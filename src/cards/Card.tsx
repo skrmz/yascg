@@ -86,13 +86,13 @@ export function CardView({
       <div className="card-body" ref={bodyRef}>
         <BlockList blocks={blocks} />
       </div>
-      {spell.classes.length > 0 ? (
-        <p className="card-classes" title={spell.classes.join(", ")}>
-          {spell.classes.join(", ")}
-        </p>
-      ) : null}
       <footer className="card-footer">
         <span className="card-source">{spell.sourceLabel ?? spell.source}</span>
+        {spell.classes.length > 0 ? (
+          <p className="card-classes" title={spell.classes.join(", ")}>
+            {spell.classes.join(", ")}
+          </p>
+        ) : null}
         {cardCount > 1 ? (
           <span className="card-continuation">
             {cardIndex > 1 ? `Continued from Card ${cardIndex - 1} \u00b7 ` : ""}
