@@ -47,7 +47,7 @@ function germanEntry(overrides: Record<string, unknown> = {}): Record<string, un
       "Du wirst unsichtbar.",
       "Als magische Aktion kannst du den Doppelgänger bewegen.",
     ],
-    higherLevels: ["**_Verwenden von Zauberplätzen höheren Grades:_** Zusätzliche Effekte."],
+    higherLevels: ["Zusätzliche Effekte."],
     source: "SRD-5.2.1",
     ...overrides,
   };
@@ -74,9 +74,7 @@ describe("convertGermanSpells", () => {
     expect(converted.description).toBe(
       "Du wirst unsichtbar.\nAls magische Aktion kannst du den Doppelgänger bewegen.",
     );
-    expect(converted.higher_level).toBe(
-      "**_Verwenden von Zauberplätzen höheren Grades:_** Zusätzliche Effekte.",
-    );
+    expect(converted.higher_level).toBe("Zusätzliche Effekte.");
 
     expect(converted.id).toBeUndefined();
     expect(converted.source).toBeUndefined();
@@ -141,9 +139,7 @@ describe("convertGermanSpells", () => {
     const english = englishEntry({ higher_level: undefined });
     delete (english as Record<string, unknown>).higher_level;
     const { entries, report } = convertGermanSpells([germanEntry()], [english]);
-    expect(entries[0].higher_level).toBe(
-      "**_Verwenden von Zauberplätzen höheren Grades:_** Zusätzliche Effekte.",
-    );
+    expect(entries[0].higher_level).toBe("Zusätzliche Effekte.");
     expect(report.germanOnlyHigherLevelIndices).toEqual(["mislead"]);
   });
 

@@ -35,7 +35,7 @@
       }
     },
     "description": "Auf ein Ziel in Reichweite schießt ein schimmernder grüner Pfeil, der in einem Sprühregen aus Säure explodiert. Führe einen Fernkampf‑Zauberangriff gegen das Ziel aus. Bei einem Treffer erleidet das Ziel 4W4 Säureschaden sowie 2W4 Säureschaden am Ende seines nächsten Zugs. Bei einem Misserfolg spritzt dennoch genügend Säure auf das Ziel, um ihm die Hälfte des anfänglichen Schadens zuzufügen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. werden anfänglicher sowie späterer Schaden jeweils um 1W4 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. werden anfänglicher sowie späterer Schaden jeweils um 1W4 erhöht."
   },
   {
     "index": "acid-splash",
@@ -122,7 +122,7 @@
     "duration": "8 Stunden",
     "concentration": false,
     "description": "Wähle bis zu drei Kreaturen in Reichweite aus. Für die Wirkungsdauer werden Trefferpunktemaximum sowie aktuelle Trefferpunkte jedes Ziels um 5 erhöht.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. werden die Trefferpunkte jedes Ziels um jeweils 5 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. werden die Trefferpunkte jedes Ziels um jeweils 5 erhöht."
   },
   {
     "index": "alarm",
@@ -220,7 +220,7 @@
     "duration": "24 Stunden",
     "concentration": false,
     "description": "Ziele auf ein Tier in Reichweite, das du sehen kannst. Das Ziel muss einen Weisheitsrettungswurf bestehen, oder es ist für die Wirkungsdauer bezaubert. Wenn du oder einer deiner Verbündeten dem Ziel Schaden zufügt, endet der Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. kannst du auf ein weiteres Tier zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. kannst du auf ein weiteres Tier zielen."
   },
   {
     "index": "animal-messenger",
@@ -257,7 +257,7 @@
     "duration": "24 Stunden",
     "concentration": false,
     "description": "Ein winziges Tier deiner Wahl in Reichweite, das du sehen kannst, muss einen Charismarettungswurf bestehen. Misslingt der Wurf, so muss das Ziel versuchen, in deinem Namen eine Botschaft zu überbringen (dies gelingt dem Ziel automatisch, sofern sein Herausforderungsgrad nicht gleich null ist). Bestimme einen Ort, an dem du schon einmal warst, und einen Empfänger, der einer allgemeinen Beschreibung wie „eine Person in Stadtwachenuniform“ oder „ein rothaariger Zwerg mit spitzem Hut“ entspricht. Dann kommunizierst du eine Botschaft mit bis zu 25 Worten. Das Tier reist für die Wirkungsdauer in Richtung Zielort, wobei es in 24 Stunden etwa 40 Kilometer zurücklegt – oder 80 Kilometer, wenn es fliegen kann.\nAm Zielort übermittelt das Tier der Kreatur, die du beschrieben hast, deine Botschaft und imitiert dabei deine Art der Kommunikation. Erreicht das Tier während der Wirkungsdauer sein Ziel nicht, so geht die Botschaft verloren, und das Tier kehrt an den Ort zurück, an dem du den Zauber gewirkt hast.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird die Wirkungsdauer des Zaubers um 48 Stunden erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird die Wirkungsdauer des Zaubers um 48 Stunden erhöht."
   },
   {
     "index": "animal-shapes",
@@ -314,7 +314,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Wähle einen Knochenhaufen oder die Leiche eines kleinen oder mittelgroßen Humanoiden in Reichweite aus. Das Ziel wird zu einer untoten Kreatur: zu einem **Skelett** , wenn du Knochen ausgewählt hast, oder zu einem **Zombie** , wenn du eine Leiche ausgewählt hast (jeweilige Wertekästen siehe „Monster“).\nDu kannst in jedem deiner Züge eine Bonusaktion ausführen, um jede Kreatur, die du mit diesem Zauber erschaffen hast und die sich im Abstand von bis zu 18 Metern von dir befindet, mental zu befehligen. Handelt es sich um mehrere Kreaturen, so kannst du beliebig viele von ihnen gleichzeitig befehligen, wobei jeweils der gleiche Befehl erteilt wird. Du entscheidest über die Aktion und die Bewegung der Kreatur in ihrem nächsten Zug. Alternativ kannst du einen allgemeinen Befehl erteilen, beispielsweise eine bestimmte Kammer oder einen Korridor zu bewachen. Wenn du keine Befehle erteilst, führt die Kreatur die Ausweichaktion aus und bewegt sich nur, um Schaden zu vermeiden. Sobald die Kreatur einen Befehl erhalten hat, führt sie ihn aus, bis die Aufgabe abgeschlossen ist.\nDie Kreatur steht 24 Stunden lang unter deiner Kontrolle. Danach folgt sie keinem deiner Befehle mehr. Um für weitere 24 Stunden die Kontrolle\nüber die Kreatur zu behalten, musst du diesen Zauber erneut auf die Kreatur wirken, ehe die ersten 24 Stunden abgelaufen sind. In diesem Fall verlängerst du die Kontrolle über bis zu vier Kreaturen, die du mit diesem Zauber erschaffen hast, anstatt eine neue Kreatur zu erschaffen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. erschaffst du zwei zusätzliche untote Kreaturen oder verlängerst die Kontrolle über zwei zusätzliche untote Kreaturen. Du benötigst für jede Kreatur eine separate Leiche oder einen separaten Knochenhaufen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. erschaffst du zwei zusätzliche untote Kreaturen oder verlängerst die Kontrolle über zwei zusätzliche untote Kreaturen. Du benötigst für jede Kreatur eine separate Leiche oder einen separaten Knochenhaufen."
   },
   {
     "index": "animate-objects",
@@ -350,7 +350,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Auf deinen Befehl hin werden Gegenstände belebt. Wähle eine Anzahl nichtmagischer Gegenstände in Reichweite aus, die nicht getragen oder gehalten werden, nicht an einer Oberfläche fixiert und kleiner als gigantisch sind. Die maximale Anzahl von Gegenständen entspricht deinem ZauberwirkenAttributsmodifikator. Dabei zählt ein Ziel von höchstens mittelgroßer Größe als ein Gegenstand, ein großes Ziel zählt als zwei Gegenstände, und ein riesiges Ziel zählt als drei Gegenstände.\nJedes Ziel wird belebt, es erhält Beine und wird zu einem Konstrukt, das den Wertekasten eines **belebten Gegenstands** verwendet. Diese Kreatur steht unter deiner Kontrolle, bis der Zauber endet oder seine Trefferpunkte auf 0 sinken. Jede Kreatur, die du mit diesem Zauber erzeugst, ist mit dir und deinen Verbündeten verbündet. Im Kampf teilt sie deinen Initiativewert und ist unmittelbar nach dir am Zug.\nBis der Zauber endet, kannst du als Bonusaktion jede Kreatur, die du mit diesem Zauber erschaffen hast und die sich im Abstand von bis zu 150 Metern von dir befindet, mental befehligen. Handelt es sich um mehrere Kreaturen, so kannst du beliebig viele von ihnen gleichzeitig befehligen, wobei jeweils der gleiche Befehl erteilt wird. Wenn du keine Befehle erteilst, führt die Kreatur die Ausweichaktion aus und bewegt sich nur, um Schaden zu vermeiden. Wenn die Trefferpunkte der Kreatur auf 0 sinken, nimmt sie wieder ihre Gegenstandgestalt an. Überschüssiger Schaden wird auf diese Form übertragen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 5. wird der Hiebschaden der Kreatur um 1W4 (höchstens mittelgroß), 1W6 (groß) oder 1W12 (riesig) erhöht.\n#### **Belebter Gegenstand**\n_Konstrukt von höchstens riesiger Größe, gesinnungslos_  **RK** 15; **TP** 10 (höchstens mittelgroß), 20 (groß), 40 (riesig); **Bewegungsrate** 9 m\n**Attribut / Mod / RW:**\n- ST 16 / +3 / +3\n- GE 10 / +0 / +0\n- KO 10 / +0 / +0\n- IN  3 / -4 / -4\n- WE  3 / -4 / -4\n- CH  1 / -5 / -5\n**Immunitäten:** Gift, Psychisch; Bezaubert, Erschöpft, Gelähmt, Verängstigt, Vergiftet **Sinne** Blindsicht 9 m; Passive Wahrnehmung 6 **Sprachen** Versteht die Sprachen, die du sprichst **HG** − (EP 0, ÜB entspricht deinem Übungsbonus)\n**Aktionen:**\n- **_Hieb:_** _Nahkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 1,5 m. _Treffer:_ Energieschaden in Höhe von 1W4+3 (höchstens mittelgroß), 2W6+3 + deinem ZauberwirkenAttributsmodifikator (groß) oder 2W12+3 + deinem Zauberwirken-Attributsmodifikator (riesig)."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 5. wird der Hiebschaden der Kreatur um 1W4 (höchstens mittelgroß), 1W6 (groß) oder 1W12 (riesig) erhöht.\n#### **Belebter Gegenstand**\n_Konstrukt von höchstens riesiger Größe, gesinnungslos_  **RK** 15; **TP** 10 (höchstens mittelgroß), 20 (groß), 40 (riesig); **Bewegungsrate** 9 m\n**Attribut / Mod / RW:**\n- ST 16 / +3 / +3\n- GE 10 / +0 / +0\n- KO 10 / +0 / +0\n- IN  3 / -4 / -4\n- WE  3 / -4 / -4\n- CH  1 / -5 / -5\n**Immunitäten:** Gift, Psychisch; Bezaubert, Erschöpft, Gelähmt, Verängstigt, Vergiftet **Sinne** Blindsicht 9 m; Passive Wahrnehmung 6 **Sprachen** Versteht die Sprachen, die du sprichst **HG** − (EP 0, ÜB entspricht deinem Übungsbonus)\n**Aktionen:**\n- **_Hieb:_** _Nahkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 1,5 m. _Treffer:_ Energieschaden in Höhe von 1W4+3 (höchstens mittelgroß), 2W6+3 + deinem ZauberwirkenAttributsmodifikator (groß) oder 2W12+3 + deinem Zauberwirken-Attributsmodifikator (riesig)."
   },
   {
     "index": "antilife-shell",
@@ -765,7 +765,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Bis zu drei Kreaturen deiner Wahl in Reichweite, die du sehen kannst, führen jeweils einen Charismarettungswurf aus. Wenn ein Ziel, dessen Rettungswurf misslingt, während der Wirkungsdauer einen Angriffsoder Rettungswurf ausführt, muss es 1W4 von seinem Angriffsoder Rettungswurf abziehen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "banishment",
@@ -812,7 +812,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Eine Kreatur in Reichweite, die du sehen kannst, muss einen Charismarettungswurf bestehen, oder sie wird für die Wirkungsdauer auf eine harmlose Halbebene transportiert. Solange das Ziel sich dort befindet, ist es kampfunfähig. Wenn der Zauber endet, erscheint das Ziel in dem Bereich, aus dem es wegteleportiert wurde, oder im nächstgelegenen freien Bereich wieder, falls der ursprüngliche inzwischen besetzt ist.\nFalls das Ziel eine Aberration, ein celestisches Wesen, ein Elementar, ein Feenwesen oder ein Unhold ist, kehrt es nicht zurück, sofern der Zauber eine Minute lang wirkt. Stattdessen gelangt es an einen zufälligen Ort auf einer Ebene (nach Wahl des SL), die mit seinem Kreaturentyp assoziiert ist.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "barkskin",
@@ -1068,7 +1068,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Du segnest bis zu drei Kreaturen in Reichweite. Wann immer ein Ziel während der Wirkungsdauer einen Angriffsoder Rettungswurf ausführt, fügt es dem Ergebnis 1W4 hinzu.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "blight",
@@ -1119,7 +1119,7 @@
       }
     },
     "description": "Eine Kreatur in Reichweite, die du sehen kannst, führt einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet sie 8W8 nekrotischen Schaden, anderenfalls die Hälfte. Bei Pflanzenkreaturen misslingt der Rettungswurf automatisch.\nZiele alternativ auf eine nichtmagische Pflanze, die keine Kreatur ist (beispielsweise Baum oder Strauch). Sie führt keinen Rettungswurf aus, sondern verdorrt und stirbt.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "blindness-deafness",
@@ -1160,7 +1160,7 @@
     "duration": "1 Minute",
     "concentration": false,
     "description": "Eine Kreatur in Reichweite, die du sehen kannst, muss einen Konstitutionsrettungswurf bestehen, oder sie ist für die Wirkungsdauer blind oder taub (nach deiner Wahl). Das Ziel wiederholt den Rettungswurf am Ende jedes seiner Züge. Bei einem Erfolg endet der Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "blink",
@@ -1261,7 +1261,7 @@
       }
     },
     "description": "Du verschießt ein dünnes Flammenband. Jede Kreatur in einem Kegel von 4,5 Metern führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet sie 3W6 Feuerschaden, anderenfalls die Hälfte.\nBrennbare Gegenstände im Kegel, die nicht getragen oder gehalten werden, beginnen zu brennen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "call-lightning",
@@ -1297,7 +1297,7 @@
       }
     },
     "description": "An einem Punkt in Reichweite über dir, den du sehen kannst, erscheint eine Sturmwolke. Sie hat die Form eines drei Meter hohen Zylinders mit einem Radius von 18 Metern.\nWenn du den Zauber wirkst, wähle einen Punkt unter der Wolke aus, den du sehen kannst. Ein Blitz schlägt von der Wolke in diesen Punkt ein. Jede Kreatur im Abstand von bis zu 1,5 Metern um diesem Punkt führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet sie 3W10 Blitzschaden, anderenfalls die Hälfte.\nFür die Wirkungsdauer kannst du eine magische Aktion verwenden, um einen weiteren Blitz dieser Art einschlagen zu lassen. Dabei kannst du denselben Punkt oder einen anderen als Ziel auswählen. Wenn du dich beim Wirken des Zaubers draußen aufhältst und ein Sturm herrscht, verleiht der Zauber dir Kontrolle über diesen Sturm, anstatt einen neuen zu erschaffen. Unter diesen Umständen wird der Schaden des Zaubers um 1W10 erhöht.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W10 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W10 erhöht."
   },
   {
     "index": "calm-emotions",
@@ -1369,7 +1369,7 @@
       }
     },
     "description": "Du schleuderst einen Blitz auf ein Ziel in Reichweite, das du sehen kannst. Dann springen drei Blitze von diesem Ziel auf bis zu drei weitere Ziele deiner Wahl über, die sich im Abstand von bis zu neun Metern vom ersten Ziel befinden müssen. Beim Ziel kann es sich um eine Kreatur oder einen Gegenstand handeln. Es kann nur von einem der Blitze getroffen werden.\nJedes Ziel führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet es 10W8 Blitzschaden, anderenfalls die Hälfte.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 6. springt ein zusätzlicher Blitz vom ersten Ziel auf ein weiteres über."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 6. springt ein zusätzlicher Blitz vom ersten Ziel auf ein weiteres über."
   },
   {
     "index": "charm-monster",
@@ -1415,7 +1415,7 @@
     "duration": "1 Stunde",
     "concentration": false,
     "description": "Eine Kreatur in Reichweite, die du sehen kannst, führt einen Weisheitsrettungswurf aus. Dabei ist sie im Vorteil, wenn du oder deine Verbündeten gegen sie kämpfen. Misslingt der Wurf, so ist das Ziel bezaubert, bis der Zauber endet oder du oder deine Verbündeten ihm Schaden zufügen. Die bezauberte Kreatur ist dir freundlich gesinnt. Nach Ende des Zaubers weiß das Ziel, dass es von dir bezaubert wurde.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "charm-person",
@@ -1461,7 +1461,7 @@
     "duration": "1 Stunde",
     "concentration": false,
     "description": "Ein Humanoide in Reichweite, den du sehen kannst, führt einen Weisheitsrettungswurf aus. Dabei ist er im Vorteil, wenn du oder deine Verbündeten gegen ihn kämpfen. Misslingt der Wurf, so ist das Ziel bezaubert, bis der Zauber endet oder du oder deine Verbündeten ihm Schaden zufügen. Die bezauberte Kreatur ist dir freundlich gesinnt. Nach Ende des Zaubers weiß das Ziel, dass es von dir bezaubert wurde.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "chill-touch",
@@ -1540,7 +1540,7 @@
     "concentration": false,
     "attack_type": "ranged",
     "description": "Du schleuderst eine Energiekugel auf ein Ziel in Reichweite. Wähle für die Art der Kugel Blitz, Feuer, Gift, Kälte, Säure oder Schall aus und führe dann einen Fernkampf‑Zauberangriff gegen das Ziel aus. Bei einem Treffer erleidet das Ziel 3W8 Schaden der ausgewählten Art.\nWenn du mit mindestens zwei der W8 dasselbe Ergebnis würfelst, springt die Kugel zu einem weiteren Ziel deiner Wahl im Abstand von bis zu neun Metern vom Ziel. Führe einen Angriffswurf gegen das neue Ziel sowie einen neuen Schadenswurf aus. Die Kugel kann nicht noch einmal springen, sofern du den Zauber nicht mit einem Zauberplatz ab dem 2. Grad wirkst.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W8 erhöht. Die Kugel kann höchstens so oft springen, wie es dem Grad des verbrauchten Zauberplatzes entspricht, und jede Kreatur kann nur einmal das Ziel dieses Zaubers sein."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W8 erhöht. Die Kugel kann höchstens so oft springen, wie es dem Grad des verbrauchten Zauberplatzes entspricht, und jede Kreatur kann nur einmal das Ziel dieses Zaubers sein."
   },
   {
     "index": "circle-of-death",
@@ -1587,7 +1587,7 @@
       }
     },
     "description": "Von einem Punkt deiner Wahl in Reichweite breitet sich negative Energie zu einer Kugel mit einem Radius von 18 Metern aus. Jede Kreatur in diesem Bereich führt einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet sie 8W8 nekrotischen Schaden, anderenfalls die Hälfte.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 6. wird der Schaden um 2W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 6. wird der Schaden um 2W8 erhöht."
   },
   {
     "index": "clairvoyance",
@@ -1695,7 +1695,7 @@
       }
     },
     "description": "Du erschaffst eine Kugel aus gelbgrünem Nebel mit einem Radius von sechs Metern um einen Punkt in Reichweite. Der Nebel bleibt für die Wirkungsdauer bestehen, oder bis starker Wind (wie solcher durch _Windstoß_ ) ihn auflöst, wodurch der Zauber endet. Der Bereich der Kugel ist komplett verschleiert.\nJede Kreatur in der Kugel führt einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet sie 5W8 Giftschaden, anderenfalls die Hälfte. Eine Kreatur muss den Konstitutionsrettungswurf auch dann ausführen, wenn die Kugel sich in ihren Bereich bewegt, wenn die Kreatur die Kugel betritt oder wenn sie ihren Zug darin beendet. Eine Kreatur kann diesen Rettungswurf nur einmal pro Zug ausführen.\nZu Beginn jedes deiner Züge bewegt sich die Kugel um drei Meter von dir weg.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 5. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 5. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "color-spray",
@@ -1936,7 +1936,7 @@
       }
     },
     "description": "Du entfesselst einen Stoß eiskalter Luft. Jede Kreatur in einem Kegel von 18 Metern, der von dir ausgeht, führt einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet sie 8W8 Kälteschaden, anderenfalls die Hälfte. Wird eine Kreatur durch diesen Zauber getötet, so wird sie zu einer gefrorenen Statue, bis sie auftaut.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 5. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 5. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "confusion",
@@ -1978,7 +1978,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Jede Kreatur in einer Kugel mit einem Radius von drei Metern um einen Punkt deiner Wahl in Reichweite muss einen Weisheitsrettungswurf bestehen, oder sie kann weder Bonusaktionen noch Reaktionen ausführen und muss zu Beginn jedes ihrer Züge mit 1W10 würfeln, um anhand der nachstehenden Tabelle ihr Verhalten in diesem Zug zu ermitteln.\n**1W10 Verhalten im Zug:**\n- 1 Das Ziel führt keine Aktion aus und verwendet seine gesamte Bewegungsrate, um sich zu bewegen. Würfle die Richtung mit 1W4 aus: 1: Norden, 2: Osten, 3: Süden, 4: Westen.\n- 2–6 Das Ziel bewegt sich nicht und führt keine Aktionen aus.\n- 7–8 Das Ziel bewegt sich nicht. Es führt die Angriffsaktion aus, um einen Nahkampfangriff gegen eine zufällige Kreatur in Reichweite auszuführen. Wenn sich keine Kreaturen in Reichweite befinden, führt das Ziel keine Aktionen aus.\n- 9–10 Das Ziel wählt sein Verhalten selbst aus.\nEin betroffenes Ziel wiederholt den Rettungswurf am Ende jedes seiner Züge. Bei einem Erfolg endet der Zauber bei diesem Ziel.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. wird der Radius der Kugel um 1,5 Meter erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. wird der Radius der Kugel um 1,5 Meter erhöht."
   },
   {
     "index": "conjure-animals",
@@ -2019,7 +2019,7 @@
       }
     },
     "description": "Du beschwörst Naturgeister. Diese nehmen die Form eines großen Rudels geisterhafter, immaterieller Tiere in einem freien Bereich in Reichweite an, den du sehen kannst. Das Rudel bleibt für die Wirkungsdauer bestehen. Du wählst die Tierform der Geister aus, beispielsweise Wölfe, Schlangen oder Vögel.\nDu bist bei Stärkerettungswürfen im Vorteil, solange du dich im Abstand von bis zu 1,5 Metern vom Rudel befindest. Wenn du dich in deinem Zug bewegst, kannst du auch das Rudel um bis zu neun Meter in einen freien Bereich bewegen, den du sehen kannst.\nWann immer das Rudel sich einer Kreatur, die du sehen kannst, auf höchstens drei Meter nähert, und wann immer eine Kreatur, die du sehen kannst, einen Bereich im Abstand von bis zu drei Metern vom Rudel betritt oder ihren Zug dort beendet, kannst du die Kreatur zu einem Geschicklichkeitsrettungswurf zwingen. Misslingt der Wurf, so erleidet die Kreatur 3W10 Hiebschaden. Eine Kreatur kann diesen Rettungswurf nur einmal pro Zug ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W10 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W10 erhöht."
   },
   {
     "index": "conjure-celestial",
@@ -2055,7 +2055,7 @@
       }
     },
     "description": "Du beschwörst einen Geist aus den Oberen Ebenen, der sich als Lichtsäule in einem zwölf Meter hohen Zylinder mit einem Radius von drei Metern um einen Punkt in Reichweite manifestiert. Wähle bei jeder Kreatur im Zylinder, die du sehen kannst, eine der folgenden Arten von Licht aus, von der sie beschienen wird:\n**Heilendes Licht:** Das Ziel erhält Trefferpunkte in Höhe von 4W12 plus deinem ZauberwirkenAttributsmodifikator zurück.\n- **Sengendes Licht:** Das Ziel führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet es 6W12 gleißenden Schaden, anderenfalls die Hälfte.\nFür die Wirkungsdauer ist der Zylinder von hellem Licht erfüllt. Wenn du dich in deinem Zug bewegst, kannst du auch den Zylinder bis zu neun Meter weit bewegen.\nWann immer der Zylinder sich in den Bereich einer Kreatur bewegt, die du sehen kannst, und wann immer eine Kreatur, die du sehen kannst, den Zylinder betritt oder ihren Zug dort beendet, kannst du sie in einer der Lichtarten baden. Eine Kreatur kann von diesem Zauber nur einmal pro Zug betroffen sein.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 7. werden Heilung und Schaden um 1W12 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 7. werden Heilung und Schaden um 1W12 erhöht."
   },
   {
     "index": "conjure-elemental",
@@ -2086,7 +2086,7 @@
     "duration": "Konzentration, bis zu 10 Minuten",
     "concentration": true,
     "description": "Du beschwörst einen großen immateriellen Geist von den Elementarebenen, der in einem freien Bereich in Reichweite erscheint. Wähle das Element des Geistes aus, durch das seine Schadensart bestimmt wird: Erde (Schall), Feuer (Feuer), Luft (Blitz) oder Wasser (Kälte). Der Geist bleibt für die Wirkungsdauer bestehen.\nWann immer eine Kreatur, die du sehen kannst, den Bereich des Geistes betritt oder ihren Zug im Abstand von bis zu 1,5 Metern vom Geist beginnt, kannst du die Kreatur zu einem Geschicklichkeitsrettungswurf zwingen, sofern der Geist keine Kreatur festgesetzt hat. Misslingt der Wurf, so erleidet das Ziel 8W8 Schaden je nach Art des Geists und ist festgesetzt, bis der Zauber endet. Das festgesetzte Ziel wiederholt den Rettungswurf zu Beginn jedes seiner Züge. Misslingt der Wurf, so erleidet das Ziel 4W8 Schaden je nach Art des Geists. Bei einem erfolgreichen Rettungswurf ist das Ziel nicht mehr vom Geist festgesetzt.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 5. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 5. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "conjure-fey",
@@ -2113,7 +2113,7 @@
     "concentration": true,
     "attack_type": "melee",
     "description": "Du beschwörst einen mittelgroßen Geist aus der Feenwildnis in einem freien Bereich in Reichweite, den du sehen kannst. Der Geist bleibt für die Wirkungsdauer bestehen und gleicht einem Feenwesen deiner Wahl. Wenn der Geist erscheint, kannst du einen Nahkampf‑Zauberangriff gegen eine Kreatur im Abstand von bis zu 1,5 Metern vom Geist ausführen. Bei einem Treffer erleidet das Ziel psychischen Schaden in Höhe von 3W12 plus deinem Zauberwirken-Attributsmodifikator. Außerdem ist das Ziel bis zum Beginn deines nächsten Zugs verängstigt. Dabei seid sowohl du als auch der Geist die Quelle seiner Angst.\nAls Bonusaktion in deinen folgenden Zügen kannst du den Geist in einen freien Bereich im Abstand von bis zu neun Metern von seinem ursprünglichen Bereich teleportieren, den du sehen kannst, und den Angriff gegen eine Kreatur im Abstand von bis zu 1,5 Metern vom Geist ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 6. wird der Schaden um 1W12 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 6. wird der Schaden um 1W12 erhöht."
   },
   {
     "index": "conjure-minor-elementals",
@@ -2144,7 +2144,7 @@
     "duration": "Konzentration, bis zu 10 Minuten",
     "concentration": true,
     "description": "Du beschwörst Geister von den Elementarebenen, die dich für die Wirkungsdauer in einer Ausströmung von 4,5 Metern umschwirren. Für die Wirkungsdauer bewirken all deine Angriffe zusätzlich 2W8 Schaden, wenn sie eine Kreatur innerhalb der Ausströmung treffen. Dieser Schaden ist Blitz‑, Feuer‑, Kälteoder Säureschaden (nach deiner Wahl, wenn du den Angriff ausführst).\nAußerdem ist der Boden innerhalb der Ausströmung schwieriges Gelände für deine Gegner.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "conjure-woodland-beings",
@@ -2185,7 +2185,7 @@
       }
     },
     "description": "Du beschwörst Naturgeister, die dich für die Wirkungsdauer in einer Ausströmung von drei Metern umschwirren. Wann immer die Ausströmung in den Bereich einer Kreatur gelangt, die du sehen kannst, und wann immer eine Kreatur, die du sehen kannst, die Ausströmung betritt oder ihren Zug dort beendet, kannst du die Kreatur zu einem Weisheitsrettungswurf zwingen. Misslingt der Wurf, so erleidet die Kreatur 5W8 Energieschaden, anderenfalls die Hälfte. Eine Kreatur kann diesen Rettungswurf nur einmal pro Zug ausführen.\nAußerdem kannst du für die Wirkungsdauer des Zaubers die Rückzug‑Aktion als Bonusaktion ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "contact-other-plane",
@@ -2543,7 +2543,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Du kannst diesen Zauber nur nachts wirken. Wähle bis zu drei Leichen von Humanoiden kleiner oder mittelgroßer Größe in Reichweite aus. Jede Leiche wird zu einem **Ghul** unter deiner Kontrolle (den Wertekasten findest du unter „Monster“).\nAls Bonusaktion in jedem deiner Züge kannst du jede untote Kreatur, die du mit diesem Zauber erschaffen hast und die sich im Abstand von bis zu 36 Metern von dir befindet, mental befehligen. Handelt es sich um mehrere Kreaturen, so kannst du beliebig viele von ihnen gleichzeitig befehligen, wobei jeweils der gleiche Befehl erteilt wird. Du entscheidest über die Aktion und die Bewegung der Kreatur in ihrem nächsten Zug. Alternativ kannst du einen allgemeinen Befehl erteilen, beispielsweise einen bestimmten Ort zu bewachen. Wenn du keine Befehle erteilst, führt die Kreatur die Ausweichaktion aus und bewegt sich nur, um Schaden zu vermeiden. Sobald die Kreatur einen Befehl erhalten hat, führt sie ihn aus, bis die Aufgabe abgeschlossen ist.\nDie Kreatur steht 24 Stunden lang unter deiner Kontrolle. Danach folgt sie keinem deiner Befehle mehr. Um die Kontrolle über die Kreatur für weitere 24 Stunden zu behalten, musst du diesen Zauber erneut auf die Kreatur wirken, ehe die ersten 24 Stunden abgelaufen sind. In diesem Fall verlängerst du die Kontrolle über bis zu drei Kreaturen, die du mit diesem Zauber erschaffen hast, anstatt eine neue Kreatur zu erschaffen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Bei einem Zauberplatz des 7. Grades kannst du vier **Ghule** erschaffen oder wieder unter deine Kontrolle bringen. Bei einem Zauberplatz des 8. Grades kannst du fünf **Ghule** oder zwei **Grule** oder zwei **Gruftschrecken** erschaffen oder wieder unter deine Kontrolle bringen. Bei einem Zauberplatz des 9. Grades kannst du sechs **Ghule** oder drei **Grule** oder drei **Gruftschrecken** oder zwei **Mumien** erschaffen oder wieder unter deine Kontrolle bringen. Die jeweiligen Wertekästen findest du unter „Monster“."
+    "higher_level": "Bei einem Zauberplatz des 7. Grades kannst du vier **Ghule** erschaffen oder wieder unter deine Kontrolle bringen. Bei einem Zauberplatz des 8. Grades kannst du fünf **Ghule** oder zwei **Grule** oder zwei **Gruftschrecken** erschaffen oder wieder unter deine Kontrolle bringen. Bei einem Zauberplatz des 9. Grades kannst du sechs **Ghule** oder drei **Grule** oder drei **Gruftschrecken** oder zwei **Mumien** erschaffen oder wieder unter deine Kontrolle bringen. Die jeweiligen Wertekästen findest du unter „Monster“."
   },
   {
     "index": "creation",
@@ -2575,7 +2575,7 @@
     "duration": "Besonders",
     "concentration": false,
     "description": "Du ziehst Fäden aus Schattenmaterial aus dem Schattensaum und erschaffst einen Gegenstand in Reichweite. Es kann sich entweder um einen Gegenstand aus pflanzlichem Material (Textilien, Seil, Holz und dergleichen) oder um einen Gegenstand aus mineralischem Material (Stein, Kristall, Metall und dergleichen) handeln. Der Gegenstand darf nicht größer als ein Würfel mit 1,5 Metern Kantenlänge sein und muss aus einem Material bestehen sowie eine Form besitzen, die du bereits gesehen hast.\nDie Wirkungsdauer des Zaubers hängt vom Material des Gegenstands ab, wie in der Tabelle „Materialien“ dargestellt. Besteht der Gegenstand aus mehreren Materialien, so verwende die kürzeste Wirkungsdauer. Wenn ein mit diesem Zauber erschaffener Gegenstand als Materialkomponente für einen anderen Zauber verwendet wird, misslingt der andere Zauber.\n**Materialien**\n|**Material**|**Dauer**|\n|---|---|\n|Pflanzliches Material|24 Stunden|\n|Stein oder Kristall|12 Stunden|\n|Edelmetalle|1 Stunde|\n|Edelsteine|10 Minuten|\n|Adamant oder Mithral|1 Minute|",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 5. wird der Würfel um 1,5 Meter vergrößert."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 5. wird der Würfel um 1,5 Meter vergrößert."
   },
   {
     "index": "cure-wounds",
@@ -2621,7 +2621,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Eine Kreatur, die du berührst, erhält eine Anzahl von Trefferpunkten in Höhe von 2W8 plus deinem Zauberwirken-Attributsmodifikator zurück.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird die Heilung um 2W8 Trefferpunkte erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird die Heilung um 2W8 Trefferpunkte erhöht."
   },
   {
     "index": "dancing-lights",
@@ -2841,7 +2841,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Du verschießt einen gelben Lichtstrahl, der sich an einem Punkt deiner Wahl in Reichweite zu einer leuchtenden Perle verdichtet und für die Wirkungsdauer dort verweilt. Wenn der Zauber endet, explodiert die Perle, und jede Kreatur in einer Kugel mit einem Radius von sechs Metern um diesen Punkt führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet die Kreatur Feuerschaden in Höhe des gesamten angesammelten Schadens, anderenfalls die Hälfte.\nDer Grundschaden des Zaubers ist 12W6, und der Schaden wird um 1W6 erhöht, wann immer während der Wirkungsdauer einer deiner Züge endet.\nWenn eine Kreatur während der Wirkungsdauer die leuchtende Perle berührt, führt die Kreatur einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so endet der Zauber, und die Perle explodiert. Bei einem erfolgreichen Rettungswurf kann die Kreatur die Perle bis zu zwölf Meter weit werfen. Gelangt die geworfene Perle in den Bereich einer Kreatur oder kollidiert sie mit einem festen Gegenstand, so endet der Zauber, und die Perle explodiert.\nWenn die Perle explodiert, beginnen brennbare Gegenstände im Explosionsbereich, die nicht getragen oder gehalten werden, zu brennen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 7. wird der Grundschaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 7. wird der Grundschaden um 1W6 erhöht."
   },
   {
     "index": "demiplane",
@@ -3160,7 +3160,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Du verschießt einen dünnen grünen Strahl auf ein Ziel in Reichweite, das du sehen kannst. Das Ziel kann eine Kreatur, ein nichtmagischer Gegenstand oder eine Struktur aus magischer Energie sein, beispielsweise die Wand des Zaubers _Energiewand_ .\nEine Kreatur, die zum Ziel dieses Zaubers wird, führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet das Ziel 10W6+40 Energieschaden. Wenn seine Trefferpunkte durch diesen Schaden auf 0 sinken, zerfällt es mitsamt jeder nichtmagischen Ausrüstung, die es trägt oder hält, zu grauem Staub. Das Ziel kann nur durch die Zauber _Wahre Auferstehung_ und _Wunsch_ wiederbelebt werden.\nNichtmagische Gegenstände von höchstens großer Größe sowie Strukturen aus magischer Energie werden von diesem Zauber automatisch aufgelöst. Wenn das Ziel von mindestens riesiger Größe ist, löst dieser Zauber einen Würfel mit drei Metern Kantenlänge davon auf.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 6. wird der Schaden um 3W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 6. wird der Schaden um 3W6 erhöht."
   },
   {
     "index": "dispel-evil-and-good",
@@ -3252,7 +3252,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Wähle eine Kreatur, einen Gegenstand oder einen magischen Effekt in Reichweite aus. Jeder Zauber des höchstens 3. Grades, der aktuell auf das Ziel wirkt, wird beendet. Führe für jeden Zauber des mindestens 4. Grades, der auf das Ziel wirkt, einen Attributswurf mit deinem Attribut zum Zauberwirken (SG 10 plus Zaubergrad) aus. Bei einem Erfolg endet der Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Du beendest automatisch einen Zauber, der auf das Ziel wirkt, wenn dessen Grad höchstens dem des Zauberplatzes entspricht, den du verwendest."
+    "higher_level": "Du beendest automatisch einen Zauber, der auf das Ziel wirkt, wenn dessen Grad höchstens dem des Zauberplatzes entspricht, den du verwendest."
   },
   {
     "index": "dissonant-whispers",
@@ -3288,7 +3288,7 @@
       }
     },
     "description": "Eine Kreatur deiner Wahl in Reichweite, die du sehen kannst, hört im Geiste eine misstönende Melodie. Das Ziel führt einen Weisheitsrettungswurf aus. Misslingt der Wurf, so erleidet das Ziel 3W6 psychischen Schaden und muss sofort seine Reaktion verwenden, sofern verfügbar, um sich so weit wie möglich von dir zu entfernen. Dabei nimmt es die sicherste Route. Bei einem erfolgreichen Rettungswurf erleidet das Ziel nur halb so viel Schaden.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "divination",
@@ -3395,7 +3395,7 @@
       }
     },
     "description": "Das Ziel erleidet zusätzlich 2W8 gleißenden Schaden durch den Angriff. Der zusätzliche Schaden wird um 1W8 erhöht, wenn das Ziel ein Unhold oder ein Untoter ist.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "divine-word",
@@ -3456,7 +3456,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Ein Tier in Reichweite, das du sehen kannst, muss einen Weisheitsrettungswurf bestehen, oder es ist für die Wirkungsdauer bezaubert. Wenn du oder deine Verbündeten gegen das Ziel kämpfen, ist es beim Rettungswurf im Vorteil. Wann immer das Ziel Schaden erleidet, wiederholt es den Rettungswurf. Bei einem Erfolg endet der Zauber bei ihm.\nDu verfügst über eine telepathische Verbindung mit dem bezauberten Ziel, solange ihr euch auf derselben Existenzebene befindet. Diese Verbindung kannst du in deinem Zug nutzen, um dem Ziel Befehle zu erteilen (keine Aktion erforderlich), beispielsweise „Greife diese Kreatur an“, „Laufe dorthin“ oder „Hole diesen Gegenstand“. Das Ziel gehorcht in seinem Zug, so gut es kann. Wenn es den Befehl ausgeführt hat und keine weiteren Anweisungen von dir erhält, verhält es sich nach seinen Wünschen und versucht vor allem, sich zu schützen.\nDu kannst dem Ziel befehlen, eine Reaktion auszuführen, musst dazu allerdings selbst eine Reaktion ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Deine Konzentration kann länger andauern: bei einem Zauberplatz des 5. Grades bis zu zehn Minuten, bei einem Zauberplatz des 6. Grades bis zu einer Stunde und bei einem Zauberplatz ab dem 7. Grad bis zu acht Stunden."
+    "higher_level": "Deine Konzentration kann länger andauern: bei einem Zauberplatz des 5. Grades bis zu zehn Minuten, bei einem Zauberplatz des 6. Grades bis zu einer Stunde und bei einem Zauberplatz ab dem 7. Grad bis zu acht Stunden."
   },
   {
     "index": "dominate-monster",
@@ -3497,7 +3497,7 @@
     "duration": "Konzentration, bis zu 1 Stunde",
     "concentration": true,
     "description": "Eine Kreatur deiner Wahl in Reichweite, die du sehen kannst, muss einen Weisheitsrettungswurf bestehen, oder sie ist für die Wirkungsdauer bezaubert. Wenn du oder deine Verbündeten gegen das Ziel kämpfen, ist es beim Rettungswurf im Vorteil. Wann immer das Ziel Schaden erleidet, wiederholt es den Rettungswurf. Bei einem Erfolg endet der Zauber bei ihm.\nDu verfügst über eine telepathische Verbindung mit dem bezauberten Ziel, solange ihr euch auf derselben Existenzebene befindet. Diese Verbindung kannst du in deinem Zug nutzen, um dem Ziel Befehle zu erteilen (keine Aktion erforderlich), beispielsweise „Greife diese Kreatur an“, „Laufe dorthin“ oder „Hole diesen Gegenstand“. Das Ziel gehorcht in seinem Zug, so gut es kann. Wenn es den Befehl ausgeführt hat und keine weiteren Anweisungen von dir erhält, verhält es sich nach seinen Wünschen und versucht vor allem, sich zu schützen.\nDu kannst dem Ziel befehlen, eine Reaktion auszuführen, musst dazu allerdings selbst eine Reaktion ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Deine Konzentration kann länger andauern: bei einem Zauberplatz des 9. Grades bis zu acht Stunden."
+    "higher_level": "Deine Konzentration kann länger andauern: bei einem Zauberplatz des 9. Grades bis zu acht Stunden."
   },
   {
     "index": "dominate-person",
@@ -3533,7 +3533,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Ein Humanoide deiner Wahl in Reichweite, den du sehen kannst, muss einen Weisheitsrettungswurf bestehen, oder er ist für die Wirkungsdauer bezaubert. Wenn du oder deine Verbündeten gegen das Ziel kämpfen, ist es beim Rettungswurf im Vorteil. Wann immer das Ziel Schaden erleidet, wiederholt es den Rettungswurf. Bei einem Erfolg endet der Zauber bei ihm.\nDu verfügst über eine telepathische Verbindung mit dem bezauberten Ziel, solange ihr euch auf derselben Existenzebene befindet. Diese Verbindung kannst du in deinem Zug nutzen, um dem Ziel Befehle zu erteilen (keine Aktion erforderlich), beispielsweise „Greife diese Kreatur an“, „Laufe dorthin“ oder „Hole diesen Gegenstand“. Das Ziel gehorcht in seinem Zug, so gut es kann. Wenn es den Befehl ausgeführt hat und keine weiteren Anweisungen von dir erhält, verhält es sich nach seinen Wünschen und versucht vor allem, sich zu schützen.\nDu kannst dem Ziel befehlen, eine Reaktion auszuführen, musst dazu allerdings selbst eine Reaktion ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Deine Konzentration kann länger andauern: bei einem Zauberplatz des 6. Grades bis zu zehn Minuten, bei einem Zauberplatz des 7. Grades bis zu einer Stunde und bei einem Zauberplatz ab dem 8. Grad bis zu acht Stunden."
+    "higher_level": "Deine Konzentration kann länger andauern: bei einem Zauberplatz des 6. Grades bis zu zehn Minuten, bei einem Zauberplatz des 7. Grades bis zu einer Stunde und bei einem Zauberplatz ab dem 8. Grad bis zu acht Stunden."
   },
   {
     "index": "dragons-breath",
@@ -3565,7 +3565,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Du berührst eine bereitwillige Kreatur und wählst Blitz, Feuer, Gift, Kälte oder Säure aus. Bis der Zauber endet, kann das Ziel eine magische Aktion ausführen, um einen Kegel von 4,5 Metern auszuatmen. Jede Kreatur in diesem Bereich führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet sie 3W6 Schaden der ausgewählten Art, anderenfalls die Hälfte.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "dream",
@@ -3805,7 +3805,7 @@
     "duration": "Konzentration, bis zu 1 Stunde",
     "concentration": true,
     "description": "Du berührst eine Kreatur und wählst Charisma, Geschicklichkeit, Intelligenz, Stärke oder Weisheit aus. Für die Wirkungsdauer ist das Ziel bei Attributswürfen mit dem ausgewählten Attribut im Vorteil.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. kannst du\nauf eine weitere Kreatur zielen. Du kannst für jedes Ziel ein anders Attribut bestimmen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. kannst du\nauf eine weitere Kreatur zielen. Du kannst für jedes Ziel ein anders Attribut bestimmen."
   },
   {
     "index": "enlarge-reduce",
@@ -3882,7 +3882,7 @@
       }
     },
     "description": "Wenn du das Ziel triffst, erscheinen greifende Ranken an ihm, und es führt einen Stärkerettungswurf aus. Kreaturen von mindestens großer Größe sind bei diesem Rettungswurf im Vorteil. Misslingt der Wurf, so ist das Ziel festgesetzt, bis der Zauber endet. Bei einem erfolgreichen Rettungswurf verwelken die Ranken, und der Zauber endet.\nWährend das Ziel festgesetzt ist, erleidet es zu Beginn jedes seiner Züge 1W6 Stichschaden. Das Ziel oder eine Kreatur in seiner Reichweite kann mit einer Aktion einen Stärkewurf (Athletik) gegen deinen Zauberrettungswurf‑SG ausführen. Bei einem Erfolg endet der Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "entangle",
@@ -4186,7 +4186,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Du erhältst 2W4+4 temporäre Trefferpunkte.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. erhältst du 5 zusätzliche temporäre Trefferpunkte."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. erhältst du 5 zusätzliche temporäre Trefferpunkte."
   },
   {
     "index": "fear",
@@ -4315,7 +4315,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Du rufst ein außerweltliches Wesen herbei, das sich als treues Reittier in einem freien Bereich deiner Wahl in Reichweite manifestiert. Es verwendet den Wertekasten eines **außerweltlichen Reittieres** . Wenn du bereits über ein Reittier durch diesen Zauber verfügst, wird dieses durch das neue ersetzt.\nDas Reittier sieht aus wie ein reittaugliches Tier deiner Wahl – beispielsweise ein Pferd, ein Kamel, ein Schreckenswolf oder ein Elch. Wann immer du diesen Zauber wirkst, wählst du den Kreaturentyp des Reittieres aus: celestisches Wesen, Feenwesen oder Unhold. Der Typ beeinflusst bestimmte Merkmale im Wertekasten.\n**_Kampf:_** Das Reittier ist mit dir und deinen Verbündeten verbündet. Im Kampf nutzt es deinen Initiativewert und fungiert als kontrolliertes Reittier, während du es reitest (wie in den Regeln zu berittenem Kampf definiert). Wenn du kampfunfähig bist, ist das Reittier unmittelbar nach dir am Zug, agiert unabhängig und fokussiert sich darauf, dich zu beschützen.\n**_Verschwinden des Reittieres:_** Das Reittier verschwindet, wenn seine Trefferpunkte auf 0 sinken oder wenn du stirbst. Wenn es verschwindet, hinterlässt es alles, was es getragen oder gehalten hat. Wenn du diesen Zauber erneut wirkst, entscheidest du, ob du erneut das verschwundene Reittier oder ein anderes herbeirufst.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Verwende den Zauberplatzgrad als Zaubergrad im Wertekasten.\n**Außerweltliches Reittier**\n> _Großes celestisches Wesen, Feenwesen oder Unhold (nach deiner Wahl), neutral_\n**RK** 10 + 1 pro Zaubergrad, **TP** 5 + 10 pro Zaubergrad (das Reittier verfügt über eine Anzahl von W10-Trefferwürfeln in Höhe des Zaubergrades), **Bewegungsrate** 18 m / Fliegen 18 m (erfordert einen Zauber des mindestens 4. Grades)\n||MOD|RW||MOD|RW||MOD|RW|\n|---|---|---|---|---|---|---|---|---|\n|ST 18|+4|+4|GE 12|+1|+1|KO 14|+2|+2|\n|IN 6|−2|−2|WE 12|+1|+1|CH 8|−1|−1|\n**Sinne** Passive Wahrnehmung 11 **Sprachen** Telepathie auf 1,6 Kilometer (nur mit dir) **HG** − (EP 0, ÜB entspricht deinem Übungsbonus)\n<u>Merkmale</u>\n**_Lebensbindung:_** Wenn du Trefferpunkte durch einen Zauber ab dem 1. Grad zurückerhältst, erhält das Reittier die gleiche Anzahl von Trefferpunkten zurück, sofern du dich im Abstand von bis zu 1,5 Metern von ihm befindest.\n<u>Aktionen</u>\n**_Außerweltlicher Hieb:_** _Nahkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 1,5 m. _Treffer:_ 1W8 plus Zaubergrad gleißender (celestisches Wesen), psychischer (Feenwesen) oder nekrotischer (Unhold) Schaden.\n<u>Bonusaktionen</u>\n**_Böses Starren (nur Unhold, wird nach langer Rast aufgeladen):_** _Weisheitsrettungswurf:_ Der SG entspricht deinem Zauberrettungswurf-SG, eine Kreatur im Abstand von bis zu 18 Metern, die vom Reittier gesehen werden kann. _Misserfolg:_ Das Ziel ist bis zum Ende deines nächsten Zugs verängstigt.\n**_Feenschritt (nur Feenwesen, wird nach langer Rast aufgeladen):_** Das Reittier teleportiert sich samt Reiter bis zu 18 Meter weit in einen freien Bereich deiner Wahl.\n**_Heilende Berührung (nur celestisches Wesen, wird nach langer Rast aufgeladen):_** Eine Kreatur im Abstand von bis zu 1,5 Metern vom Reittier erhält eine Anzahl von Trefferpunkten in Höhe von 2W8 plus Zaubergrad zurück."
+    "higher_level": "Verwende den Zauberplatzgrad als Zaubergrad im Wertekasten.\n**Außerweltliches Reittier**\n> _Großes celestisches Wesen, Feenwesen oder Unhold (nach deiner Wahl), neutral_\n**RK** 10 + 1 pro Zaubergrad, **TP** 5 + 10 pro Zaubergrad (das Reittier verfügt über eine Anzahl von W10-Trefferwürfeln in Höhe des Zaubergrades), **Bewegungsrate** 18 m / Fliegen 18 m (erfordert einen Zauber des mindestens 4. Grades)\n||MOD|RW||MOD|RW||MOD|RW|\n|---|---|---|---|---|---|---|---|---|\n|ST 18|+4|+4|GE 12|+1|+1|KO 14|+2|+2|\n|IN 6|−2|−2|WE 12|+1|+1|CH 8|−1|−1|\n**Sinne** Passive Wahrnehmung 11 **Sprachen** Telepathie auf 1,6 Kilometer (nur mit dir) **HG** − (EP 0, ÜB entspricht deinem Übungsbonus)\n<u>Merkmale</u>\n**_Lebensbindung:_** Wenn du Trefferpunkte durch einen Zauber ab dem 1. Grad zurückerhältst, erhält das Reittier die gleiche Anzahl von Trefferpunkten zurück, sofern du dich im Abstand von bis zu 1,5 Metern von ihm befindest.\n<u>Aktionen</u>\n**_Außerweltlicher Hieb:_** _Nahkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 1,5 m. _Treffer:_ 1W8 plus Zaubergrad gleißender (celestisches Wesen), psychischer (Feenwesen) oder nekrotischer (Unhold) Schaden.\n<u>Bonusaktionen</u>\n**_Böses Starren (nur Unhold, wird nach langer Rast aufgeladen):_** _Weisheitsrettungswurf:_ Der SG entspricht deinem Zauberrettungswurf-SG, eine Kreatur im Abstand von bis zu 18 Metern, die vom Reittier gesehen werden kann. _Misserfolg:_ Das Ziel ist bis zum Ende deines nächsten Zugs verängstigt.\n**_Feenschritt (nur Feenwesen, wird nach langer Rast aufgeladen):_** Das Reittier teleportiert sich samt Reiter bis zu 18 Meter weit in einen freien Bereich deiner Wahl.\n**_Heilende Berührung (nur celestisches Wesen, wird nach langer Rast aufgeladen):_** Eine Kreatur im Abstand von bis zu 1,5 Metern vom Reittier erhält eine Anzahl von Trefferpunkten in Höhe von 2W8 plus Zaubergrad zurück."
   },
   {
     "index": "find-the-path",
@@ -4463,7 +4463,7 @@
       }
     },
     "description": "Du verschießt einen hellen Lichtstrahl auf einen Punkt deiner Wahl in Reichweite, wo er unter dumpfem Grollen zu einer Flammenexplosion detoniert. Jede Kreatur in einer Kugel mit einem Radius von sechs Metern um diesen Punkt führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet sie 8W6 Feuerschaden, anderenfalls die Hälfte.\nBrennbare Gegenstände im Bereich, die nicht getragen oder gehalten werden, beginnen zu brennen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "fire-bolt",
@@ -4628,7 +4628,7 @@
     "concentration": true,
     "attack_type": "melee",
     "description": "Du erschaffst eine feurige Klinge in deiner freien Hand. Die Klinge ähnelt einem Krummsäbel und bleibt für die Wirkungsdauer bestehen. Wenn du die Klinge loslässt, verschwindet sie. Du kannst sie jedoch als Bonusaktion erneut beschwören.\nDu kannst als magische Aktion einen NahkampfZauberangriff mit der Flammenklinge ausführen. Bei einem Treffer erleidet das Ziel Feuerschaden in Höhe von 3W6 plus deinem ZauberwirkenAttributsmodifikator.\nDie Flammenklinge spendet in einem Radius von drei Metern helles Licht und in einem Radius von weiteren drei Metern dämmriges Licht.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "flame-strike",
@@ -4712,7 +4712,7 @@
       }
     },
     "description": "Du erzeugst in einem freien Bereich in Reichweite auf dem Boden eine flammende Kugel mit einem Radius von 1,5 Metern. Die Kugel bleibt für die Wirkungsdauer bestehen. Jede Kreatur, die ihren Zug in im Abstand von bis zu 1,5 Metern um die Kugel beendet, führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet sie 2W6 Feuerschaden, anderenfalls die Hälfte.\nAls Bonusaktion kannst du die Kugel bis zu neun Meter weit über den Boden rollen lassen. Wenn du die Kugel in den Bereich einer Kreatur bewegst, muss diese den Rettungswurf gegen die Kugel ausführen, und die Kugel beendet ihre Bewegung für diesen Zug.\nBewegst du die Kugel, so kannst du sie über bis zu 1,5 Meter hohe Hindernisse dirigieren und über bis zu drei Meter breite Gruben springen lassen. Brennbare Gegenstände, die nicht getragen oder gehalten werden, beginnen zu brennen, wenn sie von der Kugel berührt werden. Die Kugel spendet in einem Radius von sechs Metern helles Licht sowie in einem Radius von weiteren sechs Metern dämmriges Licht.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "flesh-to-stone",
@@ -4811,7 +4811,7 @@
     "duration": "Konzentration, bis zu 10 Minuten",
     "concentration": true,
     "description": "Du berührst eine bereitwillige Kreatur. Für die Wirkungsdauer erhält das Ziel eine Flugbewegungsrate von 18 Metern und kann schweben. Wenn der Zauber endet und das Ziel noch fliegt, stürzt es ab, sofern es den Sturz nicht verhindern kann.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "fog-cloud",
@@ -4852,7 +4852,7 @@
     "duration": "Konzentration, bis zu 1 Stunde",
     "concentration": true,
     "description": "Du erschaffst eine Kugel aus Nebel mit einem Radius von sechs Metern um einen Punkt in Reichweite. Der Bereich in der Kugel ist komplett verschleiert. Die Kugel bleibt für die Wirkungsdauer bestehen, oder bis starker Wind (wie solcher durch Windstoß) sie auflöst.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Radius des Nebels um sechs Meter erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Radius des Nebels um sechs Meter erhöht."
   },
   {
     "index": "forbiddance",
@@ -4997,7 +4997,7 @@
     "duration": "1 Stunde",
     "concentration": false,
     "description": "Du berührst eine bereitwillige Kreatur. Für die Wirkungsdauer ist die Bewegungsrate des Ziels auf schwierigem Gelände nicht eingeschränkt. Zudem können Zauber und andere magische Effekte weder seine Bewegungsrate verringern noch das Ziel lähmen oder festsetzen. Das Ziel hat ferner eine Schwimmbewegungsrate in Höhe seiner Bewegungsrate.\nEs kann außerdem 1,5 Meter seiner Bewegungsrate verbrauchen, um nichtmagischen Fesseln (beispielsweise Handschellen oder einer Kreatur, die es gepackt hält) automatisch zu entkommen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "freezing-sphere",
@@ -5039,7 +5039,7 @@
       }
     },
     "description": "Du verschießt eine eisige Kugel an einen Punkt deiner Wahl in Reichweite, wo sie zu einer Kugel mit einem Radius von 18 Metern explodiert. Jede Kreatur in diesem Bereich führt einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet sie 10W6 Kälteschaden, anderenfalls die Hälfte.\nWenn die Kugel ein Gewässer trifft, so gefriert dieses in einem quadratischen Bereich von neun Metern Kantenlänge bis in eine Tiefe von 15 Zentimetern.\nDas Eis bleibt eine Minute lang bestehen. Kreaturen, die an der Oberfläche des gefrorenen Wassers schwimmen, werden im Eis gefangen und sind festgesetzt. Eine gefangene Kreatur kann als Aktion einen Stärkewurf (Athletik) gegen deinen Zauberrettungswurf‑SG ausführen, um sich zu befreien.\nDu musst die Kugel nach dem Wirken des Zaubers nicht sofort verschießen. In diesem Fall erscheint eine kleine kühle Kugel von der Größe eines Schleudersteins in deiner Hand. Du oder eine Kreatur, der du die Kugel gibst, kann sie jederzeit bis zu zwölf Meter weit werfen oder mit einer Schleuder innerhalb ihrer Grundreichweite verschießen. Die Kugel zerbirst beim Aufprall und bewirkt den gleichen Effekt wie das normale Wirken des Zaubers. Du kannst die Kugel auch ablegen, ohne dass sie zerbirst. Ist sie nach einer Minute nicht zerborsten, so explodiert sie.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 6. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 6. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "gaseous-form",
@@ -5076,7 +5076,7 @@
     "duration": "Konzentration, bis zu 1 Stunde",
     "concentration": true,
     "description": "Für die Wirkungsdauer verwandelt sich eine bereitwillige Kreatur, die du berührst, mitsamt ihrer Ausrüstung in eine Nebelwolke. Der Zauber endet beim Ziel, wenn seine Trefferpunkte auf 0 sinken oder es den Zauber mithilfe einer magischen Aktion selbst beendet.\nIn dieser Gestalt verfügt das Ziel als einzige Bewegungsrate über eine Flugbewegungsrate von drei Metern, und es kann schweben. Das Ziel kann den Bereich einer anderen Kreatur betreten und besetzen. Es ist gegen Hieb‑, Stichund Wuchtschaden resistent, gegen den Zustand Liegend immun und bei Stärke‑, Geschicklichkeitsund Konstitutionsrettungswürfen im Vorteil. Es kann kleine Öffnungen passieren, behandelt jedoch Flüssigkeiten wie solide Oberflächen.\nDas Ziel kann weder sprechen noch mit Gegenständen interagieren. Es kann Gegenstände, die es getragen oder gehalten hat, nicht fallenlassen, verwenden oder anderweitig mit ihnen interagieren. Außerdem kann es weder angreifen noch Zauber wirken.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "gate",
@@ -5173,7 +5173,7 @@
       }
     },
     "description": "Du erteilst einer Kreatur in Reichweite, die du sehen kannst, den verbalen Befehl, eine Aufgabe zu erfüllen oder eine bestimmte Aktion oder Handlungsrichtung deiner Wahl zu unterlassen. Das Ziel muss einen Weisheitsrettungswurf bestehen, oder es ist für die Wirkungsdauer bezaubert.\nEs besteht den Rettungswurf automatisch, wenn es deinen Befehl nicht verstehen kann.\nDie bezauberte Kreatur erleidet 5W10 psychischen Schaden, wenn sie sich deinem Befehl gegensätzlich verhält. Sie kann diesen Schaden höchstens einmal täglich erleiden.\nDu kannst einen beliebigen Befehl erteilen, jedoch keine Handlungen, die zum sicheren Tod führen würden. Erteilst du einen selbstmörderischen Befehl, so endet der Zauber.\nAuch die Zauber _Fluch brechen_ , _Vollständige Genesung_ oder _Wunsch_ beenden den Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Bei einem Zauberplatz des 7. oder 8. Grades beträgt die Wirkungsdauer 365 Tage. Bei einem Zauberplatz des 9. Grades hält der Zauber an, bis er durch einen der oben genannten Zauber gebannt wird."
+    "higher_level": "Bei einem Zauberplatz des 7. oder 8. Grades beträgt die Wirkungsdauer 365 Tage. Bei einem Zauberplatz des 9. Grades hält der Zauber an, bis er durch einen der oben genannten Zauber gebannt wird."
   },
   {
     "index": "gentle-repose",
@@ -5235,7 +5235,7 @@
     "duration": "Konzentration, bis zu 10 Minuten",
     "concentration": true,
     "description": "Du rufst einen Riesentausendfüßler, eine Riesenspinne oder eine Riesenwespe (nach deiner Wahl, wenn du den Zauber wirkst) herbei. Die Kreatur manifestiert sich in einem freien Bereich in Reichweite, den du sehen kannst, und verwendet den Wertekasten eines **Rieseninsekts** . Einige Details im Wertekasten werden von der ausgewählten Gestalt bestimmt. Die Kreatur verschwindet, wenn ihre Trefferpunkte auf 0 sinken oder der Zauber endet.\nDie Kreatur ist mit dir und deinen Verbündeten verbündet. Im Kampf nutzt sie deinen Initiativewert und ist direkt nach dir am Zug. Sie gehorcht deinen mündlichen Befehlen (keine Aktion deinerseits erforderlich). Befiehlst du ihr nichts, so führt sie die Ausweichaktion aus und nutzt ihre Bewegung, um Gefahren zu vermeiden.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Verwende den Zauberplatzgrad als Zaubergrad im Wertekasten.\n**Rieseninsekt**\n_Großes Tier, gesinnungslos_\n**RK** 11 + Zaubergrad **TP** 30 + 10 für jeden Zaubergrad ab dem 4. **Bewegungsrate** 12 m, Klettern 12 m, Fliegen 12 m (nur Wespe)\n||MOD|RW||MOD|RW||MOD|RW|\n|---|---|---|---|---|---|---|---|---|\n|ST 17|+3|+3|GE 13|+1|+1|KO 15|+2|+2|\n|IN  4|−3|−3|WE 14|+2|+2|CH |3|−4|−4|\n**Sinne** Dunkelsicht 18 m; Passive Wahrnehmung 12 **Sprachen** Versteht die Sprachen, die du sprichst **HG** − (EP 0, ÜB entspricht deinem Übungsbonus)\n<u>Merkmale</u>\n**_Spinnenklettern:_** Das Insekt kann ohne Attributswürfe schwierige Oberflächen erklimmen und sich an Decken entlang bewegen.\n<u>Aktionen</u>\n**_Mehrfachangriff:_** Das Insekt führt eine Anzahl von Angriffen aus, die der Hälfte des Zaubergrads entspricht (abgerundet). **_Giftstich:_** _Nahkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 3 m. _Treffer:_ 1W6+3 plus Zaubergrad Stichschaden sowie 1W4 Giftschaden.\n**_Netzbolzen (nur Spinne):_** _Fernkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 18 m. _Treffer:_ 1W10+3 plus Zaubergrad Wuchtschaden, und die Bewegungsrate des Ziels ist bis zum Beginn seines nächsten Zugs auf 0 verringert.\n<u>Bonusaktionen</u>\n**_Giftspeien (nur Tausendfüßler):_** _Konstitutionsrettungs­ wurf:_ Dein Zauberrettungswurf-SG, eine Kreatur im Abstand von bis zu drei Metern, die vom Insekt gesehen werden kann. _Misserfolg:_ Das Ziel ist bis zum Beginn des nächsten Zugs des Insekts vergiftet."
+    "higher_level": "Verwende den Zauberplatzgrad als Zaubergrad im Wertekasten.\n**Rieseninsekt**\n_Großes Tier, gesinnungslos_\n**RK** 11 + Zaubergrad **TP** 30 + 10 für jeden Zaubergrad ab dem 4. **Bewegungsrate** 12 m, Klettern 12 m, Fliegen 12 m (nur Wespe)\n||MOD|RW||MOD|RW||MOD|RW|\n|---|---|---|---|---|---|---|---|---|\n|ST 17|+3|+3|GE 13|+1|+1|KO 15|+2|+2|\n|IN  4|−3|−3|WE 14|+2|+2|CH |3|−4|−4|\n**Sinne** Dunkelsicht 18 m; Passive Wahrnehmung 12 **Sprachen** Versteht die Sprachen, die du sprichst **HG** − (EP 0, ÜB entspricht deinem Übungsbonus)\n<u>Merkmale</u>\n**_Spinnenklettern:_** Das Insekt kann ohne Attributswürfe schwierige Oberflächen erklimmen und sich an Decken entlang bewegen.\n<u>Aktionen</u>\n**_Mehrfachangriff:_** Das Insekt führt eine Anzahl von Angriffen aus, die der Hälfte des Zaubergrads entspricht (abgerundet). **_Giftstich:_** _Nahkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 3 m. _Treffer:_ 1W6+3 plus Zaubergrad Stichschaden sowie 1W4 Giftschaden.\n**_Netzbolzen (nur Spinne):_** _Fernkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 18 m. _Treffer:_ 1W10+3 plus Zaubergrad Wuchtschaden, und die Bewegungsrate des Ziels ist bis zum Beginn seines nächsten Zugs auf 0 verringert.\n<u>Bonusaktionen</u>\n**_Giftspeien (nur Tausendfüßler):_** _Konstitutionsrettungs­ wurf:_ Dein Zauberrettungswurf-SG, eine Kreatur im Abstand von bis zu drei Metern, die vom Insekt gesehen werden kann. _Misserfolg:_ Das Ziel ist bis zum Beginn des nächsten Zugs des Insekts vergiftet."
   },
   {
     "index": "glibness",
@@ -5297,7 +5297,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "In einer Ausströmung von drei Metern erscheint für die Wirkungsdauer eine unbewegliche schimmernde Barriere um dich herum. Jeder Zauber des höchstens 5. Grades, der von außerhalb der Barriere gewirkt wird, hat keinen Effekt auf Kreaturen oder Gegenstände im Innern. Ein solcher Zauber kann Kreaturen und Gegenstände innerhalb der Barriere zum Ziel haben, hat jedoch keinen Effekt auf sie. Gleichermaßen ist der Bereich innerhalb der Barriere von Wirkungsbereichen solcher Zauber ausgeschlossen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 6. blockiert die Barriere einen Grad höhere Zauber."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 6. blockiert die Barriere einen Grad höhere Zauber."
   },
   {
     "index": "glyph-of-warding",
@@ -5334,7 +5334,7 @@
     "duration": "Bis der Zauber gebannt oder die Glyphe ausgelöst wird",
     "concentration": false,
     "description": "Du erzeugst eine Glyphe, die später einen magischen Effekt bewirkt. Diese Glyphe zeichnest du entweder auf eine Oberfläche (wie einen Tisch oder den Fußboden) oder in einen Gegenstand (wie ein Buch oder eine Truhe), der geschlossen werden kann, um die Glyphe zu verbergen. Die Glyphe kann höchstens in einem Radius von 1,5 Metern wirken. Wenn die Oberfläche oder der Gegenstand um mehr als drei Meter von der Stelle entfernt wird, an der du den Zauber gewirkt hast, wird die Glyphe zerstört, und der Zauber endet, ohne ausgelöst zu werden.\nDie Glyphe ist kaum wahrnehmbar. Es ist ein erfolgreicher Weisheitswurf (Wahrnehmung) gegen deinen Zauberrettungswurf‑SG erforderlich, um sie zu bemerken.\nWenn du die Glyphe zeichnest, bestimmst du ihren Auslöser und legst fest, ob es sich um eine explosive Rune oder eine Zauberglyphe wie unten beschrieben handelt.\n**_Auslöser bestimmen:_** Wenn du den Zauber wirkst, bestimmst du einen Auslöser für die Glyphe. Glyphen auf Oberflächen werden meist dadurch ausgelöst, dass jemand sie berührt oder betritt, einen Gegenstand bewegt, der die Glyphe verdeckt, oder einen Mindestabstand zur Glyphe unterschreitet. Glyphen in Gegenständen werden meist dadurch ausgelöst, dass jemand den Gegenstand öffnet oder die Glyphe sieht. Sobald die Glyphe ausgelöst wurde, endet der Zauber.\nDu kannst den Auslöser verfeinern, sodass die Glyphe nur von bestimmten Kreaturentypen ausgelöst wird (beispielsweise könnte die Glyphe nur auf Aberrationen wirken). Du kannst auch Bedingungen festlegen, unter denen die Glyphe nicht ausgelöst wird, beispielsweise wenn ein bestimmtes Kennwort ausgesprochen wird.\n**_Explosive Rune:_** Wird die Glyphe ausgelöst, so explodiert ihre magische Energie in einer Kugel mit einem Radius von sechs Metern um sie. Jede Kreatur in diesem Bereich führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet die Kreatur 5W8 Blitz‑, Feuer‑, Kälte‑, Säureoder Schallschaden (nach deiner Wahl beim Schreiben der Glyphe), anderenfalls die Hälfte.\n**_Zauberglyphe:_** Beim Erschaffen der Glyphe kannst du einen vorbereiteten Zauber des höchstens 3. Grades wirken und in der Glyphe speichern. Der Zauber muss eine einzelne Kreatur oder einen Bereich zum Ziel haben. Wenn er auf diese Weise gewirkt wird, hat der Zauber keinen unmittelbaren Effekt.\nEr wirkt erst, wenn die Glyphe ausgelöst wird. Wenn der Zauber ein Ziel braucht, wird die Kreatur ausgewählt, welche die Glyphe auslöst. Wirkt der Zauber auf einen Bereich, so ist dieser auf die Kreatur zentriert. Wenn der Zauber feindlich gesinnte Kreaturen beschwört oder schädliche Gegenstände oder Fallen erschafft, erscheinen sie so nahe wie möglich beim Eindringling und greifen ihn an. Erfordert der Zauber Konzentration, so hält diese bis zum Ende der vollen Wirkungsdauer an.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. wird der Schaden einer explosiven Rune um 1W8 erhöht. In einer Zauberglyphe kannst du Zauber bis zum Grad des Zauberplatzes speichern, den du zum Wirken der _Glyphe des Schutzes_ verwendet hast."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. wird der Schaden einer explosiven Rune um 1W8 erhöht. In einer Zauberglyphe kannst du Zauber bis zum Grad des Zauberplatzes speichern, den du zum Wirken der _Glyphe des Schutzes_ verwendet hast."
   },
   {
     "index": "goodberry",
@@ -5600,7 +5600,7 @@
       }
     },
     "description": "Du schleuderst einen Lichtblitz auf eine Kreatur in Reichweite. Führe einen Fernkampf‑Zauberangriff gegen das Ziel aus. Bei einem Treffer erleidet es 4W6 gleißenden Schaden, und der nächste Angriffswurf, der vor dem Ende deines nächsten Zugs gegen es ausgeführt wird, ist im Vorteil.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "gust-of-wind",
@@ -5805,7 +5805,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Wähle eine Kreatur in Reichweite aus, die du sehen kannst. Positive Energie durchströmt das Ziel, das 70 Trefferpunkte zurückerhält. Außerdem beendet dieser Zauber die Zustände Blind, Taub und Vergiftet beim Ziel.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 6. wird die Heilung um 10 Trefferpunkte erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 6. wird die Heilung um 10 Trefferpunkte erhöht."
   },
   {
     "index": "healing-word",
@@ -5841,7 +5841,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Eine Kreatur deiner Wahl in Reichweite, die du sehen kannst, erhält Trefferpunkte in Höhe von 2W4 plus deinem Zauberwirken‑Attributsmodifikator zurück.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird die Heilung um 2W4 Trefferpunkte erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird die Heilung um 2W4 Trefferpunkte erhöht."
   },
   {
     "index": "heat-metal",
@@ -5883,7 +5883,7 @@
       }
     },
     "description": "Wähle einen verarbeiteten Gegenstand aus Metall in Reichweite aus, den du sehen kannst – beispielsweise eine metallene Waffe oder eine schwere oder mittelschwere metallene Rüstung. Du lässt den Gegenstand glühend heiß werden. Wenn du den Zauber wirkst, erleiden alle Kreaturen in physischem Kontakt mit dem Gegenstand 2W8 Feuerschaden. Für die Wirkungsdauer kannst du in jedem deiner folgenden Züge eine Bonusaktion ausführen, um diesen Schaden erneut zu bewirken, sofern der Gegenstand sich in Reichweite befindet.\nTrägt eine Kreatur den Gegenstand oder hält ihn in der Hand, während sie den Schaden erleidet, so muss sie einen Konstitutionsrettungswurf bestehen, um den Gegenstand fallenzulassen, falls möglich. Wenn sie den Gegenstand nicht fallen lässt, ist sie bis zum Beginn deines nächsten Zugs bei Angriffsund Attributswürfen im Nachteil.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "hellish-rebuke",
@@ -5919,7 +5919,7 @@
       }
     },
     "description": "Die Kreatur, die dir Schaden zugefügt hat, ist kurz von grünen Flammen umgeben. Sie führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet sie 2W10 Feuerschaden, anderenfalls die Hälfte.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W10 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W10 erhöht."
   },
   {
     "index": "heroes-feast",
@@ -5986,7 +5986,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Du berührst eine bereitwillige Kreatur und erfüllst sie mit Tapferkeit. Für die Wirkungsdauer ist die Kreatur gegen den Zustand Verängstigt immun und erhält zu Beginn jedes ihrer Züge temporäre Trefferpunkte in Höhe deines ZauberwirkenAttributsmodifikators.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "hex",
@@ -6023,7 +6023,7 @@
       }
     },
     "description": "Du verfluchst eine Kreatur in Reichweite, die du sehen kannst. Für die Wirkungsdauer fügst du dem Ziel, wann immer du es mit einem Angriffswurf triffst, zusätzlich 1W6 nekrotischen Schaden zu. Wähle außerdem ein Attribut aus, wenn du den Zauber wirkst. Das Ziel ist bei allen entsprechenden Attributswürfen im Nachteil.\nWenn die Trefferpunkte des Ziels auf 0 sinken, bevor der Zauber endet, kannst du in deinen folgenden Zügen eine Bonusaktion ausführen, um eine andere Kreatur zu verfluchen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_**  Deine Konzentration kann länger andauern: bei einem Zauberplatz des 2. Grades bis zu vier Stunden, bei einem Zauberplatz des 3. und 4. Grades bis zu acht Stunden und bei einem Zauberplatz ab dem 5. Grad bis zu 24 Stunden."
+    "higher_level": " Deine Konzentration kann länger andauern: bei einem Zauberplatz des 2. Grades bis zu vier Stunden, bei einem Zauberplatz des 3. und 4. Grades bis zu acht Stunden und bei einem Zauberplatz ab dem 5. Grad bis zu 24 Stunden."
   },
   {
     "index": "hideous-laughter",
@@ -6060,7 +6060,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Eine Kreatur deiner Wahl in Reichweite, die du sehen kannst, führt einen Weisheitsrettungswurf aus. Misslingt der Wurf, so hat sie für die Wirkungsdauer die Zustände Liegend sowie Kampfunfähig. Während dieser Dauer lacht sie unkontrollierbar, sofern sie lachen kann, und kann den Zustand Liegend bei sich nicht beenden. Am Ende jedes ihrer Züge und jedes Mal, wenn sie Schaden erleidet, führt die Kreatur einen weiteren Weisheitsrettungswurf aus. Dabei ist sie im Vorteil, wenn der Rettungswurf durch Schaden ausgelöst wurde. Bei einem erfolgreichen Rettungswurf endet der Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "hold-monster",
@@ -6102,7 +6102,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Wähle eine Kreatur in Reichweite aus, die du sehen kannst. Das Ziel muss einen Weisheitsrettungswurf bestehen, oder es ist für die Wirkungsdauer gelähmt. Das Ziel wiederholt den Rettungswurf am Ende jedes seiner Züge. Bei einem Erfolg endet der Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 5. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 5. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "hold-person",
@@ -6154,7 +6154,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Wähle einen Humanoiden in Reichweite aus, den du sehen kannst. Das Ziel muss einen Weisheitsrettungswurf bestehen, oder es ist für die Wirkungsdauer gelähmt. Das Ziel wiederholt den Rettungswurf am Ende jedes seiner Züge. Bei einem Erfolg endet der Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. kannst du auf einen weiteren Humanoiden zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. kannst du auf einen weiteren Humanoiden zielen."
   },
   {
     "index": "holy-aura",
@@ -6216,7 +6216,7 @@
       }
     },
     "description": "Du markierst eine Kreatur in Reichweite, die du sehen kannst, auf magische Art als deine Beute. Für die Wirkungsdauer fügst du dem Ziel, wann immer du es mit einem Angriffswurf triffst, zusätzlich 1W6 Energieschaden zu. Außerdem bist du bei allen Weisheitswürfen (Überlebenskunst oder Wahrnehmung) im Vorteil, die du ausführst, um das Ziel zu finden.\nWenn die Trefferpunkte des Ziels auf 0 sinken, bevor dieser Zauber endet, kannst du eine Bonusaktion ausführen, um das Zeichen auf eine andere Kreatur in Reichweite, die du sehen kannst, zu übertragen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Deine Konzentration kann länger andauern: bei einem Zauberplatz des 3. und 4. Grades bis zu acht Stunden und bei einem Zauberplatz ab dem 5. Grad bis zu 24 Stunden."
+    "higher_level": "Deine Konzentration kann länger andauern: bei einem Zauberplatz des 3. und 4. Grades bis zu acht Stunden und bei einem Zauberplatz ab dem 5. Grad bis zu 24 Stunden."
   },
   {
     "index": "hypnotic-pattern",
@@ -6305,7 +6305,7 @@
       }
     },
     "description": "Du erzeugst eine Eisscherbe und schleuderst sie auf eine Kreatur in Reichweite. Führe einen FernkampfZauberangriff gegen das Ziel aus. Bei einem Treffer erleidet das Ziel 1W10 Stichschaden. Nach dem Wurf explodiert die Scherbe, ob sie getroffen hat oder nicht. Das Ziel und jede Kreatur im Abstand von bis zu 1,5 Metern von ihm müssen einen Geschicklichkeitsrettungswurf bestehen, oder sie erleiden 2W6 Kälteschaden.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Kälteschaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Kälteschaden um 1W6 erhöht."
   },
   {
     "index": "ice-storm",
@@ -6352,7 +6352,7 @@
       }
     },
     "description": "In einem zwölf Meter hohen Zylinder mit einem Radius von sechs Metern um einen Punkt in Reichweite fällt Hagel. Jede Kreatur im Zylinder führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet die Kreatur 2W10 Wuchtschaden und 4W6 Kälteschaden, anderenfalls die Hälfte.\nDie Hagelkörner machen den Boden im Zylinder bis zum Ende deines nächsten Zugs zu schwierigem Gelände.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. wird der Wuchtschaden um 1W10 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. wird der Wuchtschaden um 1W10 erhöht."
   },
   {
     "index": "identify",
@@ -6531,7 +6531,7 @@
       }
     },
     "description": "Eine Kreatur, die du berührst, führt einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet sie 2W10 nekrotischen Schaden, anderenfalls die Hälfte.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W10 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W10 erhöht."
   },
   {
     "index": "insect-plague",
@@ -6578,7 +6578,7 @@
       }
     },
     "description": "In einer Kugel mit einem Radius von sechs Metern um einen Punkt deiner Wahl in Reichweite erscheint ein Heuschreckenschwarm. Die Kugel bleibt für die Wirkungsdauer bestehen. Ihr Bereich ist leicht verschleiert sowie schwieriges Gelände.\nWenn der Schwarm erscheint, führt jede Kreatur darin einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet sie 4W10 Stichschaden, anderenfalls die Hälfte. Wenn eine Kreatur den Bereich des Zaubers in einem Zug erstmals betritt oder ihren Zug darin beendet, führt sie diesen Rettungswurf ebenfalls aus. Eine Kreatur kann diesen Rettungswurf nur einmal pro Zug ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 5. wird der Schaden um 1W10 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 5. wird der Schaden um 1W10 erhöht."
   },
   {
     "index": "instant-summons",
@@ -6676,7 +6676,7 @@
     "duration": "Konzentration, bis zu 1 Stunde",
     "concentration": true,
     "description": "Eine Kreatur, die du berührst, wird unsichtbar, bis der Zauber endet. Der Zauber endet vorzeitig, sobald das Ziel einen Angriffswurf ausgeführt, Schaden bewirkt oder selbst einen Zauber gewirkt hat.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "jump",
@@ -6718,7 +6718,7 @@
     "duration": "1 Minute",
     "concentration": false,
     "description": "Du berührst eine bereitwillige Kreatur. Für die Wirkungsdauer kann diese Kreatur in jedem ihrer Züge bis zu neun Meter weit springen, indem sie drei Meter ihrer Bewegungsrate verbraucht.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "knock",
@@ -6948,7 +6948,7 @@
       }
     },
     "description": "Du schleuderst in einer 30 Meter langen und 1,5 Meter breiten Linie, die von dir ausgeht, einen Blitz in eine Richtung deiner Wahl. Jede Kreatur in der Linie führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet sie 8W6 Blitzschaden, anderenfalls die Hälfte.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "locate-animals-or-plants",
@@ -7128,7 +7128,7 @@
     "duration": "1 Stunde",
     "concentration": false,
     "description": "Du berührst eine Kreatur. Für die Wirkungsdauer ist die Bewegungsrate des Ziels um drei Meter erhöht.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "mage-armor",
@@ -7241,7 +7241,7 @@
     "duration": "1 Stunde",
     "concentration": false,
     "description": "Du erschaffst einen sechs Meter hohen Zylinder aus magischer Energie mit einem Radius von drei Metern um einen Punkt auf dem Boden in Reichweite, den du sehen kannst. Wo der Zylinder den Boden oder eine andere Oberfläche schneidet, erscheinen leuchtende Runen.\nWähle mindestens einen der folgenden Kreaturentypen aus: celestische Wesen, Elementare, Feenwesen, Unholde oder Untote. Der Kreis beeinflusst eine Kreatur des ausgewählten Typs wie folgt:\n- Die Kreatur kann den Zylinder nicht freiwillig auf nichtmagische Weise betreten. Versucht die Kreatur, Teleportation oder Ebenenreisen zu verwenden, so muss sie zuerst einen Charismarettungswurf bestehen.\n- Die Kreatur ist bei Angriffswürfen gegen Ziele innerhalb des Zylinders im Nachteil.\n- Ziele innerhalb des Zylinders können von der Kreatur nicht besessen, bezaubert oder verängstigt werden.\nJedes Mal, wenn du diesen Zauber wirkst, kannst du seine Wirkung umkehren, sodass Kreaturen des ausgewählten Typs den Zylinder nicht verlassen können und Ziele außerhalb des Zylinders geschützt sind.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. wird die Wirkungsdauer um eine Stunde erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. wird die Wirkungsdauer um eine Stunde erhöht."
   },
   {
     "index": "magic-jar",
@@ -7298,7 +7298,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Du erschaffst drei leuchtende Wurfpfeile aus magischer Energie. Jeder Wurfpfeil trifft eine Kreatur deiner Wahl in Reichweite, die du sehen\nkannst. Ein Wurfpfeil fügt seinem Ziel 1W4+1 Energieschaden zu. Die Wurfpfeile treffen alle gleichzeitig. Du kannst bestimmen, ob sie dieselbe oder verschiedene Kreaturen treffen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. erzeugt der Zauber einen weiteren Wurfpfeil."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. erzeugt der Zauber einen weiteren Wurfpfeil."
   },
   {
     "index": "magic-mouth",
@@ -7370,7 +7370,7 @@
     "duration": "1 Stunde",
     "concentration": false,
     "description": "Du berührst eine nichtmagische Waffe. Für die Wirkungsdauer ist diese Waffe eine magische Waffe mit einem Bonus von +1 auf Angriffsund Schadenswürfe. Der Zauber endet vorzeitig, wenn du ihn erneut wirkst.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Bei einem Zauberplatz des 3. bis 5. Grades wird der Bonus auf +2 erhöht. Bei einem Zauberplatz ab dem 6. Grad wird der Bonus auf +3 erhöht."
+    "higher_level": "Bei einem Zauberplatz des 3. bis 5. Grades wird der Bonus auf +2 erhöht. Bei einem Zauberplatz ab dem 6. Grad wird der Bonus auf +3 erhöht."
   },
   {
     "index": "magnificent-mansion",
@@ -7443,7 +7443,7 @@
     "duration": "Konzentration, bis zu 10 Minuten",
     "concentration": true,
     "description": "Du erschaffst das Abbild eines Gegenstands, einer Kreatur oder eines anderen sichtbaren Phänomens, das nicht größer als ein Würfel mit sechs Metern Kantenlänge sein darf. Das Abbild erscheint an einem Punkt in Reichweite und bleibt für die Wirkungsdauer bestehen. Es wirkt echt, einschließlich passender Geräusche, Gerüche und Temperaturen, kann jedoch weder Schaden noch Zustände bewirken.\nWenn du dich in Reichweite der Illusion befindest, kannst du sie mit einer magischen Aktion an einen anderen Ort deiner Wahl in Reichweite bewegen. Dabei kannst du das Abbild so verändern, dass seine Bewegung natürlich erscheint. Beispiel: Wenn du das Abbild einer Kreatur erschaffst und bewegst, kannst du es so verändern, dass es zu laufen scheint. Außerdem kannst du die Illusion verschiedene Geräusche erzeugen oder sogar ein Gespräch führen lassen.\nPhysische Interaktionen mit dem Abbild enttarnen es als Illusion, da Dinge es einfach durchdringen können. Eine Kreatur, die das Abbild mit der StudierenAktion untersucht, kann mit einem erfolgreichen Intelligenzwurf (Nachforschungen) gegen deinen Zauberrettungswurf‑SG erkennen, dass es sich um eine Illusion handelt. In diesem Fall sieht sie das Abbild als durchscheinend und nimmt auch die anderen sensorischen Eigenschaften abgeschwächt wahr.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Bei einem Zauberplatz ab dem 4. Grad wirkt der Zauber, bis er gebannt wird, ohne dass er Konzentration erfordert."
+    "higher_level": "Bei einem Zauberplatz ab dem 4. Grad wirkt der Zauber, bis er gebannt wird, ohne dass er Konzentration erfordert."
   },
   {
     "index": "mass-cure-wounds",
@@ -7479,7 +7479,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Von einem Punkt deiner Wahl in Reichweite geht eine Woge heilender Energie aus. Wähle bis zu sechs Kreaturen innerhalb einer Kugel mit einem Radius von neun Metern um den Zielort aus. Jedes Ziel erhält Trefferpunkte in Höhe von 5W8 plus deinem Zauberwirken-Attributsmodifikator zurück.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 5. wird die Heilung um 1W8 Trefferpunkte erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 5. wird die Heilung um 1W8 Trefferpunkte erhöht."
   },
   {
     "index": "mass-heal",
@@ -7535,7 +7535,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Bis zu sechs Kreaturen deiner Wahl in Reichweite, die du sehen kannst, erhalten Trefferpunkte in Höhe von 2W4 plus deinem Zauberwirken‑Attributsmodifikator zurück.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. wird die Heilung um 1W4 Trefferpunkte erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. wird die Heilung um 1W4 Trefferpunkte erhöht."
   },
   {
     "index": "mass-suggestion",
@@ -7572,7 +7572,7 @@
     "duration": "24 Stunden",
     "concentration": false,
     "description": "Du schlägst bis zu zwölf Kreaturen in Reichweite, die du sehen kannst und die dich hören und verstehen können, mit höchstens 25 Worten eine Vorgehensweise vor. Der Vorschlag muss realistisch klingen und darf nichts enthalten, was den Zielen oder ihren Verbündeten Schaden zufügen würde. Du könntest beispielsweise sagen: „Geht ins Dorf an dieser Straße und helft den Leuten dort bis zum Sonnenuntergang bei der Ernte.“ Oder du könntest sagen: „Dies ist nicht die Zeit für Gewalt. Lasst Eure Waffen fallen und tanzt! Hört in einer Stunde wieder auf damit.“\nJedes Ziel muss einen Weisheitsrettungswurf bestehen, oder es ist für die Wirkungsdauer – oder bis du oder deine Verbündeten ihm Schaden zufügen – bezaubert. Jedes bezauberte Ziel führt den Vorschlag nach besten Kräften aus. Die vorgeschlagene Aktivität kann während der gesamten Wirkungsdauer fortgesetzt werden. Wenn sie jedoch in kürzerer Zeit abgeschlossen werden kann, endet der Zauber bei einem Ziel, sobald es die Aktivität ausgeführt hat.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Die Wirkungsdauer wird erhöht: bei einem Zauberplatzgrad von 7 auf 10 Tage, bei einem Zauberplatz grad von 8 auf 30 Tage und bei einem Zauberplatzgrad von 9 auf 366 Tage."
+    "higher_level": "Die Wirkungsdauer wird erhöht: bei einem Zauberplatzgrad von 7 auf 10 Tage, bei einem Zauberplatz grad von 8 auf 30 Tage und bei einem Zauberplatzgrad von 9 auf 366 Tage."
   },
   {
     "index": "maze",
@@ -7845,7 +7845,7 @@
       }
     },
     "description": "Du treibst einer Kreatur in Reichweite, die du sehen kannst, einen desorientierenden Stachel psionischer Energie in den Geist. Das Ziel führt einen Weisheitsrettungswurf aus. Misslingt der Wurf, so erleidet es 3W8 psychischen Schaden, anderenfalls die Hälfte. Misslingt der Wurf, so kennst du außerdem stets den Aufenthaltsort des Ziels, bis der Zauber endet, sofern ihr euch beide auf derselben Existenzebene befindet. Solange du über dieses Wissen verfügst, kann das Ziel sich nicht vor dir verstecken, und wenn es unsichtbar ist, gibt ihm dieser Zustand gegen dich keine Vorzüge.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "minor-illusion",
@@ -8062,7 +8062,7 @@
     "duration": "Konzentration, bis zu 1 Minute",
     "concentration": true,
     "description": "Du versuchst, die Erinnerungen einer anderen Kreatur umzuformen. Eine Kreatur in Reichweite, die du sehen kannst, führt einen\nWeisheitsrettungswurf aus. Wenn du gegen die Kreatur kämpfst, ist sie bei ihrem Rettungswurf im Vorteil. Misslingt der Wurf, so ist das Ziel für die Wirkungsdauer bezaubert. Ein auf diese Art bezaubertes Ziel ist außerdem kampfunfähig und sich seiner Umgebung nicht bewusst, es kann dich jedoch hören. Erleidet es Schaden oder wird es von einem anderen Zauber betroffen, so endet dieser Zauber, und die Erinnerungen bleiben unverändert.\nWährend diese Bezauberung anhält, kannst du die Erinnerungen des Ziels an ein Ereignis der letzten 24 Stunden verändern, das maximal zehn Minuten gedauert hat. Du kannst sämtliche Erinnerungen an das Ereignis dauerhaft entfernen, dem Ziel ermöglichen, sich mit absoluter Klarheit an das Ereignis zu erinnern, seine Erinnerungen an die Details des Ereignisses verändern oder eine andere Erinnerung erschaffen.\nDu musst mit dem Ziel sprechen und beschreiben, wie seine Erinnerungen beeinflusst werden. Das Ziel muss deine Sprache sprechen, damit die veränderten Erinnerungen Fuß fassen können. Sein Verstand füllt etwaige Lücken in den von dir beschriebenen Details. Endet der Zauber, bevor du die veränderten Erinnerungen beschrieben hast, so werden die Erinnerungen der Kreatur nicht modifiziert. Anderenfalls setzen sich die neuen Erinnerungen fest, wenn der Zauber endet.\nVeränderte Erinnerungen beeinflussen nicht notwendigerweise das Verhalten der Kreatur – insbesondere dann nicht, wenn sie mit den natürlichen Neigungen, der Gesinnung oder dem Glauben der Kreatur im Widerspruch stehen. Eine unlogische veränderte Erinnerung, beispielsweise daran, wie gerne die Kreatur in Säure gebadet hat, wird als Albtraum abgetan. Der SL kann eine veränderte Erinnerung als zu unsinnig erklären, um die Kreatur signifikant zu beeinflussen.\nDie Zauber _Fluch brechen_ oder _Vollständige Genesung_ stellen die wahren Erinnerungen der Kreatur wieder her.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Du kannst die Erinnerung des Ziels an ein Ereignis verändern, das in den vergangenen sieben Tagen (6. Zauberplatzgrad), in den vergangenen 30 Tagen (7. Zauberplatzgrad), den vergangenen 365 Tagen (8. Zauberplatzgrad) oder zu einem beliebigen Zeitpunkt in der Vergangenheit der Kreatur (9. Zauberplatzgrad) stattgefunden hat."
+    "higher_level": "Du kannst die Erinnerung des Ziels an ein Ereignis verändern, das in den vergangenen sieben Tagen (6. Zauberplatzgrad), in den vergangenen 30 Tagen (7. Zauberplatzgrad), den vergangenen 365 Tagen (8. Zauberplatzgrad) oder zu einem beliebigen Zeitpunkt in der Vergangenheit der Kreatur (9. Zauberplatzgrad) stattgefunden hat."
   },
   {
     "index": "moonbeam",
@@ -8099,7 +8099,7 @@
       }
     },
     "description": "In einem zwölf Meter hohen Zylinder mit einem Radius von bis zu 1,5 Metern um einen Punkt in Reichweite scheint ein silbriger Strahl fahlen Lichts herab. Für die Wirkungsdauer ist der Zylinder von dämmrigem Licht erfüllt, und du kannst in deinen folgenden Zügen eine magische Aktion ausführen, um den Zylinder bis zu 18 Meter weit zu bewegen.\nWenn der Zylinder erscheint, führt jede Kreatur darin einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet eine Kreatur 2W10 gleißenden Schaden. Wenn ihre Gestalt gewandelt ist (beispielsweise infolge des Zaubers _Verwandlung_ ), nimmt sie außerdem ihre wahre Gestalt an und kann sich erst wieder verwandeln, wenn sie den Zylinder verlässt. Bei einem erfolgreichen Rettungswurf erleidet die Kreatur nur halb so viel Schaden. Eine Kreatur führt diesen Rettungswurf auch dann aus, wenn der Bereich des Zaubers sich in ihren Bereich bewegt, wenn die Kreatur den Bereich des Zaubers betritt oder ihren Zug darin beendet. Eine Kreatur kann diesen Rettungswurf nur einmal pro Zug ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W10 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W10 erhöht."
   },
   {
     "index": "move-earth",
@@ -8315,7 +8315,7 @@
       }
     },
     "description": "Du zapfst die Alpträume einer Kreatur in Reichweite an, die du sehen kannst, und erschaffst eine Illusion ihrer tiefsten Ängste, die nur für diese Kreatur sichtbar ist. Das Ziel führt einen Weisheitsrettungswurf aus. Misslingt der Wurf, so erleidet das Ziel 4W10 psychischen Schaden und ist für die Wirkungsdauer bei Attributsund Angriffswürfen im Nachteil. Bei einem erfolgreichen Rettungswurf erleidet das Ziel halb so viel Schaden, und der Zauber endet.\nFür die Wirkungsdauer kann das Ziel am Ende jedes seiner Züge einen Weisheitsrettungswurf ausführen. Misslingt der Wurf, so erleidet es den psychischen Schaden erneut. Bei einem erfolgreichen Rettungswurf endet der Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W10 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W10 erhöht."
   },
   {
     "index": "phantom-steed",
@@ -8412,7 +8412,7 @@
     "duration": "24 Stunden",
     "concentration": false,
     "description": "Du versuchst, ein celestisches Wesen, einen Elementar, ein Feenwesen oder einen Unhold in deinen Dienst zu verpflichten. Die Kreatur muss sich für die gesamte Wirkungsdauer in Reichweite befinden. (Normalerweise wird die Kreatur zuerst in einen umgekehrten _Schutzkreis_ beschworen, wo sie gefangen bleibt, während du den Zauber wirkst.) Nach Wirken des Zaubers muss das Ziel einen Charismarettungswurf bestehen, oder es muss dir für die Wirkungsdauer dienen. Wenn die Kreatur durch einen anderen Zauber beschworen oder erschaffen wurde, verlängert sich dessen Wirkungsdauer auf die Wirkungsdauer von Bindung der Ebenen.\nEine verpflichtete Kreatur muss deine Befehle nach besten Kräften befolgen. Du kannst der Kreatur befehlen, dich auf ein Abenteuer zu begleiten, einen Ort zu bewachen oder eine Botschaft zu übermitteln. Ist sie dir jedoch feindlich gesinnt, so versucht sie, deine Worte zu verdrehen, um ihre eigenen Ziele zu verfolgen. Wenn die Kreatur deine Anweisungen vollständig ausgeführt hat, bevor der Zauber endet, kehrt sie zu dir zurück und meldet Vollzug, sofern du dich auf derselben Existenzebene befindest. Falls nicht, kehrt sie an den Ort zurück, an dem du sie verpflichtet hast, und verbleibt dort, bis der Zauber endet.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Die Wirkungsdauer wird erhöht: bei einem Zauberplatzgrad von 6 auf zehn Tage, bei einem Zauberplatzgrad von 7 auf 30 Tage, bei einem Zauberplatzgrad von 8 auf 180 Tage, bei einem Zauberplatzgrad von 9 auf 366 Tage."
+    "higher_level": "Die Wirkungsdauer wird erhöht: bei einem Zauberplatzgrad von 6 auf zehn Tage, bei einem Zauberplatzgrad von 7 auf 30 Tage, bei einem Zauberplatzgrad von 8 auf 180 Tage, bei einem Zauberplatzgrad von 9 auf 366 Tage."
   },
   {
     "index": "plane-shift",
@@ -8736,7 +8736,7 @@
     "duration": "Unmittelbar",
     "concentration": false,
     "description": "Bis zu fünf Kreaturen deiner Wahl, die während des gesamten Zeitaufwands in Reichweite verbleiben, erhalten die Vorzüge einer kurzen Rast. Außerdem erhalten sie jeweils 2W8 Trefferpunkte zurück. Eine Kreatur kann erst nach einer langen Rast erneut Ziel dieses Zaubers werden.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird die Heilung um 1W8 Trefferpunkte erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird die Heilung um 1W8 Trefferpunkte erhöht."
   },
   {
     "index": "prestidigitation",
@@ -8888,7 +8888,7 @@
     "duration": "24 Stunden",
     "concentration": false,
     "description": "Du sicherst einen Bereich in Reichweite auf magische Art. Dabei handelt es sich um einen Würfel mit einer Kantenlänge zwischen 1,5 und 30 Metern. Der Zauber bleibt für die Wirkungsdauer bestehen. Wenn du den Zauber wirkst, entscheidest du, welche Sicherheit er bietet. Du kannst eine beliebige der folgenden Eigenschaften auswählen:\n- Geräusche können die Barriere am Rand des geschützten Bereichs nicht durchdringen.\n- Die Barriere des geschützten Bereichs erscheint dunkel und neblig und verhindert jegliche Sicht (auch Dunkelsicht).\n- Sensoren von Erkenntniszaubern können weder im geschützten Bereich erscheinen noch den Rand der Barriere durchdringen.\n- Kreaturen in dem Bereich können nicht zum Ziel von Erkenntniszaubern werden.\n- Nichts kann in den bewachten Bereich hineinoder aus ihm herausteleportiert werden.\n- Ebenenreisen werden innerhalb des geschützten Bereichs blockiert.\nWenn du diesen Zauber 365 Tage lang täglich am selben Ort wirkst, wird der Effekt dauerhaft.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. kannst du die Kantenlänge des Würfels um 30 Meter vergrößern."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. kannst du die Kantenlänge des Würfels um 30 Meter vergrößern."
   },
   {
     "index": "produce-flame",
@@ -9337,7 +9337,7 @@
       }
     },
     "description": "Du verschießt einen grünlichen Strahl auf eine Kreatur in Reichweite. Führe einen FernkampfZauberangriff gegen das Ziel aus. Bei einem Treffer erleidet das Ziel 2W8 Giftschaden und ist bis zum Ende deines nächsten Zugs vergiftet.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "reincarnate",
@@ -9696,7 +9696,7 @@
       }
     },
     "description": "Du schleuderst drei feurige Strahlen. Du kannst sie auf ein Ziel oder auf mehrere Ziele in Reichweite schleudern. Führe für jeden Strahl einen FernkampfZauberangriff aus. Bei einem Treffer erleidet das Ziel 2W6 Feuerschaden pro Strahl.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. kannst du einen zusätzlichen Strahl erzeugen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. kannst du einen zusätzlichen Strahl erzeugen."
   },
   {
     "index": "scrying",
@@ -9778,7 +9778,7 @@
       }
     },
     "description": "Wenn du das Ziel triffst, erleidet es zusätzlich 1W6 Feuerschaden durch den Angriff. Für die Wirkungsdauer erleidet das Ziel zu Beginn jedes seiner Züge 1W6 Feuerschaden und führt dann einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so wirkt der Zauber weiter. Bei einem erfolgreichen Rettungswurf endet der Zauber.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird jeder Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird jeder Schaden um 1W6 erhöht."
   },
   {
     "index": "secret-chest",
@@ -10015,7 +10015,7 @@
       }
     },
     "description": "Von einem Punkt deiner Wahl in Reichweite geht ein lautes Geräusch aus. Jede Kreatur in einer Kugel mit einem Radius von drei Metern um den Punkt führt einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet sie 3W8 Schallschaden, anderenfalls die Hälfte. Konstrukte sind beim Rettungswurf im Nachteil.\nNichtmagische Gegenstände im Bereich, die nicht getragen oder gehalten werden, erleiden den gleichen Schaden.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "shield",
@@ -10138,7 +10138,7 @@
       }
     },
     "description": "Das Ziel des Schlags erleidet zusätzlich 2W6 gleißenden Schaden. Bis der Zauber endet, spendet das Ziel in einem Radius von 1,5 Metern helles Licht, Angriffswürfe gegen es sind im Vorteil, und es kann nicht unsichtbar werden.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "shocking-grasp",
@@ -10588,7 +10588,7 @@
     "duration": "Konzentration, bis zu 1 Stunde",
     "concentration": true,
     "description": "Eine bereitwillige Kreatur, die du berührst, erhält für die Wirkungsdauer die Fähigkeit, sich in alle Richtungen und mit freien Händen über senkrechte Oberflächen sowie an Decken zu bewegen. Außerdem erhält das Ziel eine Kletterbewegungsrate in Höhe seiner Bewegungsrate.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. kannst du auf eine weitere Kreatur zielen."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. kannst du auf eine weitere Kreatur zielen."
   },
   {
     "index": "spike-growth",
@@ -10666,7 +10666,7 @@
       }
     },
     "description": "Beschützende Naturgeister umschwirren dich für die Wirkungsdauer in einer Ausströmung von 4,5 Metern. Wenn du guter oder neutraler Gesinnung bist, erscheint ihre Spektralform engeloder feenhaft (nach deiner Wahl). Wenn du böser Gesinnung bist, erscheinen sie als Unholde.\nWenn du diesen Zauber wirkst, kannst du Kreaturen bestimmen, die vom Zauber nicht betroffen sind. Die Bewegungsrate betroffener Kreaturen ist innerhalb der Ausströmung halbiert, und wann immer die Ausströmung in den Bereich einer Kreatur gelangt, eine Kreatur die Ausströmung betritt oder ihren Zug darin beendet, muss die Kreatur einen Weisheits rettungswurf ausführen. Misslingt der Wurf, so erleidet die Kreatur 3W8 gleißenden Schaden (wenn du guter oder neutraler Gesinnung bist) oder 3W8 nekrotischen Schaden (wenn du böser Gesinnung bist). Bei einem erfolgreichen Rettungswurf erleidet die Kreatur halb so viel Schaden. Eine Kreatur kann diesen Rettungswurf nur einmal pro Zug ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "spiritual-weapon",
@@ -10693,7 +10693,7 @@
     "concentration": true,
     "attack_type": "melee",
     "description": "Du erzeugst eine schwebende geisterhafte Kraft, die wie eine Waffe deiner Wahl aussieht und für die Wirkungsdauer bestehen bleibt. Die Kraft erscheint in einem Bereich deiner Wahl in Reichweite, und du kannst sofort einen Nahkampf‑Zauberangriff gegen eine Kreatur im Abstand von bis zu 1,5 Metern von der Kraft ausführen. Bei einem Treffer erleidet das Ziel Energieschaden in Höhe von 1W8 plus deinem Zauberwirken-Attributsmodifikator.\nIn deinen folgenden Zügen kannst du die Waffe als Bonusaktion um bis zu sechs Meter bewegen und einen weiteren Angriff gegen eine Kreatur im Abstand von bis zu 1,5 Metern von ihr ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 2. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "starry-wisp",
@@ -10950,7 +10950,7 @@
     "duration": "Konzentration, bis zu 1 Stunde",
     "concentration": true,
     "description": "Du rufst einen Drachengeist herbei. Er erscheint in einem freien Bereich in Reichweite, den du sehen kannst, und verwendet den Wertekasten eines **Drakonischen Geists** . Die Kreatur verschwindet, wenn ihre Trefferpunkte auf 0 sinken oder der Zauber endet.\nDie Kreatur ist mit dir und deinen Verbündeten verbündet. Im Kampf nutzt sie deinen Initiativewert und ist direkt nach dir am Zug. Sie gehorcht deinen mündlichen Befehlen (keine Aktion deinerseits erforderlich). Befiehlst du ihr nichts, so führt sie die Ausweichaktion aus und nutzt ihre Bewegung, um Gefahren zu vermeiden.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Verwende den Zauberplatzgrad als Zaubergrad im Wertekasten.\n## **Drakonischer Geist**\n**Großer Drache, neutral**\n**RK** 14 + Zaubergrad **TP** 50 + 10 für jeden Zaubergrad ab dem 6. **Bewegungsrate** 9 m, Fliegen 18 m, Schwimmen 9 m\n||MOD|RW||MOD|RW||MOD RW|\n|---|---|---|---|---|---|---|---|\n|ST 19|+4|+4|GE 14|+2|+2|KO 17|+3 / +3|\n|IN 10|+0|+0|WE 14|+2|+2|CH 14|+2 / +2|\n**Resistenzen** Blitz, Feuer, Gift, Kälte, Säure **Immunitäten** Bezaubert, Verängstigt, Vergiftet **Sinne** Blindsicht 9 m, Dunkelsicht 18 m; Passive Wahrnehmung 12 **Sprachen** Drakonisch, versteht die Sprachen, die du kennst\n**HG** − (EP 0, ÜB entspricht deinem Übungsbonus)\n**Merkmale:**\n- **_Gemeinsame Resistenzen:_** Wenn du den Geist herbeirufst, wähle eine seiner Resistenzen aus. Du bist gegen die ausgewählte Schadensart resistent, bis der Zauber endet.\n**Aktionen:**\n- **_Mehrfachangriff:_** Der Geist führt eine Anzahl von Zerfetzen-Angriffen in Höhe der Hälfte des Zaubergrades (abgerundet) aus und setzt seine Odemwaffe ein.\n- **_Zerfetzen:_** _Nahkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 3 m. _Treffer:_ 1W6+4 + Zaubergrad Stichschaden. **_Odemwaffe:_** _Geschicklichkeitsrettungswurf:_ Der SG entspricht deinem Zauberrettungswurf-SG, alle Kreaturen in einem Kegel von neun Metern. _Misserfolg:_ 2W6 Schaden von einer Art, gegen die dieser Geist resistent ist (nach deiner Wahl beim Wirken des Zaubers). _Erfolg:_ Halber Schaden."
+    "higher_level": "Verwende den Zauberplatzgrad als Zaubergrad im Wertekasten.\n## **Drakonischer Geist**\n**Großer Drache, neutral**\n**RK** 14 + Zaubergrad **TP** 50 + 10 für jeden Zaubergrad ab dem 6. **Bewegungsrate** 9 m, Fliegen 18 m, Schwimmen 9 m\n||MOD|RW||MOD|RW||MOD RW|\n|---|---|---|---|---|---|---|---|\n|ST 19|+4|+4|GE 14|+2|+2|KO 17|+3 / +3|\n|IN 10|+0|+0|WE 14|+2|+2|CH 14|+2 / +2|\n**Resistenzen** Blitz, Feuer, Gift, Kälte, Säure **Immunitäten** Bezaubert, Verängstigt, Vergiftet **Sinne** Blindsicht 9 m, Dunkelsicht 18 m; Passive Wahrnehmung 12 **Sprachen** Drakonisch, versteht die Sprachen, die du kennst\n**HG** − (EP 0, ÜB entspricht deinem Übungsbonus)\n**Merkmale:**\n- **_Gemeinsame Resistenzen:_** Wenn du den Geist herbeirufst, wähle eine seiner Resistenzen aus. Du bist gegen die ausgewählte Schadensart resistent, bis der Zauber endet.\n**Aktionen:**\n- **_Mehrfachangriff:_** Der Geist führt eine Anzahl von Zerfetzen-Angriffen in Höhe der Hälfte des Zaubergrades (abgerundet) aus und setzt seine Odemwaffe ein.\n- **_Zerfetzen:_** _Nahkampfangriffswurf:_ Bonus in Höhe deines Zauberangriff-Modifikators, Reichweite 3 m. _Treffer:_ 1W6+4 + Zaubergrad Stichschaden. **_Odemwaffe:_** _Geschicklichkeitsrettungswurf:_ Der SG entspricht deinem Zauberrettungswurf-SG, alle Kreaturen in einem Kegel von neun Metern. _Misserfolg:_ 2W6 Schaden von einer Art, gegen die dieser Geist resistent ist (nach deiner Wahl beim Wirken des Zaubers). _Erfolg:_ Halber Schaden."
   },
   {
     "index": "sunbeam",
@@ -11326,7 +11326,7 @@
       }
     },
     "description": "Du entfesselst eine Welle aus donnernder Energie. Alle Kreaturen in einem Würfel mit 4,5 Metern Kantenlänge, der von dir ausgeht, führen einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet eine Kreatur 2W8 Schallschaden und wird drei Meter weit von dir weggestoßen. Bei einem erfolgreichen Rettungswurf erleidet die Kreatur nur halb so viel Schaden.\nAußerdem werden Gegenstände, die sich vollständig innerhalb des Würfels befinden und nicht fixiert sind, drei Meter weit von dir weggestoßen, und der Donnerschlag ist im Abstand von bis zu 90 Metern zu hören.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 1. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "time-stop",
@@ -11760,7 +11760,7 @@
       }
     },
     "description": "Die Berührung deiner in Schatten gehüllten Hand kann anderen Kreaturen Lebenskraft entziehen, um dich zu heilen. Führe einen Nahkampf‑Zauberangriff gegen eine Kreatur in Reichweite aus. Bei einem Treffer erleidet das Ziel 3W6 nekrotischen Schaden, und du erhältst Trefferpunkte in Höhe der Hälfte des nekrotischen Schadens zurück.\nFür die Wirkungsdauer kannst du in jedem deiner Züge den Angriff als magische Aktion wiederholen und dabei auf dieselbe oder auf eine andere Kreatur zielen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 3. wird der Schaden um 1W6 erhöht."
   },
   {
     "index": "vicious-mockery",
@@ -11837,7 +11837,7 @@
       }
     },
     "description": "Du deutest auf einen Ort in Reichweite. Dort schlägt ein leuchtender Ball aus Säure mit einem Radius von 15 Zentimetern auf und explodiert in einer Kugel mit einem Radius von sechs Metern. Jede Kreatur in diesem Bereich führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet die Kreatur 10W4 Säureschaden sowie weitere 5W4 Säureschaden am Ende ihres nächsten Zugs. Bei einem erfolgreichen Rettungswurf erleidet die Kreatur nur die Hälfte des anfänglichen Schadens.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. wird der anfängliche Schaden um 2W4 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. wird der anfängliche Schaden um 2W4 erhöht."
   },
   {
     "index": "wall-of-fire",
@@ -11884,7 +11884,7 @@
       }
     },
     "description": "Du erschaffst auf einer festen Oberfläche in Reichweite eine Feuerwand. Du kannst eine gerade Wand mit bis zu 18 Metern Länge oder eine ringförmige Wand mit einem Radius von bis zu drei Metern erschaffen. In beiden Fällen ist die Wand sechs Meter hoch und 30 Zentimeter dick. Die Wand ist undurchsichtig und bleibt für die Wirkungsdauer bestehen.\nWenn die Wand erscheint, führt jede Kreatur in ihrem Bereich einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet die Kreatur 5W8 Feuerschaden, anderenfalls die Hälfte.\nEine Seite der Wand, die du beim Wirken des Zaubers bestimmst, fügt jeder Kreatur, die ihren Zug im Abstand von bis zu drei Metern von der Seite oder in der Wand beendet, 5W8 Feuerschaden zu. Eine Kreatur erleidet den Schaden ebenfalls, wenn sie die Wand in einem Zug erstmals betritt. Die andere Seite der Wand bewirkt keinen Schaden.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 4. wird der Schaden um 1W8 erhöht."
   },
   {
     "index": "wall-of-force",
@@ -11947,7 +11947,7 @@
       }
     },
     "description": "Du erschaffst auf einer festen Oberfläche in Reichweite eine Eiswand. Du kannst sie auch zu einer halbkugelförmigen Kuppel oder zu einer Kugel mit einem Radius von bis zu drei Metern formen, oder du kannst eine flache Oberfläche aus zehn Platten mit je drei Metern Kantenlänge erschaffen. Jede Platte muss an mindestens eine andere angrenzen. Die Wand ist in jeder Form 30 Zentimeter dick und bleibt für die Wirkungsdauer bestehen.\nErschaffst du die Wand so, dass sie den Bereich einer Kreatur durchdringt, so wird die Kreatur auf eine Seite der Wand (nach deiner Wahl) gestoßen und führt einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet sie 10W6 Kälteschaden, anderenfalls die Hälfte.\nDie Wand ist ein Gegenstand, der beschädigt und somit durchbrochen werden kann. Sie besitzt eine RK von 12 und 30 Trefferpunkte pro Abschnitt von drei Metern. Sie ist gegen Gift‑, Kälteund psychischen Schaden immun und anfällig für Feuerschaden. Sinken die Trefferpunkte eines Abschnitts von drei Metern der Wand auf 0, so wird dieser Abschnitt zerstört und hinterlässt in seinem Bereich eine eisige Luftschicht.\nEine Kreatur, die sich erstmals in einem Zug durch die kalte Luftschicht bewegt, führt einen Konstitutionsrettungswurf aus. Misslingt der Wurf, so erleidet sie 5W6 Kälteschaden, anderenfalls die Hälfte.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 6. wird der Schaden, den die Wand beim Erscheinen bewirkt, um 2W6 erhöht, und der Schaden beim Durchqueren der eisigen Luftschicht wird um 1W6 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 6. wird der Schaden, den die Wand beim Erscheinen bewirkt, um 2W6 erhöht, und der Schaden beim Durchqueren der eisigen Luftschicht wird um 1W6 erhöht."
   },
   {
     "index": "wall-of-stone",
@@ -12020,7 +12020,7 @@
       }
     },
     "description": "Du erschaffst eine Wand aus verworrenem Gestrüpp mit nadelspitzen Dornen. Die Wand erscheint auf einer festen Oberfläche in Reichweite und bleibt für die Wirkungsdauer bestehen. Die Wand kann bis zu 18 Meter lang, drei Meter hoch und 1,5 Meter dick sein. Alternativ kannst du eine ringförmige Wand mit einem Radius von drei Metern erschaffen, die bis zu sechs Meter hoch und 1,5 Meter dick ist. Die Wand blockiert die Sichtlinie.\nWenn die Wand erscheint, führt jede Kreatur in ihrem Bereich einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet die Kreatur 7W8 Stichschaden, anderenfalls die Hälfte.\nEine Kreatur kann die Dornenwand durchdringen, jedoch nur langsam und unter Schmerzen. Für jeden Meter, den sie sich durch die Wand bewegt, muss sie vier Meter ihrer Bewegungsrate verbrauchen. Wenn eine Kreatur außerdem in einem Zug die Dornenwand erstmals betritt oder ihren Zug darin beendet, führt sie einen Geschicklichkeitsrettungswurf aus. Misslingt der Wurf, so erleidet sie 7W8 Hiebschaden, anderenfalls die Hälfte. Eine Kreatur kann diesen Rettungswurf nur einmal pro Zug ausführen.",
-    "higher_level": "**_Verwenden von Zauberplätzen höheren Grades:_** Für jeden Zauberplatzgrad über dem 6. werden beide Schadensarten um 1W8 erhöht."
+    "higher_level": "Für jeden Zauberplatzgrad über dem 6. werden beide Schadensarten um 1W8 erhöht."
   },
   {
     "index": "warding-bond",
