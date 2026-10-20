@@ -1,0 +1,12 @@
+[
+  {
+    "code": "en",
+    "displayName": "English",
+    "dataset": "/spells.srd.json"
+  },
+  {
+    "code": "de",
+    "displayName": "Deutsch",
+    "dataset": "/spells.srd.de.json"
+  }
+]

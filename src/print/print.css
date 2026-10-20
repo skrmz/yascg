@@ -1,0 +1,318 @@
+/*
+ * Strict physical card + print stylesheet.
+ *
+ * All card and sheet geometry uses physical units (in / mm / pt). Application
+ * chrome (Tailwind) must never derive these dimensions from utility spacing,
+ * pixels, viewport units, or transforms.
+ */
+
+@font-face {
+  font-family: "EB Garamond";
+  src: url("../assets/fonts/EBGaramond-normal.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  src: url("../assets/fonts/EBGaramond-italic.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: italic;
+  font-display: block;
+}
+
+:root {
+  --card-width: 2.5in;
+  --card-height: 3.5in;
+  --card-pad: 0.09in;
+}
+
+.spell-card {
+  box-sizing: border-box;
+  width: var(--card-width);
+  height: var(--card-height);
+  padding: var(--card-pad);
+  border: 0.5pt solid #2a2a2a;
+  border-radius: 0.06in;
+  background: #fffdf8;
+  color: #1a1a1a;
+  font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+  font-size: 8pt;
+  line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.04in;
+  overflow: hidden;
+  position: relative;
+}
+
+.card-header {
+  flex: 0 0 auto;
+}
+
+.card-name {
+  margin: 0;
+  font-size: 11.5pt;
+  line-height: 1.08;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #1a1a1a;
+}
+
+.card-subtitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.05in;
+  font-size: 7.5pt;
+  font-style: italic;
+  color: #3a3a3a;
+}
+
+.card-level-school {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-flags {
+  display: inline-flex;
+  gap: 0.04in;
+  white-space: nowrap;
+}
+
+.card-flag {
+  font-style: normal;
+  font-variant: small-caps;
+  letter-spacing: 0.01em;
+}
+
+.card-metadata {
+  flex: 0 0 auto;
+  margin: 0;
+  display: grid;
+  gap: 0.01in;
+  border-top: 0.5pt solid #b9b2a6;
+  border-bottom: 0.5pt solid #b9b2a6;
+  padding: 0.03in 0;
+}
+
+.card-metadata-row {
+  display: grid;
+  grid-template-columns: 0.95in 1fr;
+  gap: 0.04in;
+  font-size: 7.5pt;
+}
+
+.card-metadata-row dt {
+  font-variant: small-caps;
+  color: #4a4a4a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-metadata-row dd {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-material {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 7pt;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #4a4a4a;
+}
+
+.card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  font-size: var(--body-font-pt, 8.5pt);
+}
+
+.card-body p {
+  margin: 0 0 0.035in;
+}
+
+.card-body .card-h {
+  margin: 0.03in 0 0.02in;
+  font-size: calc(var(--body-font-pt, 8.5pt) + 0.5pt);
+  font-weight: 700;
+}
+
+.card-body .card-ol,
+.card-body .card-ul {
+  margin: 0 0 0.035in;
+  padding-left: 0.16in;
+}
+
+.card-body .card-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: calc(var(--body-font-pt, 8.5pt) - 0.5pt);
+  margin: 0 0 0.035in;
+}
+
+.card-body .card-table th,
+.card-body .card-table td {
+  border: 0.5pt solid #b9b2a6;
+  padding: 0 0.02in;
+  text-align: left;
+}
+
+.card-body .card-pre {
+  margin: 0 0 0.035in;
+  font-size: calc(var(--body-font-pt, 8.5pt) - 0.5pt);
+  white-space: pre-wrap;
+}
+
+.card-classes {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 6.8pt;
+  color: #4a4a4a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.05in;
+  border-top: 0.5pt solid #b9b2a6;
+  padding-top: 0.02in;
+  font-size: 6.5pt;
+  font-variant: small-caps;
+  color: #4a4a4a;
+}
+
+.card-continuation {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-overflow-badge {
+  position: absolute;
+  right: 0.05in;
+  bottom: 0.22in;
+  background: #7a1f1f;
+  color: #fff;
+  font-size: 6pt;
+  padding: 0 0.04in;
+  border-radius: 0.03in;
+  font-family: system-ui, sans-serif;
+}
+
+/* Hidden measurement layer: laid out, offscreen, never printed. */
+.card-measure-layer {
+  position: absolute;
+  left: -10000in;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Screen preview container                                            */
+/* ------------------------------------------------------------------ */
+
+.card-preview-frame {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.08in;
+  align-items: flex-start;
+}
+
+.card-preview-page {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ------------------------------------------------------------------ */
+/* Print output                                                        */
+/* ------------------------------------------------------------------ */
+
+.print-root {
+  display: none;
+}
+
+.print-sheet {
+  width: 8.5in;
+  height: 11in;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  break-after: page;
+  page-break-after: always;
+  overflow: hidden;
+}
+
+.print-sheet-A4 {
+  width: 210mm;
+  height: 297mm;
+}
+
+.print-sheet:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+.print-grid {
+  width: 7.5in;
+  height: 10.5in;
+  display: grid;
+  grid-template-columns: repeat(3, var(--card-width));
+  grid-template-rows: repeat(3, var(--card-height));
+}
+
+.print-cell {
+  width: var(--card-width);
+  height: var(--card-height);
+  overflow: hidden;
+}
+
+.print-cutting .print-cell {
+  outline: 0.4pt dashed #9b9b9b;
+  outline-offset: -0.4pt;
+}
+
+.print-card {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media print {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .app-shell,
+  .app-no-print,
+  .card-measure-layer {
+    display: none !important;
+  }
+
+  .print-root {
+    display: block;
+  }
+
+  .spell-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

@@ -25,3 +25,21 @@ release. Add a tool name to select part of the graph. For example, run
 - [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
 
 <!--VITE PLUS END-->
+
+## Project-specific guidance
+
+- Follow existing project conventions and architecture.
+- Preserve stable SRD spell IDs, canonical mechanics, and translation consistency.
+- Never manually edit generated SRD datasets or bypass normalization validation.
+- Preserve licensing notices and attribution requirements.
+- Maintain offline-first behavior, safe Markdown rendering, and accessible UI interactions.
+- Run `vp check` and `vp test` after relevant changes.
+- Run normalization and affected E2E tests when changing data processing or application behavior.
+
+## Task-specific documentation
+
+Consult these files only when relevant to the task:
+
+- `README.md` — setup, operational workflows, printing, and source-update procedures.
+- `docs/specs/spell-card-generator-spec.md` — product requirements and acceptance criteria.
+- `scripts/normalize-srd.ts` — SRD normalization implementation.

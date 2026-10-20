@@ -1,0 +1,335 @@
+import { useMemo, useState, type ReactNode } from "react";
+import { ChevronDown, Plus, RotateCcw, Search, Sparkles } from "lucide-react";
+import { useApp } from "@/state/AppProvider.tsx";
+import { CORE_CLASSES, SPELL_SCHOOLS, type Spell, type SpellSource } from "@/domain/spells";
+import {
+  DEFAULT_FILTERS,
+  countActiveAdvancedFilters,
+  createSearchIndex,
+  deriveCastingTimeOptions,
+  deriveClassOptions,
+  filterSpells,
+  searchSpells,
+  sortSpells,
+  type LibraryFilters,
+} from "@/services/data/search.ts";
+import { Button } from "@/ui/Button.tsx";
+import { Badge, SourceBadge } from "@/ui/Badge.tsx";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/Collapsible.tsx";
+import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
+import { Input } from "@/ui/Field.tsx";
+import { MultiSelect } from "@/ui/MultiSelect.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select.tsx";
+import { Separator } from "@/ui/Separator.tsx";
+import { cn } from "@/ui/cn.ts";
+import { LevelRangeSlider } from "./LevelRangeSlider.tsx";
+
+function toggle<T>(values: readonly T[], value: T): T[] {
+  return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
+}
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-2 py-0.5 text-xs focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-input bg-background text-foreground hover:bg-accent",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function LibraryPane() {
+  const {
+    librarySpells,
+    customSpells,
+    language,
+    addSpellToDeck,
+    addSpellsToDeck,
+    replaceDeckWithSpells,
+    selectSpell,
+    selectedSpellId,
+  } = useApp();
+  const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
+  const [confirmReplace, setConfirmReplace] = useState(false);
+
+  const index = useMemo(() => createSearchIndex(librarySpells), [librarySpells]);
+  const searched = useMemo(
+    () => searchSpells(index, librarySpells, query),
+    [index, librarySpells, query],
+  );
+  const results = useMemo(
+    () => sortSpells(filterSpells(searched, filters), language),
+    [searched, filters, language],
+  );
+
+  const classOptions = useMemo(
+    () => [...CORE_CLASSES, ...deriveClassOptions(customSpells)],
+    [customSpells],
+  );
+  const castingOptions = useMemo(() => deriveCastingTimeOptions(librarySpells), [librarySpells]);
+  const advancedCount = countActiveAdvancedFilters(filters);
+
+  const patch = (partial: Partial<LibraryFilters>) =>
+    setFilters((previous) => ({ ...previous, ...partial }));
+
+  const resetAll = () => {
+    setQuery("");
+    setFilters(DEFAULT_FILTERS);
+  };
+
+  const onAdd = (spell: Spell) => {
+    void addSpellToDeck(spell);
+    selectSpell(spell.id);
+  };
+
+  return (
+    <section className="flex h-full min-h-0 flex-col" aria-label="Spell library">
+      <div className="space-y-3 p-3">
+        <div className="relative">
+          <Search
+            size={15}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search name, class, or description"
+            aria-label="Search spells"
+            className="pl-7"
+          />
+        </div>
+
+        <LevelRangeSlider value={filters.levels} onChange={(levels) => patch({ levels })} />
+
+        <MultiSelect
+          label="School"
+          aria-label="School"
+          allLabel="All schools"
+          options={SPELL_SCHOOLS}
+          selected={filters.schools}
+          onChange={(schools) => patch({ schools })}
+        />
+
+        <MultiSelect
+          label="Class"
+          aria-label="Class"
+          allLabel="All classes"
+          searchable
+          searchPlaceholder="Search classes…"
+          options={classOptions}
+          selected={filters.classes}
+          onChange={(classes) => patch({ classes })}
+        />
+
+        <Collapsible defaultOpen={false} className="space-y-2">
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="group w-full justify-between"
+            >
+              <span>Advanced Filters</span>
+              <span className="flex items-center gap-2">
+                {advancedCount > 0 ? <Badge>{advancedCount} active</Badge> : null}
+                <ChevronDown
+                  size={15}
+                  aria-hidden="true"
+                  className="transition-transform group-data-[state=open]:rotate-180"
+                />
+              </span>
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2 overflow-hidden data-[state=closed]:animate-[collapsible-up_180ms_ease-out] data-[state=open]:animate-[collapsible-down_180ms_ease-out] motion-reduce:animate-none">
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Casting Time</span>
+              <Select
+                value={filters.castingTimes[0] ?? "any"}
+                onValueChange={(value) => patch({ castingTimes: value === "any" ? [] : [value] })}
+              >
+                <SelectTrigger aria-label="Casting time" className="h-8 text-xs">
+                  <SelectValue placeholder="Any" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any</SelectItem>
+                  {castingOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Concentration</span>
+              <Select
+                value={
+                  filters.concentration === null ? "any" : filters.concentration ? "yes" : "no"
+                }
+                onValueChange={(value) =>
+                  patch({ concentration: value === "any" ? null : value === "yes" })
+                }
+              >
+                <SelectTrigger aria-label="Concentration" className="h-8 text-xs">
+                  <SelectValue placeholder="Any" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any</SelectItem>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Ritual</span>
+              <Select
+                value={filters.ritual === null ? "any" : filters.ritual ? "yes" : "no"}
+                onValueChange={(value) =>
+                  patch({ ritual: value === "any" ? null : value === "yes" })
+                }
+              >
+                <SelectTrigger aria-label="Ritual" className="h-8 text-xs">
+                  <SelectValue placeholder="Any" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any</SelectItem>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
+            <span className="mr-1 text-xs text-muted-foreground">Source</span>
+            {(["SRD-5.2.1", "Custom"] as SpellSource[]).map((source) => (
+              <Chip
+                key={source}
+                active={filters.sources.includes(source)}
+                onClick={() => patch({ sources: toggle(filters.sources, source) })}
+              >
+                {source === "Custom" ? "Custom" : "SRD"}
+              </Chip>
+            ))}
+          </div>
+          <Button variant="outline" size="sm" onClick={resetAll} aria-label="Reset filters">
+            <RotateCcw size={13} aria-hidden="true" />
+            Reset Filters
+          </Button>
+        </div>
+      </div>
+
+      <Separator className="my-3" />
+
+      <div className="flex items-center justify-between gap-2 border-y border-border px-3 py-2">
+        <span className="text-xs text-muted-foreground" aria-live="polite">
+          {results.length} result{results.length === 1 ? "" : "s"}
+        </span>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={results.length === 0}
+            onClick={() => void addSpellsToDeck(results)}
+          >
+            <Sparkles size={13} aria-hidden="true" />
+            Append all
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={results.length === 0}
+            onClick={() => setConfirmReplace(true)}
+          >
+            Replace deck
+          </Button>
+        </div>
+      </div>
+
+      <ul className="min-h-0 flex-1 overflow-auto px-2 py-2" aria-label="Spell results">
+        {results.length === 0 ? (
+          <li className="px-2 py-6 text-center text-sm text-muted-foreground">
+            No spells match the current search and filters.
+          </li>
+        ) : null}
+        {results.map((spell) => (
+          <li key={spell.id}>
+            <div
+              className={cn(
+                "flex items-center justify-between gap-2 rounded px-2 py-1.5",
+                spell.id === selectedSpellId ? "bg-accent" : "hover:bg-accent/50",
+              )}
+            >
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                onClick={() => selectSpell(spell.id)}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-foreground">
+                    {spell.name}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {spell.level === 0 ? "Cantrip" : `Level ${spell.level}`} &middot; {spell.school}
+                  </span>
+                </span>
+                <SourceBadge source={spell.source} />
+              </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Add ${spell.name} to active deck`}
+                onClick={() => onAdd(spell)}
+              >
+                <Plus size={16} aria-hidden="true" />
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <Dialog open={confirmReplace} onOpenChange={setConfirmReplace}>
+        <DialogContent
+          title="Replace the active deck?"
+          description={`This removes the current active deck entries and replaces them with the ${results.length} matching spell(s). Saved decks are not changed.`}
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setConfirmReplace(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  void replaceDeckWithSpells(results);
+                  setConfirmReplace(false);
+                }}
+              >
+                Replace deck
+              </Button>
+            </>
+          }
+        />
+      </Dialog>
+    </section>
+  );
+}
