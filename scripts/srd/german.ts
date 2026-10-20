@@ -7,6 +7,8 @@ import {
   normalizeDescription,
   normalizeHigherLevels,
   requireArray,
+  requireComponents,
+  requireRange,
   requireRecord,
   requireString,
   validateNormalizedSpell,
@@ -19,6 +21,7 @@ function germanComponents(
   fileName: string,
   index: string,
 ): SpellComponents {
+  requireComponents(letters, fileName, index);
   const components: SpellComponents = {
     verbal: false,
     somatic: false,
@@ -89,7 +92,7 @@ export function normalizeGermanEntry(raw: unknown, fileName: string): Spell {
     level,
     school,
     castingTime: requireString(entry.casting_time, fileName, index, "casting_time"),
-    range: requireString(entry.range, fileName, index, "range"),
+    range: requireRange(entry.range, fileName, index),
     components: germanComponents(letters, materialText, fileName, index),
     duration: requireString(entry.duration, fileName, index, "duration"),
     concentration: Boolean(entry.concentration),

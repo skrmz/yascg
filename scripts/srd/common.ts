@@ -83,6 +83,45 @@ export function requireArray(
   return value;
 }
 
+/**
+ * Rejects spells that declare no components. Every SRD spell must have at least
+ * one of V, S, or M; upstream entries with `components: []` are source errors
+ * (historically caused by component data leaking into the `range` field) and are
+ * never silently repaired.
+ */
+export function requireComponents(
+  letters: readonly string[],
+  fileName: string,
+  sourceIndex: string,
+): readonly string[] {
+  if (letters.length === 0) {
+    throw new SrdSourceError(
+      `spell must declare at least one component (V, S, or M)`,
+      fileName,
+      sourceIndex,
+    );
+  }
+  return letters;
+}
+
+/**
+ * Reads and sanity-checks the `range` field. Upstream sources have shipped range
+ * values that accidentally absorbed a component declaration (for example
+ * `"Touch Component: V, S"`); such a value is a data error. Legitimate ranges
+ * never contain the word "component"/"komponente".
+ */
+export function requireRange(value: unknown, fileName: string, sourceIndex: string): string {
+  const range = requireString(value, fileName, sourceIndex, "range");
+  if (/component|komponente/i.test(range)) {
+    throw new SrdSourceError(
+      `field "range" looks like it contains component data ("${range}"); expected a range such as "Touch" or "60 feet"`,
+      fileName,
+      sourceIndex,
+    );
+  }
+  return range;
+}
+
 export function normalizeDescription(value: unknown): string[] {
   if (value === undefined || value === null) return [""];
   if (typeof value === "string") return [value];

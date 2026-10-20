@@ -8,6 +8,8 @@ import {
   normalizeDescription,
   normalizeHigherLevels,
   requireArray,
+  requireComponents,
+  requireRange,
   requireRecord,
   requireString,
   validateNormalizedSpell,
@@ -22,6 +24,7 @@ function componentFlags(
   fileName: string,
   index: string,
 ): SpellComponents {
+  requireComponents(letters, fileName, index);
   const set = new Set(letters);
   for (const letter of letters) {
     if (letter !== "V" && letter !== "S" && letter !== "M") {
@@ -104,7 +107,7 @@ export function normalizeEnglishEntry(raw: unknown, fileName: string): Spell {
     level,
     school,
     castingTime: requireString(entry.casting_time, fileName, index, "casting_time"),
-    range: requireString(entry.range, fileName, index, "range"),
+    range: requireRange(entry.range, fileName, index),
     components: componentFlags(letters, materialText, fileName, index),
     duration: requireString(entry.duration, fileName, index, "duration"),
     concentration: Boolean(entry.concentration),

@@ -13,6 +13,7 @@
   "[typescriptreact]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },
+  "oxc.fmt.configPath": "./vite.config.ts",
   "oxc.disableNestedConfig": true,
   "oxc.fmt.disableNestedConfig": true,
   "editor.formatOnSave": true,

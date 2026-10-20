@@ -118,6 +118,33 @@ describe("English adapter", () => {
     ).toThrow(/unknown school index/);
   });
 
+  it("rejects empty component arrays with filename and index context", () => {
+    expect(() =>
+      normalizeEnglish([{ ...canonicalEnglish[0], components: [] }], "5e-SRD-Spells.json"),
+    ).toThrow(
+      /\[5e-SRD-Spells\.json\] index "acid-arrow": spell must declare at least one component/,
+    );
+  });
+
+  it("rejects ranges that absorbed a component declaration", () => {
+    expect(() =>
+      normalizeEnglish(
+        [{ ...canonicalEnglish[0], range: "Touch Component: V, S" }],
+        "5e-SRD-Spells.json",
+      ),
+    ).toThrow(
+      /\[5e-SRD-Spells\.json\] index "acid-arrow": field "range" looks like it contains component data/,
+    );
+  });
+
+  it("accepts legitimate range descriptions", () => {
+    const spells = normalizeEnglish(
+      [{ ...canonicalEnglish[0], range: "Self (15-foot Cone)" }],
+      "5e-SRD-Spells.json",
+    );
+    expect(spells[0].range).toBe("Self (15-foot Cone)");
+  });
+
   it("rejects duplicate indices within a file", () => {
     expect(() =>
       normalizeEnglish([canonicalEnglish[0], canonicalEnglish[0]], "5e-SRD-Spells.json"),
@@ -132,6 +159,23 @@ describe("German adapter", () => {
     expect(spells[0].components.verbal).toBe(true);
     expect(spells[0].components.somatic).toBe(true);
     expect(spells[0].classes).toEqual(["Bard"]);
+  });
+
+  it("rejects empty component arrays for German-shaped imports", () => {
+    expect(() =>
+      normalizeGerman([{ ...germanEntry[0], components: [] }], "5e-SRD-Spells_de.json"),
+    ).toThrow(
+      /\[5e-SRD-Spells_de\.json\] index "command": spell must declare at least one component/,
+    );
+  });
+
+  it("rejects German ranges that absorbed a component declaration", () => {
+    expect(() =>
+      normalizeGerman(
+        [{ ...germanEntry[0], range: "Berührung Komponente: V, G" }],
+        "5e-SRD-Spells_de.json",
+      ),
+    ).toThrow(/field "range" looks like it contains component data/);
   });
 
   it("fails on unknown German class names", () => {
