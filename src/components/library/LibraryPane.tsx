@@ -1,6 +1,8 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, RotateCcw, Search, Sparkles } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
+import { levelLabelKey, schoolKey } from "@/locales/labels.ts";
 import { CORE_CLASSES, SPELL_SCHOOLS, type Spell, type SpellSource } from "@/domain/spells";
 import {
   DEFAULT_FILTERS,
@@ -65,6 +67,7 @@ export function LibraryPane() {
     selectSpell,
     selectedSpellId,
   } = useApp();
+  const { t, i18n } = useTranslation();
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
   const [confirmReplace, setConfirmReplace] = useState(false);
@@ -289,8 +292,12 @@ export function LibraryPane() {
                   <span className="block truncate text-sm font-medium text-foreground">
                     {spell.name}
                   </span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {spell.level === 0 ? "Cantrip" : `Level ${spell.level}`} &middot; {spell.school}
+                  <span
+                    lang={i18n.resolvedLanguage}
+                    className="block truncate text-xs text-muted-foreground"
+                  >
+                    {t(levelLabelKey(spell.level), { level: spell.level })} &middot;{" "}
+                    {t(schoolKey(spell.school))}
                   </span>
                 </span>
                 <SourceBadge source={spell.source} />

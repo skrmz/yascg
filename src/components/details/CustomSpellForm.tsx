@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useApp } from "@/state/AppProvider.tsx";
 import { createCustomSpellDraft } from "@/db/custom-spells.ts";
 import { LIMITS, SPELL_SCHOOLS, spellSchema, type Spell, type SpellSchool } from "@/domain/spells";
+import { schoolKey } from "@/locales/labels.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Checkbox } from "@/ui/Checkbox.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
@@ -53,6 +55,7 @@ function toDraft(spell: Spell): DraftState {
 
 export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormProps) {
   const { saveCustomSpell, selectSpell } = useApp();
+  const { t, i18n } = useTranslation();
   const base = useMemo(() => spell ?? createCustomSpellDraft(), [spell]);
   const [draft, setDraft] = useState<DraftState>(() => toDraft(base));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -100,14 +103,15 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
     };
 
     const nextErrors: Record<string, string> = {};
-    if (draft.castingTime.trim().length > LIMITS.FREETEXT_AUTHORED_MAX) {
-      nextErrors.castingTime = `Casting time must be at most ${LIMITS.FREETEXT_AUTHORED_MAX} characters.`;
+    const maxLength = LIMITS.FREETEXT_AUTHORED_MAX;
+    if (draft.castingTime.trim().length > maxLength) {
+      nextErrors.castingTime = t("form.error.castingTime", { max: maxLength });
     }
-    if (draft.range.trim().length > LIMITS.FREETEXT_AUTHORED_MAX) {
-      nextErrors.range = `Range must be at most ${LIMITS.FREETEXT_AUTHORED_MAX} characters.`;
+    if (draft.range.trim().length > maxLength) {
+      nextErrors.range = t("form.error.range", { max: maxLength });
     }
-    if (draft.duration.trim().length > LIMITS.FREETEXT_AUTHORED_MAX) {
-      nextErrors.duration = `Duration must be at most ${LIMITS.FREETEXT_AUTHORED_MAX} characters.`;
+    if (draft.duration.trim().length > maxLength) {
+      nextErrors.duration = t("form.error.duration", { max: maxLength });
     }
     const parsed = spellSchema.safeParse(candidate);
     if (!parsed.success) {
@@ -129,21 +133,22 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        title={spell ? "Edit custom spell" : "New custom spell"}
-        description="Custom spells are stored locally and never modify bundled SRD data."
+        title={t(spell ? "form.title.edit" : "form.title.new")}
+        description={t("form.description")}
+        lang={i18n.resolvedLanguage}
         className="w-[min(92vw,42rem)]"
         footer={
           <>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={() => void onSubmit()}>Save spell</Button>
+            <Button onClick={() => void onSubmit()}>{t("form.save")}</Button>
           </>
         }
       >
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
-            <Label htmlFor="cs-name">Name</Label>
+            <Label htmlFor="cs-name">{t("form.name")}</Label>
             <Input
               id="cs-name"
               value={draft.name}
@@ -153,7 +158,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
             <FieldError>{errors.name}</FieldError>
           </div>
           <div>
-            <Label htmlFor="cs-level">Level (0-9)</Label>
+            <Label htmlFor="cs-level">{t("form.level")}</Label>
             <Input
               id="cs-level"
               type="number"
@@ -166,7 +171,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
             <FieldError>{errors.level}</FieldError>
           </div>
           <div>
-            <Label htmlFor="cs-school">School</Label>
+            <Label htmlFor="cs-school">{t("form.school")}</Label>
             <NativeSelect
               id="cs-school"
               value={draft.school}
@@ -174,13 +179,13 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
             >
               {SPELL_SCHOOLS.map((school) => (
                 <option key={school} value={school}>
-                  {school}
+                  {t(schoolKey(school))}
                 </option>
               ))}
             </NativeSelect>
           </div>
           <div>
-            <Label htmlFor="cs-casting">Casting time</Label>
+            <Label htmlFor="cs-casting">{t("spell.metadata.castingTime")}</Label>
             <Input
               id="cs-casting"
               value={draft.castingTime}
@@ -190,7 +195,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
             <FieldError>{errors.castingTime}</FieldError>
           </div>
           <div>
-            <Label htmlFor="cs-range">Range</Label>
+            <Label htmlFor="cs-range">{t("spell.metadata.range")}</Label>
             <Input
               id="cs-range"
               value={draft.range}
@@ -200,7 +205,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
             <FieldError>{errors.range}</FieldError>
           </div>
           <div>
-            <Label htmlFor="cs-duration">Duration</Label>
+            <Label htmlFor="cs-duration">{t("spell.metadata.duration")}</Label>
             <Input
               id="cs-duration"
               value={draft.duration}
@@ -211,36 +216,36 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
           </div>
           <div className="flex items-end gap-3">
             <Checkbox
-              label="Concentration"
+              label={t("spell.flag.concentration")}
               checked={draft.concentration}
               onChange={(event) => update("concentration", event.target.checked)}
             />
             <Checkbox
-              label="Ritual"
+              label={t("spell.flag.ritual")}
               checked={draft.ritual}
               onChange={(event) => update("ritual", event.target.checked)}
             />
           </div>
           <div className="col-span-2 flex flex-wrap items-center gap-3">
             <Checkbox
-              label="Verbal"
+              label={t("form.verbal")}
               checked={draft.verbal}
               onChange={(event) => update("verbal", event.target.checked)}
             />
             <Checkbox
-              label="Somatic"
+              label={t("form.somatic")}
               checked={draft.somatic}
               onChange={(event) => update("somatic", event.target.checked)}
             />
             <Checkbox
-              label="Material"
+              label={t("form.material")}
               checked={draft.material}
               onChange={(event) => update("material", event.target.checked)}
             />
           </div>
           {draft.material ? (
             <div className="col-span-2">
-              <Label htmlFor="cs-material">Material description</Label>
+              <Label htmlFor="cs-material">{t("form.materialDescription")}</Label>
               <Input
                 id="cs-material"
                 value={draft.materialDescription}
@@ -249,7 +254,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
             </div>
           ) : null}
           <div className="col-span-2">
-            <Label htmlFor="cs-classes">Classes (comma-separated)</Label>
+            <Label htmlFor="cs-classes">{t("form.classes")}</Label>
             <Input
               id="cs-classes"
               value={draft.classes}
@@ -258,7 +263,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
             <FieldError>{errors.classes}</FieldError>
           </div>
           <div className="col-span-2">
-            <Label htmlFor="cs-description">Description (Markdown)</Label>
+            <Label htmlFor="cs-description">{t("form.descriptionField")}</Label>
             <Textarea
               id="cs-description"
               rows={6}
@@ -268,7 +273,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
             <FieldError>{errors.description}</FieldError>
           </div>
           <div className="col-span-2">
-            <Label htmlFor="cs-higher">Higher levels (Markdown, optional)</Label>
+            <Label htmlFor="cs-higher">{t("form.higherLevels")}</Label>
             <Textarea
               id="cs-higher"
               rows={3}

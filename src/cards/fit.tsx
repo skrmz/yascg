@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal, flushSync } from "react-dom";
+import { useTranslation } from "react-i18next";
 import type { CardFitMode, Spell } from "@/domain/spells";
 import { LIMITS } from "@/domain/spells";
 import { parseSpellBody, type BlockNode } from "@/markdown/parse.ts";
@@ -128,12 +129,18 @@ export interface UseCardFitResult {
 }
 
 export function useCardFit({ spell, fitMode, language }: UseCardFitOptions): UseCardFitResult {
+  const { t, i18n } = useTranslation();
+  const higherLevelsHeading = t("spell.higherLevels");
+  const resolvedLanguage = i18n.resolvedLanguage;
   const { measure, layer } = useMeasurer();
   const [result, setResult] = useState<FitResult | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const blocks = useMemo(() => (spell ? parseSpellBody(spell) : []), [spell]);
+  const blocks = useMemo(
+    () => (spell ? parseSpellBody(spell, higherLevelsHeading) : []),
+    [spell, higherLevelsHeading],
+  );
   const cacheKey = useMemo(() => {
     if (!spell) return null;
     return fitCacheKey({
@@ -184,7 +191,7 @@ export function useCardFit({ spell, fitMode, language }: UseCardFitOptions): Use
     return () => {
       cancelled = true;
     };
-  }, [spell, cacheKey, blocks, fitMode, measure]);
+  }, [spell, cacheKey, blocks, fitMode, measure, higherLevelsHeading, resolvedLanguage]);
 
   return { result, ready, error, measureLayer: layer };
 }
@@ -207,6 +214,9 @@ export function useDeckCardFits(
   language: string,
   enabled = true,
 ): UseDeckCardFitsResult {
+  const { t, i18n } = useTranslation();
+  const higherLevelsHeading = t("spell.higherLevels");
+  const resolvedLanguage = i18n.resolvedLanguage;
   const { measure, layer } = useMeasurer();
   const [results, setResults] = useState<Map<string, FitResult>>(new Map());
   const [ready, setReady] = useState(false);
@@ -216,8 +226,8 @@ export function useDeckCardFits(
   const signature = useMemo(
     () =>
       items.map((item) => `${item.key}:${item.spell.id}:${item.fitMode}`).join("|") +
-      `@${language}`,
-    [items, language],
+      `@${language}:${higherLevelsHeading}`,
+    [items, language, higherLevelsHeading],
   );
 
   useEffect(() => {
@@ -234,7 +244,7 @@ export function useDeckCardFits(
       if (cancelled) return;
       const next = new Map<string, FitResult>();
       for (const item of current) {
-        const blocks = parseSpellBody(item.spell);
+        const blocks = parseSpellBody(item.spell, higherLevelsHeading);
         const cacheKey = fitCacheKey({
           spellId: item.spell.id,
           language,
@@ -262,7 +272,7 @@ export function useDeckCardFits(
     return () => {
       cancelled = true;
     };
-  }, [signature, language, measure, enabled]);
+  }, [signature, language, measure, enabled, higherLevelsHeading, resolvedLanguage]);
 
   return { results, ready, measureLayer: enabled ? layer : null };
 }

@@ -1,0 +1,92 @@
+import type { Translations } from "./en.ts";
+
+export const de = {
+  spell: {
+    metadata: {
+      castingTime: "Zeitaufwand",
+      range: "Reichweite",
+      components: "Komponenten",
+      duration: "Wirkungsdauer",
+      material: "Material",
+      classes: "Klassen",
+    },
+    higherLevels: "Höhere Grade",
+    level: {
+      cantrip: "Zaubertrick",
+      level: "Grad {{level}}",
+    },
+    flag: {
+      concentration: "Konzentration",
+      ritual: "Ritual",
+    },
+  },
+  component: {
+    verbal: "V",
+    somatic: "G",
+    material: "M",
+  },
+  damageType: {
+    acid: "Säure",
+    bludgeoning: "Wucht",
+    cold: "Kälte",
+    fire: "Feuer",
+    force: "Energie",
+    lightning: "Blitz",
+    necrotic: "Nekrotisch",
+    piercing: "Stich",
+    poison: "Gift",
+    psychic: "Psychisch",
+    radiant: "Gleißend",
+    slashing: "Hieb",
+    thunder: "Schall",
+  },
+  school: {
+    abjuration: "Bannmagie",
+    conjuration: "Beschwörung",
+    divination: "Erkenntnismagie",
+    enchantment: "Verzauberung",
+    evocation: "Hervorrufung",
+    illusion: "Illusion",
+    necromancy: "Nekromantie",
+    transmutation: "Verwandlung",
+  },
+  class: {
+    bard: "Barde",
+    cleric: "Kleriker",
+    druid: "Druide",
+    paladin: "Paladin",
+    ranger: "Waldläufer",
+    sorcerer: "Zauberer",
+    warlock: "Hexenmeister",
+    wizard: "Magier",
+  },
+  card: {
+    truncated: "Inhalt gekürzt",
+    continuedFrom: "Fortgesetzt von Karte {{index}}",
+    continuation: "Karte {{index}} von {{count}}",
+  },
+  form: {
+    title: {
+      new: "Neuer eigener Zauber",
+      edit: "Eigenen Zauber bearbeiten",
+    },
+    description:
+      "Eigene Zauber werden lokal gespeichert und verändern niemals die mitgelieferten SRD-Daten.",
+    name: "Name",
+    level: "Grad (0-9)",
+    school: "Schule",
+    verbal: "Verbal",
+    somatic: "Somatisch",
+    material: "Material",
+    materialDescription: "Materialbeschreibung",
+    classes: "Klassen (durch Kommas getrennt)",
+    descriptionField: "Beschreibung (Markdown)",
+    higherLevels: "Höhere Grade (Markdown, optional)",
+    save: "Zauber speichern",
+    error: {
+      castingTime: "Der Zeitaufwand darf höchstens {{max}} Zeichen lang sein.",
+      range: "Die Reichweite darf höchstens {{max}} Zeichen lang sein.",
+      duration: "Die Wirkungsdauer darf höchstens {{max}} Zeichen lang sein.",
+    },
+  },
+} satisfies Translations;

@@ -127,6 +127,8 @@ Translation files may localize free text (`name`, `description`, `casting_time`,
 
 `index`, `school`, `classes`, and `damageType` identifiers are always mapped to canonical values, so both languages resolve to the same `srd-<index>` identity.
 
+Canonical identifiers — including `damageType` (stored lowercased, e.g. `"fire"`) — are never translated in the data pipeline. Localized display labels (school names, class names, component letters, and damage-type names) are applied only at render time by the `src/locales/` catalogs, with English used as the fallback for any value absent from the catalog.
+
 ---
 
 ### 3. The Role of "Canonical"

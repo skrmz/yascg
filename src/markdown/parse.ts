@@ -210,16 +210,23 @@ export const HIGHER_LEVELS_HEADING: HeadingBlock = {
   children: [{ type: "text", value: "Higher Levels" }],
 };
 
-export function parseSpellBody(spell: {
-  description: readonly string[];
-  higherLevels?: readonly string[];
-}): BlockNode[] {
+export function parseSpellBody(
+  spell: {
+    description: readonly string[];
+    higherLevels?: readonly string[];
+  },
+  higherLevelsHeading: string = "Higher Levels",
+): BlockNode[] {
   const blocks: BlockNode[] = [];
   blocks.push(...parseMarkdown(spell.description.join("\n\n")));
   if (spell.higherLevels && spell.higherLevels.length > 0) {
     const higher = spell.higherLevels.filter((part) => part.trim() !== "");
     if (higher.length > 0) {
-      blocks.push(HIGHER_LEVELS_HEADING);
+      blocks.push({
+        type: "heading",
+        depth: HIGHER_LEVELS_HEADING.depth,
+        children: [{ type: "text", value: higherLevelsHeading }],
+      });
       blocks.push(...parseMarkdown(higher.join("\n\n")));
     }
   }

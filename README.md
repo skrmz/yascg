@@ -1,28 +1,31 @@
 # YASCG - Yet Another Spell Card Generator
 
-Offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards. Browse the
-SRD 5.2.1 spell library in multiple languages, create custom spells, assemble one
-active deck, save and load named decks, and print 2.5in x 3.5in (63.5mm x 88.9mm)
-cards 9-up on US Letter or ISO A4 paper. All data stays in your browser unless you
-export it as JSON.
+Offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards. Browse the SRD 5.2.1 spell library in multiple languages, create custom spells, assemble one active deck, save and load named decks, and print 2.5in x 3.5in (63.5mm x 88.9mm) cards 9-up on US Letter or A4 paper. All data stays in your browser unless you export it as JSON.
 
 Specification: [`docs/specs/spell-card-generator-spec.md`](docs/specs/spell-card-generator-spec.md).
 
 ## Attribution
 
-This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1")
-by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD
-5.2.1 is licensed under the Creative Commons Attribution 4.0 International License,
-available at https://creativecommons.org/licenses/by/4.0/.
+This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/.
 
-Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells are
-labeled `Custom`. No Wizards of the Coast logos or D&D trademarks are used.
+Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells are labeled `Custom`. No Wizards of the Coast logos or D&D trademarks are used.
+
+## Tech Stack
+
+- React 19 + TypeScript strict
+- Vite+ with `@vitejs/plugin-react`
+- Tailwind v4 (`@tailwindcss/vite`)
+- shadcn-style Radix primitives
+- Lucide icons
+- Dexie
+- Zod
+- Fuse.js,
+- `marked` token walker
+- i18next + react-i18next (spell-card terminology, EN/DE).
 
 ## Toolchain
 
-Requires **Node.js >= 24** and **pnpm v12+** with the unified **Vite+ (`vp`)**
-toolchain (Vite, Rolldown, Vitest, Oxlint, Oxfmt). Repository guidance lives in
-[`AGENTS.md`](AGENTS.md).
+Requires **Node.js >= 24** and **pnpm v12+** with the unified **Vite+ (`vp`)** toolchain (Vite, Rolldown, Vitest, Oxlint, Oxfmt). Repository guidance lives in [`AGENTS.md`](AGENTS.md).
 
 ```powershell
 pnpm install         # or: vp install
@@ -97,7 +100,35 @@ belong to the same release as the generated manifest and datasets.
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
 - `src/io/` — `1.0.0` JSON export/import with collision review and atomic commits.
 - `src/pwa/` — service-worker registration and Cache Storage verification.
+- `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE
+  spell-card terminology catalogs.
 - `src/state/`, `src/components/`, `src/ui/` — application state and UI.
+
+## Localization
+
+Spell-card terminology (card labels, metadata terms, school/class names, component
+letters, damage-type badges, the "Higher Levels" heading, and the custom-spell form) is
+localized with
+`react-i18next`, using English as the fallback and German as the second locale. The
+locale follows the existing **spell data language** selection (`en`/`de` in
+`src/data/spell-languages.json`); there is no separate UI-language control. Unknown
+codes (e.g. `fr` in tests) fall back to English.
+
+- Catalogs are TypeScript modules under `src/locales/` (`en.ts`, `de.ts`) so no
+  `resolveJsonModule` is needed; `de` is checked for key parity via
+  `satisfies Translations`.
+- School/class names, component letters, and damage-type names are localized at
+  presentation time via `src/locales/labels.ts`; unknown damage types fall back to the
+  raw stored value. Bundled and generated SRD datasets (`src/data/**`) are never
+  modified, and canonical mechanics/enums stay English.
+- The initial locale is seeded synchronously from the stored preference
+  (`spellCards.language`) before first paint, and card fitting re-measures on locale
+  change, so switching languages never leaves stale measurements.
+- Localized content containers carry a `lang` attribute; `document.documentElement.lang`
+  is intentionally left untouched.
+
+Out of scope: app chrome, library filter dropdowns, the print dialog, deck pane, dialogs,
+and status/error messages remain English.
 
 ## Printing
 

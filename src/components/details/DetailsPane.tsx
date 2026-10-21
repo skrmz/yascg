@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Copy, Plus, SquarePen, Trash2 } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
-import { CardView } from "@/cards/Card.tsx";
+import { CardView, classSummary } from "@/cards/Card.tsx";
+import { componentKey, damageTypeKey } from "@/locales/labels.ts";
 import { useCardFit, AUTO_SHRINK_MIN_PT } from "@/cards/fit.tsx";
 import { LIMITS } from "@/domain/spells";
 import { BlockList } from "@/markdown/render.tsx";
@@ -22,6 +24,7 @@ export function DetailsPane() {
     canUndo,
     undoDelete,
   } = useApp();
+  const { t, i18n } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -112,7 +115,10 @@ export function DetailsPane() {
               </div>
             )}
           </div>
-          <div className="min-w-[16rem] flex-1 space-y-2 text-sm text-foreground">
+          <div
+            lang={i18n.resolvedLanguage}
+            className="min-w-[16rem] flex-1 space-y-2 text-sm text-foreground"
+          >
             {fit.error ? (
               <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
                 {fit.error}
@@ -136,48 +142,54 @@ export function DetailsPane() {
               </p>
             ) : null}
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-              <dt className="text-muted-foreground">Casting Time</dt>
+              <dt className="text-muted-foreground">{t("spell.metadata.castingTime")}</dt>
               <dd>{spell.castingTime}</dd>
-              <dt className="text-muted-foreground">Range</dt>
+              <dt className="text-muted-foreground">{t("spell.metadata.range")}</dt>
               <dd>{spell.range}</dd>
-              <dt className="text-muted-foreground">Duration</dt>
+              <dt className="text-muted-foreground">{t("spell.metadata.duration")}</dt>
               <dd>{spell.duration}</dd>
-              <dt className="text-muted-foreground">Components</dt>
+              <dt className="text-muted-foreground">{t("spell.metadata.components")}</dt>
               <dd>
-                {spell.components.verbal ? "V" : ""}
-                {spell.components.somatic ? "S" : ""}
-                {spell.components.material ? "M" : ""}
+                {spell.components.verbal ? t(componentKey("verbal")) : ""}
+                {spell.components.somatic ? t(componentKey("somatic")) : ""}
+                {spell.components.material ? t(componentKey("material")) : ""}
                 {!spell.components.verbal && !spell.components.somatic && !spell.components.material
                   ? "\u2014"
                   : ""}
               </dd>
               {spell.components.materialDescription ? (
                 <>
-                  <dt className="text-muted-foreground">Material</dt>
+                  <dt className="text-muted-foreground">{t("spell.metadata.material")}</dt>
                   <dd>{spell.components.materialDescription}</dd>
                 </>
               ) : null}
-              <dt className="text-muted-foreground">Classes</dt>
-              <dd>{spell.classes.length > 0 ? spell.classes.join(", ") : "\u2014"}</dd>
+              <dt className="text-muted-foreground">{t("spell.metadata.classes")}</dt>
+              <dd>{spell.classes.length > 0 ? classSummary(spell.classes, t) : "\u2014"}</dd>
             </dl>
             <div className="flex flex-wrap gap-1">
-              {spell.concentration ? <Badge>Concentration</Badge> : null}
-              {spell.ritual ? <Badge>Ritual</Badge> : null}
-              {spell.damageTypes?.map((type) => (
-                <Badge key={type} tone="warning">
-                  {type}
-                </Badge>
-              ))}
+              {spell.concentration ? <Badge>{t("spell.flag.concentration")}</Badge> : null}
+              {spell.ritual ? <Badge>{t("spell.flag.ritual")}</Badge> : null}
+              {spell.damageTypes?.map((type) => {
+                const key = damageTypeKey(type);
+                return (
+                  <Badge key={type} tone="warning">
+                    {key ? t(key) : type}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        <div className="max-w-3xl space-y-2 text-sm leading-relaxed text-foreground">
+        <div
+          lang={i18n.resolvedLanguage}
+          className="max-w-3xl space-y-2 text-sm leading-relaxed text-foreground"
+        >
           <BlockList blocks={descriptionBlocks} />
           {higherBlocks.length > 0 ? (
             <>
               <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Higher Levels
+                {t("spell.higherLevels")}
               </h3>
               <BlockList blocks={higherBlocks} />
             </>

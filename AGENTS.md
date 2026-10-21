@@ -33,6 +33,9 @@ release. Add a tool name to select part of the graph. For example, run
 - Never manually edit generated SRD datasets or bypass normalization validation.
 - Preserve licensing notices and attribution requirements.
 - Maintain offline-first behavior, safe Markdown rendering, and accessible UI interactions.
+- Keep localization presentation-only: add UI terminology to `src/locales/en.ts` and
+  `src/locales/de.ts` (via `satisfies Translations`), never edit generated datasets or
+  canonical enums for translation. The UI locale follows the spell data language.
 - Run `vp check` and `vp test` after relevant changes.
 - Run normalization and affected E2E tests when changing data processing or application behavior.
 
@@ -41,5 +44,4 @@ release. Add a tool name to select part of the graph. For example, run
 Consult these files only when relevant to the task:
 
 - `README.md` — setup, operational workflows, printing, and source-update procedures.
-- `docs/specs/spell-card-generator-spec.md` — product requirements and acceptance criteria.
 - `scripts/normalize-srd.ts` — SRD normalization implementation.

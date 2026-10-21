@@ -1,4 +1,5 @@
 import "fake-indexeddb/auto";
+import "../i18n.ts";
 import { afterEach } from "vite-plus/test";
 import { cleanup } from "@testing-library/react";
 import { webcrypto } from "node:crypto";

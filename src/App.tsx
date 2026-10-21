@@ -1,7 +1,19 @@
 import { useEffect, useState } from "react";
-import { AppProvider } from "./state/AppProvider.tsx";
+import { AppProvider, useApp } from "./state/AppProvider.tsx";
 import { AppShell } from "./components/AppShell.tsx";
 import { db } from "./db/database.ts";
+import i18n, { toUiLocale } from "./i18n.ts";
+
+function UiLocaleBridge() {
+  const { language } = useApp();
+  useEffect(() => {
+    const code = toUiLocale(language);
+    if (i18n.resolvedLanguage !== code) {
+      void i18n.changeLanguage(code);
+    }
+  }, [language]);
+  return null;
+}
 
 function StorageNotice() {
   const [message, setMessage] = useState<string | null>(null);
@@ -41,6 +53,7 @@ function StorageNotice() {
 export function App() {
   return (
     <AppProvider>
+      <UiLocaleBridge />
       <StorageNotice />
       <AppShell />
     </AppProvider>
