@@ -1,4 +1,4 @@
-# Spell Card Generator
+# YASCG - Yet Another Spell Card Generator
 
 Offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards. Browse the
 SRD 5.2.1 spell library in multiple languages, create custom spells, assemble one

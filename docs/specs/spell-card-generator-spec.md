@@ -1,4 +1,4 @@
-# Spell Card Generator — Specification v1.0.0
+# YASCG - Yet Another Spell Card Generator — Specification v1.0.0
 
 **Status:** Implementation specification  
 **Ruleset:** Dungeons & Dragons 5.5e (2024); SRD 5.2.1 only for bundled spells  
@@ -329,47 +329,47 @@ Card backs/duplex alignment, visual themes, crop marks, and third-party import f
 
 These invariants are normative and must be covered by automated tests:
 
-| Scenario                                                                       | Required result                                                                              |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| Cancel custom deletion                                                         | Spell and active deck unchanged                                                              |
-| Delete spell with multiple active copies                                       | Spell and all active occurrences removed in one transaction; saved decks unchanged           |
-| Undo immediately after deletion                                                | Original spell and original entry IDs/positions restored; dirty state recalculated           |
-| Undo after intervening active edit or cross-tab write                          | Undo refused; newer work preserved                                                           |
-| Load saved deck while dirty                                                    | Explicit confirmation; cancel leaves persisted state unchanged                               |
-| Save As from an existing saved deck                                            | New saved ID; original snapshot unchanged; active association and baseline updated           |
-| Import a deck with same name as saved deck                                     | Active deck replaced; no saved snapshot modified; imported deck unsaved                      |
-| Repair missing spell in active deck                                            | Only active reference changed; saved snapshot unchanged                                      |
-| Re-import deleted spell with original ID/source                                | Existing missing references automatically resolve                                            |
-| Import valid `1.0.0` custom-spell payload                                      | Strictly validated; collision/remap review applied; atomic commit                            |
-| Import valid `1.0.0` deck payload                                              | Strictly validated; active deck replaced only after confirmation; order/duplicates retained |
-| Import duplicate IDs                                                           | Whole batch rejected without writes                                                          |
-| Import reserved `srd-` custom ID                                               | Unique UUID remap, old/new mapping shown; bundled SRD unchanged                              |
-| Import SRD-sourced record as custom                                            | Rejected; not relabeled as Custom                                                            |
+| Scenario                                                                       | Required result                                                                                                             |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Cancel custom deletion                                                         | Spell and active deck unchanged                                                                                             |
+| Delete spell with multiple active copies                                       | Spell and all active occurrences removed in one transaction; saved decks unchanged                                          |
+| Undo immediately after deletion                                                | Original spell and original entry IDs/positions restored; dirty state recalculated                                          |
+| Undo after intervening active edit or cross-tab write                          | Undo refused; newer work preserved                                                                                          |
+| Load saved deck while dirty                                                    | Explicit confirmation; cancel leaves persisted state unchanged                                                              |
+| Save As from an existing saved deck                                            | New saved ID; original snapshot unchanged; active association and baseline updated                                          |
+| Import a deck with same name as saved deck                                     | Active deck replaced; no saved snapshot modified; imported deck unsaved                                                     |
+| Repair missing spell in active deck                                            | Only active reference changed; saved snapshot unchanged                                                                     |
+| Re-import deleted spell with original ID/source                                | Existing missing references automatically resolve                                                                           |
+| Import valid `1.0.0` custom-spell payload                                      | Strictly validated; collision/remap review applied; atomic commit                                                           |
+| Import valid `1.0.0` deck payload                                              | Strictly validated; active deck replaced only after confirmation; order/duplicates retained                                 |
+| Import duplicate IDs                                                           | Whole batch rejected without writes                                                                                         |
+| Import reserved `srd-` custom ID                                               | Unique UUID remap, old/new mapping shown; bundled SRD unchanged                                                             |
+| Import SRD-sourced record as custom                                            | Rejected; not relabeled as Custom                                                                                           |
 | Unknown JSON version                                                           | **Unknown version — Try Import / Cancel**; opt-in extracts recognized fields only and never infers missing mandatory fields |
-| Two tabs mutate same active revision                                           | Exactly one succeeds; other receives conflict, no silent overwrite                           |
-| Two tabs overwrite same saved snapshot                                         | Exactly one succeeds; other receives conflict                                                |
-| IndexedDB quota or transaction failure                                         | No success message or partial linked operation                                               |
-| Auto-shrink on long Markdown list                                              | Valid rendered structure and visible ellipsis; full details retained                         |
-| Multi-card on long Unicode/Markdown content                                    | No dropped text, invalid markup, or split grapheme; continuation order retained              |
-| More than 100 continuation cards                                               | Visible blocking error for that entry; no silent omission                                    |
-| Unresolved entries at print                                                    | Counted and omitted only after confirmation; print disabled if none resolved                 |
-| Letter/A4 nine-card print                                                      | No clipping, unwanted scaling, or extra blank sheet at correct settings                      |
-| Offline setup incomplete                                                       | Accurate not-ready state and Retry action                                                    |
-| Add valid German source and rebuild                                            | `de` discovered and usable; English remains selectable                                       |
-| Add partial French source and rebuild                                          | `fr` discovered; untranslated canonical spell IDs remain valid deck references               |
-| Translation changes canonical `index` or duplicates an index within file       | Build fails with indexed error; no name matching                                             |
-| Translation contains unknown English ID, invalid JSON or conflicting mechanics | Build fails; no invalid/partial dataset shipped                                              |
-| Change to fully covered language                                               | Switch immediately with deck records/revisions/baseline unchanged                            |
-| Missing translations; cancel switch                                            | Exact entry/unique-spell counts; language/preference/deck unchanged                          |
-| Missing translations; confirm switch                                           | Unavailable entries remain in deck as on-screen placeholders; switching back restores text   |
-| Multiple copies of untranslated spell                                          | All occurrences preserved; entry count and distinct-ID count differ accurately               |
-| Custom spell and true broken reference in translated deck                      | Custom spell unchanged; broken reference remains repairable, not categorized as untranslated |
-| Export and reimport partially translated deck                                  | Canonical IDs and all entries preserved; no language-specific payload rewriting              |
-| Print with untranslated and broken references                                  | Separate counts, confirmation and omissions; no entry deleted                                |
-| Persisted language removed in update                                           | Visible English fallback; saved decks and active deck unchanged                              |
-| Switch languages offline after readiness                                       | No runtime network request; only manifest-listed assets selectable                           |
-| Active deck changes in another tab during switch dialog                        | Recheck latest revision and require confirmation of new state                                |
-| Long translated Markdown and Unicode on cards                                  | Safe remeasurement, truncation, continuations and print retained                             |
+| Two tabs mutate same active revision                                           | Exactly one succeeds; other receives conflict, no silent overwrite                                                          |
+| Two tabs overwrite same saved snapshot                                         | Exactly one succeeds; other receives conflict                                                                               |
+| IndexedDB quota or transaction failure                                         | No success message or partial linked operation                                                                              |
+| Auto-shrink on long Markdown list                                              | Valid rendered structure and visible ellipsis; full details retained                                                        |
+| Multi-card on long Unicode/Markdown content                                    | No dropped text, invalid markup, or split grapheme; continuation order retained                                             |
+| More than 100 continuation cards                                               | Visible blocking error for that entry; no silent omission                                                                   |
+| Unresolved entries at print                                                    | Counted and omitted only after confirmation; print disabled if none resolved                                                |
+| Letter/A4 nine-card print                                                      | No clipping, unwanted scaling, or extra blank sheet at correct settings                                                     |
+| Offline setup incomplete                                                       | Accurate not-ready state and Retry action                                                                                   |
+| Add valid German source and rebuild                                            | `de` discovered and usable; English remains selectable                                                                      |
+| Add partial French source and rebuild                                          | `fr` discovered; untranslated canonical spell IDs remain valid deck references                                              |
+| Translation changes canonical `index` or duplicates an index within file       | Build fails with indexed error; no name matching                                                                            |
+| Translation contains unknown English ID, invalid JSON or conflicting mechanics | Build fails; no invalid/partial dataset shipped                                                                             |
+| Change to fully covered language                                               | Switch immediately with deck records/revisions/baseline unchanged                                                           |
+| Missing translations; cancel switch                                            | Exact entry/unique-spell counts; language/preference/deck unchanged                                                         |
+| Missing translations; confirm switch                                           | Unavailable entries remain in deck as on-screen placeholders; switching back restores text                                  |
+| Multiple copies of untranslated spell                                          | All occurrences preserved; entry count and distinct-ID count differ accurately                                              |
+| Custom spell and true broken reference in translated deck                      | Custom spell unchanged; broken reference remains repairable, not categorized as untranslated                                |
+| Export and reimport partially translated deck                                  | Canonical IDs and all entries preserved; no language-specific payload rewriting                                             |
+| Print with untranslated and broken references                                  | Separate counts, confirmation and omissions; no entry deleted                                                               |
+| Persisted language removed in update                                           | Visible English fallback; saved decks and active deck unchanged                                                             |
+| Switch languages offline after readiness                                       | No runtime network request; only manifest-listed assets selectable                                                          |
+| Active deck changes in another tab during switch dialog                        | Recheck latest revision and require confirmation of new state                                                               |
+| Long translated Markdown and Unicode on cards                                  | Safe remeasurement, truncation, continuations and print retained                                                            |
 
 **Storage implementation note:** The `activeDeck` singleton and `savedDecks` records must use explicit Dexie keys. Start the greenfield database schema with the revision/baseline fields defined in §4 and use explicit Dexie schema versions for future evolution. Any future migration must preserve user data and fail visibly rather than partially applying. Keep the service worker cache lifecycle independent from IndexedDB schema evolution.
 

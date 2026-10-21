@@ -14,7 +14,7 @@ export function AboutDialog() {
           About
         </Button>
       </DialogTrigger>
-      <DialogContent title="About Spell Card Generator">
+      <DialogContent title="About YASCG - Yet Another Spell Card Generator">
         <div className="space-y-3">
           <p>
             An offline-first generator for Dungeons &amp; Dragons 5.5e (2024) spell cards. Bundled

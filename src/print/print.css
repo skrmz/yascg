@@ -126,7 +126,7 @@
   margin: 0;
   font-size: 7pt;
   font-style: italic;
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
   text-overflow: ellipsis;
   color: #4a4a4a;
