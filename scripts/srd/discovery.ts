@@ -1,8 +1,8 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 
-export const CANONICAL_ENGLISH_BASENAME = "5e-SRD-Spells.json";
-const TRANSLATION_PATTERN = /^5e-SRD-Spells_(.+)\.json$/;
+export const CANONICAL_ENGLISH_BASENAME = "srd-spells-2024.json";
+const TRANSLATION_PATTERN = /^srd-spells-2024_(.+)\.json$/;
 
 export interface DiscoveredLanguageFile {
   /** Canonical BCP 47 tag, e.g. "de" or "pt-BR". */
@@ -73,9 +73,9 @@ export async function discoverSrdInputs(dir: string): Promise<DiscoveredInputs> 
     if (fileName === CANONICAL_ENGLISH_BASENAME) continue;
     const match = TRANSLATION_PATTERN.exec(fileName);
     if (!match) {
-      if (fileName.startsWith("5e-SRD-Spells")) {
+      if (fileName.startsWith("srd-spells-2024")) {
         throw new DiscoveryError(
-          `Unrecognized SRD translation filename "${fileName}". Expected "5e-SRD-Spells_<LANG>.json".`,
+          `Unrecognized SRD translation filename "${fileName}". Expected "srd-spells-2024_<LANG>.json".`,
           fileName,
         );
       }

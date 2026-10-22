@@ -99,6 +99,15 @@ export function validateTranslation(
     if (spell.damageTypes !== undefined && !sameSet(spell.damageTypes, english.damageTypes ?? [])) {
       conflict(fileName, index, "damageTypes", english.damageTypes, spell.damageTypes);
     }
+    if (spell.subclasses !== undefined && !sameSet(spell.subclasses, english.subclasses ?? [])) {
+      conflict(fileName, index, "subclasses", english.subclasses, spell.subclasses);
+    }
+    if (spell.subclasses === undefined && english.subclasses !== undefined) {
+      // Subclasses are canonical mechanics. A translation that omits them would
+      // silently lose subclass availability from the localized dataset, so the
+      // English assignments are inherited into the normalized translation.
+      spell.subclasses = [...english.subclasses];
+    }
     if (spell.savingThrow !== undefined && spell.savingThrow !== english.savingThrow) {
       conflict(fileName, index, "savingThrow", english.savingThrow, spell.savingThrow);
     }

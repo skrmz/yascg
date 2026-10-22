@@ -43,10 +43,23 @@ pnpm run test:e2e
 
 Raw inputs live in `data/srd/`:
 
-- `5e-SRD-Spells.json` — canonical English input (5e-bits 2024 schema).
-- `5e-SRD-Spells_<LANG>.json` — optional translation inputs (`<LANG>` is a canonical
+- `srd-spells-2024.json` — canonical English input.
+- `srd-spells-2024_<LANG>.json` — optional translation inputs (`<LANG>` is a canonical
   BCP 47 tag, e.g. `de`, `pt-BR`). New files are discovered automatically; there is no
   language allowlist.
+
+Both use the canonical source shape: a bare JSON array of spells with a string `school`
+holding a canonical English school name, `classes` as canonical English class-name
+strings, `components` as `V`/`S`/`M` letters, `damage.damage_type` as a canonical
+lowercase slug, and an optional `subclasses` array of `"<Class>: <Subclass>"` identifiers.
+`damage.damage_at_slot_level` and `attack_type` are retained verbatim as raw-source
+metadata but are ignored by normalization. Non-dataset reference material (for example
+`srd-spells-2024_extended-props.json`) belongs in `data/reference/`, not `data/srd/`,
+because every `srd-spells-2024*` JSON file there is treated as an input.
+
+No bundled spell declares `subclasses` yet: the field exists so the later subclass phase can
+populate it without another schema change, and nothing is merged from the
+`data/reference/` file.
 
 `scripts/normalize-srd.ts` discovers inputs, normalizes them into the application
 `Spell` schema, cross-validates translations against the canonical English mechanics,
@@ -63,26 +76,52 @@ preserved; language-independent mechanics are normalized to canonical values.
 
 ### Source structure adapters
 
-- **English / shared adapter**: canonical upstream structure (`index`, `school.index`,
-  `classes[].index`, `V`/`S`/`M` components, canonical damage identifiers).
-- **German adapter**: maps `G` (Geste) to `somatic`, German class names to canonical
-  classes, and `higher_levels` to `higherLevels`.
+- **Shared adapter** (`scripts/srd/shared-translation.ts` → `scripts/srd/english.ts`) handles
+  the canonical source shape and is used for English and every translation, including `de`.
+  There are no language-specific adapters, and the former German adapter and
+  `convert:german-srd` repair script have been removed.
 - Unsupported source structures fail the build with the offending filename and index
   instead of being skipped.
 
-### Canonical English snapshot
+### Source format migration
 
-`data/srd/canonical-english.snapshot.json` pins the reviewed normalized English output.
-The first run creates it; subsequent runs fail if normalized English diverges, so
-source updates are intentional and reviewable. Translation inputs and the snapshot
-belong to the same release as the generated manifest and datasets.
+`scripts/migrate-srd-source-format.ts` is the one-time utility that converts a legacy
+5e-bits source (object `school.index`, `classes[].index`, object `damage.damage_type`,
+top-level `url`) into the canonical shape:
+
+```powershell
+pnpm exec tsx scripts/migrate-srd-source-format.ts           # dry run (default): report only
+pnpm exec tsx scripts/migrate-srd-source-format.ts --apply   # write the converted sources
+```
+
+- Options: `--input-dir <dir>` (default `data/srd`), `--files <a,b>` (default both
+  datasets), `--report <path>` (write the JSON report to a file).
+- It converts `school`, `classes[]` and `damage.damage_type` to canonical scalars, removes
+  the top-level `url`, preserves `damage.damage_at_slot_level` and `attack_type` verbatim,
+  validates any existing `subclasses` as canonical identifiers, and keeps entry/property
+  order with 2-space indentation, LF line endings and a trailing newline.
+- Before writing anything it verifies the converted sources normalize back to the committed
+  `src/data/spells.srd*.json` datasets; `--apply` stages and validates both outputs, then
+  swaps them in atomically with a backup that is restored if a later replacement fails.
+  Re-running on already-migrated files reports a no-op.
+- Legacy files reaching `normalize:srd` fail with a message pointing at this tool. The
+  utility is temporary and may be deleted once no legacy sources remain.
+
+### Drift protection
+
+`src/test/srd-dataset.test.ts` normalizes the checked-in `data/srd/` sources and asserts
+they reproduce the committed `src/data/spells.srd*.json` datasets (baseline read from the
+Git object store, so a local `pnpm run build` cannot mask a regression). Intentional source
+updates are reviewed through `git diff` on the raw source and the regenerated datasets.
 
 ### Adding a translation
 
-1. Add `data/srd/5e-SRD-Spells_<LANG>.json` in the canonical upstream shape (or add a
-   dedicated adapter under `scripts/srd/` for a genuinely different structure).
+1. Add `data/srd/srd-spells-2024_<LANG>.json` using the canonical source shape described
+   above. There is no separate adapter for `de`: localized free text is preserved while
+   school/class/damage/subclass mechanics use the canonical English identifiers.
 2. Run `pnpm run normalize:srd`. Partial coverage is valid; unknown IDs, duplicate
-   indices, malformed JSON, or conflicting canonical mechanics fail the build.
+   indices, malformed JSON, malformed subclass identifiers, or conflicting canonical
+   mechanics fail the build.
 3. Confirm the language appears in `src/data/spell-languages.json` and the UI.
 
 ## Architecture

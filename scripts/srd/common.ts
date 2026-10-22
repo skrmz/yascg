@@ -1,5 +1,6 @@
 import {
   CORE_CLASSES,
+  DAMAGE_TYPES,
   SPELL_SCHOOLS,
   spellSchema,
   type CoreClass,
@@ -22,26 +23,28 @@ export class SrdSourceError extends Error {
   }
 }
 
-export const SCHOOL_BY_INDEX = new Map<string, SpellSchool>(
+/** Canonical English school name → enum, keyed case-insensitively. */
+export const SCHOOL_BY_NAME = new Map<string, SpellSchool>(
   SPELL_SCHOOLS.map((school) => [school.toLowerCase(), school]),
 );
 
-export const CLASS_BY_INDEX = new Map<string, CoreClass>(
+/** Canonical English class name → enum, keyed case-insensitively. */
+export const CLASS_BY_NAME = new Map<string, CoreClass>(
   CORE_CLASSES.map((cls) => [cls.toLowerCase(), cls]),
 );
 
-export const CANONICAL_COMPONENT_LETTERS = new Set(["V", "S", "M"]);
+/**
+ * Legacy upstream slugs (`evocation`, `wizard`, …) are the lowercased canonical
+ * names, so the migration tool reuses the single name registry instead of keeping
+ * a duplicate map.
+ */
+export const SCHOOL_BY_INDEX = SCHOOL_BY_NAME;
+export const CLASS_BY_INDEX = CLASS_BY_NAME;
 
-export const GERMAN_CLASS_BY_NAME = new Map<string, CoreClass>([
-  ["Barde", "Bard"],
-  ["Kleriker", "Cleric"],
-  ["Druide", "Druid"],
-  ["Paladin", "Paladin"],
-  ["Waldläufer", "Ranger"],
-  ["Zauberer", "Sorcerer"],
-  ["Hexenmeister", "Warlock"],
-  ["Magier", "Wizard"],
-]);
+/** Single authoritative damage-type vocabulary (derived from the domain list). */
+export const CANONICAL_DAMAGE_TYPES = new Set<string>(DAMAGE_TYPES);
+
+export const CANONICAL_COMPONENT_LETTERS = new Set(["V", "S", "M"]);
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -120,6 +123,75 @@ export function requireRange(value: unknown, fileName: string, sourceIndex: stri
     );
   }
   return range;
+}
+
+/**
+ * Parses a single raw subclass identifier `"<ClassName>: <SubclassName>"`.
+ * Exactly one `": "` separator is allowed; both parts must be non-empty after
+ * trimming; the class must be a canonical `CORE_CLASSES` name (independently of
+ * the spell's `classes`). No fixed subclass enumeration or alias canonicalization
+ * is applied, and the canonical class capitalization is restored.
+ */
+function canonicalSubclass(raw: string, fileName: string, sourceIndex: string): string {
+  const separatorIndex = raw.indexOf(": ");
+  if (separatorIndex === -1 || raw.indexOf(": ", separatorIndex + 2) !== -1) {
+    throw new SrdSourceError(
+      `subclass "${raw}" must be formatted as "<Class>: <Subclass>" with a single ": " separator`,
+      fileName,
+      sourceIndex,
+    );
+  }
+  const className = raw.slice(0, separatorIndex).trim();
+  const subclassName = raw.slice(separatorIndex + 2).trim();
+  if (className === "" || subclassName === "") {
+    throw new SrdSourceError(
+      `subclass "${raw}" must have non-empty class and subclass names`,
+      fileName,
+      sourceIndex,
+    );
+  }
+  const canonical = CLASS_BY_NAME.get(className.toLowerCase());
+  if (!canonical) {
+    throw new SrdSourceError(
+      `unknown subclass parent class "${className}"; expected a core class`,
+      fileName,
+      sourceIndex,
+    );
+  }
+  return `${canonical}: ${subclassName}`;
+}
+
+/**
+ * Parses and validates the optional raw `subclasses` field: a non-empty array of
+ * unique `"<Class>: <Subclass>"` identifiers. Returns `undefined` when the field
+ * is absent so the normalized spell omits the property (no default).
+ */
+export function canonicalSubclasses(
+  value: unknown,
+  fileName: string,
+  sourceIndex: string,
+): string[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  const list = requireArray(value, fileName, sourceIndex, "subclasses");
+  if (list.length === 0) {
+    throw new SrdSourceError(
+      `field "subclasses" must not be empty when present`,
+      fileName,
+      sourceIndex,
+    );
+  }
+  const subclasses: string[] = [];
+  const seen = new Set<string>();
+  for (const item of list) {
+    const raw = requireString(item, fileName, sourceIndex, "subclasses[]");
+    const identifier = canonicalSubclass(raw, fileName, sourceIndex);
+    if (seen.has(identifier)) {
+      throw new SrdSourceError(`duplicate subclass "${identifier}"`, fileName, sourceIndex);
+    }
+    seen.add(identifier);
+    subclasses.push(identifier);
+  }
+  return subclasses;
 }
 
 export function normalizeDescription(value: unknown): string[] {

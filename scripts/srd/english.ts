@@ -1,9 +1,12 @@
 import { srdIdForIndex } from "../../src/domain/ids.ts";
 import type { CoreClass, Spell, SpellComponents } from "../../src/domain/spells.ts";
 import {
-  CLASS_BY_INDEX,
-  SCHOOL_BY_INDEX,
+  CANONICAL_COMPONENT_LETTERS,
+  CANONICAL_DAMAGE_TYPES,
+  CLASS_BY_NAME,
+  SCHOOL_BY_NAME,
   SrdSourceError,
+  canonicalSubclasses,
   isRecord,
   normalizeDescription,
   normalizeHigherLevels,
@@ -17,6 +20,10 @@ import {
 
 export const SOURCE_CANONICAL = "SRD-5.2.1" as const;
 export const SOURCE_LABEL = "SRD 5.2.1" as const;
+
+/** Actionable error for the pre-refactoring 5e-bits source shape. */
+export const MIGRATION_HINT =
+  'legacy 5e-bits raw source shape detected (object "school.index"); migrate the raw sources first with "pnpm exec tsx scripts/migrate-srd-source-format.ts --apply"';
 
 function componentFlags(
   letters: readonly string[],
@@ -50,17 +57,21 @@ function componentFlags(
 function canonicalClasses(rawClasses: unknown, fileName: string, index: string): CoreClass[] {
   const list = requireArray(rawClasses, fileName, index, "classes");
   const classes: CoreClass[] = [];
+  const seen = new Set<CoreClass>();
   for (const item of list) {
-    const record = requireRecord(item, fileName, index, "classes[]");
-    const classIndex = requireString(record.index, fileName, index, "classes[].index");
-    const canonical = CLASS_BY_INDEX.get(classIndex.toLowerCase());
+    const name = requireString(item, fileName, index, "classes[]");
+    const canonical = CLASS_BY_NAME.get(name.toLowerCase());
     if (!canonical) {
       throw new SrdSourceError(
-        `unknown class index "${classIndex}"; expected a core class`,
+        `unknown class "${name}"; expected a canonical core class name`,
         fileName,
         index,
       );
     }
+    if (seen.has(canonical)) {
+      throw new SrdSourceError(`duplicate class "${canonical}"`, fileName, index);
+    }
+    seen.add(canonical);
     classes.push(canonical);
   }
   return classes;
@@ -75,9 +86,16 @@ function canonicalDamageTypes(
   const damage = requireRecord(rawDamage, fileName, index, "damage");
   const damageType = damage.damage_type;
   if (damageType === undefined || damageType === null) return undefined;
-  const record = requireRecord(damageType, fileName, index, "damage.damage_type");
-  const damageIndex = requireString(record.index, fileName, index, "damage.damage_type.index");
-  return [damageIndex.toLowerCase()];
+  const rawSlug = requireString(damageType, fileName, index, "damage.damage_type");
+  const slug = rawSlug.toLowerCase();
+  if (!CANONICAL_DAMAGE_TYPES.has(slug)) {
+    throw new SrdSourceError(
+      `unknown damage type "${rawSlug}"; expected a canonical damage slug`,
+      fileName,
+      index,
+    );
+  }
+  return [slug];
 }
 
 export function normalizeEnglishEntry(raw: unknown, fileName: string): Spell {
@@ -88,11 +106,14 @@ export function normalizeEnglishEntry(raw: unknown, fileName: string): Spell {
   if (typeof level !== "number" || !Number.isInteger(level)) {
     throw new SrdSourceError(`field "level" must be an integer`, fileName, index);
   }
-  const schoolRecord = requireRecord(entry.school, fileName, index, "school");
-  const schoolIndex = requireString(schoolRecord.index, fileName, index, "school.index");
-  const school = SCHOOL_BY_INDEX.get(schoolIndex.toLowerCase());
+  const schoolName = requireString(entry.school, fileName, index, "school");
+  const school = SCHOOL_BY_NAME.get(schoolName.toLowerCase());
   if (!school) {
-    throw new SrdSourceError(`unknown school index "${schoolIndex}"`, fileName, index);
+    throw new SrdSourceError(
+      `unknown school "${schoolName}"; expected a canonical school name`,
+      fileName,
+      index,
+    );
   }
 
   const rawComponents = requireArray(entry.components, fileName, index, "components");
@@ -121,6 +142,9 @@ export function normalizeEnglishEntry(raw: unknown, fileName: string): Spell {
   const damageTypes = canonicalDamageTypes(entry.damage, fileName, index);
   if (damageTypes) spell.damageTypes = damageTypes;
 
+  const subclasses = canonicalSubclasses(entry.subclasses, fileName, index);
+  if (subclasses) spell.subclasses = subclasses;
+
   const higherLevels = normalizeHigherLevels(entry.higher_level ?? entry.higher_levels);
   if (higherLevels) spell.higherLevels = higherLevels;
 
@@ -130,6 +154,9 @@ export function normalizeEnglishEntry(raw: unknown, fileName: string): Spell {
 export function normalizeEnglish(raw: unknown, fileName: string): Spell[] {
   if (!Array.isArray(raw)) {
     throw new SrdSourceError(`top-level JSON must be an array of spells`, fileName);
+  }
+  if (isLegacySourceShape(raw)) {
+    throw new SrdSourceError(MIGRATION_HINT, fileName);
   }
   const spells = raw.map((entry) => normalizeEnglishEntry(entry, fileName));
   assertUnique(spells, fileName);
@@ -147,19 +174,34 @@ function assertUnique(spells: readonly Spell[], fileName: string): void {
   }
 }
 
+/**
+ * Detects the pre-refactoring 5e-bits shape (object `school.index`). Legacy
+ * sources are never parsed; callers fail with {@link MIGRATION_HINT}.
+ */
+export function isLegacySourceShape(raw: unknown): boolean {
+  if (!Array.isArray(raw)) return false;
+  return raw.some(
+    (entry) => isRecord(entry) && isRecord(entry.school) && typeof entry.school.index === "string",
+  );
+}
+
+/**
+ * Probes the canonical (post-refactoring) raw source shape: string `school`,
+ * `classes` as canonical name strings, and `V`/`S`/`M` component letters.
+ */
 export function isCanonicalSourceShape(raw: unknown): boolean {
   if (!Array.isArray(raw)) return false;
   for (const entry of raw) {
     if (!isRecord(entry)) return false;
     if (typeof entry.index !== "string") return false;
-    if (!isRecord(entry.school) || typeof entry.school.index !== "string") return false;
+    if (typeof entry.school !== "string") return false;
     if (!Array.isArray(entry.classes)) return false;
     for (const cls of entry.classes) {
-      if (!isRecord(cls) || typeof cls.index !== "string") return false;
+      if (typeof cls !== "string") return false;
     }
     if (!Array.isArray(entry.components)) return false;
     for (const component of entry.components) {
-      if (typeof component !== "string" || !["V", "S", "M"].includes(component)) {
+      if (typeof component !== "string" || !CANONICAL_COMPONENT_LETTERS.has(component)) {
         return false;
       }
     }

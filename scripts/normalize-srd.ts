@@ -2,14 +2,14 @@ import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Spell } from "../src/domain/spells.ts";
-import {
-  CANONICAL_ENGLISH_BASENAME,
-  discoverSrdInputs,
-  displayNameForTag,
-} from "./srd/discovery.ts";
+import { discoverSrdInputs, displayNameForTag } from "./srd/discovery.ts";
 import { SrdSourceError } from "./srd/common.ts";
-import { isCanonicalSourceShape, normalizeEnglish } from "./srd/english.ts";
-import { normalizeGerman } from "./srd/german.ts";
+import {
+  MIGRATION_HINT,
+  isCanonicalSourceShape,
+  isLegacySourceShape,
+  normalizeEnglish,
+} from "./srd/english.ts";
 import { normalizeSharedTranslation } from "./srd/shared-translation.ts";
 import { validateTranslation } from "./srd/validate.ts";
 
@@ -27,10 +27,6 @@ export interface BuildOptions {
   /** Directory holding static assets copied next to the datasets (favicon etc.). */
   staticSourceDir?: string;
   staticAssets?: readonly string[];
-  /** Overrides the snapshot path (defaults to <inputDir>/canonical-english.snapshot.json). */
-  snapshotPath?: string;
-  /** Create the snapshot instead of failing when it is absent. */
-  allowSnapshotCreation?: boolean;
   log?: (message: string) => void;
 }
 
@@ -56,38 +52,6 @@ async function readJson(filePath: string, fileName: string): Promise<unknown> {
   }
 }
 
-async function verifyOrCreateSnapshot(
-  english: readonly Spell[],
-  snapshotPath: string,
-  allowCreation: boolean,
-): Promise<void> {
-  const serialized = JSON.stringify(english, null, 2);
-  let existing: string | null = null;
-  try {
-    existing = await readFile(snapshotPath, "utf8");
-  } catch {
-    existing = null;
-  }
-  if (existing === null) {
-    if (!allowCreation) {
-      throw new SrdSourceError(
-        `missing reviewed canonical snapshot at ${snapshotPath}`,
-        CANONICAL_ENGLISH_BASENAME,
-      );
-    }
-    await mkdir(path.dirname(snapshotPath), { recursive: true });
-    await writeFile(snapshotPath, serialized, "utf8");
-    return;
-  }
-  const normalizedExisting = JSON.stringify(JSON.parse(existing) as Spell[], null, 2);
-  if (normalizedExisting !== serialized) {
-    throw new SrdSourceError(
-      `normalized English differs from the reviewed canonical snapshot; review the source update intentionally and regenerate the snapshot`,
-      CANONICAL_ENGLISH_BASENAME,
-    );
-  }
-}
-
 export async function buildSrdArtifacts(options: BuildOptions): Promise<BuildResult> {
   const log = options.log ?? (() => undefined);
   const inputs = await discoverSrdInputs(options.inputDir);
@@ -99,10 +63,6 @@ export async function buildSrdArtifacts(options: BuildOptions): Promise<BuildRes
     throw new SrdSourceError(`canonical English dataset is empty`, inputs.english.fileName);
   }
 
-  const snapshotPath =
-    options.snapshotPath ?? path.join(options.inputDir, "canonical-english.snapshot.json");
-  await verifyOrCreateSnapshot(english, snapshotPath, options.allowSnapshotCreation ?? true);
-
   const englishById = new Map(english.map((spell) => [spell.id, spell]));
   const manifest: ManifestEntry[] = [
     { code: "en", displayName: displayNameForTag("en"), dataset: "/spells.srd.json" },
@@ -110,21 +70,16 @@ export async function buildSrdArtifacts(options: BuildOptions): Promise<BuildRes
 
   for (const language of inputs.languages) {
     const raw = await readJson(language.filePath, language.fileName);
-    const sharedShape = isCanonicalSourceShape(raw);
-    let adapterName: string;
-    let translated: Spell[];
-    if (sharedShape) {
-      adapterName = "shared";
-      translated = normalizeSharedTranslation(raw, language.fileName);
-    } else if (language.tag === "de") {
-      adapterName = "german";
-      translated = normalizeGerman(raw, language.fileName);
-    } else {
+    if (isLegacySourceShape(raw)) {
+      throw new SrdSourceError(MIGRATION_HINT, language.fileName);
+    }
+    if (!isCanonicalSourceShape(raw)) {
       throw new SrdSourceError(
-        `unsupported translation source structure; a language-specific adapter is required (checked-in data must match the canonical upstream shape)`,
+        `unsupported translation source structure; checked-in data must match the canonical source shape (string "school", string[] "classes", V/S/M components)`,
         language.fileName,
       );
     }
+    const translated = normalizeSharedTranslation(raw, language.fileName);
     validateTranslation(englishById, translated, language.fileName);
 
     const datasetFile = `spells.srd.${language.tag}.json`;
@@ -134,7 +89,7 @@ export async function buildSrdArtifacts(options: BuildOptions): Promise<BuildRes
       displayName: displayNameForTag(language.tag),
       dataset: `/${datasetFile}`,
     });
-    log(`normalized ${language.fileName} (${adapterName} adapter): ${translated.length} spell(s)`);
+    log(`normalized ${language.fileName} (shared adapter): ${translated.length} spell(s)`);
   }
 
   await writeFile(path.join(options.outputDir, "spells.srd.json"), JSON.stringify(english), "utf8");

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
 import { LIMITS, spellSchema } from "@/domain/spells";
+import {
+  CUSTOM_SPELLS_TYPE,
+  EXPORT_VERSION,
+  extractRecognizedSpell,
+  spellExportPayloadSchema,
+} from "@/domain/payloads";
 import { makeSpell } from "@/test/fixtures/spells.ts";
 
 describe("spellSchema", () => {
@@ -57,5 +63,51 @@ describe("spellSchema", () => {
     if (result.success) {
       expect("sneaky" in result.data).toBe(false);
     }
+  });
+
+  it("accepts and round-trips valid subclasses", () => {
+    const result = spellSchema.safeParse(makeSpell({ subclasses: ["Cleric: War"] }));
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.subclasses).toEqual(["Cleric: War"]);
+    }
+  });
+
+  it("accepts a spell without subclasses", () => {
+    const result = spellSchema.safeParse(makeSpell());
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect("subclasses" in result.data).toBe(false);
+    }
+  });
+
+  it("rejects duplicate subclass identifiers", () => {
+    expect(
+      spellSchema.safeParse(makeSpell({ subclasses: ["Cleric: War", "Cleric: War"] })).success,
+    ).toBe(false);
+  });
+
+  it("rejects over-long subclass identifiers", () => {
+    expect(
+      spellSchema.safeParse(makeSpell({ subclasses: ["x".repeat(LIMITS.META_MAX + 1)] })).success,
+    ).toBe(false);
+  });
+
+  it("rejects blank subclass identifiers", () => {
+    expect(spellSchema.safeParse(makeSpell({ subclasses: ["   "] })).success).toBe(false);
+  });
+
+  it("round-trips subclasses through the export payload and extraction", () => {
+    const spell = makeSpell({ subclasses: ["Cleric: War"] });
+    const parsed = spellExportPayloadSchema.safeParse({
+      version: EXPORT_VERSION,
+      type: CUSTOM_SPELLS_TYPE,
+      spells: [spell],
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.spells[0].subclasses).toEqual(["Cleric: War"]);
+    }
+    expect(extractRecognizedSpell(spell)?.subclasses).toEqual(["Cleric: War"]);
   });
 });

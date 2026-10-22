@@ -22,6 +22,22 @@ export const CORE_CLASSES = [
   "Wizard",
 ] as const;
 
+export const DAMAGE_TYPES = [
+  "acid",
+  "bludgeoning",
+  "cold",
+  "fire",
+  "force",
+  "lightning",
+  "necrotic",
+  "piercing",
+  "poison",
+  "psychic",
+  "radiant",
+  "slashing",
+  "thunder",
+] as const;
+
 export const ABILITY_SCORES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
 
 export const SPELL_SOURCES = ["SRD-5.2.1", "Custom"] as const;
@@ -30,6 +46,7 @@ export const CARD_FIT_MODES = ["auto-shrink", "multi-card"] as const;
 
 export type SpellSchool = (typeof SPELL_SCHOOLS)[number];
 export type CoreClass = (typeof CORE_CLASSES)[number];
+export type DamageType = (typeof DAMAGE_TYPES)[number];
 export type CharacterClass = CoreClass | (string & {});
 export type AbilityScore = (typeof ABILITY_SCORES)[number];
 export type SpellSource = (typeof SPELL_SOURCES)[number];
@@ -59,6 +76,7 @@ export interface Spell {
   concentration: boolean;
   ritual: boolean;
   classes: CharacterClass[];
+  subclasses?: string[];
   savingThrow?: AbilityScore;
   damageTypes?: string[];
   description: string[];
@@ -128,6 +146,18 @@ export const spellSchema = z
       .refine((values) => new Set(values).size === values.length, {
         message: "class names must be unique",
       }),
+    /**
+     * Canonical `"<ClassName>: <SubclassName>"` identifiers for SRD data. The
+     * runtime schema intentionally only enforces non-empty unique strings so that
+     * custom spells and imports stay tolerant; the raw SRD adapter enforces the
+     * `"<CORE_CLASS>: <Sub>"` prefix rule.
+     */
+    subclasses: z
+      .array(trimmedNonEmpty(LIMITS.META_MAX))
+      .refine((values) => new Set(values).size === values.length, {
+        message: "subclass identifiers must be unique",
+      })
+      .optional(),
     savingThrow: abilityScoreSchema.optional(),
     damageTypes: z.array(trimmedNonEmpty(LIMITS.META_MAX)).optional(),
     description: z.array(z.string().max(LIMITS.DESCRIPTION_ITEM_MAX)).min(1),

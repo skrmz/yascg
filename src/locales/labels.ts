@@ -1,4 +1,4 @@
-import type { CharacterClass, CoreClass, SpellSchool } from "@/domain/spells";
+import type { CharacterClass, CoreClass, DamageType, SpellSchool } from "@/domain/spells";
 
 export const SCHOOL_KEYS = {
   Abjuration: "school.abjuration",
@@ -61,7 +61,7 @@ export const DAMAGE_TYPE_KEYS = {
   radiant: "damageType.radiant",
   slashing: "damageType.slashing",
   thunder: "damageType.thunder",
-} as const;
+} as const satisfies Record<DamageType, string>;
 
 export type DamageTypeTranslationKey = (typeof DAMAGE_TYPE_KEYS)[keyof typeof DAMAGE_TYPE_KEYS];
 
