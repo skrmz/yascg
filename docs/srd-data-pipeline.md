@@ -92,7 +92,7 @@ Every raw source — English and translations alike — uses the same **canonica
 - `school` is a canonical English school name validated against `SPELL_SCHOOLS` (case-insensitive lookup, canonical value emitted);
 - `classes[]` are canonical English `CORE_CLASSES` names (unknown names and duplicates fail);
 - `damage.damage_type` is a canonical lowercase slug validated against the single `DAMAGE_TYPES` vocabulary in `src/domain/spells.ts`;
-- `subclasses[]` (optional) are `"<ClassName>: <SubclassName>"` strings with exactly one `": "` separator. The parent class must be a canonical `CORE_CLASSES` name and is **independent of `classes`** (a spell may list `"Cleric: War"` without Cleric in `classes`). Values are stored as canonical identifiers with no fixed subclass enumeration and no alias canonicalization.
+- `subclasses[]` (optional) are `"<ClassName>: <SubclassName>"` strings with exactly one `": "` separator. The parent class must be a canonical `CORE_CLASSES` name and is **independent of `classes`** (a spell may list `"Cleric: War Domain"` without Cleric in `classes`). Values are stored as canonical identifiers with no fixed subclass enumeration and no alias canonicalization; the raw adapter stays tolerant of non-catalog identifiers (reference-only subclasses, custom spells, imports). The bundled assignments were produced by the subclass reconciliation tool (§2.G): catalog subclasses use the 48 canonical identifiers from `docs/subclasses.md`, reference-only subclasses are preserved verbatim, and Artificer subclasses are excluded.
 
 `isCanonicalSourceShape` probes this shape (string `index`, string `school`, string `classes[]`, `V`/`S`/`M` components). The legacy 5e-bits shape (object `school.index`, `classes[].index`, object `damage.damage_type`, top-level `url`) is detected and rejected with an actionable message pointing at `pnpm exec tsx scripts/migrate-srd-source-format.ts --apply`. Other structures fail with `unsupported translation source structure` rather than being skipped.
 
@@ -148,6 +148,21 @@ pnpm exec tsx scripts/migrate-srd-source-format.ts --apply   # write the convert
 - Self-validation: the converted sources are normalized in memory and must reproduce the committed `src/data/spells.srd*.json` datasets (translations are also cross-validated against English).
 - `--apply` stages and verifies both outputs first, then replaces them atomically with a backup that is rolled back if a later replacement fails. Re-running on already-migrated files is a no-op, and output is deterministic (2-space indentation, LF, trailing newline).
 
+#### G. Subclass reconciliation (one-time utility)
+
+`scripts/migrate-srd-subclasses.ts` populates the optional raw `subclasses` field from `data/reference/srd-spells-2024_extended-props.json` (reference material, never an input dataset). It is a one-time utility.
+
+```powershell
+pnpm exec tsx scripts/migrate-srd-subclasses.ts                                   # dry run (default): report only
+pnpm exec tsx scripts/migrate-srd-subclasses.ts --apply --report data/reference/subclass-reconciliation.json
+```
+
+- Options: `--input-dir <dir>` (default `data/srd`), `--reference <path>`, `--files <a,b>` (default both datasets), `--report <path>`, `--apply`.
+- Reconciliation is explicit and deterministic: reference identifiers are mapped through an alias table to the 48 canonical catalog identifiers (`src/domain/subclasses.ts`, `docs/subclasses.md`), reference-only subclasses (parent class among the 12 `CORE_CLASSES`) are preserved verbatim, and subclasses whose parent class is not a core class (Artificer) are excluded and reported as `unsupported-parent-class`. There is no fuzzy matching; every unmatched spell name is reported.
+- Spell matching is by trimmed name for English (the reference typo `Arance Hand` is aliased to `Arcane Hand`) and by canonical `index` for translations, whose names are localized. This keeps EN/DE subclass assignments identical.
+- The tool inserts `subclasses` immediately after `classes`, sorts identifiers, omits empty lists, and preserves every other field and its order. Before writing it normalizes both sources in memory, validates the translation against English, and asserts that every field **except** `subclasses` still reproduces the committed `src/data/spells.srd*.json` datasets, that EN/DE assignments match, and that every identifier's parent class is canonical. `--apply` writes atomically with backup/rollback (`.migrate-tmp` / `.migrate-bak`); re-running is a no-op.
+- The committed report `data/reference/subclass-reconciliation.json` records catalog coverage, the alias map, reference-only and excluded identifiers, unmatched names, dedup collisions (e.g. the 12 `Druid: Land (…)` variants collapsing onto `Druid: Circle of the Land`), and per-file population counts.
+
 ---
 
 ### 3. The Role of "Canonical"
@@ -156,7 +171,7 @@ The term **canonical** operates across multiple layers as the bedrock for data i
 
 #### A. Drift Protection (Regression Test, No Snapshot File)
 - **Committed Golden Datasets:** The normalized English and German datasets in `src/data/` are committed and reviewed artifacts. The former `canonical-english.snapshot.json` was removed because it duplicated `src/data/spells.srd.json`.
-- **Automatic Drift Gate:** `src/test/srd-dataset.test.ts` normalizes the checked-in `data/srd/` sources and asserts they reproduce the committed datasets exactly, including the 339-spell count, unique IDs, and the sorted ID set. It reads the baseline from the Git object store (`git show HEAD:src/data/...`) with a working-tree fallback, so a local `pnpm run build` cannot overwrite the expectation and hide a regression.
+- **Automatic Drift Gate:** `src/test/srd-dataset.test.ts` normalizes the checked-in `data/srd/` sources and asserts they reproduce the committed datasets exactly, including the 339-spell count, unique IDs, the sorted ID set, the populated subclass counts, and that every subclass parent is a core class. It reads the baseline from the Git object store (`git show HEAD:src/data/...`) and fails loudly if that baseline is unavailable — there is deliberately no working-tree fallback, which could otherwise compare generated output against itself. It also asserts that stripping `subclasses` from both sides leaves every other field identical (mechanics unchanged) and that EN/DE assignments match.
 - **Intentional Updates:** Changing the SRD sources changes the raw file and the regenerated `src/data/spells.srd*.json` in the same review, and `git diff` plus the drift test keep the change explicit.
 
 #### B. Canonical Source of Truth for Mechanics

@@ -7,6 +7,9 @@
     "classes": [
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "90 feet",
@@ -37,6 +40,9 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -66,6 +72,15 @@
       "Paladin",
       "Ranger"
     ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Cleric: Peace",
+      "Cleric: Solidarity (PSA)",
+      "Paladin: Oath of Devotion",
+      "Sorcerer: Clockwork Sorcery",
+      "Warlock: Celestial Patron",
+      "Warlock: Vestige (Life Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -89,6 +104,10 @@
       "Ranger",
       "Wizard"
     ],
+    "subclasses": [
+      "Paladin: Watchers",
+      "Sorcerer: Clockwork Sorcery"
+    ],
     "casting_time": "1 minute",
     "ritual": true,
     "range": "30 feet",
@@ -111,6 +130,13 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Moon",
+      "Ranger: Hollow Warden",
+      "Sorcerer: Draconic Sorcery",
+      "Sorcerer: Lunar (Full Moon)",
+      "Wizard: Transmuter"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -131,6 +157,9 @@
       "Bard",
       "Druid",
       "Ranger"
+    ],
+    "subclasses": [
+      "Cleric: Nature"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -198,6 +227,12 @@
       "Cleric",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Death",
+      "Druid: Spores",
+      "Paladin: Oathbreaker",
+      "Wizard: Necromancer"
+    ],
     "casting_time": "1 minute",
     "ritual": false,
     "range": "10 feet",
@@ -222,6 +257,9 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Forge"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -241,6 +279,11 @@
     "school": "Abjuration",
     "classes": [
       "Druid"
+    ],
+    "subclasses": [
+      "Cleric: Death",
+      "Cleric: Grave",
+      "Warlock: Undead"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -306,6 +349,15 @@
     "classes": [
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Arcana",
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)",
+      "Cleric: Light Domain",
+      "Ranger: Swarmkeeper",
+      "Sorcerer: Draconic Sorcery",
+      "Warlock: Vestige (Light Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -327,6 +379,10 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Arcana",
+      "Warlock: Fathomless"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -401,6 +457,9 @@
     "classes": [
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Arcana"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -447,6 +506,11 @@
       "Druid",
       "Wizard"
     ],
+    "subclasses": [
+      "Barbarian: Ancestral Guardian",
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)"
+    ],
     "casting_time": "1 minute",
     "ritual": true,
     "range": "Self",
@@ -468,6 +532,14 @@
     "classes": [
       "Cleric",
       "Paladin"
+    ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Cleric: Solidarity (PSA)",
+      "Cleric: Twilight",
+      "Druid: Wildfire",
+      "Warlock: Undying",
+      "Warlock: Vestige (Life Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -511,6 +583,14 @@
       "Cleric",
       "Warlock"
     ],
+    "subclasses": [
+      "Cleric: Ambition (PSA)",
+      "Cleric: Grave",
+      "Paladin: Oath of Vengeance",
+      "Sorcerer: Divine Soul (Chaos)",
+      "Sorcerer: Shadow",
+      "Warlock: Undead"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -537,6 +617,14 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Knowledge",
+      "Paladin: Crown",
+      "Paladin: Oath of Vengeance",
+      "Paladin: Watchers",
+      "Ranger: Horizon Walker",
+      "Ranger: Monster Slayer"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -560,6 +648,10 @@
       "Druid",
       "Ranger"
     ],
+    "subclasses": [
+      "Cleric: Nature",
+      "Druid: Circle of the Land"
+    ],
     "casting_time": "Bonus Action",
     "ritual": false,
     "range": "Touch",
@@ -580,6 +672,12 @@
     "school": "Abjuration",
     "classes": [
       "Cleric"
+    ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Cleric: Peace",
+      "Cleric: Solidarity (PSA)",
+      "Paladin: Oath of Devotion"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -632,6 +730,11 @@
       "Cleric",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Ambition (PSA)",
+      "Paladin: Conquest",
+      "Paladin: Oathbreaker"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -657,6 +760,11 @@
     "school": "Conjuration",
     "classes": [
       "Wizard"
+    ],
+    "subclasses": [
+      "Sorcerer: Aberrant Sorcery",
+      "Warlock: Fathomless",
+      "Warlock: Great Old One Patron"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -711,6 +819,12 @@
       "Cleric",
       "Paladin"
     ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Cleric: Solidarity (PSA)",
+      "Sorcerer: Divine Soul (Law)",
+      "Warlock: Vestige (Life Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -735,6 +849,13 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Death",
+      "Cleric: Grave",
+      "Druid: Circle of the Land",
+      "Druid: Spores",
+      "Paladin: Oathbreaker"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -765,6 +886,14 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Death",
+      "Druid: Spores",
+      "Sorcerer: Lunar (Full Moon)",
+      "Warlock: Fiend Patron",
+      "Warlock: Undead",
+      "Warlock: Undying"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -784,6 +913,11 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Trickery Domain",
+      "Warlock: Archfey Patron",
+      "Warlock: Hexblade"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -805,6 +939,11 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Warlock: Genie (Marid)",
+      "Warlock: Hexblade"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -823,6 +962,15 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Light Domain",
+      "Druid: Circle of the Land",
+      "Druid: Wildfire",
+      "Monk: Sun Soul",
+      "Warlock: Fiend Patron",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Vestige (Light Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -850,6 +998,10 @@
     "classes": [
       "Druid"
     ],
+    "subclasses": [
+      "Cleric: Tempest",
+      "Druid: Circle of the Land"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -876,6 +1028,11 @@
     "classes": [
       "Bard",
       "Cleric"
+    ],
+    "subclasses": [
+      "Paladin: Redemption",
+      "Sorcerer: Aberrant Sorcery",
+      "Warlock: Archfey Patron"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -929,6 +1086,9 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Sorcerer: Draconic Sorcery"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -953,6 +1113,12 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Bard: College of Glamour",
+      "Cleric: Trickery Domain",
+      "Ranger: Fey Wanderer",
+      "Warlock: Vestige (Trickery Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -974,6 +1140,9 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Spores"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1001,6 +1170,10 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Paladin: Noble Genies",
+      "Sorcerer: Draconic Sorcery"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1058,6 +1231,10 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Barbarian: Ancestral Guardian",
+      "Warlock: Great Old One Patron"
+    ],
     "casting_time": "10 minutes",
     "ritual": false,
     "range": "1 mile",
@@ -1101,6 +1278,13 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Death",
+      "Druid: Circle of the Land",
+      "Druid: Spores",
+      "Paladin: Conquest",
+      "Warlock: Undead"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -1129,6 +1313,9 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Sorcerer: Lunar (Full Moon)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -1152,6 +1339,16 @@
       "Cleric",
       "Paladin"
     ],
+    "subclasses": [
+      "Bard: College of Glamour",
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)",
+      "Cleric: Order",
+      "Paladin: Conquest",
+      "Paladin: Crown",
+      "Sorcerer: Draconic Sorcery",
+      "Warlock: Fiend Patron"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -1170,6 +1367,11 @@
     "school": "Divination",
     "classes": [
       "Cleric"
+    ],
+    "subclasses": [
+      "Cleric: Order",
+      "Paladin: Oath of Devotion",
+      "Paladin: Oath of Glory"
     ],
     "casting_time": "1 minute",
     "ritual": true,
@@ -1193,6 +1395,12 @@
       "Druid",
       "Ranger"
     ],
+    "subclasses": [
+      "Barbarian: Path of the Wild Heart",
+      "Barbarian: Totem Warrior",
+      "Druid: Circle of the Land",
+      "Paladin: Oath of the Ancients"
+    ],
     "casting_time": "1 minute",
     "ritual": true,
     "range": "Self",
@@ -1215,6 +1423,10 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Knowledge",
+      "Fighter: Banneret"
+    ],
     "casting_time": "Action",
     "ritual": true,
     "range": "Self",
@@ -1236,6 +1448,10 @@
     "classes": [
       "Bard"
     ],
+    "subclasses": [
+      "Cleric: Order",
+      "Paladin: Oath of Glory"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -1256,6 +1472,13 @@
       "Druid",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Ranger: Winter Walker",
+      "Warlock: Fathomless",
+      "Warlock: Genie (Marid)",
+      "Warlock: Hexblade"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1288,6 +1511,16 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)",
+      "Cleric: Trickery Domain",
+      "Druid: Spores",
+      "Paladin: Oathbreaker",
+      "Sorcerer: Lunar (Full Moon)",
+      "Warlock: Great Old One Patron",
+      "Warlock: Vestige (Trickery Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "90 feet",
@@ -1310,6 +1543,9 @@
     "classes": [
       "Druid",
       "Ranger"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Moon"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1364,6 +1600,10 @@
       "Druid",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Druid: Circle of the Sea"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -1405,6 +1645,9 @@
     "classes": [
       "Druid",
       "Wizard"
+    ],
+    "subclasses": [
+      "Paladin: Noble Genies"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1454,6 +1697,9 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Paladin: Noble Genies"
+    ],
     "casting_time": "1 minute",
     "ritual": true,
     "range": "Self",
@@ -1478,6 +1724,12 @@
     "classes": [
       "Cleric",
       "Druid"
+    ],
+    "subclasses": [
+      "Druid: Spores",
+      "Paladin: Oathbreaker",
+      "Sorcerer: Shadow",
+      "Warlock: Undying"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1550,6 +1802,13 @@
       "Druid",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Tempest",
+      "Druid: Circle of the Land",
+      "Druid: Circle of the Sea",
+      "Warlock: Fathomless",
+      "Warlock: Genie (Marid)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "300 feet",
@@ -1602,6 +1861,13 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Arcana",
+      "Paladin: Redemption",
+      "Paladin: Watchers",
+      "Sorcerer: Spellfire",
+      "Wizard: Abjurer"
+    ],
     "casting_time": "Reaction, which you take when you see a creature within 60 feet of yourself casting a spell with Verbal, Somatic, or Material components",
     "ritual": false,
     "range": "60 feet",
@@ -1620,6 +1886,13 @@
     "classes": [
       "Cleric",
       "Paladin"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Warlock: Genie (Dao)",
+      "Warlock: Genie (Djinni)",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Genie (Marid)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1640,6 +1913,9 @@
     "classes": [
       "Cleric",
       "Druid"
+    ],
+    "subclasses": [
+      "Warlock: Fathomless"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1688,6 +1964,14 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Forge",
+      "Sorcerer: Shadow",
+      "Warlock: Genie (Dao)",
+      "Warlock: Genie (Djinni)",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Genie (Marid)"
+    ],
     "casting_time": "1 minute",
     "ritual": false,
     "range": "30 feet",
@@ -1713,6 +1997,15 @@
       "Druid",
       "Paladin",
       "Ranger"
+    ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Druid: Circle of the Moon",
+      "Druid: Wildfire",
+      "Sorcerer: Divine Soul (Good)",
+      "Sorcerer: Spellfire",
+      "Warlock: Celestial Patron",
+      "Warlock: Vestige (Life Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1758,6 +2051,12 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Monk: Warrior of Shadow",
+      "Paladin: Oathbreaker",
+      "Sorcerer: Shadow"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -1780,6 +2079,9 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Monk: Warrior of Shadow"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1806,6 +2108,12 @@
       "Ranger",
       "Sorcerer"
     ],
+    "subclasses": [
+      "Cleric: Light Domain",
+      "Druid: Circle of the Land",
+      "Warlock: Celestial Patron",
+      "Warlock: Vestige (Light Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -1825,6 +2133,16 @@
     "classes": [
       "Cleric",
       "Paladin"
+    ],
+    "subclasses": [
+      "Cleric: Ambition (PSA)",
+      "Cleric: Death",
+      "Cleric: Grave",
+      "Cleric: Life Domain",
+      "Sorcerer: Lunar (Full Moon)",
+      "Warlock: Undead",
+      "Warlock: Undying",
+      "Warlock: Vestige (Life Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -1889,6 +2207,13 @@
       "Cleric",
       "Paladin"
     ],
+    "subclasses": [
+      "Cleric: Grave",
+      "Warlock: Genie (Dao)",
+      "Warlock: Genie (Djinni)",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Genie (Marid)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -1914,6 +2239,11 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Arcana",
+      "Cleric: Knowledge",
+      "Paladin: Watchers"
     ],
     "casting_time": "Action",
     "ritual": true,
@@ -1960,6 +2290,11 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Knowledge",
+      "Sorcerer: Aberrant Sorcery",
+      "Warlock: Great Old One Patron"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -1983,6 +2318,13 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Ambition (PSA)",
+      "Cleric: Trickery Domain",
+      "Paladin: Oath of Vengeance",
+      "Ranger: Fey Wanderer",
+      "Warlock: Vestige (Trickery Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -2009,6 +2351,12 @@
       "Bard",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Ambition (PSA)",
+      "Cleric: Trickery Domain",
+      "Ranger: Gloom Stalker",
+      "Warlock: Vestige (Trickery Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -2053,6 +2401,9 @@
       "Cleric",
       "Paladin"
     ],
+    "subclasses": [
+      "Cleric: Grave"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -2081,6 +2432,17 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Arcana",
+      "Cleric: Knowledge",
+      "Cleric: Trickery Domain",
+      "Paladin: Oath of Devotion",
+      "Ranger: Fey Wanderer",
+      "Sorcerer: Clockwork Sorcery",
+      "Sorcerer: Lunar (Full Moon)",
+      "Sorcerer: Spellfire",
+      "Wizard: Abjurer"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -2100,6 +2462,10 @@
     "school": "Enchantment",
     "classes": [
       "Bard"
+    ],
+    "subclasses": [
+      "Sorcerer: Aberrant Sorcery",
+      "Warlock: Great Old One Patron"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -2128,6 +2494,9 @@
       "Druid",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land"
+    ],
     "casting_time": "Action",
     "ritual": true,
     "range": "Self",
@@ -2148,6 +2517,10 @@
     "school": "Transmutation",
     "classes": [
       "Paladin"
+    ],
+    "subclasses": [
+      "Cleric: Strength (PSA)",
+      "Cleric: War Domain"
     ],
     "casting_time": "Bonus Action",
     "ritual": false,
@@ -2219,6 +2592,14 @@
       "Ranger",
       "Sorcerer"
     ],
+    "subclasses": [
+      "Cleric: Nature",
+      "Cleric: Strength (PSA)",
+      "Paladin: Conquest",
+      "Ranger: Hollow Warden",
+      "Warlock: Archfey Patron",
+      "Warlock: Great Old One Patron"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -2264,6 +2645,16 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Ambition (PSA)",
+      "Cleric: Order",
+      "Cleric: Trickery Domain",
+      "Paladin: Conquest",
+      "Paladin: Oathbreaker",
+      "Warlock: Archfey Patron",
+      "Warlock: Great Old One Patron",
+      "Warlock: Vestige (Trickery Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -2284,6 +2675,9 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Sorcerer: Draconic Sorcery"
     ],
     "casting_time": "Bonus Action",
     "ritual": false,
@@ -2307,6 +2701,9 @@
       "Bard",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land"
     ],
     "casting_time": "1 minute",
     "ritual": false,
@@ -2334,6 +2731,10 @@
     "school": "Transmutation",
     "classes": [
       "Druid"
+    ],
+    "subclasses": [
+      "Barbarian: Giant",
+      "Fighter: Arcane Archer"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -2411,6 +2812,10 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Monk: Warrior of the Elements",
+      "Paladin: Noble Genies"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -2434,6 +2839,10 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Strength (PSA)",
+      "Paladin: Oath of Glory"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -2480,6 +2889,9 @@
     "school": "Conjuration",
     "classes": [
       "Ranger"
+    ],
+    "subclasses": [
+      "Paladin: Oath of the Ancients"
     ],
     "casting_time": "Bonus Action, which you take immediately after hitting a creature with a weapon",
     "ritual": false,
@@ -2613,6 +3025,9 @@
     "classes": [
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Forge"
+    ],
     "casting_time": "10 minutes",
     "ritual": false,
     "range": "120 feet",
@@ -2632,6 +3047,13 @@
     "classes": [
       "Bard",
       "Druid"
+    ],
+    "subclasses": [
+      "Cleric: Light Domain",
+      "Cleric: Twilight",
+      "Ranger: Swarmkeeper",
+      "Warlock: Archfey Patron",
+      "Warlock: Vestige (Light Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -2679,6 +3101,12 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Death",
+      "Cleric: Grave",
+      "Warlock: Undead",
+      "Warlock: Undying"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -2703,6 +3131,11 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Paladin: Conquest",
+      "Ranger: Gloom Stalker",
+      "Sorcerer: Draconic Sorcery"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -2746,6 +3179,9 @@
     "school": "Conjuration",
     "classes": [
       "Wizard"
+    ],
+    "subclasses": [
+      "Wizard: Necromancer"
     ],
     "casting_time": "1 hour",
     "ritual": true,
@@ -2854,6 +3290,14 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Light Domain",
+      "Cleric: Zeal (PSA)",
+      "Druid: Circle of the Land",
+      "Warlock: Fiend Patron",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Vestige (Light Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "150 feet",
@@ -2883,6 +3327,9 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -2910,6 +3357,15 @@
       "Druid",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: War Domain",
+      "Cleric: Zeal (PSA)",
+      "Druid: Wildfire",
+      "Sorcerer: Spellfire",
+      "Warlock: Fiend Patron",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Vestige (War Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -2989,6 +3445,19 @@
     "classes": [
       "Cleric"
     ],
+    "subclasses": [
+      "Cleric: Light Domain",
+      "Cleric: War Domain",
+      "Cleric: Zeal (PSA)",
+      "Druid: Wildfire",
+      "Paladin: Oath of Devotion",
+      "Paladin: Oath of Glory",
+      "Sorcerer: Spellfire",
+      "Warlock: Celestial Patron",
+      "Warlock: Fiend Patron",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Vestige (Light Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -3018,6 +3487,11 @@
       "Druid",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Light Domain",
+      "Druid: Wildfire",
+      "Warlock: Celestial Patron"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -3093,6 +3567,10 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Paladin: Noble Genies",
+      "Sorcerer: Draconic Sorcery"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -3117,6 +3595,12 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Tempest",
+      "Druid: Circle of the Land",
+      "Druid: Circle of the Sea",
+      "Warlock: Genie (Marid)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -3209,6 +3693,15 @@
       "Druid",
       "Ranger"
     ],
+    "subclasses": [
+      "Cleric: War Domain",
+      "Cleric: Zeal (PSA)",
+      "Druid: Circle of the Land",
+      "Paladin: Oath of Devotion",
+      "Paladin: Oath of Glory",
+      "Sorcerer: Clockwork Sorcery",
+      "Warlock: Vestige (War Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -3262,6 +3755,12 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Druid: Spores",
+      "Paladin: Noble Genies",
+      "Ranger: Swarmkeeper"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -3312,6 +3811,10 @@
       "Paladin",
       "Wizard"
     ],
+    "subclasses": [
+      "Paladin: Crown",
+      "Warlock: Fiend Patron"
+    ],
     "casting_time": "1 minute",
     "ritual": false,
     "range": "60 feet",
@@ -3338,6 +3841,10 @@
       "Cleric",
       "Paladin",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Grave",
+      "Druid: Spores"
     ],
     "casting_time": "Action",
     "ritual": true,
@@ -3492,6 +3999,15 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Twilight",
+      "Druid: Circle of the Land",
+      "Ranger: Gloom Stalker",
+      "Sorcerer: Shadow",
+      "Warlock: Archfey Patron",
+      "Warlock: Genie (Djinni)",
+      "Warlock: Undead"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -3515,6 +4031,14 @@
       "Paladin",
       "Ranger"
     ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Cleric: Peace",
+      "Sorcerer: Clockwork Sorcery",
+      "Sorcerer: Spellfire",
+      "Warlock: Celestial Patron",
+      "Warlock: Vestige (Life Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -3535,6 +4059,14 @@
     "school": "Conjuration",
     "classes": [
       "Cleric"
+    ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Cleric: Light Domain",
+      "Cleric: Solidarity (PSA)",
+      "Paladin: Crown",
+      "Paladin: Oath of Devotion",
+      "Warlock: Celestial Patron"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -3577,6 +4109,10 @@
       "Cleric",
       "Druid"
     ],
+    "subclasses": [
+      "Bard: Spirits",
+      "Druid: Circle of the Stars"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -3595,6 +4131,15 @@
     "school": "Evocation",
     "classes": [
       "Cleric"
+    ],
+    "subclasses": [
+      "Cleric: Solidarity (PSA)",
+      "Cleric: War Domain",
+      "Druid: Circle of the Stars",
+      "Paladin: Oath of Glory",
+      "Sorcerer: Spellfire",
+      "Warlock: Celestial Patron",
+      "Warlock: Vestige (War Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -3626,6 +4171,12 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Tempest",
+      "Druid: Circle of the Sea",
+      "Warlock: Fathomless",
+      "Warlock: Genie (Djinni)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -3646,6 +4197,9 @@
     "school": "Abjuration",
     "classes": [
       "Cleric"
+    ],
+    "subclasses": [
+      "Warlock: Fiend Patron"
     ],
     "casting_time": "24 hours",
     "ritual": false,
@@ -3670,6 +4224,10 @@
       "Druid",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Sorcerer: Lunar (Full Moon)"
     ],
     "casting_time": "10 minutes",
     "ritual": false,
@@ -3717,6 +4275,14 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Strength (PSA)",
+      "Cleric: Zeal (PSA)",
+      "Druid: Circle of the Land",
+      "Paladin: Oath of Glory",
+      "Paladin: Oath of Vengeance",
+      "Ranger: Horizon Walker"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -3782,6 +4348,9 @@
       "Bard",
       "Druid"
     ],
+    "subclasses": [
+      "Cleric: Forge"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -3809,6 +4378,9 @@
     "school": "Evocation",
     "classes": [
       "Warlock"
+    ],
+    "subclasses": [
+      "Paladin: Oathbreaker"
     ],
     "casting_time": "Reaction, which you take in response to taking damage from a creature that you can see within 60 feet of yourself",
     "ritual": false,
@@ -3860,6 +4432,11 @@
       "Bard",
       "Paladin"
     ],
+    "subclasses": [
+      "Cleric: Order",
+      "Cleric: Peace",
+      "Paladin: Oath of Glory"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -3879,6 +4456,9 @@
     "school": "Enchantment",
     "classes": [
       "Warlock"
+    ],
+    "subclasses": [
+      "Warlock: Great Old One Patron"
     ],
     "casting_time": "Bonus Action",
     "ritual": false,
@@ -3910,6 +4490,9 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Warlock: Great Old One Patron"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -3934,6 +4517,16 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: War Domain",
+      "Druid: Circle of the Sea",
+      "Paladin: Oath of Vengeance",
+      "Paladin: Redemption",
+      "Paladin: Watchers",
+      "Ranger: Monster Slayer",
+      "Sorcerer: Lunar (Full Moon)",
+      "Warlock: Vestige (War Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -3961,6 +4554,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Order",
+      "Druid: Circle of the Land",
+      "Paladin: Conquest",
+      "Paladin: Oath of Vengeance",
+      "Paladin: Redemption",
+      "Ranger: Winter Walker"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -4005,6 +4606,9 @@
     "classes": [
       "Ranger"
     ],
+    "subclasses": [
+      "Paladin: Oath of Vengeance"
+    ],
     "casting_time": "Bonus Action",
     "ritual": false,
     "range": "90 feet",
@@ -4033,6 +4637,11 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Trickery Domain",
+      "Paladin: Redemption",
+      "Warlock: Vestige (Trickery Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -4054,6 +4663,9 @@
       "Druid",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Ranger: Winter Walker"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -4085,6 +4697,13 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Tempest",
+      "Druid: Circle of the Land",
+      "Druid: Circle of the Sea",
+      "Paladin: Oath of the Ancients",
+      "Ranger: Winter Walker"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "300 feet",
@@ -4113,6 +4732,11 @@
     "classes": [
       "Bard",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Forge",
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)"
     ],
     "casting_time": "1 minute",
     "ritual": true,
@@ -4206,6 +4830,11 @@
     "classes": [
       "Cleric"
     ],
+    "subclasses": [
+      "Paladin: Oathbreaker",
+      "Sorcerer: Divine Soul (Evil)",
+      "Sorcerer: Shadow"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -4233,6 +4862,14 @@
       "Cleric",
       "Druid",
       "Sorcerer"
+    ],
+    "subclasses": [
+      "Cleric: Nature",
+      "Cleric: Strength (PSA)",
+      "Cleric: Tempest",
+      "Druid: Circle of the Land",
+      "Ranger: Swarmkeeper",
+      "Warlock: Fiend Patron"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -4305,6 +4942,11 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Trickery Domain",
+      "Druid: Circle of the Land",
+      "Warlock: Vestige (Trickery Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -4374,6 +5016,13 @@
       "Cleric",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)",
+      "Paladin: Oath of Glory",
+      "Sorcerer: Draconic Sorcery",
+      "Warlock: Undying"
+    ],
     "casting_time": "10 minutes",
     "ritual": false,
     "range": "Self",
@@ -4398,6 +5047,15 @@
       "Druid",
       "Paladin",
       "Ranger"
+    ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Paladin: Oath of Devotion",
+      "Sorcerer: Clockwork Sorcery",
+      "Sorcerer: Lunar (Full Moon)",
+      "Sorcerer: Spellfire",
+      "Warlock: Celestial Patron",
+      "Warlock: Vestige (Life Domain)"
     ],
     "casting_time": "Bonus Action",
     "ritual": false,
@@ -4443,6 +5101,10 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Light Domain",
+      "Warlock: Celestial Patron"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -4463,6 +5125,11 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Druid: Circle of the Sea",
+      "Warlock: Fathomless"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -4519,6 +5186,10 @@
       "Paladin",
       "Ranger",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Order",
+      "Druid: Circle of the Land"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -4617,6 +5288,10 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Ranger: Swarmkeeper",
+      "Rogue: Arcane Trickster"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -4638,6 +5313,10 @@
       "Paladin",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Arcana",
+      "Ranger: Monster Slayer"
     ],
     "casting_time": "1 minute",
     "ritual": false,
@@ -4683,6 +5362,9 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Arcana"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -4727,6 +5409,14 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Arcana",
+      "Cleric: Forge",
+      "Cleric: War Domain",
+      "Cleric: Zeal (PSA)",
+      "Paladin: Oath of Glory",
+      "Warlock: Vestige (War Domain)"
     ],
     "casting_time": "Bonus Action",
     "ritual": false,
@@ -4797,6 +5487,13 @@
       "Cleric",
       "Druid"
     ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Cleric: Solidarity (PSA)",
+      "Druid: Circle of the Moon",
+      "Druid: Wildfire",
+      "Warlock: Vestige (Life Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -4836,6 +5533,11 @@
     "classes": [
       "Bard",
       "Cleric"
+    ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Cleric: Order",
+      "Warlock: Vestige (Life Domain)"
     ],
     "casting_time": "Bonus Action",
     "ritual": false,
@@ -4899,6 +5601,10 @@
       "Cleric",
       "Druid",
       "Ranger"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Warlock: Genie (Dao)"
     ],
     "casting_time": "Action",
     "ritual": true,
@@ -5021,6 +5727,9 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Knowledge"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -5048,6 +5757,10 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Monk: Warrior of Shadow",
+      "Wizard: Illusionist"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5093,6 +5806,13 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Bard: College of Glamour",
+      "Cleric: Ambition (PSA)",
+      "Cleric: Trickery Domain",
+      "Druid: Circle of the Land",
+      "Paladin: Noble Genies"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -5114,6 +5834,11 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Twilight",
+      "Ranger: Fey Wanderer",
+      "Sorcerer: Lunar (Full Moon)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -5134,6 +5859,14 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Paladin: Oath of Vengeance",
+      "Paladin: Oath of the Ancients",
+      "Ranger: Fey Wanderer",
+      "Ranger: Horizon Walker",
+      "Warlock: Archfey Patron"
+    ],
     "casting_time": "Bonus Action",
     "ritual": false,
     "range": "Self",
@@ -5152,6 +5885,12 @@
     "classes": [
       "Bard",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Ambition (PSA)",
+      "Cleric: Trickery Domain",
+      "Warlock: Great Old One Patron",
+      "Warlock: Vestige (Trickery Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5172,6 +5911,13 @@
     "school": "Evocation",
     "classes": [
       "Druid"
+    ],
+    "subclasses": [
+      "Bard: Moon",
+      "Cleric: Twilight",
+      "Druid: Circle of the Moon",
+      "Paladin: Oath of the Ancients",
+      "Paladin: Watchers"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5226,6 +5972,14 @@
       "Ranger",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)",
+      "Cleric: Trickery Domain",
+      "Paladin: Watchers",
+      "Sorcerer: Shadow",
+      "Warlock: Vestige (Trickery Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -5246,6 +6000,9 @@
     "school": "Transmutation",
     "classes": [
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5269,6 +6026,13 @@
       "Druid",
       "Ranger"
     ],
+    "subclasses": [
+      "Cleric: Trickery Domain",
+      "Druid: Circle of the Land",
+      "Monk: Warrior of Shadow",
+      "Sorcerer: Shadow",
+      "Warlock: Vestige (Trickery Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -5291,6 +6055,16 @@
       "Bard",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Paladin: Noble Genies",
+      "Warlock: Archfey Patron",
+      "Warlock: Genie (Dao)",
+      "Warlock: Genie (Djinni)",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Genie (Marid)",
+      "Warlock: Great Old One Patron",
+      "Warlock: Undead"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5320,6 +6094,15 @@
       "Bard",
       "Wizard"
     ],
+    "subclasses": [
+      "Sorcerer: Shadow",
+      "Warlock: Genie (Dao)",
+      "Warlock: Genie (Djinni)",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Genie (Marid)",
+      "Warlock: Hexblade",
+      "Warlock: Undead"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -5345,6 +6128,11 @@
     "school": "Illusion",
     "classes": [
       "Wizard"
+    ],
+    "subclasses": [
+      "Ranger: Hollow Warden",
+      "Sorcerer: Lunar (Full Moon)",
+      "Warlock: Undead"
     ],
     "casting_time": "1 minute",
     "ritual": true,
@@ -5387,6 +6175,9 @@
       "Druid",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Arcana"
     ],
     "casting_time": "1 hour",
     "ritual": false,
@@ -5436,6 +6227,13 @@
       "Bard",
       "Druid",
       "Ranger"
+    ],
+    "subclasses": [
+      "Cleric: Nature",
+      "Druid: Circle of the Land",
+      "Druid: Wildfire",
+      "Paladin: Oath of the Ancients",
+      "Warlock: Archfey Patron"
     ],
     "casting_time": "Action (Overgrowth) or 8 hours (Enrichment)",
     "ritual": false,
@@ -5487,6 +6285,11 @@
       "Druid",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Trickery Domain",
+      "Druid: Circle of the Land",
+      "Wizard: Transmuter"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5597,6 +6400,9 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Fighter: Arcane Archer"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5766,6 +6572,15 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Forge",
+      "Cleric: Strength (PSA)",
+      "Druid: Circle of the Land",
+      "Paladin: Oath of Glory",
+      "Paladin: Oath of Vengeance",
+      "Paladin: Oath of the Ancients",
+      "Sorcerer: Clockwork Sorcery"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -5788,6 +6603,13 @@
       "Paladin",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Paladin: Oath of Devotion",
+      "Ranger: Horizon Walker",
+      "Ranger: Monster Slayer",
+      "Sorcerer: Clockwork Sorcery",
+      "Sorcerer: Divine Soul (Neutrality)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5812,6 +6634,9 @@
       "Druid",
       "Paladin",
       "Ranger"
+    ],
+    "subclasses": [
+      "Cleric: Strength (PSA)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5855,6 +6680,10 @@
       "Cleric",
       "Paladin"
     ],
+    "subclasses": [
+      "Cleric: Grave",
+      "Cleric: Life Domain"
+    ],
     "casting_time": "1 hour",
     "ritual": false,
     "range": "Touch",
@@ -5877,6 +6706,11 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Ambition (PSA)",
+      "Cleric: Death",
+      "Cleric: Grave"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -5896,6 +6730,10 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Druid: Circle of the Sea"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -5947,6 +6785,13 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Death",
+      "Druid: Circle of the Land",
+      "Sorcerer: Lunar (Full Moon)",
+      "Warlock: Undead",
+      "Warlock: Undying"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -5997,6 +6842,9 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Ranger: Winter Walker"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -6015,6 +6863,10 @@
     "school": "Abjuration",
     "classes": [
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Peace",
+      "Paladin: Redemption"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6105,6 +6957,13 @@
       "Paladin",
       "Ranger"
     ],
+    "subclasses": [
+      "Cleric: Grave",
+      "Cleric: Life Domain",
+      "Druid: Wildfire",
+      "Warlock: Celestial Patron",
+      "Warlock: Vestige (Life Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -6126,6 +6985,9 @@
     "classes": [
       "Wizard"
     ],
+    "subclasses": [
+      "Ranger: Gloom Stalker"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -6146,6 +7008,9 @@
     "school": "Evocation",
     "classes": [
       "Cleric"
+    ],
+    "subclasses": [
+      "Warlock: Celestial Patron"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6172,6 +7037,13 @@
     "classes": [
       "Cleric"
     ],
+    "subclasses": [
+      "Cleric: Peace",
+      "Monk: Warrior of the Open Hand",
+      "Paladin: Oath of Devotion",
+      "Paladin: Redemption",
+      "Warlock: Genie (Dao)"
+    ],
     "casting_time": "Bonus Action",
     "ritual": false,
     "range": "30 feet",
@@ -6193,6 +7065,14 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Light Domain",
+      "Druid: Wildfire",
+      "Sorcerer: Spellfire",
+      "Warlock: Fiend Patron",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Vestige (Light Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6225,6 +7105,15 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)",
+      "Cleric: Light Domain",
+      "Druid: Circle of the Land",
+      "Paladin: Oath of Vengeance",
+      "Paladin: Watchers",
+      "Warlock: Vestige (Light Domain)"
+    ],
     "casting_time": "10 minutes",
     "ritual": false,
     "range": "Self",
@@ -6245,6 +7134,10 @@
     "school": "Evocation",
     "classes": [
       "Paladin"
+    ],
+    "subclasses": [
+      "Cleric: Forge",
+      "Cleric: Zeal (PSA)"
     ],
     "casting_time": "Bonus Action, which you take immediately after hitting a target with a Melee weapon or an Unarmed Strike",
     "ritual": false,
@@ -6271,6 +7164,9 @@
     "classes": [
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Arcana"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -6293,6 +7189,13 @@
       "Bard",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Light Domain",
+      "Cleric: Twilight",
+      "Paladin: Watchers",
+      "Warlock: Vestige (Light Domain)",
+      "Wizard: Diviner"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6317,6 +7220,11 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Ranger: Gloom Stalker",
+      "Warlock: Archfey Patron",
+      "Warlock: Genie (Djinni)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -6337,6 +7245,11 @@
       "Bard",
       "Cleric",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Peace",
+      "Sorcerer: Aberrant Sorcery",
+      "Warlock: Great Old One Patron"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6404,6 +7317,11 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Tempest",
+      "Cleric: Zeal (PSA)",
+      "Druid: Circle of the Sea"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -6432,6 +7350,10 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Sorcerer: Lunar (Full Moon)",
+      "Warlock: Hexblade"
+    ],
     "casting_time": "Reaction, which you take when you are hit by an attack roll or targeted by the Magic Missile spell",
     "ritual": false,
     "range": "Self",
@@ -6451,6 +7373,12 @@
     "classes": [
       "Cleric",
       "Paladin"
+    ],
+    "subclasses": [
+      "Cleric: Strength (PSA)",
+      "Cleric: War Domain",
+      "Paladin: Oath of Devotion",
+      "Warlock: Vestige (War Domain)"
     ],
     "casting_time": "Bonus Action",
     "ritual": false,
@@ -6520,6 +7448,9 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -6547,6 +7478,12 @@
       "Bard",
       "Cleric",
       "Ranger"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Monk: Warrior of Shadow",
+      "Warlock: Fathomless",
+      "Warlock: Undying"
     ],
     "casting_time": "Action",
     "ritual": true,
@@ -6613,6 +7550,12 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Twilight",
+      "Druid: Circle of the Land",
+      "Paladin: Redemption",
+      "Warlock: Archfey Patron"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -6636,6 +7579,12 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Tempest",
+      "Druid: Circle of the Land",
+      "Warlock: Fathomless",
+      "Warlock: Genie (Marid)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "150 feet",
@@ -6658,6 +7607,10 @@
       "Bard",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Order",
+      "Druid: Circle of the Land"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6701,6 +7654,10 @@
       "Cleric",
       "Druid"
     ],
+    "subclasses": [
+      "Cleric: Grave",
+      "Warlock: Undying"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "15 feet",
@@ -6723,6 +7680,12 @@
       "Ranger",
       "Warlock"
     ],
+    "subclasses": [
+      "Barbarian: Path of the Wild Heart",
+      "Barbarian: Totem Warrior",
+      "Cleric: Nature",
+      "Paladin: Oath of the Ancients"
+    ],
     "casting_time": "Action",
     "ritual": true,
     "range": "Self",
@@ -6743,6 +7706,13 @@
       "Bard",
       "Cleric",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)",
+      "Rogue: Phantom",
+      "Warlock: Undead",
+      "Warlock: Undying"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6788,6 +7758,9 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -6810,6 +7783,11 @@
     "classes": [
       "Druid",
       "Ranger"
+    ],
+    "subclasses": [
+      "Cleric: Nature",
+      "Druid: Circle of the Land",
+      "Warlock: Genie (Dao)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6837,6 +7815,12 @@
     "school": "Conjuration",
     "classes": [
       "Cleric"
+    ],
+    "subclasses": [
+      "Bard: Spirits",
+      "Cleric: War Domain",
+      "Paladin: Crown",
+      "Warlock: Vestige (War Domain)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6866,6 +7850,12 @@
     "classes": [
       "Cleric"
     ],
+    "subclasses": [
+      "Cleric: Life Domain",
+      "Cleric: War Domain",
+      "Paladin: Conquest",
+      "Warlock: Vestige (War Domain)"
+    ],
     "casting_time": "Bonus Action",
     "ritual": false,
     "range": "60 feet",
@@ -6887,6 +7877,9 @@
     "classes": [
       "Bard",
       "Druid"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Moon"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6916,6 +7909,10 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Warlock: Fiend Patron"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "90 feet",
@@ -6938,6 +7935,10 @@
       "Cleric",
       "Druid",
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Warlock: Genie (Dao)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -6962,6 +7963,14 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Strength (PSA)",
+      "Cleric: War Domain",
+      "Druid: Circle of the Land",
+      "Paladin: Conquest",
+      "Paladin: Oath of the Ancients",
+      "Paladin: Redemption"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -7012,6 +8021,11 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Knowledge",
+      "Cleric: Knowledge (PSA)",
+      "Warlock: Fiend Patron"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "30 feet",
@@ -7031,6 +8045,9 @@
     "school": "Conjuration",
     "classes": [
       "Wizard"
+    ],
+    "subclasses": [
+      "Sorcerer: Draconic Sorcery"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -7145,6 +8162,11 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Fighter: Psi Warrior",
+      "Sorcerer: Aberrant Sorcery",
+      "Warlock: Great Old One Patron"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "60 feet",
@@ -7164,6 +8186,11 @@
     "classes": [
       "Bard",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Peace",
+      "Sorcerer: Aberrant Sorcery",
+      "Sorcerer: Lunar (Full Moon)"
     ],
     "casting_time": "Action",
     "ritual": true,
@@ -7215,6 +8242,10 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Arcana",
+      "Ranger: Horizon Walker"
+    ],
     "casting_time": "1 minute",
     "ritual": false,
     "range": "10 feet",
@@ -7234,6 +8265,10 @@
     "school": "Transmutation",
     "classes": [
       "Cleric"
+    ],
+    "subclasses": [
+      "Barbarian: Giant",
+      "Ranger: Drakewarden"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -7255,6 +8290,12 @@
       "Druid",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Tempest",
+      "Druid: Circle of the Sea",
+      "Warlock: Fathomless",
+      "Warlock: Genie (Djinni)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -7301,6 +8342,9 @@
       "Bard",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Twilight"
+    ],
     "casting_time": "1 minute",
     "ritual": true,
     "range": "Self",
@@ -7325,6 +8369,9 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
+    ],
+    "subclasses": [
+      "Cleric: Knowledge"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -7365,6 +8412,11 @@
     "classes": [
       "Druid",
       "Ranger"
+    ],
+    "subclasses": [
+      "Cleric: Nature",
+      "Druid: Circle of the Land",
+      "Paladin: Oath of the Ancients"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -7528,6 +8580,12 @@
       "Warlock",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Ambition (PSA)",
+      "Cleric: Death",
+      "Cleric: Grave",
+      "Sorcerer: Lunar (Full Moon)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Self",
@@ -7610,6 +8668,14 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Cleric: Forge",
+      "Cleric: Light Domain",
+      "Sorcerer: Spellfire",
+      "Warlock: Celestial Patron",
+      "Warlock: Fiend Patron",
+      "Warlock: Vestige (Light Domain)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -7637,6 +8703,10 @@
     "school": "Evocation",
     "classes": [
       "Wizard"
+    ],
+    "subclasses": [
+      "Paladin: Redemption",
+      "Sorcerer: Clockwork Sorcery"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -7689,6 +8759,10 @@
       "Sorcerer",
       "Wizard"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Warlock: Genie (Dao)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -7739,6 +8813,11 @@
       "Cleric",
       "Paladin"
     ],
+    "subclasses": [
+      "Cleric: Peace",
+      "Cleric: Solidarity (PSA)",
+      "Paladin: Crown"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "Touch",
@@ -7762,6 +8841,10 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Druid: Circle of the Sea"
     ],
     "casting_time": "Action",
     "ritual": true,
@@ -7787,6 +8870,9 @@
       "Ranger",
       "Sorcerer"
     ],
+    "subclasses": [
+      "Druid: Circle of the Land"
+    ],
     "casting_time": "Action",
     "ritual": true,
     "range": "30 feet",
@@ -7808,6 +8894,10 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Druid: Circle of the Land",
+      "Ranger: Swarmkeeper"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -7884,6 +8974,10 @@
       "Druid",
       "Ranger"
     ],
+    "subclasses": [
+      "Cleric: Nature",
+      "Warlock: Genie (Djinni)"
+    ],
     "casting_time": "Action",
     "ritual": false,
     "range": "120 feet",
@@ -7911,6 +9005,12 @@
     "classes": [
       "Sorcerer",
       "Wizard"
+    ],
+    "subclasses": [
+      "Warlock: Genie (Dao)",
+      "Warlock: Genie (Djinni)",
+      "Warlock: Genie (Efreeti)",
+      "Warlock: Genie (Marid)"
     ],
     "casting_time": "Action",
     "ritual": false,
@@ -7955,6 +9055,12 @@
       "Bard",
       "Cleric",
       "Paladin"
+    ],
+    "subclasses": [
+      "Cleric: Order",
+      "Paladin: Crown",
+      "Paladin: Oath of Devotion",
+      "Ranger: Monster Slayer"
     ],
     "casting_time": "Action",
     "ritual": false,

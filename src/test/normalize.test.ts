@@ -146,6 +146,29 @@ describe("canonical source adapter", () => {
     expect("subclasses" in spells[0]).toBe(false);
   });
 
+  it("accepts the four expanded core classes", () => {
+    for (const cls of ["Barbarian", "Fighter", "Monk", "Rogue"]) {
+      const spells = normalizeEnglish(
+        [{ ...canonicalEnglish[1], classes: [cls] }],
+        "srd-spells-2024.json",
+      );
+      expect(spells[0].classes).toEqual([cls]);
+    }
+  });
+
+  it("stays tolerant of non-catalog subclass identifiers with a core parent", () => {
+    const spells = normalizeEnglish(
+      [
+        {
+          ...canonicalEnglish[1],
+          subclasses: ["Cleric: Arcana", "Sorcerer: Lunar (Full Moon)"],
+        },
+      ],
+      "srd-spells-2024.json",
+    );
+    expect(spells[0].subclasses).toEqual(["Cleric: Arcana", "Sorcerer: Lunar (Full Moon)"]);
+  });
+
   it("accepts a German-shaped canonical source", () => {
     const spells = normalizeEnglish(germanPartial, "srd-spells-2024_de.json");
     expect(spells[0].id).toBe("srd-command");

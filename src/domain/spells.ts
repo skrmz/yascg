@@ -12,11 +12,15 @@ export const SPELL_SCHOOLS = [
 ] as const;
 
 export const CORE_CLASSES = [
+  "Barbarian",
   "Bard",
   "Cleric",
   "Druid",
+  "Fighter",
+  "Monk",
   "Paladin",
   "Ranger",
+  "Rogue",
   "Sorcerer",
   "Warlock",
   "Wizard",

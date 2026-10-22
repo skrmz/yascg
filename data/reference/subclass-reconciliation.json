@@ -1,0 +1,560 @@
+{
+  "reference": "C:\\dev\\spell-cards-generator\\data\\reference\\srd-spells-2024_extended-props.json",
+  "mode": "applied",
+  "catalog": {
+    "total": 48,
+    "covered": [
+      "Barbarian: Path of the Wild Heart",
+      "Bard: College of Glamour",
+      "Cleric: Life Domain",
+      "Cleric: Light Domain",
+      "Cleric: Trickery Domain",
+      "Cleric: War Domain",
+      "Druid: Circle of the Land",
+      "Druid: Circle of the Moon",
+      "Druid: Circle of the Sea",
+      "Druid: Circle of the Stars",
+      "Fighter: Psi Warrior",
+      "Monk: Warrior of Shadow",
+      "Monk: Warrior of the Elements",
+      "Monk: Warrior of the Open Hand",
+      "Paladin: Oath of Devotion",
+      "Paladin: Oath of Glory",
+      "Paladin: Oath of Vengeance",
+      "Paladin: Oath of the Ancients",
+      "Ranger: Fey Wanderer",
+      "Ranger: Gloom Stalker",
+      "Rogue: Arcane Trickster",
+      "Sorcerer: Aberrant Sorcery",
+      "Sorcerer: Clockwork Sorcery",
+      "Sorcerer: Draconic Sorcery",
+      "Warlock: Archfey Patron",
+      "Warlock: Celestial Patron",
+      "Warlock: Fiend Patron",
+      "Warlock: Great Old One Patron",
+      "Wizard: Abjurer",
+      "Wizard: Diviner",
+      "Wizard: Illusionist"
+    ],
+    "uncovered": [
+      "Barbarian: Path of the Berserker",
+      "Barbarian: Path of the World Tree",
+      "Barbarian: Path of the Zealot",
+      "Bard: College of Dance",
+      "Bard: College of Lore",
+      "Bard: College of Valor",
+      "Fighter: Battle Master",
+      "Fighter: Champion",
+      "Fighter: Eldritch Knight",
+      "Monk: Warrior of Mercy",
+      "Ranger: Beast Master",
+      "Ranger: Hunter",
+      "Rogue: Assassin",
+      "Rogue: Soulknife",
+      "Rogue: Thief",
+      "Sorcerer: Wild Magic Sorcery",
+      "Wizard: Evoker"
+    ]
+  },
+  "catalogMapped": [
+    {
+      "reference": "Barbarian: Wild Heart",
+      "canonical": "Barbarian: Path of the Wild Heart",
+      "spells": 2
+    },
+    {
+      "reference": "Bard: Glamour",
+      "canonical": "Bard: College of Glamour",
+      "spells": 3
+    },
+    {
+      "reference": "Cleric: Life",
+      "canonical": "Cleric: Life Domain",
+      "spells": 14
+    },
+    {
+      "reference": "Cleric: Light",
+      "canonical": "Cleric: Light Domain",
+      "spells": 13
+    },
+    {
+      "reference": "Cleric: Trickery",
+      "canonical": "Cleric: Trickery Domain",
+      "spells": 14
+    },
+    {
+      "reference": "Cleric: War",
+      "canonical": "Cleric: War Domain",
+      "spells": 11
+    },
+    {
+      "reference": "Druid: Land (Tropical Land)",
+      "canonical": "Druid: Circle of the Land",
+      "spells": 57
+    },
+    {
+      "reference": "Druid: Moon",
+      "canonical": "Druid: Circle of the Moon",
+      "spells": 6
+    },
+    {
+      "reference": "Druid: Sea",
+      "canonical": "Druid: Circle of the Sea",
+      "spells": 11
+    },
+    {
+      "reference": "Druid: Stars",
+      "canonical": "Druid: Circle of the Stars",
+      "spells": 2
+    },
+    {
+      "reference": "Fighter: Psi Warrior",
+      "canonical": "Fighter: Psi Warrior",
+      "spells": 1
+    },
+    {
+      "reference": "Monk: Shadow",
+      "canonical": "Monk: Warrior of Shadow",
+      "spells": 5
+    },
+    {
+      "reference": "Monk: Elements",
+      "canonical": "Monk: Warrior of the Elements",
+      "spells": 1
+    },
+    {
+      "reference": "Monk: Open Hand",
+      "canonical": "Monk: Warrior of the Open Hand",
+      "spells": 1
+    },
+    {
+      "reference": "Paladin: Devotion",
+      "canonical": "Paladin: Oath of Devotion",
+      "spells": 12
+    },
+    {
+      "reference": "Paladin: Glory",
+      "canonical": "Paladin: Oath of Glory",
+      "spells": 11
+    },
+    {
+      "reference": "Paladin: Ancients",
+      "canonical": "Paladin: Oath of the Ancients",
+      "spells": 10
+    },
+    {
+      "reference": "Paladin: Vengeance",
+      "canonical": "Paladin: Oath of Vengeance",
+      "spells": 10
+    },
+    {
+      "reference": "Ranger: Fey Wanderer",
+      "canonical": "Ranger: Fey Wanderer",
+      "spells": 5
+    },
+    {
+      "reference": "Ranger: Gloom Stalker",
+      "canonical": "Ranger: Gloom Stalker",
+      "spells": 5
+    },
+    {
+      "reference": "Rogue: Arcane Trickster",
+      "canonical": "Rogue: Arcane Trickster",
+      "spells": 1
+    },
+    {
+      "reference": "Sorcerer: Aberrant",
+      "canonical": "Sorcerer: Aberrant Sorcery",
+      "spells": 7
+    },
+    {
+      "reference": "Sorcerer: Clockwork",
+      "canonical": "Sorcerer: Clockwork Sorcery",
+      "spells": 9
+    },
+    {
+      "reference": "Sorcerer: Draconic",
+      "canonical": "Sorcerer: Draconic Sorcery",
+      "spells": 10
+    },
+    {
+      "reference": "Warlock: Archfey",
+      "canonical": "Warlock: Archfey Patron",
+      "spells": 11
+    },
+    {
+      "reference": "Warlock: Celestial",
+      "canonical": "Warlock: Celestial Patron",
+      "spells": 13
+    },
+    {
+      "reference": "Warlock: Fiend",
+      "canonical": "Warlock: Fiend Patron",
+      "spells": 13
+    },
+    {
+      "reference": "Warlock: Great Old One",
+      "canonical": "Warlock: Great Old One Patron",
+      "spells": 13
+    },
+    {
+      "reference": "Wizard: Abjurer",
+      "canonical": "Wizard: Abjurer",
+      "spells": 2
+    },
+    {
+      "reference": "Wizard: Diviner",
+      "canonical": "Wizard: Diviner",
+      "spells": 1
+    },
+    {
+      "reference": "Wizard: Illusion",
+      "canonical": "Wizard: Illusionist",
+      "spells": 1
+    }
+  ],
+  "referenceOnly": [
+    {
+      "id": "Barbarian: Ancestral Guardian",
+      "spells": 2
+    },
+    {
+      "id": "Barbarian: Giant",
+      "spells": 2
+    },
+    {
+      "id": "Barbarian: Totem Warrior",
+      "spells": 2
+    },
+    {
+      "id": "Bard: Moon",
+      "spells": 1
+    },
+    {
+      "id": "Bard: Spirits",
+      "spells": 2
+    },
+    {
+      "id": "Cleric: Ambition (PSA)",
+      "spells": 10
+    },
+    {
+      "id": "Cleric: Arcana",
+      "spells": 12
+    },
+    {
+      "id": "Cleric: Death",
+      "spells": 10
+    },
+    {
+      "id": "Cleric: Forge",
+      "spells": 9
+    },
+    {
+      "id": "Cleric: Grave",
+      "spells": 13
+    },
+    {
+      "id": "Cleric: Knowledge",
+      "spells": 17
+    },
+    {
+      "id": "Cleric: Knowledge (PSA)",
+      "spells": 10
+    },
+    {
+      "id": "Cleric: Nature",
+      "spells": 9
+    },
+    {
+      "id": "Cleric: Order",
+      "spells": 10
+    },
+    {
+      "id": "Cleric: Peace",
+      "spells": 9
+    },
+    {
+      "id": "Cleric: Solidarity (PSA)",
+      "spells": 8
+    },
+    {
+      "id": "Cleric: Strength (PSA)",
+      "spells": 9
+    },
+    {
+      "id": "Cleric: Tempest",
+      "spells": 9
+    },
+    {
+      "id": "Cleric: Twilight",
+      "spells": 8
+    },
+    {
+      "id": "Cleric: Zeal (PSA)",
+      "spells": 8
+    },
+    {
+      "id": "Druid: Spores",
+      "spells": 9
+    },
+    {
+      "id": "Druid: Wildfire",
+      "spells": 10
+    },
+    {
+      "id": "Fighter: Arcane Archer",
+      "spells": 2
+    },
+    {
+      "id": "Fighter: Banneret",
+      "spells": 1
+    },
+    {
+      "id": "Monk: Sun Soul",
+      "spells": 1
+    },
+    {
+      "id": "Paladin: Conquest",
+      "spells": 9
+    },
+    {
+      "id": "Paladin: Crown",
+      "spells": 7
+    },
+    {
+      "id": "Paladin: Noble Genies",
+      "spells": 8
+    },
+    {
+      "id": "Paladin: Oathbreaker",
+      "spells": 9
+    },
+    {
+      "id": "Paladin: Redemption",
+      "spells": 10
+    },
+    {
+      "id": "Paladin: Watchers",
+      "spells": 9
+    },
+    {
+      "id": "Ranger: Drakewarden",
+      "spells": 1
+    },
+    {
+      "id": "Ranger: Hollow Warden",
+      "spells": 3
+    },
+    {
+      "id": "Ranger: Horizon Walker",
+      "spells": 5
+    },
+    {
+      "id": "Ranger: Monster Slayer",
+      "spells": 5
+    },
+    {
+      "id": "Ranger: Swarmkeeper",
+      "spells": 6
+    },
+    {
+      "id": "Ranger: Winter Walker",
+      "spells": 5
+    },
+    {
+      "id": "Rogue: Phantom",
+      "spells": 1
+    },
+    {
+      "id": "Sorcerer: Divine Soul (Chaos)",
+      "spells": 1
+    },
+    {
+      "id": "Sorcerer: Divine Soul (Evil)",
+      "spells": 1
+    },
+    {
+      "id": "Sorcerer: Divine Soul (Good)",
+      "spells": 1
+    },
+    {
+      "id": "Sorcerer: Divine Soul (Law)",
+      "spells": 1
+    },
+    {
+      "id": "Sorcerer: Divine Soul (Neutrality)",
+      "spells": 1
+    },
+    {
+      "id": "Sorcerer: Lunar (Full Moon)",
+      "spells": 15
+    },
+    {
+      "id": "Sorcerer: Shadow",
+      "spells": 9
+    },
+    {
+      "id": "Sorcerer: Spellfire",
+      "spells": 10
+    },
+    {
+      "id": "Warlock: Fathomless",
+      "spells": 10
+    },
+    {
+      "id": "Warlock: Genie (Dao)",
+      "spells": 11
+    },
+    {
+      "id": "Warlock: Genie (Djinni)",
+      "spells": 11
+    },
+    {
+      "id": "Warlock: Genie (Efreeti)",
+      "spells": 11
+    },
+    {
+      "id": "Warlock: Genie (Marid)",
+      "spells": 11
+    },
+    {
+      "id": "Warlock: Hexblade",
+      "spells": 5
+    },
+    {
+      "id": "Warlock: Undead",
+      "spells": 12
+    },
+    {
+      "id": "Warlock: Undying",
+      "spells": 10
+    },
+    {
+      "id": "Warlock: Vestige (Life Domain)",
+      "spells": 10
+    },
+    {
+      "id": "Warlock: Vestige (Light Domain)",
+      "spells": 10
+    },
+    {
+      "id": "Warlock: Vestige (Trickery Domain)",
+      "spells": 10
+    },
+    {
+      "id": "Warlock: Vestige (War Domain)",
+      "spells": 8
+    },
+    {
+      "id": "Wizard: Necromancer",
+      "spells": 2
+    },
+    {
+      "id": "Wizard: Transmuter",
+      "spells": 2
+    }
+  ],
+  "excluded": [
+    {
+      "id": "Artificer: Alchemist",
+      "reason": "unsupported-parent-class",
+      "spells": 12
+    },
+    {
+      "id": "Artificer: Armorer",
+      "reason": "unsupported-parent-class",
+      "spells": 10
+    },
+    {
+      "id": "Artificer: Artillerist",
+      "reason": "unsupported-parent-class",
+      "spells": 10
+    },
+    {
+      "id": "Artificer: Battle Smith",
+      "reason": "unsupported-parent-class",
+      "spells": 6
+    },
+    {
+      "id": "Artificer: Cartographer",
+      "reason": "unsupported-parent-class",
+      "spells": 11
+    },
+    {
+      "id": "Artificer: Reanimator",
+      "reason": "unsupported-parent-class",
+      "spells": 10
+    }
+  ],
+  "dedupCollisions": [
+    {
+      "canonical": "Druid: Circle of the Land",
+      "references": [
+        "Druid: Land (Arctic)",
+        "Druid: Land (Arid Land)",
+        "Druid: Land (Coast)",
+        "Druid: Land (Desert)",
+        "Druid: Land (Forest)",
+        "Druid: Land (Grassland)",
+        "Druid: Land (Mountain)",
+        "Druid: Land (Polar Land)",
+        "Druid: Land (Swamp)",
+        "Druid: Land (Temperate Land)",
+        "Druid: Land (Tropical Land)",
+        "Druid: Land (Underdark)"
+      ],
+      "spells": 21
+    },
+    {
+      "canonical": "Sorcerer: Aberrant Sorcery",
+      "references": [
+        "Sorcerer: Aberrant",
+        "Sorcerer: Aberrant Mind"
+      ],
+      "spells": 7
+    },
+    {
+      "canonical": "Sorcerer: Clockwork Sorcery",
+      "references": [
+        "Sorcerer: Clockwork",
+        "Sorcerer: Clockwork Soul"
+      ],
+      "spells": 9
+    },
+    {
+      "canonical": "Wizard: Illusionist",
+      "references": [
+        "Wizard: Illusion",
+        "Wizard: Illusionist"
+      ],
+      "spells": 1
+    }
+  ],
+  "unmatchedSpellNames": {},
+  "files": [
+    {
+      "fileName": "srd-spells-2024.json",
+      "totalSpells": 339,
+      "spellsPopulated": 204,
+      "totalAssignments": 698,
+      "status": "populated"
+    },
+    {
+      "fileName": "srd-spells-2024_de.json",
+      "totalSpells": 339,
+      "spellsPopulated": 204,
+      "totalAssignments": 698,
+      "status": "populated"
+    }
+  ],
+  "totals": {
+    "referenceSpells": 339,
+    "referenceSpellsWithSubclasses": 208,
+    "spellsPopulated": 204,
+    "totalAssignments": 698,
+    "catalogAssignments": 275,
+    "referenceOnlyAssignments": 423,
+    "excludedAssignments": 59
+  }
+}

@@ -5,6 +5,8 @@ The §3 evidence and §16 sequence below describe the pre-refactoring state and 
 Scope: raw SRD source JSON simplification + lossless optional `subclasses` support.
 Out of scope: populating subclass assignments (separate later phase), subclass UI/filtering, and any change to normalized runtime behavior.
 
+**Phase 2 landed.** The "separate later phase" referred to above is complete: subclass assignments were populated from `data/reference/srd-spells-2024_extended-props.json` via `scripts/migrate-srd-subclasses.ts`, `CORE_CLASSES` was widened from 8 to 12, and localized subclass labels were added under `src/locales/`. See `docs/subclasses.md`, `docs/srd-data-pipeline.md` §2.G, and the committed report `data/reference/subclass-reconciliation.json`. This document is retained as the historical Phase-1 specification.
+
 This document is an implementation specification. It is intentionally detailed so a separate coding agent can implement it without re-deriving the architecture. Every "MANDATORY"/"OPTIONAL" marker is normative.
 
 ---

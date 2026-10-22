@@ -56,8 +56,8 @@ export const SPELL_SCHOOLS = [
   "Evocation", "Illusion", "Necromancy", "Transmutation"
 ] as const;
 export const CORE_CLASSES = [
-  "Bard", "Cleric", "Druid", "Paladin",
-  "Ranger", "Sorcerer", "Warlock", "Wizard"
+  "Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk",
+  "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"
 ] as const;
 export type SpellSchool = typeof SPELL_SCHOOLS[number];
 export type CoreClass = typeof CORE_CLASSES[number];
@@ -148,7 +148,7 @@ export interface BundledSpellLanguage {
 
 The language manifest lists exactly one available asset per unique canonical language tag, including mandatory `en`; reject invalid tags, duplicate tags/assets, and nonlocal asset paths. Language preference is presentation state, not part of `Spell`, `DeckEntry`, `ActiveDeck`, `SavedDeck`, revisions, baselines, or export payloads. The `Spell` schema is unchanged apart from the optional `subclasses` field. All language variants of one SRD spell share the canonical `id` and `source: "SRD-5.2.1"`. Custom spells keep their existing IDs and unchanged author-written contents.
 
-**Subclass reference material (later phase):** `data/reference/srd-spells-2024_extended-props.json` is reference data, not an input dataset (reference material never lives in `data/srd/`). Populating `subclasses` from it — including reconciling classes beyond `CORE_CLASSES` and localized subclass labels via `src/locales/` catalogs — is a separate, later phase. This specification only adds lossless optional support for the field.
+**Subclasses (phase complete):** `CORE_CLASSES` now lists the 12 classes that carry subclasses. The bundled `subclasses` values were reconciled from `data/reference/srd-spells-2024_extended-props.json` (reference data, never an input dataset) by `scripts/migrate-srd-subclasses.ts`: the 48 official 2024 catalog subclasses (`docs/subclasses.md`, `src/domain/subclasses.ts`) use canonical identifiers, reference-only subclasses are preserved verbatim, and Artificer subclasses are excluded and reported. Localized labels come from `src/locales/` catalogs via `subclassLabel()`, with unknown identifiers falling back to the English subclass name. The `Spell` schema keeps `subclasses` as an optional, tolerant string array.
 
 **SRD deck-reference resolution:** Use `DeckEntry.spellId` and `reference.source`, never `reference.name`, for matching. Distinguish **resolved** (SRD record in the selected language or existing custom record), **translation unavailable** (canonical English SRD ID exists but is not in the selected translation), and **missing reference** (canonical English SRD ID or referenced custom record absent). A translation-unavailable spell is not a broken reference and must not invoke reference repair. `reference.name` remains a historical fallback label, not a translated identity key.
 

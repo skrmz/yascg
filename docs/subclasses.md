@@ -1,13 +1,24 @@
 # DnD 5.5e 2024 - official subclasses
 
-> **Reference material (later phase).** This list is not a restrictive enum and is not
-> consumed by the data pipeline. It spans classes beyond the eight `CORE_CLASSES`
-> (Barbarian, Fighter, Monk, Rogue, …), and the German column contains alternatives that
-> still need reconciliation. Populating `subclasses` in the SRD sources from
-> `data/reference/srd-spells-2024_extended-props.json` — including any compatibility
-> decision about classes outside `CORE_CLASSES` and localized labels via `src/locales/`
-> catalogs — is a separate, later phase. Raw SRD `subclasses` values are always canonical
-> English identifiers, never German names.
+> **Authoritative subclass catalog.** This 48-item list is the canonical catalog of official
+> 2024 subclasses and the source for the localized labels in `src/locales/en.ts` /
+> `src/locales/de.ts` (`SUBCLASSES` in `src/domain/subclasses.ts`). The German column lists
+> presentation labels only; stored identifiers are always canonical English
+> `"<Class>: <Subclass>"` strings.
+>
+> Subclass assignments in `data/srd/srd-spells-2024*.json` were reconciled from
+> `data/reference/srd-spells-2024_extended-props.json`. The reference also contains
+> subclasses that are **not** in this catalog:
+>
+> - **reference-only** subclasses (parent class among the 12 `CORE_CLASSES`, e.g.
+>   `Cleric: Arcana`, `Sorcerer: Divine Soul (Chaos)`) are preserved verbatim; they have no
+>   German label and fall back to the English subclass name at render time;
+> - **excluded** subclasses (parent class outside `CORE_CLASSES`, i.e. Artificer) are
+>   reported as `unsupported-parent-class` and are not stored.
+>
+> The full alias map, dedup-collision report, and per-file counts are committed at
+> `data/reference/subclass-reconciliation.json`, produced by
+> `scripts/migrate-srd-subclasses.ts`.
 
 Here are the 48 official subclasses (from the DnD 5.5e 2024 player's handbook) grouped by classes along with the corresponding german terms.
 
@@ -90,7 +101,7 @@ Here are the 48 official subclasses (from the DnD 5.5e 2024 player's handbook) g
 
 ## Magier (Wizard)
 
--   Abjurer → Bannzauberer / Bannmagier (Schule der Bannmagie)
--   Diviner → Wahrsager / Erkenntnismagier (Schule der Erkenntnismagie)
--   Evoker → Hervorrufer / Hervorrufungsmagier (Schule der Hervorrufungsmagie)    
--   Illusionist → Illusionist / Illusionsmagier (Schule der Illusionsmagie)
+-   Abjurer → Bannzauberer
+-   Diviner → Wahrsager
+-   Evoker → Hervorrufer  
+-   Illusionist → Illusionist

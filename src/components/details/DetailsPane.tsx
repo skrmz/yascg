@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Copy, Plus, SquarePen, Trash2 } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
 import { CardView, classSummary } from "@/cards/Card.tsx";
-import { componentKey, damageTypeKey } from "@/locales/labels.ts";
+import { componentKey, damageTypeKey, subclassLabel } from "@/locales/labels.ts";
 import { useCardFit, AUTO_SHRINK_MIN_PT } from "@/cards/fit.tsx";
 import { LIMITS } from "@/domain/spells";
 import { BlockList } from "@/markdown/render.tsx";
@@ -165,6 +165,12 @@ export function DetailsPane() {
               ) : null}
               <dt className="text-muted-foreground">{t("spell.metadata.classes")}</dt>
               <dd>{spell.classes.length > 0 ? classSummary(spell.classes, t) : "\u2014"}</dd>
+              <dt className="text-muted-foreground">{t("spell.metadata.subclasses")}</dt>
+              <dd>
+                {spell.subclasses && spell.subclasses.length > 0
+                  ? spell.subclasses.map((id) => subclassLabel(id, t)).join(", ")
+                  : "\u2014"}
+              </dd>
             </dl>
             <div className="flex flex-wrap gap-1">
               {spell.concentration ? <Badge>{t("spell.flag.concentration")}</Badge> : null}

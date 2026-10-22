@@ -34,8 +34,10 @@ release. Add a tool name to select part of the graph. For example, run
 - Raw sources in `data/srd/` use the canonical source shape (string `school`, `classes`
   name strings, `V`/`S`/`M` components, string `damage.damage_type`, optional
   `subclasses`). Do not hand-edit them into another shape: migrate legacy 5e-bits files
-  with `pnpm exec tsx scripts/migrate-srd-source-format.ts --apply`. Non-dataset
-  reference material belongs in `data/reference/`, never in `data/srd/`.
+  with `pnpm exec tsx scripts/migrate-srd-source-format.ts --apply`. Populate `subclasses`
+  only through `scripts/migrate-srd-subclasses.ts`; the committed reconciliation report
+  lives at `data/reference/subclass-reconciliation.json`. Non-dataset reference material
+  belongs in `data/reference/`, never in `data/srd/`.
 - Preserve licensing notices and attribution requirements.
 - Maintain offline-first behavior, safe Markdown rendering, and accessible UI interactions.
 - Keep localization presentation-only: add UI terminology to `src/locales/en.ts` and

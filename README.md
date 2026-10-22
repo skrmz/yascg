@@ -57,9 +57,11 @@ metadata but are ignored by normalization. Non-dataset reference material (for e
 `srd-spells-2024_extended-props.json`) belongs in `data/reference/`, not `data/srd/`,
 because every `srd-spells-2024*` JSON file there is treated as an input.
 
-No bundled spell declares `subclasses` yet: the field exists so the later subclass phase can
-populate it without another schema change, and nothing is merged from the
-`data/reference/` file.
+Bundled spells populate `subclasses` with canonical identifiers reconciled from
+`data/reference/srd-spells-2024_extended-props.json` (204 of 339 spells, 698 assignments).
+Only the 48 official 2024 subclasses (see `docs/subclasses.md`) are localized; reference-only
+subclasses are preserved verbatim and fall back to the English name, and Artificer subclasses
+are excluded and reported. See "Subclass reconciliation" below.
 
 `scripts/normalize-srd.ts` discovers inputs, normalizes them into the application
 `Spell` schema, cross-validates translations against the canonical English mechanics,
@@ -106,6 +108,32 @@ pnpm exec tsx scripts/migrate-srd-source-format.ts --apply   # write the convert
   Re-running on already-migrated files reports a no-op.
 - Legacy files reaching `normalize:srd` fail with a message pointing at this tool. The
   utility is temporary and may be deleted once no legacy sources remain.
+
+### Subclass reconciliation
+
+`scripts/migrate-srd-subclasses.ts` is the one-time utility that populates the optional raw
+`subclasses` field from `data/reference/srd-spells-2024_extended-props.json`:
+
+```powershell
+pnpm exec tsx scripts/migrate-srd-subclasses.ts                                   # dry run (default)
+pnpm exec tsx scripts/migrate-srd-subclasses.ts --apply --report data/reference/subclass-reconciliation.json
+```
+
+- Options: `--input-dir <dir>` (default `data/srd`), `--reference <path>`, `--files <a,b>`
+  (default both datasets), `--report <path>`, `--apply`.
+- Reference identifiers are reconciled to canonical `"<Class>: <Subclass>"` identifiers via an
+  explicit alias table (no fuzzy matching), reference-only subclasses are preserved verbatim,
+  and Artificer subclasses are excluded and reported. English is matched by spell name (with
+  the single `Arance Hand` → `Arcane Hand` typo alias); the German source is matched by `index`
+  because its names are localized, so EN/DE assignments are identical.
+- It inserts `subclasses` immediately after `classes`, sorts identifiers, omits empty lists, and
+  never touches any other field. Before writing it normalizes both sources in memory and asserts
+  every field **except** `subclasses` still matches the committed `src/data/spells.srd*.json`
+  datasets (mechanics unchanged), then writes atomically with backup/rollback. Re-running is a
+  no-op.
+- The committed report (`data/reference/subclass-reconciliation.json`) records the catalog
+  coverage, alias map, reference-only and excluded identifiers, unmatched names, dedup
+  collisions, and per-file population counts.
 
 ### Drift protection
 
