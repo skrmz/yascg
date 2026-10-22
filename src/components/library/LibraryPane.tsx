@@ -123,15 +123,6 @@ export function LibraryPane() {
         <LevelRangeSlider value={filters.levels} onChange={(levels) => patch({ levels })} />
 
         <MultiSelect
-          label="School"
-          aria-label="School"
-          allLabel="All schools"
-          options={SPELL_SCHOOLS}
-          selected={filters.schools}
-          onChange={(schools) => patch({ schools })}
-        />
-
-        <MultiSelect
           label="Class"
           aria-label="Class"
           allLabel="All classes"
@@ -162,6 +153,16 @@ export function LibraryPane() {
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 overflow-hidden data-[state=closed]:animate-[collapsible-up_180ms_ease-out] data-[state=open]:animate-[collapsible-down_180ms_ease-out] motion-reduce:animate-none">
+            <div className="space-y-1">
+              <MultiSelect
+                label="School"
+                aria-label="School"
+                allLabel="All schools"
+                options={SPELL_SCHOOLS}
+                selected={filters.schools}
+                onChange={(schools) => patch({ schools })}
+              />
+            </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground">Casting Time</span>
               <Select

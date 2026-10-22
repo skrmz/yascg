@@ -49,6 +49,7 @@ test("school multi-select ORs the selected schools", async ({ page }) => {
   await page.goto("/");
   const results = page.getByRole("list", { name: "Spell results" });
 
+  await page.getByRole("button", { name: /Advanced Filters/ }).click();
   await page.getByRole("button", { name: "School" }).click();
   await page.getByRole("checkbox", { name: "Evocation" }).check();
   await page.getByRole("checkbox", { name: "Abjuration" }).check();
