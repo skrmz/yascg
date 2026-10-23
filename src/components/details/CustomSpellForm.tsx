@@ -2,12 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "@/state/AppProvider.tsx";
 import { createCustomSpellDraft } from "@/db/custom-spells.ts";
-import { LIMITS, SPELL_SCHOOLS, spellSchema, type Spell, type SpellSchool } from "@/domain/spells";
-import { schoolKey } from "@/locales/labels.ts";
+import {
+  CORE_CLASSES,
+  isCoreClass,
+  LIMITS,
+  SPELL_SCHOOLS,
+  spellSchema,
+  type CoreClass,
+  type Spell,
+  type SpellSchool,
+} from "@/domain/spells";
+import { classKey, schoolKey } from "@/locales/labels.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Checkbox } from "@/ui/Checkbox.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { FieldError, Input, Label, NativeSelect, Textarea } from "@/ui/Field.tsx";
+import { MultiSelect } from "@/ui/MultiSelect.tsx";
 
 export interface CustomSpellFormProps {
   open: boolean;
@@ -28,7 +38,7 @@ interface DraftState {
   materialDescription: string;
   concentration: boolean;
   ritual: boolean;
-  classes: string;
+  classes: CoreClass[];
   description: string;
   higherLevels: string;
 }
@@ -47,7 +57,7 @@ function toDraft(spell: Spell): DraftState {
     materialDescription: spell.components.materialDescription ?? "",
     concentration: spell.concentration,
     ritual: spell.ritual,
-    classes: spell.classes.join(", "),
+    classes: spell.classes.filter(isCoreClass),
     description: spell.description.join("\n\n"),
     higherLevels: (spell.higherLevels ?? []).join("\n\n"),
   };
@@ -72,10 +82,6 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
   };
 
   const onSubmit = async () => {
-    const classes = draft.classes
-      .split(",")
-      .map((value) => value.trim())
-      .filter((value) => value.length > 0);
     const candidate: Spell = {
       ...base,
       name: draft.name.trim(),
@@ -94,7 +100,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
       },
       concentration: draft.concentration,
       ritual: draft.ritual,
-      classes,
+      classes: draft.classes,
       description: [draft.description],
       ...(draft.higherLevels.trim() !== ""
         ? { higherLevels: [draft.higherLevels] }
@@ -254,11 +260,17 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
             </div>
           ) : null}
           <div className="col-span-2">
-            <Label htmlFor="cs-classes">{t("form.classes")}</Label>
-            <Input
-              id="cs-classes"
-              value={draft.classes}
-              onChange={(event) => update("classes", event.target.value)}
+            <Label>{t("form.classes")}</Label>
+            <MultiSelect<CoreClass>
+              aria-label={t("form.classes")}
+              allLabel={t("form.classesNone")}
+              options={CORE_CLASSES}
+              selected={draft.classes}
+              onChange={(classes) => update("classes", classes)}
+              getLabel={(cls) => {
+                const key = classKey(cls);
+                return key ? t(key) : cls;
+              }}
             />
             <FieldError>{errors.classes}</FieldError>
           </div>

@@ -7,13 +7,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "./Popover.tsx";
 import { cn } from "./cn.ts";
 
 export interface MultiSelectProps<T extends string> {
-  label: string;
+  label?: string;
   options: readonly T[];
   selected: readonly T[];
   onChange: (next: T[]) => void;
   searchable?: boolean;
   searchPlaceholder?: string;
   allLabel?: string;
+  getLabel?: (option: T) => string;
   "aria-label"?: string;
   className?: string;
 }
@@ -26,25 +27,30 @@ export function MultiSelect<T extends string>({
   searchable = false,
   searchPlaceholder = "Search…",
   allLabel,
+  getLabel,
   className,
   "aria-label": ariaLabel,
 }: MultiSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
+  const labelFor = (option: T): string => (getLabel ? getLabel(option) : option);
+  const accessibleLabel = label ?? ariaLabel ?? "Options";
+
   const filtered = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase();
     if (!searchable || needle === "") return options;
-    return options.filter((option) => option.toLocaleLowerCase().includes(needle));
-  }, [options, search, searchable]);
+    const label = (option: T) => (getLabel ? getLabel(option) : option);
+    return options.filter((option) => label(option).toLocaleLowerCase().includes(needle));
+  }, [options, search, searchable, getLabel]);
 
   const summary =
     selected.length === 0
       ? (allLabel ?? "All")
       : selected.length === 1
-        ? selected[0]
+        ? labelFor(selected[0])
         : `${selected.length} selected`;
-  const fullSummary = selected.join(", ");
+  const fullSummary = selected.map(labelFor).join(", ");
   const toggle = (value: T) => {
     onChange(
       selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value],
@@ -66,7 +72,7 @@ export function MultiSelect<T extends string>({
           className={cn("w-full justify-between gap-2 font-normal", className)}
         >
           <span className="flex min-w-0 items-baseline gap-1.5 text-sm">
-            <span className="shrink-0 text-muted-foreground">{label}</span>
+            {label ? <span className="shrink-0 text-muted-foreground">{label}</span> : null}
             <span
               className="truncate text-foreground"
               title={selected.length > 1 ? fullSummary : undefined}
@@ -85,7 +91,7 @@ export function MultiSelect<T extends string>({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={searchPlaceholder}
-              aria-label={`Search ${label.toLocaleLowerCase()}`}
+              aria-label={`Search ${accessibleLabel.toLocaleLowerCase()}`}
               className="h-8"
             />
           </div>
@@ -98,7 +104,7 @@ export function MultiSelect<T extends string>({
               {filtered.map((option) => (
                 <li key={option}>
                   <Checkbox
-                    label={option}
+                    label={labelFor(option)}
                     checked={selected.includes(option)}
                     onChange={() => toggle(option)}
                   />

@@ -47,6 +47,22 @@ describe("custom spell import analysis", () => {
     if (!analysis.ok) expect(analysis.error).toContain("SRD");
   });
 
+  it("rejects class identifiers outside the 12 core classes", () => {
+    const analysis = analyzeCustomImport(
+      payload([makeCustomSpell({ id: "c1", classes: ["Artificer"] })]),
+      [],
+    );
+    expect(analysis.ok).toBe(false);
+  });
+
+  it("rejects unknown-version records with unsupported classes", () => {
+    const analysis = analyzeCustomImport(
+      payload([makeCustomSpell({ id: "c1", classes: ["Artificer"] })], "2.0.0"),
+      [],
+    );
+    expect(analysis.ok).toBe(false);
+  });
+
   it("remaps reserved srd- custom IDs to UUIDs", () => {
     const analysis = analyzeCustomImport(payload([makeCustomSpell({ id: "srd-forged" })]), []);
     expect(analysis.ok).toBe(true);

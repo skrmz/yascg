@@ -42,6 +42,13 @@ describe("spellSchema", () => {
     expect(spellSchema.safeParse(makeSpell({ classes: ["Bard", "Bard"] })).success).toBe(false);
   });
 
+  it("restricts classes to the 12 canonical core classes", () => {
+    expect(spellSchema.safeParse(makeSpell({ classes: ["Wizard", "Bard"] })).success).toBe(true);
+    expect(spellSchema.safeParse(makeSpell({ classes: [] })).success).toBe(true);
+    expect(spellSchema.safeParse(makeSpell({ classes: ["Artificer"] })).success).toBe(false);
+    expect(spellSchema.safeParse(makeSpell({ classes: ["wizard"] })).success).toBe(false);
+  });
+
   it("rejects invalid source", () => {
     const invalid = { ...makeSpell(), source: "PHB" };
     expect(spellSchema.safeParse(invalid).success).toBe(false);

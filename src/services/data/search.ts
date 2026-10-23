@@ -117,14 +117,6 @@ export function sortSpells(spells: readonly Spell[], locale: string): Spell[] {
   });
 }
 
-export function deriveClassOptions(customSpells: readonly Spell[]): string[] {
-  const set = new Set<string>();
-  for (const spell of customSpells) {
-    for (const cls of spell.classes) set.add(cls);
-  }
-  return [...set];
-}
-
 export function deriveCastingTimeOptions(spells: readonly Spell[]): string[] {
   const set = new Map<string, string>();
   for (const spell of spells) {

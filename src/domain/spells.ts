@@ -111,6 +111,7 @@ export const LIMITS = {
 } as const;
 
 export const spellSchoolSchema = z.enum(SPELL_SCHOOLS);
+export const coreClassSchema = z.enum(CORE_CLASSES);
 export const abilityScoreSchema = z.enum(ABILITY_SCORES);
 export const spellSourceSchema = z.enum(SPELL_SOURCES);
 export const cardFitModeSchema = z.enum(CARD_FIT_MODES);
@@ -145,11 +146,9 @@ export const spellSchema = z
     duration: trimmedNonEmpty(LIMITS.FREETEXT_MAX),
     concentration: z.boolean(),
     ritual: z.boolean(),
-    classes: z
-      .array(trimmedNonEmpty(LIMITS.CLASS_NAME_MAX))
-      .refine((values) => new Set(values).size === values.length, {
-        message: "class names must be unique",
-      }),
+    classes: z.array(coreClassSchema).refine((values) => new Set(values).size === values.length, {
+      message: "class names must be unique",
+    }),
     /**
      * Canonical `"<ClassName>: <SubclassName>"` identifiers for SRD data. The
      * runtime schema intentionally only enforces non-empty unique strings so that
@@ -192,4 +191,9 @@ export function combinedDescriptionLength(
 
 export function isCustomSpell(spell: Pick<Spell, "source">): boolean {
   return spell.source === "Custom";
+}
+
+/** Narrows an arbitrary string (e.g. legacy custom-spell data) to a core class. */
+export function isCoreClass(value: string): value is CoreClass {
+  return (CORE_CLASSES as readonly string[]).includes(value);
 }

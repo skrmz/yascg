@@ -2,14 +2,13 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, RotateCcw, Search, Sparkles } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
-import { levelLabelKey, schoolKey } from "@/locales/labels.ts";
+import { classKey, levelLabelKey, schoolKey } from "@/locales/labels.ts";
 import { CORE_CLASSES, SPELL_SCHOOLS, type Spell, type SpellSource } from "@/domain/spells";
 import {
   DEFAULT_FILTERS,
   countActiveAdvancedFilters,
   createSearchIndex,
   deriveCastingTimeOptions,
-  deriveClassOptions,
   filterSpells,
   searchSpells,
   sortSpells,
@@ -59,7 +58,6 @@ function Chip({
 export function LibraryPane() {
   const {
     librarySpells,
-    customSpells,
     language,
     addSpellToDeck,
     addSpellsToDeck,
@@ -82,10 +80,6 @@ export function LibraryPane() {
     [searched, filters, language],
   );
 
-  const classOptions = useMemo(
-    () => [...CORE_CLASSES, ...deriveClassOptions(customSpells)],
-    [customSpells],
-  );
   const castingOptions = useMemo(() => deriveCastingTimeOptions(librarySpells), [librarySpells]);
   const advancedCount = countActiveAdvancedFilters(filters);
 
@@ -128,9 +122,13 @@ export function LibraryPane() {
           allLabel="All classes"
           searchable
           searchPlaceholder="Search classes…"
-          options={classOptions}
+          options={CORE_CLASSES}
           selected={filters.classes}
           onChange={(classes) => patch({ classes })}
+          getLabel={(cls) => {
+            const key = classKey(cls);
+            return key ? t(key) : cls;
+          }}
         />
 
         <Collapsible defaultOpen={false} className="space-y-2">
