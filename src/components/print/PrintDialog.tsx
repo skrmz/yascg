@@ -4,6 +4,7 @@ import { Printer } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
 import { LIMITS } from "@/domain/spells";
 import { useDeckCardFits, type DeckFitItem } from "@/cards/fit.tsx";
+import { waitForCardFonts } from "@/cards/fonts.ts";
 import { PrintSheets, type PaperSize, type PrintCardData } from "@/print/PrintSheet.tsx";
 import { Button } from "@/ui/Button.tsx";
 import { Checkbox } from "@/ui/Checkbox.tsx";
@@ -78,10 +79,18 @@ export function PrintDialog({
 
   useEffect(() => {
     if (!job) return;
-    const id = window.requestAnimationFrame(() => {
-      window.print();
-    });
-    return () => window.cancelAnimationFrame(id);
+    let cancelled = false;
+    let frame = 0;
+    const run = async () => {
+      await waitForCardFonts();
+      if (cancelled) return;
+      frame = window.requestAnimationFrame(() => window.print());
+    };
+    void run();
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
   }, [job]);
 
   const startPrint = () => {

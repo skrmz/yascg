@@ -38,15 +38,16 @@ Do not display Wizards of the Coast logos or D&D trademarks. Label custom spells
 ## 3. Technology and Architecture
 
 - **Runtime/toolchain:** Node.js >= 24, pnpm v12+, React, TypeScript (strict), and the unified Vite+ (`vp`) toolchain. Repository-level implementation guidance in `AGENTS.md` is normative for agent-assisted work unless it conflicts with this specification.
-- **Offline:** `vite-plugin-pwa` / Workbox precache of application shell, JS/CSS, the generated language manifest, every bundled language dataset, and required local fonts.
+- **Offline:** `vite-plugin-pwa` / Workbox precache of application shell, JS/CSS, the generated language manifest, every bundled language dataset, and required local fonts, including the self-hosted Latin-subset card fonts used for titles and body copy.
 - **Persistence:** Dexie.js (IndexedDB) stores `customSpells`, `savedDecks`, and singleton `activeDeck` state. Store the language preference separately (for example `localStorage`), never in deck or spell records. Failed preference storage does not block an in-memory language selection.
 - **Validation:** Zod for stored records, imported JSON, and normalized SRD data.
 - **Search:** Fuse.js in-memory index of bundled spells available in the selected language plus custom spells, rebuilt when the language or custom spells change.
 - **UI & Styling:** Tailwind CSS for the application shell, shadcn/ui using Radix UI primitives for accessible Combobox, Dialog, Tabs, and Tooltip components, and Lucide React icons. Print sheets and physical card containers are governed by dedicated strict print/card CSS (§9–10), not utility-class geometry.
+- **Typography:** Application chrome uses Karla (body/controls), Cormorant Garamond (display headings), and IBM Plex Mono (labels). Spell cards use dedicated card-only tokens (`--font-card-title`, `--font-card-body`): Vollkorn 600/700 for titles and Alegreya Sans 400/500/700 plus true italics for body, rules, labels, and stats, with `"Barlow Semi Condensed"` then `sans-serif` as fallbacks. Card fonts are self-hosted as Latin-subset WOFF2 assets so measurement, print output, and offline rendering are deterministic; the Google Fonts link may supply application-shell families and extended card glyph coverage. Card typography must never override the application `--font-sans`, `--font-display`, or `--font-mono` tokens.
 - **Markdown parser:** Use a safe AST-based parser (for example `marked` with an AST walker, or `unified`/`remark`) with raw HTML disabled. Render only an allowlisted node set; links display as non-clickable text. No remote images or external resources in spell content.
 - **Tests:** `vp test` for unit/integration tests and browser end-to-end tests for storage, workflows, layout, print geometry, and offline behavior.
 
-Core functionality makes no runtime network requests after the first successful precache. Browser-local storage is not guaranteed permanent; JSON export is the backup mechanism.
+After the first successful precache, core data, card measurement, preview, and printing require no runtime network requests; self-hosted card fonts are part of that cached release. Application-shell Google Fonts are progressive enhancement and may fall back to system fonts offline. Browser-local storage is not guaranteed permanent; JSON export is the backup mechanism.
 
 ## 4. Data Models and Validation
 
@@ -243,16 +244,18 @@ Search name, classes, and description (case/accent insensitive); for SRD spells 
 
 **Physical size:** 2.5″ × 3.5″ (63.5 × 88.9 mm), `box-sizing: border-box`. Application-shell controls and surrounding UI use Tailwind/shadcn. Card containers and all geometry that must match print output use dedicated strict CSS with physical units (`pt`, `in`, `mm`); do not derive physical dimensions from Tailwind spacing scales, pixels, viewport units, or transforms.
 
+**Card typography:** Spell titles use Vollkorn at weight 700 with natural Title Case; never force uppercase. Titles wrap within the card header instead of clipping, allowing long names to remain fully visible while measurement accounts for the added height. Body, rules, labels, and stats use Alegreya Sans at weight 500 by default, with 400/700 and true italics available for mixed formatting, followed by `"Barlow Semi Condensed"` and `sans-serif`. Card text uses near-black `#111`, line-height `1.28`, and `0.01em` tracking so 7–8.5 pt output remains legible. These rules are scoped to `.spell-card`; application-shell typography is unchanged.
+
 - **Header:** Name, level, school, ritual/concentration indicators. Continuation cards add a localized continuation label (`contd.` / `fortgesetzt`) aligned to the top-right.
 - **Metadata:** Casting time, range, components, duration. Rendered on the first card only; continuation cards omit this section.
 - **Body:** Description, Higher Levels, classes.
 - **Footer:** Source and `Card X of N` for continuations.
 - Components use V/S/M indicators; absent components display `—`. Material details may use one line with ellipsis on the first card; full details remain visible in the details pane.
-- Fixed fields (name, school, range, duration and other header/metadata strings) never disappear: truncate with visible ellipsis if they cannot fit. Full untruncated values remain available in spell details. Level and icons stay visible.
+- Fixed fields (school, range, duration and other header/metadata strings) never disappear: truncate with visible ellipsis if they cannot fit. The spell name wraps within the header instead of truncating; measurement includes the resulting header height. Full untruncated values remain available in spell details. Level and icons stay visible.
 
 **Language-sensitive content:** Card details, preview and print use the selected translated SRD record where available, or the unchanged custom record. On language changes, invalidate measurements and pagination for changed content; content/language and fit mode must be reflected in cache keys. Translation-unavailable placeholders appear only on screen, not on printed cards. All existing truncation, Markdown safety, continuation and Unicode rules remain in force.
 
-**Measurement:** Use a hidden, fixed-size card matching print styles to measure actual rendered heights after fonts are ready. Recompute on spell edits, fit-mode changes, and relevant style/font changes; cache per content and mode. Never perform measurement for every scroll event.
+**Measurement:** Use a hidden, fixed-size card matching print styles to measure actual rendered heights after explicitly loading and checking the required card fonts (not only `document.fonts.ready`). Recompute on spell edits, fit-mode changes, and relevant style/font changes; cache per content and mode. Never perform measurement for every scroll event.
 
 **Auto-shrink (default):** Body font starts at 8.5 pt, decreases in 0.5 pt steps to 6 pt. Choose largest size that fits. If body content still overflows at 6 pt, render a safe, valid prefix of the parsed Markdown document that fits and append a visible ellipsis to the last displayed text node. Prefer block boundaries, then sentence, word, and finally Unicode grapheme boundaries; never output malformed HTML, a broken list container, or half a Unicode grapheme. Use the same resulting truncation in preview and print, but show an **on-screen-only** overflow warning. Full content remains in spell details. Do not silently drop content without the ellipsis.
 
@@ -267,16 +270,18 @@ Preview warnings and controls are never printed. Use deterministic fixture tests
 Print with `window.print()` and dedicated strict CSS only. The application shell may use Tailwind/shadcn, but print sheets, grid geometry, card containers, typography sizing, gaps, and margins use physical units (`pt`, `in`, `mm`) plus page-size-specific `@page` rules so correctly configured output can meet the ±1 mm physical tolerance. Support **US Letter** (8.5″ × 11″) and **ISO A4** (210 × 297 mm). A 3 × 3 card grid occupies 7.5″ × 10.5″; print up to nine physical cards per sheet, leaving unused cells blank on the last sheet.
 
 - User selects Letter or A4 and toggles cutting borders.
+- Before programmatic printing, explicitly load and verify the Vollkorn and Alegreya Sans faces, including italics, rather than relying solely on `document.fonts.ready`. Card fonts are self-hosted and precached, so print output must not depend on network font loading or mid-render fallback.
 - Use page-size-specific `@page { size: letter | A4; margin: 0; }` rules via separate print classes/stylesheets as appropriate. Use physical `in` units for card and grid dimensions, not `vw`/`vh`.
 - Center the fixed-size grid on the physical sheet; avoid forced scaling, page breaks inside cards, trailing blank sheets, and browser header/footer content.
 - Pre-print dialog: choose matching paper size; 100% / Actual Size; no headers/footers; margins None or Minimum. Warn that hardware non-printable margins or driver scaling can still alter physical dimensions.
 - Print only entries whose spell bodies are available in the current language, including resolvable custom spells. Omit translation-unavailable placeholders and genuinely missing references without modifying deck entries. Before print, show separate counts for omitted missing translations and missing references, and require confirmation if either is nonzero. Disable print if no printable entries remain. Keep existing 100-card continuation errors and print geometry rules. Printing never changes the deck or selected language.
-- Verify physical-size output in current stable Chrome, Firefox, and Safari where available, for Letter and A4. Measure a printed or 100%-scale PDF test grid: target card dimensions 63.5 × 88.9 mm, with ±1 mm acceptable measurement tolerance under correctly configured print settings; deviations outside tolerance require investigation/documentation, not silent CSS scaling. Verify nine cards fit without page overflow and no extra blank sheet is emitted. Document browser/printer limitations; exact physical sizing depends partly on user print settings and hardware.
+- Verify physical-size output in current stable Chrome, Firefox, and Safari where available, for Letter and A4. Measure a printed or 100%-scale PDF test grid: target card dimensions 63.5 × 88.9 mm, with ±1 mm acceptable measurement tolerance under correctly configured print settings; deviations outside tolerance require investigation/documentation, not silent CSS scaling. Verify nine cards fit without page overflow and no extra blank sheet is emitted. Verify print preview and 100%-scale output render card titles in Vollkorn and body copy in Alegreya Sans without fallback substitution, clipping, or content overflow. Document browser/printer limitations; exact physical sizing depends partly on user print settings and hardware.
 
 ## 11. Offline, Persistence, Security, and Quality
 
 - First-load readiness means required assets, the language manifest, and **every** bundled language dataset are available together in the service-worker cache. Until then, show **Setting up offline access**; if installation/precache fails, show **Offline setup incomplete — Retry** and explain that offline use is not yet guaranteed. The online app may remain usable while caching completes. Retry requests a fresh cache/install attempt; never claim offline-ready based only on service-worker registration.
 - Cache the manifest and all corresponding datasets as a coherent versioned release, never advertising mixed-version or absent assets as offline-ready. Language switching after full precache must work without network access.
+- Card typography assets are self-hosted WOFF2 files included in the precache release. Offline card preview, measurement, and printing must use those local faces; Google Fonts is not required for card rendering.
 - Restore the saved language preference only if its tag occurs in the current manifest; otherwise use English. If a previously selected language was removed, visibly explain the fallback to English and clear/update the stale preference without changing any deck. If a dataset cannot be loaded/validated despite being listed, show an error and offer retry; retain the current working language where possible, or visibly fall back to English if necessary. Never silently show English spell bodies under a different language selection. If preference persistence fails, keep the in-memory selection and indicate that it may not survive reload.
 - Use existing keyboard, label, focus and modal accessibility rules for the language dropdown and confirmation. Apply the same untrusted-JSON/Markdown sanitation and Unicode-safe rendering rules to every language.
 - Version caches; prompt when an update is ready and reload cleanly to avoid mixed-version assets. Do not erase IndexedDB during app updates.
@@ -315,16 +320,18 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 24. Unavailable translations show distinguishable deck placeholders and are omitted from printing with separate counts/confirmation; switching back restores their content. Search, filters, sorting, details, layout and print reflect selected language while custom spells remain unchanged.
 25. Selected language persists outside deck records; missing selected languages visibly fall back to English. Import/export wire version is `1.0.0`; unknown versions require explicit best-effort opt-in and never invoke historical migration adapters. A pending switch is revalidated after concurrent deck edits.
 26. Manifest and all language assets precache as one offline release; switching works without runtime requests. Runtime asset errors, accessibility and safe multilingual Unicode/Markdown handling are tested.
+27. Spell-card titles use Vollkorn 700 with natural capitalization, and card body/rules/stats use Alegreya Sans 500 with the specified fallbacks; application chrome remains on Karla, Cormorant Garamond, and IBM Plex Mono.
+28. Required card fonts are explicitly loaded and verified before measurement and `window.print()`; long titles wrap without clipping, and card text uses near-black `#111`, weight 500, line-height 1.28, and `0.01em` tracking without changing card dimensions or causing overflow in previously valid cards.
 
 ## 13. Implementation Plan
 
 1. Define Zod schemas, types, canonical `index`-based SRD identity, language discovery/manifest, and multilingual SRD normalization/build validation.
 2. Set up Dexie stores, versioning, active/saved deck persistence, baseline tracking, and transactional revision checks.
 3. Implement library, per-language Fuse search/filters/sorting, language selector and preference, and custom spell CRUD.
-4. Build safe Markdown details, card preview, and measured text-fitting/pagination.
+4. Build safe Markdown details, card preview with isolated card typography, and measured text-fitting/pagination.
 5. Implement deck ordering, uniqueness, save/load, dirty-state confirmation, delete/undo, and non-destructive language switching with confirmation.
 6. Implement `1.0.0` JSON import/export, unknown-version safe fallback, collision/remapping review, limits, missing-reference repair, and atomic validation.
-7. Implement Letter/A4 print layout, pre-print guidance, and cross-browser verification.
+7. Implement Letter/A4 print layout, explicit card-font readiness, pre-print guidance, and cross-browser verification.
 8. Configure PWA cache/update lifecycle for all language assets; test offline behavior, accessibility, storage/schema failures, two-tab concurrency, and language compatibility.
 
 ## 14. Post-v1.0.0
@@ -360,6 +367,10 @@ These invariants are normative and must be covered by automated tests:
 | More than 100 continuation cards                                               | Visible blocking error for that entry; no silent omission                                                                   |
 | Unresolved entries at print                                                    | Counted and omitted only after confirmation; print disabled if none resolved                                                |
 | Letter/A4 nine-card print                                                      | No clipping, unwanted scaling, or extra blank sheet at correct settings                                                     |
+| Spell-card typography                                                          | Title Vollkorn 700/Title Case; body Alegreya Sans 500 with fallbacks; app chrome fonts unchanged                            |
+| Card font readiness                                                            | Required faces verified before measurement and `window.print()`; no fallback substitution                                   |
+| Long spell title                                                               | Title wraps within the card header; no clipping or body overflow                                                           |
+| Offline card preview and print                                                 | Self-hosted card fonts load from precache; typography and measurement work without network                                 |
 | Offline setup incomplete                                                       | Accurate not-ready state and Retry action                                                                                   |
 | Add valid German source and rebuild                                            | `de` discovered and usable; English remains selectable                                                                      |
 | Add partial French source and rebuild                                          | `fr` discovered; untranslated canonical spell IDs remain valid deck references                                              |

@@ -7,6 +7,7 @@ import { parseSpellBody, type BlockNode } from "@/markdown/parse.ts";
 import { cloneBlock, paginateToPages, truncateBlocksToFit } from "@/markdown/split.ts";
 import { componentMarkerKey } from "@/locales/labels.ts";
 import { CardView } from "./Card.tsx";
+import { waitForCardFonts } from "./fonts.ts";
 import { fitCacheKey } from "./fingerprint.ts";
 
 export const AUTO_SHRINK_STEPS = [8.5, 8, 7.5, 7, 6.5, 6] as const;
@@ -84,7 +85,7 @@ interface Measurer {
   layer: ReactNode;
 }
 
-/** Shared hidden-card measurer. Await `document.fonts.ready` before first use. */
+/** Shared hidden-card measurer. Await card fonts before first use. */
 function useMeasurer(): Measurer {
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const [layout, setLayout] = useState<Layout>({
@@ -121,13 +122,6 @@ function useMeasurer(): Measurer {
       : null;
 
   return { measure, layer };
-}
-
-async function waitForFonts(): Promise<void> {
-  const fonts = (globalThis as { document?: Document }).document?.fonts;
-  if (fonts && typeof fonts.ready?.then === "function") {
-    await fonts.ready;
-  }
 }
 
 export interface UseCardFitOptions {
@@ -191,7 +185,7 @@ export function useCardFit({ spell, fitMode, language }: UseCardFitOptions): Use
     setReady(false);
     const run = async () => {
       try {
-        await waitForFonts();
+        await waitForCardFonts();
         if (cancelled) return;
         const computed = computeFit(
           blocks,
@@ -271,7 +265,7 @@ export function useDeckCardFits(
     let cancelled = false;
     setReady(false);
     const run = async () => {
-      await waitForFonts();
+      await waitForCardFonts();
       if (cancelled) return;
       const next = new Map<string, FitResult>();
       for (const item of current) {

@@ -48,7 +48,12 @@ test("cycles card terminology EN to DE and back without stale fit or overflow", 
   await expect(card.getByText("V, G, M")).toBeVisible();
   await expect(card.getByText("Zauberer, Magier")).toBeVisible();
   const german = await layoutState(page);
-  expect(german).toEqual(english);
+  // German card text is longer than English and may auto-shrink further; the
+  // physical card count and fit guarantees must still hold.
+  expect(german.cards).toBe(english.cards);
+  expect(german.status).toMatch(/^\d+ physical cards? at \d+(?:\.\d+)?pt\.$/);
+  expect(german.truncated).toBe(0);
+  expect(german.overflow).toBe(0);
 
   await switchLanguage(page, /English/);
 

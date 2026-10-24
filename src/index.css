@@ -57,6 +57,10 @@
   --font-display: "Cormorant Garamond", serif;
   --font-sans: "Karla", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
+
+  /* Dedicated Spell Card Fonts */
+  --font-card-title: "Vollkorn", serif;
+  --font-card-body: "Alegreya Sans", "Barlow Semi Condensed", sans-serif;
 }
 
 :root {
