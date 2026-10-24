@@ -11,7 +11,7 @@
 
 Build a small, offline-first app to browse SRD spells, manage custom spells, assemble one active printable deck, save and load named decks, and print standard poker-size cards. Data is local unless the user exports it. Bundled SRD spell data supports selectable languages; English is the canonical/default dataset and translated datasets may be incomplete. Language selection affects bundled spell content, not UI language, custom spells, or stored decks.
 
-**Included:** Spell-data language selection; search and filters; custom spell CRUD and JSON import/export; multiple copies and ordering; named local saved decks; deck JSON import/export; auto-shrink or continuation cards; Letter/A4 printing; offline PWA.
+**Included:** Spell-data language selection; search and filters; custom spell CRUD and JSON import/export; unique spell entries and ordering; named local saved decks; deck JSON import/export; auto-shrink or continuation cards; Letter/A4 printing; offline PWA.
 
 **Excluded:** Non-SRD bundled spells, accounts/cloud sync/backend, PDF rendering engines, card backs, duplex controls, external spell APIs, and third-party format adapters.
 
@@ -100,7 +100,7 @@ export interface Spell {
 }
 export interface DeckEntry {
   entryId: string; // unique UUID per occurrence
-  spellId: string; // reference by stable ID, never by name
+  spellId: string; // reference by stable ID, never by name; unique within a deck
   fitMode: CardFitMode;
   // Only for missing-reference display and manual repair; not a spell backup.
   reference: { source: SpellSource; name: string };
@@ -110,12 +110,12 @@ export interface SavedDeck {
   name: string;
   updatedAt: number;
   revision: number; // monotonic concurrency token for saved snapshot writes
-  entries: DeckEntry[];
+  entries: DeckEntry[]; // at most one entry per spellId
 }
 export interface ActiveDeck {
   name: string;
   savedDeckId?: string;
-  entries: DeckEntry[];
+  entries: DeckEntry[]; // at most one entry per spellId, in order
   // Monotonic revision for optimistic concurrency; persisted with the deck.
   revision: number;
   // Baseline of last explicitly loaded/saved snapshot; null means unsaved.
@@ -171,7 +171,7 @@ The language manifest lists exactly one available asset per unique canonical lan
 
 ## 5. Workspace and Library
 
-Three responsive panes: **Library** (search/filter/list), **Preview & Details** (selected spell/card), **Active Deck** (ordered cards, copy counts, fit mode, save/load/print). Below 1024px, use tabs or stacked views. Adding a spell requires one click.
+Three responsive panes: **Library** (search/filter/list), **Preview & Details** (selected spell/card), **Active Deck** (ordered unique entries, fit mode, save/load/print). Below 1024px, use tabs or stacked views. Adding a spell requires one click.
 
 **Language selector:** Place a compact, labeled, keyboard-accessible dropdown/combobox in the upper-right application header (reachable on small screens). Show only languages in the generated manifest, using native display names and optional language tags. Default to `en` unless a persisted choice remains available. Changing language changes bundled SRD text in library, details, preview, deck presentation, and printed cards; it does not translate UI controls, custom spells, attribution, or canonical game-rule enum/class labels.
 
@@ -179,7 +179,7 @@ Three responsive panes: **Library** (search/filter/list), **Preview & Details** 
 
 Search name, classes, and description (case/accent insensitive); for SRD spells use their selected-language textual values where the normalized schema supports them, while canonical class identifiers remain filterable. Rank with Fuse.js and use name then ID as deterministic tie-breakers. Filters: level, school, class, casting time, concentration, ritual, source. Multiple choices within a group are OR; groups combine with AND. Empty groups impose no restriction. Core classes always appear; additional class names are derived from custom spells. Casting-time filter values are normalized by trimming and case folding but otherwise compared as exact strings. Empty results show a clear message. Changing filters never changes the deck.
 
-**Add all filtered results:** Present **Append** (one new entry per matching spell, retaining existing entries and duplicates) or **Replace** (confirmation required). Disable both when there are no results. This bulk operation is optional UI convenience, not a separate deck model.
+**Add all filtered results:** Present **Append** (adds only matching spells not already in the active deck, retains existing entries, and reports added/skipped counts in one notification) or **Replace** (confirmation required). Disable both when there are no results. This bulk operation is optional UI convenience, not a separate deck model.
 
 ## 6. Custom Spell Management
 
@@ -187,27 +187,28 @@ Search name, classes, and description (case/accent insensitive); for SRD spells 
 - New spells use `crypto.randomUUID()` and `updatedAt = Date.now()`; edits update the timestamp; duplication creates a new UUID.
 - Defaults: level 0, school Evocation, casting time `1 Action`, range `Self`, duration `Instantaneous`, components false, concentration/ritual false, classes `[]`, description `[""]`.
 - Validate before saving. Report errors inline. A failed IndexedDB write must not appear successful. A custom spell edit or overwrite retains its ID, and cards resolve the current spell body by that ID; saved snapshots are not rewritten.
-- **Delete:** Show a confirmation explaining that deleting a custom spell also removes *all its entries from the active deck*. Confirm or cancel. Delete the spell and matching active entries atomically, checking the active-deck revision and incrementing it. **Never** silently rewrite saved decks. Loading a saved deck later may produce unresolved references (§8).
-- **Undo:** Keep the deleted spell and removed entries/positions in session memory. Undo remains available only during the same open session until a conflicting spell edit/import or active-deck mutation occurs. Undo verifies both the spell ID is free and the expected active-deck revision; it atomically restores the spell and entries at their original positions and increments the revision. If either check fails, disable Undo with an explanation. No persistent trash is required.
+- **Delete:** Show a confirmation explaining that deleting a custom spell also removes *its entry from the active deck*. Confirm or cancel. Delete the spell and matching active entry atomically, checking the active-deck revision and incrementing it. **Never** silently rewrite saved decks. Loading a saved deck later may produce unresolved references (§8).
+- **Undo:** Keep the deleted spell and removed entry/position in session memory. Undo remains available only during the same open session until a conflicting spell edit/import or active-deck mutation occurs. Undo verifies both the spell ID is free and the expected active-deck revision; it atomically restores the spell and entry at its original position and increments the revision. If either check fails, disable Undo with an explanation. No persistent trash is required.
 - If another tab changes the affected spell or active deck, discard unsafe Undo rather than overwriting newer data. Deletion, restoration, and imports must trigger search-index refresh and missing-reference re-resolution.
 
 ## 7. Active and Saved Decks
 
 - Exactly **one active deck** exists at a time. Store it as a singleton Dexie record with `name`, `savedDeckId?`, ordered `entries`, `revision`, and `baseline`. Initial state: `{name: "", entries: [], revision: 0, baseline: null}`. Persist every successful mutation; never treat unsaved as unpersisted.
-- Support add, add copy (new `entryId`), remove, move up/down, drag reorder, per-entry fit mode, and clear (with confirmation). Entry IDs must be unique within a deck; duplicate cards get new entry IDs.
+- **Uniqueness:** A deck contains at most one entry per unique `spellId`, regardless of how the spell is added. Individual add attempts for a spell already in the deck leave the deck unchanged and show a bottom-right notification; bulk append skips existing spells and reports added/skipped counts. Shared deck mutation logic and persisted active/saved deck schemas enforce uniqueness rather than relying on UI checks alone. Legacy duplicate entries are normalized to the first occurrence when the database is upgraded or a saved deck is loaded. Reference repair must not rebind an entry to a spell already present in the deck. Entry IDs must be unique within a deck.
+- Support add, remove, move up/down, drag reorder, per-entry fit mode, and clear (with confirmation).
 - **Save New / Save As:** Require a non-empty trimmed name (1–120 characters); create a new saved-deck UUID and snapshot. Set the active `savedDeckId` to the new ID and its baseline to the newly saved name/entries in the same transaction. Duplicate names are allowed; show modification timestamps and IDs to distinguish them.
 - **Overwrite Saved:** Require explicit choice of target saved deck; replace that saved snapshot atomically with current name/entries, update its `updatedAt`, set `savedDeckId` to the target, and reset baseline. Never overwrite implicitly, even when `savedDeckId` is present.
-- **Load Saved:** If active is dirty, prompt **Replace Active Deck / Cancel**; loading replaces name, entries, `savedDeckId`, and baseline with the chosen saved snapshot, increments revision, and never merges. Loading the same deck with no unsaved changes needs no warning. Cancel or failure leaves both persisted records unchanged.
+- **Load Saved:** If active is dirty, prompt **Replace Active Deck / Cancel**; loading replaces name, entries, `savedDeckId`, and baseline with the chosen saved snapshot, increments revision, and never merges. Duplicate spell entries in a loaded snapshot are normalized to the first occurrence. Loading the same deck with no unsaved changes needs no warning. Cancel or failure leaves both persisted records unchanged.
 - **Dirty state:** Compare active `name` and ordered `entries` (including `entryId`, `spellId`, `fitMode`, and `reference`) against the persisted `baseline`, ignoring `revision`. `baseline: null` is dirty if the active name is nonempty or entries exist. An empty unnamed active deck with null baseline is clean. Baseline is created/updated **only** by successful Save New, Save As, Overwrite Saved, or Load Saved. Edits, deletion, Undo, repair, clear, and deck import never update the baseline. If Undo exactly restores the baseline, dirty becomes false.
-- **Import Deck:** Replaces the active name and entries, clears `savedDeckId`, and sets `baseline: null`; it is unsaved unless the imported deck is completely empty and unnamed. A dirty active deck requires confirmation. Import never changes saved decks.
+- **Import Deck:** Replaces the active name and entries, clears `savedDeckId`, and sets `baseline: null`; it is unsaved unless the imported deck is completely empty and unnamed. A dirty active deck requires confirmation. Import never changes saved decks. Imported entries are deduplicated by `spellId`, keeping the first occurrence and preserving the relative order of retained entries; a summary reports how many duplicates were removed.
 - **Clear:** Confirmation required; clears active entries but preserves active name, saved association, and baseline. It does not delete saved snapshots.
 - **Saved deck deletion:** Allow explicit deletion of a named saved deck with confirmation. Do not change active content; if its ID equals `savedDeckId`, clear the association and baseline so the active deck becomes unsaved. Perform both changes transactionally.
 - **Reference repair:** A missing entry may be rebound to an existing spell. Update `spellId` and `reference` (`source`, `name`) together, keeping `entryId`, position, and `fitMode`; change **only** the active deck. Saved snapshots change only through an explicit overwrite. If a missing spell with the original ID and source is later imported/restored, its entry resolves automatically without changing the reference.
-**Language switching (non-destructive):** Changing the selected spell-data language affects rendering only. Never add/remove/reorder/rebind active or saved entries, modify `reference`, baselines, saved associations or revisions, or change dirty state solely due to a language switch. All entries, including duplicate copies, persist and reappear automatically when translations become available again. Language preference is saved separately from deck transactions.
+**Language switching (non-destructive):** Changing the selected spell-data language affects rendering only. Never add/remove/reorder/rebind active or saved entries, modify `reference`, baselines, saved associations or revisions, or change dirty state solely due to a language switch. All entries persist and reappear automatically when translations become available again. Language preference is saved separately from deck transactions.
 
 **Missing translation confirmation:** Before switching, resolve current entries by source and canonical ID against the target dataset. True missing references are not counted as missing translations; custom spells are unchanged. If no active SRD entry becomes translation-unavailable, switch immediately. Otherwise, leave the current language and deck presentation unchanged and show a modal naming the target language, exact number of affected *entries* and number of *distinct spell IDs*, and the consequence that cards are temporarily unavailable and omitted from print but **not deleted**. Offer **Switch Language** / **Cancel**. Cancel changes neither language, preference nor deck. Confirm changes only language and preference. This applies even if every SRD entry is unavailable.
 
-**On-screen deck presentation:** Keep translation-unavailable entries in original positions with original entry IDs, fit modes, and copy counts; show non-printable `Not available in <language>` placeholders using the canonical English or stored reference name for identification. Keep them distinct from genuinely unresolved entries eligible for repair. Explicit normal deck edits remain available; removal still requires an actual user deck edit.
+**On-screen deck presentation:** Keep translation-unavailable entries in original positions with original entry IDs and fit modes; show non-printable `Not available in <language>` placeholders using the canonical English or stored reference name for identification. Keep them distinct from genuinely unresolved entries eligible for repair. Explicit normal deck edits remain available; removal still requires an actual user deck edit.
 
 **Concurrent changes while confirming:** Re-read the latest active-deck revision and recompute affected counts before applying a pending confirmation. If the deck changed, refresh the warning and require a new decision for the new state, even when counts happen to be equal. Language-only updates do not increment the deck revision or use deck compare-and-swap. Cross-tab preference notifications may update language presentation but never mutate decks.
 
@@ -231,7 +232,7 @@ Search name, classes, and description (case/accent insensitive); for SRD spells 
 - Export `DeckExportPayload` with `version: "1.0.0"` and references only (not full spell bodies). Filename `spell-deck-YYYY-MM-DD.json`. Export current active deck, not the saved-deck collection. Do not export `entryId`, `revision`, or `baseline`.
 - Import maximum: 5 MiB JSON and 2,000 entries. The supported payload is `{version:"1.0.0",type:"deck",name,exportedAt,entries:[{spellId,fitMode,reference:{source,name}}]}`. Validate the entire payload and all entries before any write; wrong `type`, invalid `fitMode`, missing/invalid `spellId`, invalid reference source/name, or excess limits cause atomic rejection.
 - If `version` is `"1.0.0"`, validate strictly against the current schema. For any other version, show **Unknown version — Try Import / Cancel**. **Try Import** extracts only fields recognized by the current `1.0.0` schema and rejects any entry missing mandatory `spellId`, `fitMode`, or `reference.source/name`. Unknown fields are discarded. Do not infer references from names, migrate historical shapes, or claim full future compatibility.
-- Import replaces the active deck only after confirmation; cancel, validation failure, stale-revision conflict, or storage failure must leave persisted state unchanged. Generate unique UUID `entryId` values on import; preserve entry order and duplicates. Set active `savedDeckId` and `baseline` to null and increment revision.
+- Import replaces the active deck only after confirmation; cancel, validation failure, stale-revision conflict, or storage failure must leave persisted state unchanged. Generate unique UUID `entryId` values on import; deduplicate imported entries by `spellId` (keep the first occurrence and preserve relative order) and report the removed count. Set active `savedDeckId` and `baseline` to null and increment revision.
 - Resolve `SRD-5.2.1` references **only** against bundled SRD IDs and `Custom` references **only** against custom IDs. Never silently rebind by name or across sources. If absent, retain an unresolved entry labeled by `reference.name`; allow repair to an existing spell or removal. Re-evaluate resolution on library changes. Unresolved entries remain visible but are **excluded from printing**, with a count and confirmation before print.
 - **Cross-device transfer:** Import custom spells first, then the deck. IDs ordinarily remain stable. If custom import remapped an ID, display a remap report; deck references are not automatically rewritten across separately imported files. Repair affected entries manually. No combined package or persistent remapping database is required.
 
@@ -291,9 +292,9 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 2. Build fails on missing, malformed, incomplete, or duplicate-ID SRD input; bundled spells are SRD-only with attribution.
 3. Search and filters obey defined case, matching, OR/AND, and ordering rules.
 4. Custom spell CRUD, duplication, validation, deletion, and session-only safe Undo work; deletion/Undo are atomic and never silently mutate saved decks.
-5. Deleting a custom spell removes all its active-deck entries after confirmation, without modifying saved snapshots.
+5. Deleting a custom spell removes its active-deck entry after confirmation, without modifying saved snapshots.
 6. Active deck survives reload; named decks can be saved, overwritten, and loaded; loading unsaved changes requires confirmation.
-7. Bulk add supports Append or confirmed Replace; copies and ordering persist.
+7. Individual duplicate additions are rejected with a bottom-right notification. Bulk add supports Append (skipping spells already in the deck and reporting counts) or confirmed Replace; uniqueness and ordering persist.
 8. Custom imports strictly support the `1.0.0` envelope; reject duplicate IDs and SRD-sourced records; batch collision review, namespace remapping, rollback, remap reporting, and unknown-version safe fallback are tested.
 9. Deck exports use version `1.0.0` and reference stable IDs without spell bodies; imports replace only after confirmation, enforce 5 MiB/2,000-entry limits, and handle unresolved references without incorrect rebinding; unknown versions use the explicit safe fallback.
 10. Auto-shrink uses 8.5–6 pt steps, applies ellipses when necessary, and shows preview-only warnings.
@@ -309,7 +310,7 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 20. Offline first-load setup, retry, update, and IndexedDB/schema failures show accurate actionable states; all required assets are cached before claiming offline readiness.
 21. Discover English and valid suffixed language files at build time without a language allowlist; include only validated languages in the UI and default to English.
 22. Every translation `index` is identical to its canonical English spell; normalization produces the same `srd-` ID. Unknown/missing/duplicate indices, invalid schema, conflicting canonical mechanics or bad language filenames fail the build; incomplete but valid translations pass.
-23. A fully covered deck switches languages immediately. For incomplete coverage, confirmation reports accurate affected entry and distinct-spell counts; cancel changes nothing; confirmation preserves all active/saved entries, ordering, copies, dirty state, baseline and revisions.
+23. A fully covered deck switches languages immediately. For incomplete coverage, confirmation reports accurate affected entry and distinct-spell counts; cancel changes nothing; confirmation preserves all active/saved entries, ordering, dirty state, baseline and revisions.
 24. Unavailable translations show distinguishable deck placeholders and are omitted from printing with separate counts/confirmation; switching back restores their content. Search, filters, sorting, details, layout and print reflect selected language while custom spells remain unchanged.
 25. Selected language persists outside deck records; missing selected languages visibly fall back to English. Import/export wire version is `1.0.0`; unknown versions require explicit best-effort opt-in and never invoke historical migration adapters. A pending switch is revalidated after concurrent deck edits.
 26. Manifest and all language assets precache as one offline release; switching works without runtime requests. Runtime asset errors, accessibility and safe multilingual Unicode/Markdown handling are tested.
@@ -320,7 +321,7 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 2. Set up Dexie stores, versioning, active/saved deck persistence, baseline tracking, and transactional revision checks.
 3. Implement library, per-language Fuse search/filters/sorting, language selector and preference, and custom spell CRUD.
 4. Build safe Markdown details, card preview, and measured text-fitting/pagination.
-5. Implement deck ordering, copies, save/load, dirty-state confirmation, delete/undo, and non-destructive language switching with confirmation.
+5. Implement deck ordering, uniqueness, save/load, dirty-state confirmation, delete/undo, and non-destructive language switching with confirmation.
 6. Implement `1.0.0` JSON import/export, unknown-version safe fallback, collision/remapping review, limits, missing-reference repair, and atomic validation.
 7. Implement Letter/A4 print layout, pre-print guidance, and cross-browser verification.
 8. Configure PWA cache/update lifecycle for all language assets; test offline behavior, accessibility, storage/schema failures, two-tab concurrency, and language compatibility.
@@ -336,7 +337,7 @@ These invariants are normative and must be covered by automated tests:
 | Scenario                                                                       | Required result                                                                                                             |
 | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
 | Cancel custom deletion                                                         | Spell and active deck unchanged                                                                                             |
-| Delete spell with multiple active copies                                       | Spell and all active occurrences removed in one transaction; saved decks unchanged                                          |
+| Delete spell present in active deck                                         | Spell and its active entry removed in one transaction; saved decks unchanged                                                |
 | Undo immediately after deletion                                                | Original spell and original entry IDs/positions restored; dirty state recalculated                                          |
 | Undo after intervening active edit or cross-tab write                          | Undo refused; newer work preserved                                                                                          |
 | Load saved deck while dirty                                                    | Explicit confirmation; cancel leaves persisted state unchanged                                                              |
@@ -345,7 +346,7 @@ These invariants are normative and must be covered by automated tests:
 | Repair missing spell in active deck                                            | Only active reference changed; saved snapshot unchanged                                                                     |
 | Re-import deleted spell with original ID/source                                | Existing missing references automatically resolve                                                                           |
 | Import valid `1.0.0` custom-spell payload                                      | Strictly validated; collision/remap review applied; atomic commit                                                           |
-| Import valid `1.0.0` deck payload                                              | Strictly validated; active deck replaced only after confirmation; order/duplicates retained                                 |
+| Import valid `1.0.0` deck payload                                              | Strictly validated; active deck replaced only after confirmation; order retained and duplicates removed with reported count  |
 | Import duplicate IDs                                                           | Whole batch rejected without writes                                                                                         |
 | Import reserved `srd-` custom ID                                               | Unique UUID remap, old/new mapping shown; bundled SRD unchanged                                                             |
 | Import SRD-sourced record as custom                                            | Rejected; not relabeled as Custom                                                                                           |
@@ -366,7 +367,7 @@ These invariants are normative and must be covered by automated tests:
 | Change to fully covered language                                               | Switch immediately with deck records/revisions/baseline unchanged                                                           |
 | Missing translations; cancel switch                                            | Exact entry/unique-spell counts; language/preference/deck unchanged                                                         |
 | Missing translations; confirm switch                                           | Unavailable entries remain in deck as on-screen placeholders; switching back restores text                                  |
-| Multiple copies of untranslated spell                                          | All occurrences preserved; entry count and distinct-ID count differ accurately                                              |
+| Translation-unavailable spell already in deck                                  | Single entry preserved as an unavailable placeholder; switching back restores its text                                     |
 | Custom spell and true broken reference in translated deck                      | Custom spell unchanged; broken reference remains repairable, not categorized as untranslated                                |
 | Export and reimport partially translated deck                                  | Canonical IDs and all entries preserved; no language-specific payload rewriting                                             |
 | Print with untranslated and broken references                                  | Separate counts, confirmation and omissions; no entry deleted                                                               |

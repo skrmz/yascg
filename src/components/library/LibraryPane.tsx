@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, RotateCcw, Search, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { classKey, levelLabelKey, schoolKey } from "@/locales/labels.ts";
 import { CORE_CLASSES, SPELL_SCHOOLS, type Spell, type SpellSource } from "@/domain/spells";
@@ -91,9 +92,33 @@ export function LibraryPane() {
     setFilters(DEFAULT_FILTERS);
   };
 
-  const onAdd = (spell: Spell) => {
-    void addSpellToDeck(spell);
-    selectSpell(spell.id);
+  const onAdd = async (spell: Spell) => {
+    const result = await addSpellToDeck(spell);
+    if (result === "added") selectSpell(spell.id);
+    if (result === "duplicate") {
+      toast.info("Already in deck", {
+        description: `${spell.name} is already in the active deck.`,
+      });
+    }
+  };
+
+  const onAppendAll = async () => {
+    const result = await addSpellsToDeck(results);
+    if (!result.ok || (result.added === 0 && result.skipped === 0)) return;
+    if (result.added === 0) {
+      toast.info("No spells added", {
+        description: `${result.skipped} matching spell${result.skipped === 1 ? " is" : "s are"} already in the active deck.`,
+      });
+      return;
+    }
+    toast.success(
+      `Added ${result.added} spell${result.added === 1 ? "" : "s"} to the active deck.`,
+      result.skipped > 0
+        ? {
+            description: `Skipped ${result.skipped} already in the active deck.`,
+          }
+        : undefined,
+    );
   };
 
   return (
@@ -254,7 +279,7 @@ export function LibraryPane() {
             variant="secondary"
             size="sm"
             disabled={results.length === 0}
-            onClick={() => void addSpellsToDeck(results)}
+            onClick={() => void onAppendAll()}
           >
             <Sparkles size={13} aria-hidden="true" />
             Append all
@@ -307,7 +332,7 @@ export function LibraryPane() {
                 variant="ghost"
                 size="icon"
                 aria-label={`Add ${spell.name} to active deck`}
-                onClick={() => onAdd(spell)}
+                onClick={() => void onAdd(spell)}
               >
                 <Plus size={16} aria-hidden="true" />
               </Button>

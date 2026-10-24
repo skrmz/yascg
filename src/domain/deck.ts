@@ -47,15 +47,22 @@ export const deckEntrySchema = z.object({
   reference: deckReferenceSchema,
 });
 
+/** At most one deck entry per spell, regardless of how the deck was assembled. */
+export const uniqueDeckEntriesSchema = z
+  .array(deckEntrySchema)
+  .refine((entries) => new Set(entries.map((entry) => entry.spellId)).size === entries.length, {
+    message: "Deck entries must have unique spell IDs.",
+  });
+
 export const deckBaselineSchema = z.object({
   name: z.string(),
-  entries: z.array(deckEntrySchema),
+  entries: uniqueDeckEntriesSchema,
 });
 
 export const activeDeckSchema = z.object({
   name: z.string().max(120),
   savedDeckId: z.string().trim().min(1).optional(),
-  entries: z.array(deckEntrySchema),
+  entries: uniqueDeckEntriesSchema,
   revision: z.number().int().nonnegative(),
   baseline: deckBaselineSchema.nullable(),
 });
@@ -69,8 +76,24 @@ export const savedDeckSchema = z.object({
   name: z.string().trim().min(1).max(120),
   updatedAt: z.number().int().nonnegative(),
   revision: z.number().int().nonnegative(),
-  entries: z.array(deckEntrySchema),
+  entries: uniqueDeckEntriesSchema,
 });
+
+export function dedupeDeckEntries<T extends { spellId: string }>(entries: readonly T[]): T[] {
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.spellId)) return false;
+    seen.add(entry.spellId);
+    return true;
+  });
+}
+
+export function hasSpellEntry(
+  entries: readonly Pick<DeckEntry, "spellId">[],
+  spellId: string,
+): boolean {
+  return entries.some((entry) => entry.spellId === spellId);
+}
 
 export function createEmptyActiveDeck(): ActiveDeckRecord {
   return {

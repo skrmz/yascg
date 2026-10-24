@@ -2,6 +2,7 @@ import { db } from "./database.ts";
 import {
   ACTIVE_DECK_ID,
   createEmptyActiveDeck,
+  dedupeDeckEntries,
   savedDeckSchema,
   type ActiveDeckRecord,
   type DeckEntry,
@@ -26,7 +27,9 @@ export class SavedDeckConflictError extends Error {
 
 export async function listSavedDecks(): Promise<SavedDeck[]> {
   const decks = await db.savedDecks.toArray();
-  return decks.sort((a, b) => b.updatedAt - a.updatedAt);
+  return decks
+    .map((deck) => ({ ...deck, entries: dedupeDeckEntries(deck.entries) }))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export interface SavedDeckWriteResult {
@@ -58,9 +61,9 @@ function withBaseline(
   return {
     ...deck,
     name,
-    entries: cloneEntries(entries),
+    entries: dedupeDeckEntries(cloneEntries(entries)),
     savedDeckId,
-    baseline: { name, entries: cloneEntries(entries) },
+    baseline: { name, entries: dedupeDeckEntries(cloneEntries(entries)) },
     revision: deck.revision + 1,
   };
 }
@@ -84,7 +87,7 @@ export async function saveNewDeck(
       name: trimmed,
       updatedAt: now,
       revision: 0,
-      entries: cloneEntries(entries),
+      entries: dedupeDeckEntries(cloneEntries(entries)),
     });
     await db.savedDecks.put(savedDeck);
     const active = withBaseline(current, trimmed, entries, id);
@@ -123,7 +126,7 @@ export async function overwriteSavedDeck(options: {
       name: trimmed,
       updatedAt: Date.now(),
       revision: existing.revision + 1,
-      entries: cloneEntries(options.entries),
+      entries: dedupeDeckEntries(cloneEntries(options.entries)),
     };
     await db.savedDecks.put(savedDeck);
     const active = withBaseline(current, trimmed, options.entries, options.targetSavedId);
@@ -141,12 +144,13 @@ export async function loadSavedDeck(
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
     const saved = await db.savedDecks.get(savedId);
     if (!saved) throw new Error(`Saved deck "${savedId}" was not found.`);
+    const entries = dedupeDeckEntries(cloneEntries(saved.entries));
     const active: ActiveDeckRecord = {
       ...current,
       name: saved.name,
-      entries: cloneEntries(saved.entries),
+      entries,
       savedDeckId: saved.id,
-      baseline: { name: saved.name, entries: cloneEntries(saved.entries) },
+      baseline: { name: saved.name, entries: dedupeDeckEntries(cloneEntries(entries)) },
       revision: current.revision + 1,
     };
     await db.activeDeck.put(active);

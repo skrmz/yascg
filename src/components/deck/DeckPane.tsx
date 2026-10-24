@@ -3,7 +3,6 @@ import {
   ArrowDown,
   ArrowUp,
   GripVertical,
-  Plus,
   Printer,
   Save,
   Trash2,
@@ -11,6 +10,7 @@ import {
   Download,
   Wrench,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import type { DeckEntry } from "@/domain/deck";
 import type { CardFitMode } from "@/domain/spells";
@@ -31,7 +31,6 @@ export function DeckPane() {
     resolvedEntries,
     language,
     renameDeck,
-    addCopyToDeck,
     removeFromDeck,
     moveDeckEntry,
     reorderDeckEntries,
@@ -261,40 +260,51 @@ export function DeckPane() {
         </div>
       </div>
 
-      <ol className="min-h-0 flex-1 overflow-auto p-2" aria-label="Ordered deck entries">
-        {entries.length === 0 ? (
-          <li className="p-4 text-center text-sm text-muted-foreground">
-            The active deck is empty. Add spells from the library.
-          </li>
-        ) : null}
-        {resolvedEntries.map(({ entry, resolution }, index) => (
-          <DeckRow
-            key={entry.entryId}
-            entry={entry}
-            index={index}
-            resolution={resolution}
-            language={language}
-            onAddCopy={() => void addCopyToDeck(entry.entryId)}
-            onRemove={() => void removeFromDeck(entry.entryId)}
-            onMoveUp={() => void moveDeckEntry(entry.entryId, -1)}
-            onMoveDown={() => void moveDeckEntry(entry.entryId, 1)}
-            onFitMode={(mode) => void setDeckEntryFitMode(entry.entryId, mode)}
-            onRepair={() => {
-              setRepairEntryId(entry.entryId);
-              setRepairSpellId("");
-            }}
-            onSelect={() => {
-              if (resolution.status === "resolved") selectSpell(resolution.spell.id);
-            }}
-            dragProps={{
-              draggable: true,
-              onDragStart: () => onDragStart(index),
-              onDragOver: (event) => event.preventDefault(),
-              onDrop: () => onDrop(index),
-            }}
-          />
-        ))}
-      </ol>
+      <div className="mt-2 flex min-h-0 flex-1 flex-col">
+        <h2
+          id="deck-entries-heading"
+          className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        >
+          Deck entries
+        </h2>
+        <ol
+          id="deck-entries"
+          className="min-h-0 flex-1 overflow-auto p-2"
+          aria-labelledby="deck-entries-heading"
+        >
+          {entries.length === 0 ? (
+            <li className="p-4 text-center text-sm text-muted-foreground">
+              The active deck is empty. Add spells from the library.
+            </li>
+          ) : null}
+          {resolvedEntries.map(({ entry, resolution }, index) => (
+            <DeckRow
+              key={entry.entryId}
+              entry={entry}
+              index={index}
+              resolution={resolution}
+              language={language}
+              onRemove={() => void removeFromDeck(entry.entryId)}
+              onMoveUp={() => void moveDeckEntry(entry.entryId, -1)}
+              onMoveDown={() => void moveDeckEntry(entry.entryId, 1)}
+              onFitMode={(mode) => void setDeckEntryFitMode(entry.entryId, mode)}
+              onRepair={() => {
+                setRepairEntryId(entry.entryId);
+                setRepairSpellId("");
+              }}
+              onSelect={() => {
+                if (resolution.status === "resolved") selectSpell(resolution.spell.id);
+              }}
+              dragProps={{
+                draggable: true,
+                onDragStart: () => onDragStart(index),
+                onDragOver: (event) => event.preventDefault(),
+                onDrop: () => onDrop(index),
+              }}
+            />
+          ))}
+        </ol>
+      </div>
 
       <Dialog open={confirmClear} onOpenChange={setConfirmClear}>
         <DialogContent
@@ -386,6 +396,12 @@ export function DeckPane() {
                       spellId: repairTarget.id,
                       source: repairTarget.source,
                       name: repairTarget.name,
+                    }).then((result) => {
+                      if (result === "duplicate") {
+                        toast.info("Already in deck", {
+                          description: `${repairTarget.name} is already in the active deck.`,
+                        });
+                      }
                     });
                   }
                   setRepairEntryId(null);
@@ -425,7 +441,6 @@ interface DeckRowProps {
   index: number;
   resolution: EntryResolution;
   language: string;
-  onAddCopy: () => void;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -445,7 +460,6 @@ function DeckRow({
   index,
   resolution,
   language,
-  onAddCopy,
   onRemove,
   onMoveUp,
   onMoveDown,
@@ -509,9 +523,6 @@ function DeckRow({
           <Wrench size={14} aria-hidden="true" />
         </Button>
       ) : null}
-      <Button variant="ghost" size="icon" aria-label={`Add copy of ${name}`} onClick={onAddCopy}>
-        <Plus size={14} aria-hidden="true" />
-      </Button>
       <Button variant="ghost" size="icon" aria-label={`Move ${name} up`} onClick={onMoveUp}>
         <ArrowUp size={14} aria-hidden="true" />
       </Button>

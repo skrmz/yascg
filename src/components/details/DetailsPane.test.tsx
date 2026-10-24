@@ -1,10 +1,20 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { Spell } from "@/domain/spells";
 import { makeSpell } from "@/test/fixtures/spells.ts";
 import { DetailsPane } from "./DetailsPane.tsx";
 
-const holder = vi.hoisted(() => ({ spell: null as Spell | null }));
+const holder = vi.hoisted(() => ({
+  spell: null as Spell | null,
+  addSpellToDeck: vi.fn(),
+}));
+
+const toastMock = vi.hoisted(() => ({
+  info: vi.fn(),
+}));
+
+vi.mock("sonner", () => ({ toast: toastMock }));
 
 vi.mock("@/state/AppProvider.tsx", () => ({
   useApp: () => ({
@@ -14,7 +24,7 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     manifest: [],
     englishById: new Map(),
     srdSpellOverrides: [],
-    addSpellToDeck: () => Promise.resolve(),
+    addSpellToDeck: holder.addSpellToDeck,
     duplicateSpell: () => Promise.resolve(),
     deleteSpell: () => Promise.resolve(true),
     saveCustomSpell: () => Promise.resolve(null),
@@ -33,6 +43,23 @@ vi.mock("@/cards/fit.tsx", () => ({
 
 beforeEach(() => {
   holder.spell = makeSpell();
+  holder.addSpellToDeck.mockReset().mockResolvedValue("added");
+  toastMock.info.mockReset();
+});
+
+describe("DetailsPane deck additions", () => {
+  it("shows a toast when the selected spell is already in the active deck", async () => {
+    holder.spell = makeSpell({ id: "srd-fireball", name: "Fireball" });
+    holder.addSpellToDeck.mockResolvedValueOnce("duplicate");
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(toastMock.info).toHaveBeenCalledWith("Already in deck", {
+      description: "Fireball is already in the active deck.",
+    });
+  });
 });
 
 describe("DetailsPane subclasses row", () => {

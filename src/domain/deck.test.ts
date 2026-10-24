@@ -3,6 +3,8 @@ import {
   createEmptyActiveDeck,
   deckEntriesEqual,
   deckMatchesBaseline,
+  dedupeDeckEntries,
+  hasSpellEntry,
   isDeckDirty,
   type ActiveDeckRecord,
   type DeckEntry,
@@ -17,6 +19,20 @@ function entry(overrides: Partial<DeckEntry> = {}): DeckEntry {
     ...overrides,
   };
 }
+
+describe("deck entry uniqueness", () => {
+  it("keeps the first entry for each spell while preserving order", () => {
+    const first = entry({ entryId: "a-1" });
+    const second = entry({ entryId: "b-1", spellId: "srd-shield" });
+    const duplicate = entry({ entryId: "a-2" });
+    expect(dedupeDeckEntries([first, second, duplicate])).toEqual([first, second]);
+  });
+
+  it("detects whether a spell is already in a deck", () => {
+    expect(hasSpellEntry([entry()], "srd-fireball")).toBe(true);
+    expect(hasSpellEntry([entry()], "srd-shield")).toBe(false);
+  });
+});
 
 describe("deck baseline and dirty rules", () => {
   it("treats an empty unnamed deck with null baseline as clean", () => {

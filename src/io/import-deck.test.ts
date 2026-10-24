@@ -25,10 +25,38 @@ beforeEach(async () => {
 });
 
 describe("deck import analysis", () => {
-  it("accepts a valid 1.0.0 deck", () => {
+  it("accepts a valid 1.0.0 deck and deduplicates repeated spell IDs", () => {
     const analysis = analyzeDeckImport(deckPayload([validEntry, validEntry]));
     expect(analysis.ok).toBe(true);
-    if (analysis.ok) expect(analysis.plan.entries).toHaveLength(2);
+    if (analysis.ok) {
+      expect(analysis.plan.entries).toHaveLength(1);
+      expect(analysis.plan.removedDuplicates).toBe(1);
+    }
+  });
+
+  it("keeps the first occurrence and relative order when deduplicating", () => {
+    const second = {
+      ...validEntry,
+      spellId: "srd-magic-missile",
+      reference: { source: "SRD-5.2.1", name: "Magic Missile" },
+    };
+    const third = {
+      ...validEntry,
+      spellId: "srd-shield",
+      reference: { source: "SRD-5.2.1", name: "Shield" },
+    };
+    const analysis = analyzeDeckImport(
+      deckPayload([validEntry, second, validEntry, third, second]),
+    );
+    expect(analysis.ok).toBe(true);
+    if (analysis.ok) {
+      expect(analysis.plan.entries.map((entry) => entry.spellId)).toEqual([
+        "srd-fireball",
+        "srd-magic-missile",
+        "srd-shield",
+      ]);
+      expect(analysis.plan.removedDuplicates).toBe(2);
+    }
   });
 
   it("rejects a wrong type", () => {
@@ -57,7 +85,7 @@ describe("deck import analysis", () => {
 });
 
 describe("deck import commit", () => {
-  it("replaces the active deck, clears baseline, and preserves duplicates", async () => {
+  it("replaces the active deck, clears baseline, and removes duplicate entries", async () => {
     await mutateActiveDeck(0, (current) => ({
       ...current,
       name: "Old",
@@ -67,12 +95,11 @@ describe("deck import commit", () => {
     if (!analysis.ok) throw new Error("expected ok");
     const active = await applyDeckImport(analysis.plan, 1);
     expect(active.name).toBe("Imported");
-    expect(active.entries).toHaveLength(2);
+    expect(active.entries).toHaveLength(1);
     expect(active.entries[0].spellId).toBe("srd-fireball");
-    expect(active.entries[0].entryId).not.toBe(active.entries[1].entryId);
     expect(active.savedDeckId).toBeUndefined();
     expect(active.baseline).toBeNull();
     expect(active.revision).toBe(2);
-    expect((await getActiveDeck()).entries).toHaveLength(2);
+    expect((await getActiveDeck()).entries).toHaveLength(1);
   });
 });

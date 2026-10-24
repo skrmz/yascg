@@ -4,7 +4,9 @@ import {
   ACTIVE_DECK_ID,
   activeDeckRecordSchema,
   createEmptyActiveDeck,
+  dedupeDeckEntries,
   deckEntrySchema,
+  hasSpellEntry,
   type ActiveDeckRecord,
   type DeckEntry,
 } from "@/domain/deck";
@@ -58,10 +60,23 @@ export async function mutateActiveDeck(
       throw new DeckConflictError(expectedRevision, current.revision);
     }
     const draft = mutator(current);
+    const entries = dedupeDeckEntries(draft.entries);
+    const baseline =
+      draft.baseline === null
+        ? null
+        : { ...draft.baseline, entries: dedupeDeckEntries(draft.baseline.entries) };
+    const dedupeChangedDraft =
+      entries.length !== draft.entries.length ||
+      (baseline !== null &&
+        draft.baseline !== null &&
+        baseline.entries.length !== draft.baseline.entries.length);
+    if (draft === current && !dedupeChangedDraft) return current;
     const next: ActiveDeckRecord = {
       ...draft,
       id: ACTIVE_DECK_ID,
       name: draft.name.trim().slice(0, 120),
+      entries,
+      baseline,
       revision: current.revision + 1,
     };
     const validated = activeDeckRecordSchema.parse(next);
@@ -84,21 +99,8 @@ export function makeEntry(spellId: string, source: SpellSource, name: string): D
 }
 
 export function addEntry(current: ActiveDeckRecord, entry: DeckEntry): ActiveDeckRecord {
+  if (hasSpellEntry(current.entries, entry.spellId)) return current;
   return { ...current, entries: [...current.entries, entry] };
-}
-
-export function addCopy(current: ActiveDeckRecord, entryId: string): ActiveDeckRecord {
-  const index = current.entries.findIndex((entry) => entry.entryId === entryId);
-  if (index === -1) return current;
-  const source = current.entries[index];
-  const copy: DeckEntry = {
-    ...source,
-    entryId: newEntryId(),
-    reference: { ...source.reference },
-  };
-  const entries = [...current.entries];
-  entries.splice(index + 1, 0, copy);
-  return { ...current, entries };
 }
 
 export function removeEntry(current: ActiveDeckRecord, entryId: string): ActiveDeckRecord {
@@ -166,16 +168,22 @@ export function repairEntry(
   entryId: string,
   target: { spellId: string; reference: { source: SpellSource; name: string } },
 ): ActiveDeckRecord {
+  const entry = current.entries.find((candidate) => candidate.entryId === entryId);
+  if (!entry) return current;
+  const targetAlreadyPresent = current.entries.some(
+    (candidate) => candidate.entryId !== entryId && candidate.spellId === target.spellId,
+  );
+  if (targetAlreadyPresent) return current;
   return {
     ...current,
-    entries: current.entries.map((entry) =>
-      entry.entryId === entryId
+    entries: current.entries.map((candidate) =>
+      candidate.entryId === entryId
         ? {
-            ...entry,
+            ...candidate,
             spellId: target.spellId,
             reference: { source: target.reference.source, name: target.reference.name },
           }
-        : entry,
+        : candidate,
     ),
   };
 }
@@ -188,7 +196,7 @@ export interface DeckSnapshot {
 }
 
 export function replaceDeck(current: ActiveDeckRecord, snapshot: DeckSnapshot): ActiveDeckRecord {
-  const entries = snapshot.entries.map((entry) => deckEntrySchema.parse(entry));
+  const entries = dedupeDeckEntries(snapshot.entries.map((entry) => deckEntrySchema.parse(entry)));
   const next: ActiveDeckRecord = {
     ...current,
     name: snapshot.name,
@@ -198,7 +206,9 @@ export function replaceDeck(current: ActiveDeckRecord, snapshot: DeckSnapshot): 
         ? null
         : {
             name: snapshot.baseline.name,
-            entries: snapshot.baseline.entries.map((entry) => deckEntrySchema.parse(entry)),
+            entries: dedupeDeckEntries(
+              snapshot.baseline.entries.map((entry) => deckEntrySchema.parse(entry)),
+            ),
           },
   };
   if (snapshot.savedDeckId === undefined) {
@@ -218,7 +228,7 @@ export function withBaseline(
     ...current,
     baseline: {
       name,
-      entries: entries.map((entry) => ({ ...entry, reference: { ...entry.reference } })),
+      entries: dedupeDeckEntries(cloneEntries(entries)),
     },
   };
 }

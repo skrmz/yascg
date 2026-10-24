@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import {
   buildCustomSpellsPayload,
@@ -154,11 +155,19 @@ export function ImportExportDialog({
     }
     setDeckPlan(analysis.plan);
     setConfirmDeck(false);
+    const duplicateText =
+      analysis.plan.removedDuplicates > 0
+        ? ` ${analysis.plan.removedDuplicates} duplicate entr${
+            analysis.plan.removedDuplicates === 1 ? "y" : "ies"
+          } will be removed.`
+        : "";
     setNotice({
       tone: "ok",
       text: analysis.plan.unknownVersion
-        ? "Unknown version — Try Import available. Confirm to replace the active deck."
-        : `${analysis.plan.entries.length} deck entr(y/ies) validated. Confirm to replace the active deck.`,
+        ? `Unknown version — Try Import available. Confirm to replace the active deck.${duplicateText}`
+        : `${analysis.plan.entries.length} deck entr${
+            analysis.plan.entries.length === 1 ? "y" : "ies"
+          } validated. Confirm to replace the active deck.${duplicateText}`,
     });
   };
 
@@ -168,7 +177,21 @@ export function ImportExportDialog({
     if (!current) return;
     try {
       await applyDeckImport(deckPlan, current.revision);
-      setNotice({ tone: "ok", text: "Active deck replaced." });
+      const duplicateText =
+        deckPlan.removedDuplicates > 0
+          ? ` Removed ${deckPlan.removedDuplicates} duplicate entr${
+              deckPlan.removedDuplicates === 1 ? "y" : "ies"
+            }.`
+          : "";
+      setNotice({ tone: "ok", text: `Active deck replaced.${duplicateText}` });
+      toast.success("Deck imported", {
+        description:
+          deckPlan.removedDuplicates > 0
+            ? `Removed ${deckPlan.removedDuplicates} duplicate entr${
+                deckPlan.removedDuplicates === 1 ? "y" : "ies"
+              } from the imported deck.`
+            : "The active deck was replaced.",
+      });
       setDeckPlan(null);
       refreshAll();
     } catch (error) {
@@ -305,6 +328,11 @@ export function ImportExportDialog({
                   {deckPlan.entries.length} entr{deckPlan.entries.length === 1 ? "y" : "ies"}
                   {deckPlan.name ? ` — name "${deckPlan.name}"` : ""}. Import replaces the active
                   deck and leaves saved decks untouched.
+                  {deckPlan.removedDuplicates > 0
+                    ? ` ${deckPlan.removedDuplicates} duplicate entr${
+                        deckPlan.removedDuplicates === 1 ? "y" : "ies"
+                      } will be removed.`
+                    : ""}
                 </p>
                 {confirmDeck ? (
                   <Button size="sm" variant="destructive" onClick={() => void commitDeck()}>

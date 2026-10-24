@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppProvider, useApp } from "./state/AppProvider.tsx";
 import { AppShell } from "./components/AppShell.tsx";
+import { Toaster } from "./ui/Sonner.tsx";
 import { db } from "./db/database.ts";
 import i18n, { toUiLocale } from "./i18n.ts";
 
@@ -56,6 +57,7 @@ export function App() {
       <UiLocaleBridge />
       <StorageNotice />
       <AppShell />
+      <Toaster />
     </AppProvider>
   );
 }

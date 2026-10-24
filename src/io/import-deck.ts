@@ -9,7 +9,7 @@ import {
   type DeckExportEntry,
 } from "@/domain/payloads";
 import { newEntryId } from "@/domain/ids";
-import { type ActiveDeckRecord, type DeckEntry } from "@/domain/deck";
+import { type ActiveDeckRecord, type DeckEntry, dedupeDeckEntries } from "@/domain/deck";
 import { mutateActiveDeck, replaceDeck } from "@/db/active-deck.ts";
 
 export interface DeckImportPlan {
@@ -17,6 +17,7 @@ export interface DeckImportPlan {
   unknownVersion: boolean;
   name: string;
   entries: DeckExportEntry[];
+  removedDuplicates: number;
 }
 
 export type DeckImportAnalysis = { ok: true; plan: DeckImportPlan } | { ok: false; error: string };
@@ -62,13 +63,15 @@ export function analyzeDeckImport(text: string): DeckImportAnalysis {
     if (parsed.data.entries.length > LIMITS.DECK_ENTRIES_MAX) {
       return { ok: false, error: "The deck contains more than 2,000 entries." };
     }
+    const entries = dedupeDeckEntries(parsed.data.entries);
     return {
       ok: true,
       plan: {
         version,
         unknownVersion,
         name: parsed.data.name,
-        entries: parsed.data.entries,
+        entries,
+        removedDuplicates: parsed.data.entries.length - entries.length,
       },
     };
   }
@@ -95,16 +98,28 @@ export function analyzeDeckImport(text: string): DeckImportAnalysis {
     typeof (raw as { name?: unknown }).name === "string"
       ? (raw as { name: string }).name.slice(0, 120)
       : "";
-  return { ok: true, plan: { version, unknownVersion, name, entries } };
+  const uniqueEntries = dedupeDeckEntries(entries);
+  return {
+    ok: true,
+    plan: {
+      version,
+      unknownVersion,
+      name,
+      entries: uniqueEntries,
+      removedDuplicates: entries.length - uniqueEntries.length,
+    },
+  };
 }
 
 export function planToEntries(plan: DeckImportPlan): DeckEntry[] {
-  return plan.entries.map((entry) => ({
-    entryId: newEntryId(),
-    spellId: entry.spellId,
-    fitMode: entry.fitMode,
-    reference: { source: entry.reference.source, name: entry.reference.name },
-  }));
+  return dedupeDeckEntries(
+    plan.entries.map((entry) => ({
+      entryId: newEntryId(),
+      spellId: entry.spellId,
+      fitMode: entry.fitMode,
+      reference: { source: entry.reference.source, name: entry.reference.name },
+    })),
+  );
 }
 
 /** Replaces the active deck after confirmation; validation happens before commit. */

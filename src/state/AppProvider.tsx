@@ -10,7 +10,6 @@ import {
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database.ts";
 import {
-  addCopy,
   addEntry,
   clearEntries,
   DeckConflictError,
@@ -70,7 +69,18 @@ import {
   type LanguageSwitchImpact,
 } from "@/services/data/resolution.ts";
 import type { ActiveDeckRecord, DeckEntry, SavedDeck } from "@/domain/deck";
+import { hasSpellEntry } from "@/domain/deck";
 import type { CardFitMode, Spell, SpellSource, SrdSpellOverride } from "@/domain/spells";
+
+export type AddSpellResult = "added" | "duplicate" | "error";
+
+export interface AddSpellsResult {
+  added: number;
+  skipped: number;
+  ok: boolean;
+}
+
+export type RepairDeckEntryResult = "repaired" | "duplicate" | "error";
 
 export interface ResolvedDeckEntry {
   entry: DeckEntry;
@@ -120,10 +130,9 @@ export interface AppContextValue {
   reloadLatest: () => void;
   dismissConflict: () => void;
 
-  addSpellToDeck: (spell: Spell) => Promise<void>;
-  addSpellsToDeck: (spells: readonly Spell[]) => Promise<void>;
+  addSpellToDeck: (spell: Spell) => Promise<AddSpellResult>;
+  addSpellsToDeck: (spells: readonly Spell[]) => Promise<AddSpellsResult>;
   replaceDeckWithSpells: (spells: readonly Spell[]) => Promise<void>;
-  addCopyToDeck: (entryId: string) => Promise<void>;
   removeFromDeck: (entryId: string) => Promise<void>;
   moveDeckEntry: (entryId: string, delta: -1 | 1) => Promise<void>;
   reorderDeckEntries: (fromIndex: number, toIndex: number) => Promise<void>;
@@ -133,7 +142,7 @@ export interface AppContextValue {
   repairDeckEntry: (
     entryId: string,
     target: { spellId: string; source: SpellSource; name: string },
-  ) => Promise<void>;
+  ) => Promise<RepairDeckEntryResult>;
   replaceActiveDeck: (snapshot: DeckSnapshot) => Promise<void>;
 
   saveDeckAs: (name: string) => Promise<SavedDeck | null>;
@@ -366,23 +375,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const addSpellToDeck = useCallback(
-    async (spell: Spell) => {
-      await runDeckMutation((current) =>
-        addEntry(current, makeEntry(spell.id, spell.source, spell.name)),
-      );
+    async (spell: Spell): Promise<AddSpellResult> => {
+      let result: AddSpellResult = "duplicate";
+      const ok = await runDeckMutation((current) => {
+        if (hasSpellEntry(current.entries, spell.id)) return current;
+        result = "added";
+        return addEntry(current, makeEntry(spell.id, spell.source, spell.name));
+      });
+      return ok ? result : "error";
     },
     [runDeckMutation],
   );
 
   const addSpellsToDeck = useCallback(
-    async (spells: readonly Spell[]) => {
-      if (spells.length === 0) return;
-      await runDeckMutation((current) =>
-        spells.reduce(
-          (deck, spell) => addEntry(deck, makeEntry(spell.id, spell.source, spell.name)),
-          current,
-        ),
-      );
+    async (spells: readonly Spell[]): Promise<AddSpellsResult> => {
+      if (spells.length === 0) return { added: 0, skipped: 0, ok: true };
+      let added = 0;
+      let skipped = 0;
+      const ok = await runDeckMutation((current) => {
+        const seen = new Set(current.entries.map((entry) => entry.spellId));
+        let next = current;
+        for (const spell of spells) {
+          if (seen.has(spell.id)) {
+            skipped += 1;
+            continue;
+          }
+          seen.add(spell.id);
+          next = addEntry(next, makeEntry(spell.id, spell.source, spell.name));
+          added += 1;
+        }
+        return next;
+      });
+      return { added: ok ? added : 0, skipped, ok };
     },
     [runDeckMutation],
   );
@@ -393,13 +417,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...current,
         entries: spells.map((spell) => makeEntry(spell.id, spell.source, spell.name)),
       }));
-    },
-    [runDeckMutation],
-  );
-
-  const addCopyToDeck = useCallback(
-    async (entryId: string) => {
-      await runDeckMutation((current) => addCopy(current, entryId));
     },
     [runDeckMutation],
   );
@@ -444,13 +461,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [runDeckMutation]);
 
   const repairDeckEntryFn = useCallback(
-    async (entryId: string, target: { spellId: string; source: SpellSource; name: string }) => {
-      await runDeckMutation((current) =>
-        repairEntry(current, entryId, {
+    async (
+      entryId: string,
+      target: { spellId: string; source: SpellSource; name: string },
+    ): Promise<RepairDeckEntryResult> => {
+      let result: RepairDeckEntryResult = "error";
+      const ok = await runDeckMutation((current) => {
+        const entry = current.entries.find((candidate) => candidate.entryId === entryId);
+        if (!entry) return current;
+        const targetAlreadyPresent = current.entries.some(
+          (candidate) => candidate.entryId !== entryId && candidate.spellId === target.spellId,
+        );
+        if (targetAlreadyPresent) {
+          result = "duplicate";
+          return current;
+        }
+        result = "repaired";
+        return repairEntry(current, entryId, {
           spellId: target.spellId,
           reference: { source: target.source, name: target.name },
-        }),
-      );
+        });
+      });
+      return ok ? result : "error";
     },
     [runDeckMutation],
   );
@@ -796,7 +828,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addSpellToDeck,
       addSpellsToDeck,
       replaceDeckWithSpells,
-      addCopyToDeck,
       removeFromDeck,
       moveDeckEntry,
       reorderDeckEntries,
@@ -849,7 +880,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addSpellToDeck,
       addSpellsToDeck,
       replaceDeckWithSpells,
-      addCopyToDeck,
       removeFromDeck,
       moveDeckEntry,
       reorderDeckEntries,

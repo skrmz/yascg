@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Copy, Plus, SquarePen, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { CardView, classSummary, materialDetailText } from "@/cards/Card.tsx";
 import {
@@ -65,6 +66,14 @@ export function DetailsPane() {
 
   const spell = selectedSpell;
   const isCustom = spell.source === "Custom";
+  const onAdd = async () => {
+    const result = await addSpellToDeck(spell);
+    if (result === "duplicate") {
+      toast.info("Already in deck", {
+        description: `${spell.name} is already in the active deck.`,
+      });
+    }
+  };
   const descriptionBlocks = parseMarkdown(spell.description.join("\n\n"));
   const higherBlocks = spell.higherLevels ? parseMarkdown(spell.higherLevels.join("\n\n")) : [];
   const componentBlocks = componentDescriptionBlocks(spell, {
@@ -85,7 +94,7 @@ export function DetailsPane() {
           />
         </div>
         <div className="flex items-center gap-1">
-          <Button size="sm" onClick={() => void addSpellToDeck(spell)}>
+          <Button size="sm" onClick={() => void onAdd()}>
             <Plus size={14} aria-hidden="true" />
             Add
           </Button>

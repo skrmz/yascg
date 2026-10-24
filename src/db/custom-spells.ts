@@ -3,6 +3,7 @@ import { DeckConflictError } from "./active-deck.ts";
 import {
   ACTIVE_DECK_ID,
   createEmptyActiveDeck,
+  dedupeDeckEntries,
   type ActiveDeckRecord,
   type DeckEntry,
 } from "@/domain/deck";
@@ -153,7 +154,7 @@ export async function restoreDeletedSpell(
     }
     const next: ActiveDeckRecord = {
       ...active,
-      entries,
+      entries: dedupeDeckEntries(entries),
       revision: active.revision + 1,
     };
     await db.activeDeck.put(next);
