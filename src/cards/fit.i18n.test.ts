@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
-import { AUTO_SHRINK_STEPS, computeFit, type MeasureFit } from "@/cards/fit.tsx";
+import {
+  AUTO_SHRINK_STEPS,
+  MULTI_CARD_FONT_PT,
+  computeFit,
+  type MeasureFit,
+} from "@/cards/fit.tsx";
 import { parseSpellBody, type BlockNode } from "@/markdown/parse.ts";
 
 const spell = {
@@ -34,6 +39,38 @@ function headingText(blocks: readonly BlockNode[]): string | null {
 function measureByBlockCount(maxBlocks: number): MeasureFit {
   return (blocks) => blocks.length <= maxBlocks;
 }
+
+function paragraph(value: string): BlockNode {
+  return { type: "paragraph", children: [{ type: "text", value }] };
+}
+
+describe("multi-card pagination layout", () => {
+  it("measures pages after the first with the continuation-card layout", () => {
+    const blocks = ["a", "b", "c", "d", "e", "f"].map(paragraph);
+    const measure: MeasureFit = (page, _fontPt, continuation) =>
+      page.length <= (continuation ? 4 : 2);
+
+    const fit = computeFit(blocks, measure, "multi-card");
+
+    expect(fit.pages.map((page) => page.length)).toEqual([2, 4]);
+    expect(fit.pages.flat()).toHaveLength(blocks.length);
+    expect(fit.fontPt).toBe(MULTI_CARD_FONT_PT);
+    expect(fit.overflow).toBe(false);
+  });
+
+  it("keeps auto-shrink on the first-card layout", () => {
+    const continuations: boolean[] = [];
+    const measure: MeasureFit = (_page, _fontPt, continuation) => {
+      continuations.push(continuation);
+      return continuation === false;
+    };
+
+    const fit = computeFit([paragraph("Short")], measure, "auto-shrink");
+
+    expect(fit.pages).toHaveLength(1);
+    expect(continuations.every((continuation) => continuation === false)).toBe(true);
+  });
+});
 
 describe("computeFit across localized headings", () => {
   it("parses the localized Higher Levels heading per locale", () => {

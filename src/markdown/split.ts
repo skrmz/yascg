@@ -308,13 +308,17 @@ export interface PaginationResult {
   overflow: boolean;
 }
 
+export type PageFit = (page: readonly BlockNode[], pageIndex: number) => boolean;
+
 /**
- * Greedy paginator using a caller-supplied page-fit predicate. Prevents orphaning
- * a heading at the bottom of a page when the following block can move with it.
+ * Greedy paginator using a caller-supplied page-fit predicate. The predicate
+ * receives the zero-based page index so first-card and continuation-card
+ * layouts can be measured differently. Prevents orphaning a heading at the
+ * bottom of a page when the following block can move with it.
  */
 export function paginateBlocks(
   blocks: readonly BlockNode[],
-  fitsPage: (page: readonly BlockNode[]) => boolean,
+  fitsPage: PageFit,
   maxPages = 100,
 ): PaginationResult {
   const queue = blocks.map(cloneBlock);
@@ -330,7 +334,7 @@ export function paginateBlocks(
     }
     const block = queue[index];
     const candidate = [...current, block];
-    if (fitsPage(candidate)) {
+    if (fitsPage(candidate, pages.length)) {
       current = candidate;
       index += 1;
       continue;
@@ -350,7 +354,9 @@ export function paginateBlocks(
       continue;
     }
 
-    const split = splitBlockToFit(block, (candidateBlock) => fitsPage([candidateBlock]));
+    const split = splitBlockToFit(block, (candidateBlock) =>
+      fitsPage([candidateBlock], pages.length),
+    );
     if (!split) {
       overflow = true;
       pages.push([block]);
@@ -367,7 +373,7 @@ export function paginateBlocks(
 
 export function paginateToPages(
   blocks: readonly BlockNode[],
-  fitsPage: (page: readonly BlockNode[]) => boolean,
+  fitsPage: PageFit,
   maxPages = 100,
 ): PaginationResult {
   return paginateBlocks(blocks, fitsPage, maxPages);

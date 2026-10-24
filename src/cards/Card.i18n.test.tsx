@@ -94,6 +94,44 @@ describe("CardView localization", () => {
   });
 });
 
+describe("CardView continuation layout", () => {
+  const materialSpell: Spell = {
+    ...fireball,
+    components: {
+      ...fireball.components,
+      materialDescription: "A ruby",
+      materialCost: "100 gp",
+      materialConsumed: true,
+    },
+  };
+
+  it("renders only the compact continuation header, body, and footer", async () => {
+    await setLocale("en");
+    render(<CardView spell={materialSpell} blocks={[]} cardIndex={2} cardCount={3} fontPt={8} />);
+    expect(screen.getByText("Feuerball")).not.toBeNull();
+    expect(screen.getByText(/Level 3/)).not.toBeNull();
+    expect(screen.getByText("contd.")).not.toBeNull();
+    expect(screen.queryByText("Casting Time")).toBeNull();
+    expect(screen.queryByText("A ruby (100 gp, consumed)")).toBeNull();
+    expect(screen.getByText(/Continued from Card 1/)).not.toBeNull();
+    expect(screen.getByText(/Card 2 of 3/)).not.toBeNull();
+  });
+
+  it("localizes the continuation label in German", async () => {
+    await setLocale("de");
+    render(<CardView spell={fireball} blocks={[]} cardIndex={2} cardCount={2} fontPt={8} />);
+    expect(screen.getByText("fortgesetzt")).not.toBeNull();
+    expect(screen.queryByText("contd.")).toBeNull();
+  });
+
+  it("keeps the full header and metadata on the first card", async () => {
+    await setLocale("en");
+    render(<CardView spell={fireball} blocks={[]} cardIndex={1} cardCount={3} fontPt={8} />);
+    expect(screen.queryByText("contd.")).toBeNull();
+    expect(screen.getByText("Casting Time")).not.toBeNull();
+  });
+});
+
 describe("CardView component and material rendering", () => {
   it("renders component-description blocks with localized markers", () => {
     const spell: Spell = {

@@ -164,7 +164,8 @@ updates are reviewed through `git diff` on the raw source and the regenerated da
   renderer, and deterministic AST splitting/pagination.
 - `src/cards/` — card chrome plus hidden-card measurement, `document.fonts.ready`
   gating, auto-shrink (8.5pt → 6pt) and multi-card pagination with heading-orphan
-  prevention.
+  prevention. Continuation cards use a compact header with a localized
+  `contd.`/`fortgesetzt` label and omit repeated metadata to maximize body space.
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
 - `src/io/` — JSON export/import with collision review and atomic commits. Custom-spell
   payloads are version `1.1.0` (they may carry SRD component-text overrides); deck
@@ -204,6 +205,11 @@ and status/error messages remain English.
 
 Open **Print** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per sheet on a
 centered 7.5in x 10.5in grid.
+
+In **Multi-Card** mode, the first card keeps the full header and metadata block.
+Continuation cards keep the card header with a localized `contd.`/`fortgesetzt` label,
+omit the repeated metadata, and use the extra space for description text; pagination is
+measured against these continuation layouts so preview and print match.
 
 Before printing, configure your browser/printer:
 

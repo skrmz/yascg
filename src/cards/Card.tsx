@@ -21,6 +21,7 @@ export interface CardViewProps {
   overflowWarning?: boolean;
   className?: string;
   bodyRef?: Ref<HTMLDivElement>;
+  continuation?: boolean;
 }
 
 export function componentSummary(spell: Spell, t: TFunction): string {
@@ -79,6 +80,7 @@ export function CardView({
   overflowWarning = false,
   className,
   bodyRef,
+  continuation,
 }: CardViewProps) {
   const { t, i18n } = useTranslation();
   const levelLabel = t(levelLabelKey(spell.level), { level: spell.level });
@@ -87,14 +89,20 @@ export function CardView({
   if (spell.ritual) labels.push(t("spell.flag.ritual"));
   const classes = classSummary(spell.classes, t);
   const material = materialDetailText(spell, t);
+  const isContinuation = continuation ?? cardIndex > 1;
 
   return (
     <article
       lang={i18n.resolvedLanguage}
-      className={`spell-card${className ? ` ${className}` : ""}`}
+      className={`spell-card${isContinuation ? " spell-card-continuation" : ""}${
+        className ? ` ${className}` : ""
+      }`}
       style={{ ["--body-font-pt" as string]: `${fontPt}pt` }}
     >
       <header className="card-header">
+        {isContinuation ? (
+          <span className="card-continuation-label">{t("card.continued")}</span>
+        ) : null}
         <h2 className="card-name" title={spell.name}>
           {spell.name}
         </h2>
@@ -111,16 +119,18 @@ export function CardView({
           </span>
         </div>
       </header>
-      <dl className="card-metadata">
-        {metadataRows(spell, t).map((row) => (
-          <div className="card-metadata-row" key={row.label}>
-            <dt>{row.label}</dt>
-            <dd title={row.value}>{row.value}</dd>
-          </div>
-        ))}
-      </dl>
+      {isContinuation ? null : (
+        <dl className="card-metadata">
+          {metadataRows(spell, t).map((row) => (
+            <div className="card-metadata-row" key={row.label}>
+              <dt>{row.label}</dt>
+              <dd title={row.value}>{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
       <div className="card-body-measured" ref={bodyRef}>
-        {material ? (
+        {material && !isContinuation ? (
           <p className="card-material" title={material}>
             {material}
           </p>

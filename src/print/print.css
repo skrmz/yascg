@@ -49,6 +49,23 @@
 
 .card-header {
   flex: 0 0 auto;
+  position: relative;
+}
+
+.card-continuation-label {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 6.5pt;
+  line-height: 1.08;
+  font-style: italic;
+  font-variant: small-caps;
+  color: #4a4a4a;
+  white-space: nowrap;
+}
+
+.spell-card-continuation .card-name {
+  padding-right: 0.58in;
 }
 
 .card-name {

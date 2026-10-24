@@ -149,6 +149,7 @@ export const de = {
     },
   },
   card: {
+    continued: "fortgesetzt",
     truncated: "Inhalt gekürzt",
     continuedFrom: "Fortgesetzt von Karte {{index}}",
     continuation: "Karte {{index}} von {{count}}",

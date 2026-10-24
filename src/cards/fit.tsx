@@ -14,7 +14,11 @@ export const AUTO_SHRINK_MIN_PT = 6;
 export const MULTI_CARD_FONT_PT = 8;
 export const MULTI_CARD_MIN_FONT_PT = 6;
 
-export type MeasureFit = (blocks: readonly BlockNode[], fontPt: number) => boolean;
+export type MeasureFit = (
+  blocks: readonly BlockNode[],
+  fontPt: number,
+  continuation: boolean,
+) => boolean;
 
 export interface FitResult {
   pages: BlockNode[][];
@@ -32,12 +36,12 @@ export function computeFit(
   const source = blocks.map(cloneBlock);
   if (fitMode === "auto-shrink") {
     for (const fontPt of AUTO_SHRINK_STEPS) {
-      if (measure(source, fontPt)) {
+      if (measure(source, fontPt, false)) {
         return { pages: [source], fontPt, truncated: false, overflow: false };
       }
     }
     const truncated = truncateBlocksToFit(source, (candidate) =>
-      measure(candidate, AUTO_SHRINK_MIN_PT),
+      measure(candidate, AUTO_SHRINK_MIN_PT, false),
     );
     return {
       pages: [truncated.blocks],
@@ -47,10 +51,12 @@ export function computeFit(
     };
   }
   let fontPt: number = MULTI_CARD_FONT_PT;
-  let result = paginateToPages(source, (page) => measure(page, fontPt), maxCards);
+  const fitsPage = (page: readonly BlockNode[], pageIndex: number) =>
+    measure(page, fontPt, pageIndex > 0);
+  let result = paginateToPages(source, fitsPage, maxCards);
   if (result.overflow && fontPt > MULTI_CARD_MIN_FONT_PT) {
     fontPt = MULTI_CARD_MIN_FONT_PT;
-    result = paginateToPages(source, (page) => measure(page, fontPt), maxCards);
+    result = paginateToPages(source, fitsPage, maxCards);
   }
   return { pages: result.pages, fontPt, truncated: false, overflow: result.overflow };
 }
@@ -65,10 +71,16 @@ interface Layout {
   spell: Spell | null;
   blocks: BlockNode[];
   fontPt: number;
+  continuation: boolean;
 }
 
 interface Measurer {
-  measure: (spell: Spell, blocks: readonly BlockNode[], fontPt: number) => boolean;
+  measure: (
+    spell: Spell,
+    blocks: readonly BlockNode[],
+    fontPt: number,
+    continuation: boolean,
+  ) => boolean;
   layer: ReactNode;
 }
 
@@ -79,10 +91,11 @@ function useMeasurer(): Measurer {
     spell: null,
     blocks: [],
     fontPt: AUTO_SHRINK_STEPS[0],
+    continuation: false,
   });
 
-  const measure = useCallback<Measurer["measure"]>((spell, blocks, fontPt) => {
-    flushSync(() => setLayout({ spell, blocks: blocks.map(cloneBlock), fontPt }));
+  const measure = useCallback<Measurer["measure"]>((spell, blocks, fontPt, continuation) => {
+    flushSync(() => setLayout({ spell, blocks: blocks.map(cloneBlock), fontPt, continuation }));
     const element = bodyRef.current;
     if (!element) return true;
     return element.scrollHeight <= element.clientHeight + 1;
@@ -95,9 +108,10 @@ function useMeasurer(): Measurer {
             <CardView
               spell={layout.spell}
               blocks={layout.blocks}
-              cardIndex={1}
-              cardCount={1}
+              cardIndex={layout.continuation ? 2 : 1}
+              cardCount={layout.continuation ? 2 : 1}
               fontPt={layout.fontPt}
+              continuation={layout.continuation}
               bodyRef={bodyRef}
               className="spell-card-measure"
             />
@@ -181,7 +195,7 @@ export function useCardFit({ spell, fitMode, language }: UseCardFitOptions): Use
         if (cancelled) return;
         const computed = computeFit(
           blocks,
-          (candidate, fontPt) => measure(spell, candidate, fontPt),
+          (candidate, fontPt, continuation) => measure(spell, candidate, fontPt, continuation),
           fitMode,
         );
         if (cancelled) return;
@@ -272,7 +286,8 @@ export function useDeckCardFits(
         if (!computed) {
           computed = computeFit(
             blocks,
-            (candidate, fontPt) => measure(item.spell, candidate, fontPt),
+            (candidate, fontPt, continuation) =>
+              measure(item.spell, candidate, fontPt, continuation),
             item.fitMode,
           );
           fitCache.set(cacheKey, computed);
