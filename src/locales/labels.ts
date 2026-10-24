@@ -1,6 +1,15 @@
 import type { TFunction } from "i18next";
-import type { CharacterClass, CoreClass, DamageType, SpellSchool } from "@/domain/spells";
+import type {
+  CharacterClass,
+  CoreClass,
+  DamageType,
+  Spell,
+  SpellSchool,
+  SpellSource,
+} from "@/domain/spells";
 import { subclassDisplayNameFallback, type SubclassId } from "@/domain/subclasses";
+import { de } from "./de.ts";
+import { en } from "./en.ts";
 
 export const SCHOOL_KEYS = {
   Abjuration: "school.abjuration",
@@ -127,6 +136,64 @@ export type ComponentTranslationKey = (typeof COMPONENT_KEYS)[ComponentKind];
 
 export function componentKey(component: ComponentKind): ComponentTranslationKey {
   return COMPONENT_KEYS[component];
+}
+
+export const COMPONENT_MARKER_KEYS = {
+  verbal: "component.marker.verbal",
+  somatic: "component.marker.somatic",
+} as const;
+
+export type ComponentMarkerKind = keyof typeof COMPONENT_MARKER_KEYS;
+export type ComponentMarkerTranslationKey = (typeof COMPONENT_MARKER_KEYS)[ComponentMarkerKind];
+
+export function componentMarkerKey(kind: ComponentMarkerKind): ComponentMarkerTranslationKey {
+  return COMPONENT_MARKER_KEYS[kind];
+}
+
+/** Localized component-description markers, resolved without i18next. */
+export interface ComponentMarkers {
+  verbal: string;
+  somatic: string;
+}
+
+export function componentMarkers(language: string): ComponentMarkers {
+  const source = language === "de" ? de : en;
+  return { ...source.component.marker };
+}
+
+export const SOURCE_KEYS = {
+  "SRD-5.2.1": "source.srd",
+  Custom: "source.custom",
+} as const satisfies Record<SpellSource, string>;
+
+export type SourceTranslationKey = (typeof SOURCE_KEYS)[SpellSource];
+
+export function sourceKey(source: SpellSource): SourceTranslationKey {
+  return SOURCE_KEYS[source];
+}
+
+/**
+ * Canonical source label followed by ` *` when the spell carries a live SRD
+ * override. The canonical `source`/`sourceLabel` data is never mutated.
+ */
+export function sourceLabelText(
+  spell: Pick<Spell, "source" | "sourceLabel" | "overridden">,
+  t: TFunction,
+): string {
+  const label = spell.sourceLabel ?? t(sourceKey(spell.source));
+  return spell.overridden ? `${label} *` : label;
+}
+
+/** Localized default values for a new custom-spell draft. */
+export interface DraftDefaults {
+  castingTime: string;
+  range: string;
+  duration: string;
+}
+
+export function customSpellDraftDefaults(language: string): DraftDefaults {
+  const source = language === "de" ? de : en;
+  return { ...source.form.default };
 }
 
 export const DAMAGE_TYPE_KEYS = {

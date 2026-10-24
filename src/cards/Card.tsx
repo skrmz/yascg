@@ -4,7 +4,13 @@ import type { TFunction } from "i18next";
 import type { CharacterClass, Spell } from "@/domain/spells";
 import type { BlockNode } from "@/markdown/parse.ts";
 import { BlockList } from "@/markdown/render.tsx";
-import { classKey, componentKey, levelLabelKey, schoolKey } from "@/locales/labels.ts";
+import {
+  classKey,
+  componentKey,
+  levelLabelKey,
+  schoolKey,
+  sourceLabelText,
+} from "@/locales/labels.ts";
 
 export interface CardViewProps {
   spell: Spell;
@@ -36,6 +42,25 @@ export function classSummary(classes: readonly CharacterClass[], t: TFunction): 
     .join(", ");
 }
 
+/**
+ * Composes the material-detail line from description, cost, and an optional
+ * consumed qualifier. Returns `null` when the material component is disabled or
+ * no detail text exists, so no empty parentheses or stray separators render.
+ */
+export function materialDetailText(spell: Spell, t: TFunction): string | null {
+  const components = spell.components;
+  if (!components.material) return null;
+  const description = components.materialDescription?.trim() ?? "";
+  const details: string[] = [];
+  const cost = components.materialCost?.trim();
+  if (cost) details.push(cost);
+  if (components.materialConsumed) details.push(t("spell.metadata.materialConsumed"));
+  if (description === "" && details.length === 0) return null;
+  if (description === "") return details.join(", ");
+  if (details.length === 0) return description;
+  return `${description} (${details.join(", ")})`;
+}
+
 export function metadataRows(spell: Spell, t: TFunction): Array<{ label: string; value: string }> {
   return [
     { label: t("spell.metadata.castingTime"), value: spell.castingTime },
@@ -61,6 +86,7 @@ export function CardView({
   if (spell.concentration) labels.push(t("spell.flag.concentration"));
   if (spell.ritual) labels.push(t("spell.flag.ritual"));
   const classes = classSummary(spell.classes, t);
+  const material = materialDetailText(spell, t);
 
   return (
     <article
@@ -93,16 +119,18 @@ export function CardView({
           </div>
         ))}
       </dl>
-      {spell.components.material && spell.components.materialDescription ? (
-        <p className="card-material" title={spell.components.materialDescription}>
-          {spell.components.materialDescription}
-        </p>
-      ) : null}
-      <div className="card-body" ref={bodyRef}>
-        <BlockList blocks={blocks} />
+      <div className="card-body-measured" ref={bodyRef}>
+        {material ? (
+          <p className="card-material" title={material}>
+            {material}
+          </p>
+        ) : null}
+        <div className="card-body">
+          <BlockList blocks={blocks} />
+        </div>
       </div>
       <footer className="card-footer">
-        <span className="card-source">{spell.sourceLabel ?? spell.source}</span>
+        <span className="card-source">{sourceLabelText(spell, t)}</span>
         {spell.classes.length > 0 ? (
           <p className="card-classes" title={classes}>
             {classes}

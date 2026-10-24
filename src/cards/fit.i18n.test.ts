@@ -7,6 +7,24 @@ const spell = {
   higherLevels: ["Scales with a higher slot."],
 };
 
+const markers = { verbal: "ⓥ", somatic: "ⓢ" };
+
+const richSpell = {
+  description: ["Base spell text."],
+  higherLevels: ["Scales with a higher slot."],
+  components: {
+    verbal: true,
+    verbalDescription: "A very long verbal description ".repeat(8).trim(),
+    somatic: true,
+    somaticDescription: "A very long somatic description ".repeat(8).trim(),
+    material: false,
+  },
+};
+
+function countOccurrences(haystack: string, needle: string): number {
+  return haystack.split(needle).length - 1;
+}
+
 function headingText(blocks: readonly BlockNode[]): string | null {
   const heading = blocks.find((block) => block.type === "heading");
   if (!heading || heading.type !== "heading") return null;
@@ -19,8 +37,8 @@ function measureByBlockCount(maxBlocks: number): MeasureFit {
 
 describe("computeFit across localized headings", () => {
   it("parses the localized Higher Levels heading per locale", () => {
-    const english = parseSpellBody(spell, "Higher Levels");
-    const german = parseSpellBody(spell, "Höhere Grade");
+    const english = parseSpellBody(spell, "Higher Levels", markers);
+    const german = parseSpellBody(spell, "Höhere Grade", markers);
     expect(headingText(english)).toBe("Higher Levels");
     expect(headingText(german)).toBe("Höhere Grade");
     expect(english).toHaveLength(3);
@@ -29,12 +47,12 @@ describe("computeFit across localized headings", () => {
 
   it("auto-shrinks identically for English and German headings", () => {
     const english = computeFit(
-      parseSpellBody(spell, "Higher Levels"),
+      parseSpellBody(spell, "Higher Levels", markers),
       measureByBlockCount(3),
       "auto-shrink",
     );
     const german = computeFit(
-      parseSpellBody(spell, "Höhere Grade"),
+      parseSpellBody(spell, "Höhere Grade", markers),
       measureByBlockCount(3),
       "auto-shrink",
     );
@@ -50,12 +68,12 @@ describe("computeFit across localized headings", () => {
 
   it("takes the truncation path identically when the heading never fits", () => {
     const english = computeFit(
-      parseSpellBody(spell, "Higher Levels"),
+      parseSpellBody(spell, "Higher Levels", markers),
       measureByBlockCount(2),
       "auto-shrink",
     );
     const german = computeFit(
-      parseSpellBody(spell, "Höhere Grade"),
+      parseSpellBody(spell, "Höhere Grade", markers),
       measureByBlockCount(2),
       "auto-shrink",
     );
@@ -67,18 +85,43 @@ describe("computeFit across localized headings", () => {
 
   it("reports continuation overflow identically for both locales", () => {
     const english = computeFit(
-      parseSpellBody(spell, "Higher Levels"),
+      parseSpellBody(spell, "Higher Levels", markers),
       measureByBlockCount(1),
       "multi-card",
       1,
     );
     const german = computeFit(
-      parseSpellBody(spell, "Höhere Grade"),
+      parseSpellBody(spell, "Höhere Grade", markers),
       measureByBlockCount(1),
       "multi-card",
       1,
     );
     expect(english.overflow).toBe(true);
     expect(german.overflow).toBe(true);
+  });
+});
+
+describe("component blocks through the fit pipeline", () => {
+  it("keeps component blocks in order in auto-shrink mode", () => {
+    const blocks = parseSpellBody(richSpell, "Higher Levels", markers);
+    const fit = computeFit(blocks, measureByBlockCount(blocks.length), "auto-shrink");
+    expect(fit.pages).toHaveLength(1);
+    const text = JSON.stringify(fit.pages);
+    expect(countOccurrences(text, "ⓥ ")).toBe(1);
+    expect(countOccurrences(text, "ⓢ ")).toBe(1);
+    expect(text.indexOf("Scales with a higher slot.")).toBeLessThan(text.indexOf("ⓥ "));
+    expect(text.indexOf("ⓥ ")).toBeLessThan(text.indexOf("ⓢ "));
+  });
+
+  it("emits each component block exactly once across continuation cards", () => {
+    const blocks = parseSpellBody(richSpell, "Higher Levels", markers);
+    const fit = computeFit(blocks, measureByBlockCount(2), "multi-card");
+    expect(fit.pages.length).toBeGreaterThan(1);
+    const text = JSON.stringify(fit.pages);
+    expect(countOccurrences(text, "ⓥ ")).toBe(1);
+    expect(countOccurrences(text, "ⓢ ")).toBe(1);
+    expect(text.indexOf("ⓥ ")).toBeLessThan(text.indexOf("ⓢ "));
+    const total = fit.pages.reduce((sum, page) => sum + page.length, 0);
+    expect(total).toBe(blocks.length);
   });
 });

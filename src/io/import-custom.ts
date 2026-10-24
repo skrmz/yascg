@@ -1,12 +1,15 @@
+import { z } from "zod";
 import { db } from "@/db/database.ts";
 import { LIMITS, spellSchema, type Spell } from "@/domain/spells";
+import { validateSrdOverride, type SrdOverrideInput } from "@/domain/srd-overrides.ts";
 import {
   CUSTOM_SPELLS_TYPE,
+  CUSTOM_SPELL_EXPORT_VERSION,
   EXPORT_VERSION,
+  customSpellExportPayloadSchemaV1,
   extractRecognizedSpell,
   readType,
   readVersion,
-  spellExportPayloadSchema,
 } from "@/domain/payloads";
 import { newUuid } from "@/domain/ids";
 
@@ -23,17 +26,40 @@ export interface CustomImportCollision {
   fingerprint: string;
 }
 
+export interface CustomImportOverride {
+  spellId: string;
+  locale: string;
+  verbalDescription?: string;
+  somaticDescription?: string;
+}
+
+export interface OverrideImportError {
+  index: number;
+  spellId: string;
+  locale: string;
+  reason: string;
+}
+
 export interface CustomImportPlan {
   version: string | null;
   unknownVersion: boolean;
   entries: CustomImportEntry[];
   remaps: Array<{ from: string; to: string }>;
   collisions: CustomImportCollision[];
+  overrides: CustomImportOverride[];
+  lossy: boolean;
+  lossyFields: string[];
+  droppedOverrides: number;
 }
 
 export type CustomImportAnalysis =
   | { ok: true; plan: CustomImportPlan }
-  | { ok: false; error: string };
+  | { ok: false; error: string; overrideErrors?: OverrideImportError[] };
+
+export interface CustomImportOptions {
+  srdSpellsById?: ReadonlyMap<string, Spell>;
+  supportedLocales?: readonly string[];
+}
 
 export type CollisionStrategy = "overwrite" | "keep-both" | "skip";
 
@@ -43,6 +69,7 @@ export interface CustomImportCounts {
   copied: number;
   skipped: number;
   remapped: number;
+  overrides: number;
 }
 
 export class ImportConflictError extends Error {
@@ -52,6 +79,30 @@ export class ImportConflictError extends Error {
   }
 }
 
+const RECOGNIZED_SPELL_KEYS = new Set([
+  "id",
+  "name",
+  "level",
+  "school",
+  "castingTime",
+  "range",
+  "components",
+  "duration",
+  "concentration",
+  "ritual",
+  "classes",
+  "subclasses",
+  "savingThrow",
+  "damageTypes",
+  "description",
+  "higherLevels",
+  "source",
+  "sourceLabel",
+  "updatedAt",
+]);
+
+const RECOGNIZED_TOP_KEYS = new Set(["version", "type", "spells", "srdSpellOverrides"]);
+
 function byteLength(text: string): number {
   return new TextEncoder().encode(text).length;
 }
@@ -60,9 +111,17 @@ function fingerprint(spell: Spell): string {
   return JSON.stringify(spell);
 }
 
+function collectUnknownSpellFields(record: unknown, index: number, into: string[]): void {
+  if (!record || typeof record !== "object") return;
+  for (const key of Object.keys(record as Record<string, unknown>)) {
+    if (!RECOGNIZED_SPELL_KEYS.has(key)) into.push(`spells[${index}].${key}`);
+  }
+}
+
 export function analyzeCustomImport(
   text: string,
   existing: readonly Spell[],
+  options: CustomImportOptions = {},
 ): CustomImportAnalysis {
   if (byteLength(text) > LIMITS.IMPORT_BYTES_MAX) {
     return { ok: false, error: "The file exceeds the 5 MiB custom-spell import limit." };
@@ -84,21 +143,47 @@ export function analyzeCustomImport(
     };
   }
   const version = readVersion(raw);
-  const unknownVersion = version !== EXPORT_VERSION;
+  const isV1 = version === EXPORT_VERSION;
+  const isV2 = version === CUSTOM_SPELL_EXPORT_VERSION;
+  const unknownVersion = !isV1 && !isV2;
 
   let spells: Spell[];
-  if (!unknownVersion) {
-    const parsed = spellExportPayloadSchema.safeParse(raw);
+  let rawOverrides: unknown[] = [];
+  const lossyFields: string[] = [];
+  let droppedOverrides = 0;
+
+  if (isV1) {
+    const parsed = customSpellExportPayloadSchemaV1.safeParse(raw);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       return {
         ok: false,
-        error: `Invalid 1.0.0 payload on "${issue?.path.join(".") || "payload"}": ${
+        error: `Invalid ${EXPORT_VERSION} payload on "${issue?.path.join(".") || "payload"}": ${
           issue?.message ?? "unknown error"
         }.`,
       };
     }
     spells = parsed.data.spells;
+  } else if (isV2) {
+    const spellsResult = z.array(spellSchema).safeParse((raw as { spells?: unknown }).spells);
+    if (!spellsResult.success) {
+      const issue = spellsResult.error.issues[0];
+      return {
+        ok: false,
+        error: `Invalid ${CUSTOM_SPELL_EXPORT_VERSION} payload on "spells.${
+          issue?.path.join(".") || "?"
+        }": ${issue?.message ?? "unknown error"}.`,
+      };
+    }
+    spells = spellsResult.data;
+    const maybeOverrides = (raw as { srdSpellOverrides?: unknown }).srdSpellOverrides;
+    if (maybeOverrides === undefined) {
+      rawOverrides = [];
+    } else if (Array.isArray(maybeOverrides)) {
+      rawOverrides = maybeOverrides;
+    } else {
+      return { ok: false, error: 'The "srdSpellOverrides" field must be an array.' };
+    }
   } else {
     const list = (raw as { spells?: unknown }).spells;
     if (!Array.isArray(list)) {
@@ -114,6 +199,72 @@ export function analyzeCustomImport(
         };
       }
       spells.push(extracted);
+      collectUnknownSpellFields(list[index], index, lossyFields);
+    }
+    for (const key of Object.keys(raw as Record<string, unknown>)) {
+      if (!RECOGNIZED_TOP_KEYS.has(key)) lossyFields.push(key);
+    }
+    const dropped = (raw as { srdSpellOverrides?: unknown }).srdSpellOverrides;
+    if (Array.isArray(dropped)) droppedOverrides = dropped.length;
+    else if (dropped !== undefined) lossyFields.push("srdSpellOverrides");
+  }
+
+  const overrides: CustomImportOverride[] = [];
+  if (rawOverrides.length > 0) {
+    const srdSpellsById = options.srdSpellsById;
+    const supportedLocales = options.supportedLocales;
+    if (
+      !srdSpellsById ||
+      srdSpellsById.size === 0 ||
+      !supportedLocales ||
+      supportedLocales.length === 0
+    ) {
+      return {
+        ok: false,
+        error:
+          "SRD validation data is not loaded yet; reload the spell data before importing overrides.",
+      };
+    }
+    const overrideErrors: OverrideImportError[] = [];
+    const byKey = new Map<string, number>();
+    rawOverrides.forEach((record, index) => {
+      const candidate: SrdOverrideInput =
+        record && typeof record === "object"
+          ? (record as SrdOverrideInput)
+          : { spellId: "", locale: "" };
+      const result = validateSrdOverride(candidate, { srdSpellsById, supportedLocales });
+      if (!result.ok) {
+        overrideErrors.push({
+          index,
+          spellId: typeof candidate.spellId === "string" ? candidate.spellId : "",
+          locale: typeof candidate.locale === "string" ? candidate.locale : "",
+          reason: result.errors.join(" "),
+        });
+        return;
+      }
+      const { value } = result;
+      // Empty override records are no-ops: never stored, existing record untouched.
+      if (!value.verbalDescription && !value.somaticDescription) return;
+      const key = `${value.spellId}\u0000${value.locale}`;
+      const seen = byKey.get(key);
+      if (seen !== undefined) {
+        overrides[seen] = value;
+        return;
+      }
+      byKey.set(key, overrides.length);
+      overrides.push(value);
+    });
+    if (overrideErrors.length > 0) {
+      return {
+        ok: false,
+        error: `Invalid SRD override record(s): ${overrideErrors
+          .map(
+            (entry) =>
+              `#${entry.index} (${entry.spellId || "?"}/${entry.locale || "?"}): ${entry.reason}`,
+          )
+          .join("; ")}`,
+        overrideErrors,
+      };
     }
   }
 
@@ -167,14 +318,24 @@ export function analyzeCustomImport(
 
   return {
     ok: true,
-    plan: { version, unknownVersion, entries, remaps, collisions },
+    plan: {
+      version,
+      unknownVersion,
+      entries,
+      remaps,
+      collisions,
+      overrides,
+      lossy: lossyFields.length > 0 || droppedOverrides > 0,
+      lossyFields,
+      droppedOverrides,
+    },
   };
 }
 
 /**
- * Commits an analyzed plan in a single transaction. Collision targets are
- * re-read and verified against the reviewed fingerprints; any change aborts the
- * whole batch so the user must re-run collision review.
+ * Commits an analyzed plan in a single transaction over both stores. Collision
+ * targets are re-read and verified against the reviewed fingerprints; any change
+ * aborts the whole batch so the user must re-run collision review.
  */
 export async function applyCustomImport(
   plan: CustomImportPlan,
@@ -187,8 +348,9 @@ export async function applyCustomImport(
     copied: 0,
     skipped: 0,
     remapped: plan.remaps.length,
+    overrides: 0,
   };
-  return db.transaction("rw", db.customSpells, async () => {
+  return db.transaction("rw", db.customSpells, db.srdSpellOverrides, async () => {
     const finalRecords: Spell[] = [];
     for (const entry of plan.entries) {
       if (entry.collision) {
@@ -217,6 +379,10 @@ export async function applyCustomImport(
     }
     for (const record of finalRecords) {
       await db.customSpells.put(record);
+    }
+    for (const override of plan.overrides) {
+      await db.srdSpellOverrides.put({ ...override, updatedAt: Date.now() });
+      counts.overrides += 1;
     }
     return counts;
   });

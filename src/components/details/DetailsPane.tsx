@@ -2,12 +2,17 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Copy, Plus, SquarePen, Trash2 } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
-import { CardView, classSummary } from "@/cards/Card.tsx";
-import { componentKey, damageTypeKey, subclassLabel } from "@/locales/labels.ts";
+import { CardView, classSummary, materialDetailText } from "@/cards/Card.tsx";
+import {
+  componentKey,
+  componentMarkerKey,
+  damageTypeKey,
+  subclassLabel,
+} from "@/locales/labels.ts";
 import { useCardFit, AUTO_SHRINK_MIN_PT } from "@/cards/fit.tsx";
 import { LIMITS } from "@/domain/spells";
 import { BlockList } from "@/markdown/render.tsx";
-import { parseMarkdown } from "@/markdown/parse.ts";
+import { componentDescriptionBlocks, parseMarkdown } from "@/markdown/parse.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Badge, SourceBadge } from "@/ui/Badge.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
@@ -62,25 +67,34 @@ export function DetailsPane() {
   const isCustom = spell.source === "Custom";
   const descriptionBlocks = parseMarkdown(spell.description.join("\n\n"));
   const higherBlocks = spell.higherLevels ? parseMarkdown(spell.higherLevels.join("\n\n")) : [];
+  const componentBlocks = componentDescriptionBlocks(spell, {
+    verbal: t(componentMarkerKey("verbal")),
+    somatic: t(componentMarkerKey("somatic")),
+  });
+  const material = materialDetailText(spell, t);
 
   return (
     <section className="flex h-full min-h-0 flex-col" aria-label="Spell preview and details">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="truncate text-sm font-semibold text-foreground">{spell.name}</h2>
-          <SourceBadge source={spell.source} />
+          <SourceBadge
+            source={spell.source}
+            sourceLabel={spell.sourceLabel}
+            overridden={spell.overridden}
+          />
         </div>
         <div className="flex items-center gap-1">
           <Button size="sm" onClick={() => void addSpellToDeck(spell)}>
             <Plus size={14} aria-hidden="true" />
             Add
           </Button>
+          <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+            <SquarePen size={14} aria-hidden="true" />
+            Edit
+          </Button>
           {isCustom ? (
             <>
-              <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-                <SquarePen size={14} aria-hidden="true" />
-                Edit
-              </Button>
               <Button variant="ghost" size="sm" onClick={() => void duplicateSpell(spell.id)}>
                 <Copy size={14} aria-hidden="true" />
                 Duplicate
@@ -157,10 +171,10 @@ export function DetailsPane() {
                   ? "\u2014"
                   : ""}
               </dd>
-              {spell.components.materialDescription ? (
+              {material ? (
                 <>
                   <dt className="text-muted-foreground">{t("spell.metadata.material")}</dt>
-                  <dd>{spell.components.materialDescription}</dd>
+                  <dd>{material}</dd>
                 </>
               ) : null}
               <dt className="text-muted-foreground">{t("spell.metadata.classes")}</dt>
@@ -200,10 +214,11 @@ export function DetailsPane() {
               <BlockList blocks={higherBlocks} />
             </>
           ) : null}
+          <BlockList blocks={componentBlocks} />
         </div>
       </div>
 
-      {isCustom ? <CustomSpellForm open={editing} onOpenChange={setEditing} spell={spell} /> : null}
+      <CustomSpellForm open={editing} onOpenChange={setEditing} spell={spell} />
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent

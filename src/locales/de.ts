@@ -8,6 +8,7 @@ export const de = {
       components: "Komponenten",
       duration: "Wirkungsdauer",
       material: "Material",
+      materialConsumed: "verbraucht",
       classes: "Klassen",
       subclasses: "Unterklassen",
     },
@@ -25,6 +26,14 @@ export const de = {
     verbal: "V",
     somatic: "G",
     material: "M",
+    marker: {
+      verbal: "ⓥ",
+      somatic: "ⓖ",
+    },
+  },
+  source: {
+    srd: "SRD 5.2.1",
+    custom: "Eigen",
   },
   damageType: {
     acid: "Säure",
@@ -151,18 +160,37 @@ export const de = {
     },
     description:
       "Eigene Zauber werden lokal gespeichert und verändern niemals die mitgelieferten SRD-Daten.",
+    descriptionSrd:
+      "Die mitgelieferten SRD-Daten werden niemals verändert. Es werden nur deine lokalen verbalen und somatischen Notizen für diese Sprache gespeichert.",
     name: "Name",
     level: "Grad (0-9)",
     school: "Schule",
     verbal: "Verbal",
     somatic: "Somatisch",
     material: "Material",
+    verbalDescription: "Verbale Beschreibung",
+    somaticDescription: "Somatische Beschreibung",
+    advanced: "Erweitert / Optional",
     materialDescription: "Materialbeschreibung",
+    materialCost: "Materialkosten",
+    materialConsumed: "Beim Wirken verbraucht",
+    resetToOriginal: "Auf Original zurücksetzen",
     classes: "Klassen",
     classesNone: "Keine",
     descriptionField: "Beschreibung (Markdown)",
     higherLevels: "Höhere Grade (Markdown, optional)",
     save: "Zauber speichern",
+    default: {
+      castingTime: "1 Aktion",
+      range: "Selbst",
+      duration: "Unmittelbar",
+    },
+    placeholder: {
+      castingTime: "Aktion | Bonusaktion | Reaktion | x Minuten | x Stunden",
+      range: "x Meter | x Kilometer | Selbst | Berührung | Sichtweite | Spezial | Unbegrenzt",
+      duration:
+        "Unmittelbar | x Minuten/Stunden/Tage | bis zu x Minuten... | Spezial | Bis gebannt",
+    },
     error: {
       castingTime: "Der Zeitaufwand darf höchstens {{max}} Zeichen lang sein.",
       range: "Die Reichweite darf höchstens {{max}} Zeichen lang sein.",

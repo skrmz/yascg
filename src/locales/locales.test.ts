@@ -1,9 +1,22 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 import i18n from "@/i18n.ts";
 import { SUBCLASSES } from "@/domain/subclasses";
-import { SUBCLASS_KEYS, damageTypeKey, subclassKey, subclassLabel } from "./labels.ts";
+import {
+  SUBCLASS_KEYS,
+  componentMarkerKey,
+  componentMarkers,
+  customSpellDraftDefaults,
+  damageTypeKey,
+  sourceLabelText,
+  subclassKey,
+  subclassLabel,
+} from "./labels.ts";
 import { en } from "./en.ts";
 import { de } from "./de.ts";
+
+afterEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 function leafPaths(value: unknown, prefix = ""): string[] {
   if (typeof value === "string") return [prefix];
@@ -62,6 +75,36 @@ describe("locale catalogs", () => {
     expect(i18n.t("class.monk", { lng: "de" })).toBe("Mönch");
     expect(i18n.t("class.rogue", { lng: "de" })).toBe("Schurke");
     expect(i18n.t("spell.metadata.subclasses", { lng: "de" })).toBe("Unterklassen");
+  });
+
+  it("resolves localized component markers", () => {
+    expect(i18n.t(componentMarkerKey("verbal"), { lng: "en" })).toBe("ⓥ");
+    expect(i18n.t(componentMarkerKey("somatic"), { lng: "en" })).toBe("ⓢ");
+    expect(i18n.t(componentMarkerKey("somatic"), { lng: "de" })).toBe("ⓖ");
+    expect(componentMarkers("en")).toEqual({ verbal: "ⓥ", somatic: "ⓢ" });
+    expect(componentMarkers("de")).toEqual({ verbal: "ⓥ", somatic: "ⓖ" });
+  });
+
+  it("appends an asterisk for overridden spells", async () => {
+    await i18n.changeLanguage("en");
+    expect(sourceLabelText({ source: "SRD-5.2.1" }, i18n.t)).toBe("SRD 5.2.1");
+    expect(sourceLabelText({ source: "SRD-5.2.1", overridden: true }, i18n.t)).toBe("SRD 5.2.1 *");
+    expect(sourceLabelText({ source: "Custom" }, i18n.t)).toBe("Custom");
+    await i18n.changeLanguage("de");
+    expect(sourceLabelText({ source: "Custom" }, i18n.t)).toBe("Eigen");
+  });
+
+  it("seeds localized custom-spell draft defaults", () => {
+    expect(customSpellDraftDefaults("en")).toEqual({
+      castingTime: "1 Action",
+      range: "Self",
+      duration: "Instantaneous",
+    });
+    expect(customSpellDraftDefaults("de")).toEqual({
+      castingTime: "1 Aktion",
+      range: "Selbst",
+      duration: "Unmittelbar",
+    });
   });
 });
 

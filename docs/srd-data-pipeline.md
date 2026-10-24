@@ -263,7 +263,11 @@ Custom spells are authored, stored, and imported in the application's **internal
 
 #### B. Import envelope
 
-Custom-spell export/import uses `spellExportPayloadSchema` (`src/domain/payloads.ts`), a **strict** object:
+Custom-spell export/import uses versioned strict schemas in `src/domain/payloads.ts`. The
+**deck** payload version stays `EXPORT_VERSION = "1.0.0"`; custom-spell payloads use
+`CUSTOM_SPELL_EXPORT_VERSION = "1.1.0"`.
+
+Version `1.0.0` (`customSpellExportPayloadSchemaV1`, legacy, no overrides):
 
 ```json
 {
@@ -273,12 +277,43 @@ Custom-spell export/import uses `spellExportPayloadSchema` (`src/domain/payloads
 }
 ```
 
+Version `1.1.0` (`customSpellExportPayloadSchemaV2`, adds an optional `srdSpellOverrides`
+array):
+
+```json
+{
+  "version": "1.1.0",
+  "type": "custom-spells",
+  "spells": [],
+  "srdSpellOverrides": [
+    { "spellId": "srd-fireball", "locale": "en", "verbalDescription": "Speak the word" }
+  ]
+}
+```
+
 - `type` must be exactly `"custom-spells"`; other payload types are rejected.
-- `version` must be exactly `"1.0.0"` for strict validation. Any other version triggers the best-effort **Unknown version — Try Import** path: only fields recognized by the current `1.0.0` schema are extracted, unknown fields are discarded, and all mandatory fields must still be present.
-- The envelope is a strict object, so unknown top-level keys are rejected. Individual spell objects are non-strict, so unknown spell keys are silently stripped.
+- New custom-spell exports always stamp `1.1.0`, even when `srdSpellOverrides` is empty.
+- The importer accepts `1.0.0` and `1.1.0`. A `1.0.0` payload carries no overrides and leaves
+  local overrides untouched. Any other version triggers the best-effort **Unknown version —
+  Try Import** path: only fields recognized by the current schema are extracted, unknown
+  fields are discarded, and all mandatory fields must still be present. A recognized
+  `1.1.0` payload is never routed through this fallback.
+- Unknown versions that contain a non-empty `srdSpellOverrides` (or other dropped fields) are
+  marked **lossy**: the reported override record(s) and fields require explicit confirmation
+  before commit, so overrides are never silently discarded.
+- Each override record is validated with `validateSrdOverride` (`src/domain/srd-overrides.ts`):
+  `spellId` must be a canonical `srd-` id present in the loaded SRD data, `locale` must be a
+  manifest locale, only `verbalDescription`/`somaticDescription` may be present, both are
+  bounded by `META_MAX` (500), and a description is only allowed for a component enabled on
+  the canonical spell. Every invalid record is reported (index, `spellId`, `locale`, reason)
+  and the whole import aborts atomically. Empty override records are no-ops.
+- The envelope is a strict object, so unknown top-level keys are rejected. Individual spell
+  objects are non-strict, so unknown spell keys are silently stripped.
 - The import payload is capped at **5 MiB**; oversize files are rejected before parsing.
-- Every record must have `source: "Custom"`. SRD-sourced records (`SRD-5.2.1`) are rejected rather than relabeled.
-- IDs beginning with the reserved `srd-` prefix are remapped to fresh UUIDs (reported as old → new); other valid IDs are preserved. Newly authored spells always use `newUuid()`.
+- Every custom-spell record must have `source: "Custom"`. SRD-sourced records (`SRD-5.2.1`)
+  are rejected rather than relabeled.
+- IDs beginning with the reserved `srd-` prefix are remapped to fresh UUIDs (reported as
+  old → new); other valid IDs are preserved. Newly authored spells always use `newUuid()`.
 
 #### C. Field requirements
 
@@ -317,7 +352,7 @@ Custom-spell export/import uses `spellExportPayloadSchema` (`src/domain/payloads
 | `sourceLabel`                          | trimmed string ≤500                                         | omitted                                         |
 | `updatedAt`                            | non-negative integer                                        | set to `Date.now()` by `putCustomSpell` on save |
 
-Two cross-field rules also apply: combined `description` + `higherLevels` text must be ≤50,000 chars, and `classes`/`subclasses` values must be unique. The runtime schema only enforces non-empty, unique, length-bounded `subclasses` entries; the `"<CORE_CLASS>: <Subclass>"` prefix rule is enforced by the raw SRD adapter, keeping custom spells and imports tolerant. The schema never invents mandatory game-rule values; the authoring draft (`createCustomSpellDraft`) seeds UI placeholders (level `0`, school `Evocation`, all component flags `false`, `description: [""]`, empty `classes`) but those are not schema defaults — an imported record must supply the mandatory fields itself.
+Two cross-field rules also apply: combined `description` + `higherLevels` text must be ≤50,000 chars, and `classes`/`subclasses` values must be unique. The runtime schema only enforces non-empty, unique, length-bounded `subclasses` entries; the `"<CORE_CLASS>: <Subclass>"` prefix rule is enforced by the raw SRD adapter, keeping custom spells and imports tolerant. The schema never invents mandatory game-rule values; the authoring draft (`createCustomSpellDraft(language)`) seeds UI defaults (localized casting time/range/duration, level `0`, school `Evocation`, all component flags `false`, `description: [""]`, empty `classes`) but those are not schema defaults — an imported record must supply the mandatory fields itself.
 
 #### D. Storage
 
@@ -351,3 +386,25 @@ Custom spells persist in the Dexie `customSpells` table (`src/db/database.ts`), 
   ]
 }
 ```
+
+#### F. Component authoring & SRD component-text overrides
+
+`components.verbalDescription`, `components.somaticDescription`, `components.materialCost`,
+and `components.materialConsumed` exist in the domain schema (`src/domain/spells.ts`) and are
+now authorable in the UI:
+
+- **Custom spells** persist these fields directly in the `customSpells` table. `materialCost`
+  and `materialConsumed` sit behind a collapsed **Advanced / Optional** section, gated by the
+  `M` flag.
+- **SRD spells** are never written to `customSpells` and `src/data/**` is never modified.
+  Only `verbalDescription`/`somaticDescription` are editable in a restricted override dialog;
+  they persist per spell **and** locale in the `srdSpellOverrides` Dexie table
+  (`[spellId+locale], spellId, locale`), added by an additive `version(2)` migration. The
+  merge is applied at read time over the loaded dataset, and an active override marks the
+  source badge (`SRD 5.2.1 *`) via a transient, non-persisted `Spell.overridden` flag that is
+  excluded from `spellSchema`, imports, and exports. **Reset to original** deletes only the
+  current spell/locale record.
+
+Because the merge happens after dataset parsing and copies rather than mutates, the shared
+dataset cache in `src/services/data/load.ts` stays override-free and the drift gate
+(`src/test/srd-dataset.test.ts`) is unaffected.

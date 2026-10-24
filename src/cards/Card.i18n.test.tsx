@@ -2,7 +2,10 @@ import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import i18n from "@/i18n.ts";
 import { CardView } from "@/cards/Card.tsx";
+import { parseSpellBody } from "@/markdown/parse.ts";
 import type { Spell } from "@/domain/spells";
+
+const markers = { verbal: "ⓥ", somatic: "ⓢ" };
 
 const fireball: Spell = {
   id: "srd-fireball",
@@ -88,5 +91,97 @@ describe("CardView localization", () => {
     expect(screen.getByText("Casting Time")).not.toBeNull();
     expect(screen.queryByText("Zeitaufwand")).toBeNull();
     expect(article()?.getAttribute("lang")).toBe("en");
+  });
+});
+
+describe("CardView component and material rendering", () => {
+  it("renders component-description blocks with localized markers", () => {
+    const spell: Spell = {
+      ...fireball,
+      components: {
+        verbal: true,
+        verbalDescription: "Speak the word",
+        somatic: true,
+        somaticDescription: "Trace a sigil",
+        material: false,
+      },
+    };
+    render(
+      <CardView
+        spell={spell}
+        blocks={parseSpellBody(spell, "Higher Levels", markers)}
+        cardIndex={1}
+        cardCount={1}
+        fontPt={8}
+      />,
+    );
+    expect(screen.getByText("ⓥ Speak the word")).not.toBeNull();
+    expect(screen.getByText("ⓢ Trace a sigil")).not.toBeNull();
+  });
+
+  it("renders the material line only when the material component is enabled", () => {
+    const enabled: Spell = {
+      ...fireball,
+      components: {
+        verbal: true,
+        somatic: true,
+        material: true,
+        materialDescription: "A ruby",
+        materialCost: "100 gp",
+        materialConsumed: true,
+      },
+    };
+    const { unmount } = render(
+      <CardView spell={enabled} blocks={[]} cardIndex={1} cardCount={1} fontPt={8} />,
+    );
+    expect(screen.getByText("A ruby (100 gp, consumed)")).not.toBeNull();
+    unmount();
+
+    const disabled: Spell = { ...enabled, components: { ...enabled.components, material: false } };
+    render(<CardView spell={disabled} blocks={[]} cardIndex={1} cardCount={1} fontPt={8} />);
+    expect(screen.queryByText(/A ruby/)).toBeNull();
+  });
+
+  it("shows an asterisk on the footer source label for an overridden SRD spell", () => {
+    render(
+      <CardView
+        spell={{ ...fireball, overridden: true }}
+        blocks={[]}
+        cardIndex={1}
+        cardCount={1}
+        fontPt={8}
+      />,
+    );
+    expect(screen.getByText("SRD 5.2.1 *")).not.toBeNull();
+  });
+
+  it("includes the material line inside the measured region", () => {
+    const enabled: Spell = {
+      ...fireball,
+      components: {
+        verbal: true,
+        somatic: true,
+        material: true,
+        materialDescription: "A ruby",
+        materialCost: "100 gp",
+        materialConsumed: true,
+      },
+    };
+    const bodyRef = { current: null as HTMLDivElement | null };
+    render(
+      <CardView
+        spell={enabled}
+        blocks={[]}
+        cardIndex={1}
+        cardCount={1}
+        fontPt={8}
+        bodyRef={bodyRef}
+      />,
+    );
+    expect(bodyRef.current).not.toBeNull();
+    expect(bodyRef.current!.querySelector(".card-material")?.textContent).toBe(
+      "A ruby (100 gp, consumed)",
+    );
+    expect(bodyRef.current!.querySelector(".card-body")).not.toBeNull();
   });
 });

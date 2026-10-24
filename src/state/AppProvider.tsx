@@ -44,6 +44,14 @@ import {
 } from "@/db/custom-spells.ts";
 import { publishChange, subscribeToChanges } from "@/db/notifications.ts";
 import {
+  applySrdOverrides,
+  deleteSrdOverride,
+  indexOverridesByLocale,
+  listSrdOverrides,
+  putSrdOverride,
+  type SrdOverrideInput,
+} from "@/db/srd-overrides.ts";
+import {
   clearDataCache,
   loadLanguageDataset,
   loadManifest,
@@ -62,7 +70,7 @@ import {
   type LanguageSwitchImpact,
 } from "@/services/data/resolution.ts";
 import type { ActiveDeckRecord, DeckEntry, SavedDeck } from "@/domain/deck";
-import type { CardFitMode, Spell, SpellSource } from "@/domain/spells";
+import type { CardFitMode, Spell, SpellSource, SrdSpellOverride } from "@/domain/spells";
 
 export interface ResolvedDeckEntry {
   entry: DeckEntry;
@@ -140,6 +148,10 @@ export interface AppContextValue {
   undoDelete: () => Promise<boolean>;
   lastDeletion: CustomSpellDeletion | null;
 
+  srdSpellOverrides: SrdSpellOverride[];
+  saveSrdOverride: (input: SrdOverrideInput) => Promise<SrdSpellOverride | null>;
+  resetSrdOverride: (spellId: string, locale: string) => Promise<boolean>;
+
   pendingLanguageSwitch: PendingLanguageSwitch | null;
   requestLanguageSwitch: (code: string) => Promise<boolean>;
   confirmLanguageSwitch: () => Promise<boolean>;
@@ -149,6 +161,8 @@ export interface AppContextValue {
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
+
+const EMPTY_OVERRIDES: SrdSpellOverride[] = [];
 
 export function useApp(): AppContextValue {
   const context = useContext(AppContext);
@@ -199,6 +213,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const savedDecks = useLiveQuery(
     () => listSavedDecks().catch((error) => reportQueryFailure("saved decks", error, [])),
+    [refreshToken],
+  );
+  const srdOverrides = useLiveQuery(
+    () => listSrdOverrides().catch((error) => reportQueryFailure("SRD overrides", error, [])),
     [refreshToken],
   );
 
@@ -257,8 +275,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [retryToken]);
 
-  const englishSpells = datasets.en ?? [];
-  const languageSpells = datasets[language] ?? [];
+  const overridesList = srdOverrides ?? EMPTY_OVERRIDES;
+  const overridesByLocale = useMemo(() => indexOverridesByLocale(overridesList), [overridesList]);
+  // Merges are derived and re-derivable; `datasets` stays override-free.
+  const englishSpells = useMemo(
+    () => applySrdOverrides(datasets.en ?? [], overridesByLocale.get("en")),
+    [datasets, overridesByLocale],
+  );
+  const languageSpells = useMemo(
+    () => applySrdOverrides(datasets[language] ?? [], overridesByLocale.get(language)),
+    [datasets, language, overridesByLocale],
+  );
   const customList = customSpells ?? [];
   const savedList = savedDecks ?? [];
 
@@ -564,6 +591,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [refreshAll],
   );
 
+  const saveSrdOverride = useCallback(
+    async (input: SrdOverrideInput): Promise<SrdSpellOverride | null> => {
+      try {
+        const saved = await putSrdOverride(input, {
+          srdSpellsById: englishById,
+          supportedLocales: manifest.map((entry) => entry.code),
+        });
+        publishChange("srd-overrides");
+        refreshAll();
+        return saved;
+      } catch (error) {
+        setDeckError(errorMessage(error));
+        return null;
+      }
+    },
+    [englishById, manifest, refreshAll],
+  );
+
+  const resetSrdOverride = useCallback(
+    async (spellId: string, locale: string): Promise<boolean> => {
+      try {
+        await deleteSrdOverride(spellId, locale);
+        publishChange("srd-overrides");
+        refreshAll();
+        return true;
+      } catch (error) {
+        setDeckError(errorMessage(error));
+        return false;
+      }
+    },
+    [refreshAll],
+  );
+
   const duplicateSpell = useCallback(
     async (id: string) => {
       try {
@@ -755,6 +815,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       canUndo,
       undoDelete,
       lastDeletion,
+      srdSpellOverrides: overridesList,
+      saveSrdOverride,
+      resetSrdOverride,
       pendingLanguageSwitch,
       requestLanguageSwitch,
       confirmLanguageSwitch,
@@ -805,6 +868,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       canUndo,
       undoDelete,
       lastDeletion,
+      overridesList,
+      saveSrdOverride,
+      resetSrdOverride,
       pendingLanguageSwitch,
       requestLanguageSwitch,
       confirmLanguageSwitch,

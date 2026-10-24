@@ -132,10 +132,13 @@
   color: #4a4a4a;
 }
 
-.card-body {
+.card-body-measured {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+
+.card-body {
   font-size: var(--body-font-pt, 8.5pt);
 }
 

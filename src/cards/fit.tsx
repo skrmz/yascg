@@ -5,6 +5,7 @@ import type { CardFitMode, Spell } from "@/domain/spells";
 import { LIMITS } from "@/domain/spells";
 import { parseSpellBody, type BlockNode } from "@/markdown/parse.ts";
 import { cloneBlock, paginateToPages, truncateBlocksToFit } from "@/markdown/split.ts";
+import { componentMarkerKey } from "@/locales/labels.ts";
 import { CardView } from "./Card.tsx";
 import { fitCacheKey } from "./fingerprint.ts";
 
@@ -137,9 +138,17 @@ export function useCardFit({ spell, fitMode, language }: UseCardFitOptions): Use
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const markers = useMemo(
+    () => ({
+      verbal: t(componentMarkerKey("verbal")),
+      somatic: t(componentMarkerKey("somatic")),
+    }),
+    [t],
+  );
+
   const blocks = useMemo(
-    () => (spell ? parseSpellBody(spell, higherLevelsHeading) : []),
-    [spell, higherLevelsHeading],
+    () => (spell ? parseSpellBody(spell, higherLevelsHeading, markers) : []),
+    [spell, higherLevelsHeading, markers],
   );
   const cacheKey = useMemo(() => {
     if (!spell) return null;
@@ -191,7 +200,7 @@ export function useCardFit({ spell, fitMode, language }: UseCardFitOptions): Use
     return () => {
       cancelled = true;
     };
-  }, [spell, cacheKey, blocks, fitMode, measure, higherLevelsHeading, resolvedLanguage]);
+  }, [spell, cacheKey, blocks, fitMode, measure, higherLevelsHeading, resolvedLanguage, markers]);
 
   return { result, ready, error, measureLayer: layer };
 }
@@ -223,11 +232,19 @@ export function useDeckCardFits(
   const itemsRef = useRef(items);
   itemsRef.current = items;
 
+  const markers = useMemo(
+    () => ({
+      verbal: t(componentMarkerKey("verbal")),
+      somatic: t(componentMarkerKey("somatic")),
+    }),
+    [t],
+  );
+
   const signature = useMemo(
     () =>
       items.map((item) => `${item.key}:${item.spell.id}:${item.fitMode}`).join("|") +
-      `@${language}:${higherLevelsHeading}`,
-    [items, language, higherLevelsHeading],
+      `@${language}:${higherLevelsHeading}:${markers.verbal}:${markers.somatic}`,
+    [items, language, higherLevelsHeading, markers],
   );
 
   useEffect(() => {
@@ -244,7 +261,7 @@ export function useDeckCardFits(
       if (cancelled) return;
       const next = new Map<string, FitResult>();
       for (const item of current) {
-        const blocks = parseSpellBody(item.spell, higherLevelsHeading);
+        const blocks = parseSpellBody(item.spell, higherLevelsHeading, markers);
         const cacheKey = fitCacheKey({
           spellId: item.spell.id,
           language,
@@ -272,7 +289,7 @@ export function useDeckCardFits(
     return () => {
       cancelled = true;
     };
-  }, [signature, language, measure, enabled, higherLevelsHeading, resolvedLanguage]);
+  }, [signature, language, measure, enabled, higherLevelsHeading, resolvedLanguage, markers]);
 
   return { results, ready, measureLayer: enabled ? layer : null };
 }

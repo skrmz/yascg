@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
-import { LIMITS, spellSchema } from "@/domain/spells";
+import { LIMITS, spellSchema, srdSpellOverrideSchema } from "@/domain/spells";
 import {
   CUSTOM_SPELLS_TYPE,
   EXPORT_VERSION,
   extractRecognizedSpell,
-  spellExportPayloadSchema,
+  customSpellExportPayloadSchemaV1,
 } from "@/domain/payloads";
 import { makeSpell } from "@/test/fixtures/spells.ts";
 
@@ -106,7 +106,7 @@ describe("spellSchema", () => {
 
   it("round-trips subclasses through the export payload and extraction", () => {
     const spell = makeSpell({ subclasses: ["Cleric: War"] });
-    const parsed = spellExportPayloadSchema.safeParse({
+    const parsed = customSpellExportPayloadSchemaV1.safeParse({
       version: EXPORT_VERSION,
       type: CUSTOM_SPELLS_TYPE,
       spells: [spell],
@@ -116,5 +116,52 @@ describe("spellSchema", () => {
       expect(parsed.data.spells[0].subclasses).toEqual(["Cleric: War"]);
     }
     expect(extractRecognizedSpell(spell)?.subclasses).toEqual(["Cleric: War"]);
+  });
+
+  it("strips the transient overridden marker on parse", () => {
+    const result = spellSchema.safeParse({ ...makeSpell(), overridden: true });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect("overridden" in result.data).toBe(false);
+    }
+  });
+});
+
+describe("srdSpellOverrideSchema", () => {
+  const base = { spellId: "srd-fireball", locale: "en", updatedAt: 1 };
+
+  it("accepts a valid override", () => {
+    const result = srdSpellOverrideSchema.safeParse({
+      ...base,
+      verbalDescription: "Speak the word",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts an identity-only override", () => {
+    expect(srdSpellOverrideSchema.safeParse(base).success).toBe(true);
+  });
+
+  it("rejects a blank spell id and a short locale", () => {
+    expect(srdSpellOverrideSchema.safeParse({ ...base, spellId: "  " }).success).toBe(false);
+    expect(srdSpellOverrideSchema.safeParse({ ...base, locale: "e" }).success).toBe(false);
+  });
+
+  it("enforces the metadata length bound", () => {
+    const long = "x".repeat(LIMITS.META_MAX + 1);
+    expect(srdSpellOverrideSchema.safeParse({ ...base, verbalDescription: long }).success).toBe(
+      false,
+    );
+    expect(
+      srdSpellOverrideSchema.safeParse({
+        ...base,
+        verbalDescription: "x".repeat(LIMITS.META_MAX),
+      }).success,
+    ).toBe(true);
+  });
+
+  it("requires a non-negative integer updatedAt", () => {
+    expect(srdSpellOverrideSchema.safeParse({ ...base, updatedAt: -1 }).success).toBe(false);
+    expect(srdSpellOverrideSchema.safeParse({ ...base, updatedAt: 1.5 }).success).toBe(false);
   });
 });

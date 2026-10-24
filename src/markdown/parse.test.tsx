@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vite-plus/test";
-import { parseMarkdown, parseSpellBody, type BlockNode } from "@/markdown/parse.ts";
+import {
+  componentDescriptionBlocks,
+  parseMarkdown,
+  parseSpellBody,
+  type BlockNode,
+} from "@/markdown/parse.ts";
 import { BlockList } from "@/markdown/render.tsx";
 import { renderToStaticMarkup } from "react-dom/server";
+
+const markers = { verbal: "ⓥ", somatic: "ⓢ" };
 
 function textOf(blocks: readonly BlockNode[]): string {
   return JSON.stringify(blocks);
@@ -60,11 +67,76 @@ describe("parseMarkdown safety", () => {
   });
 
   it("appends a Higher Levels heading for higher-level text", () => {
-    const blocks = parseSpellBody({
-      description: ["Base text"],
-      higherLevels: ["Scales up"],
-    });
+    const blocks = parseSpellBody(
+      {
+        description: ["Base text"],
+        higherLevels: ["Scales up"],
+      },
+      "Higher Levels",
+      markers,
+    );
     expect(blocks.some((block) => block.type === "heading")).toBe(true);
     expect(textOf(blocks)).toContain("Scales up");
+  });
+});
+
+describe("component description blocks", () => {
+  it("appends verbal then somatic blocks after description and higher levels", () => {
+    const blocks = parseSpellBody(
+      {
+        description: ["Base text"],
+        higherLevels: ["Scales up"],
+        components: {
+          verbal: true,
+          verbalDescription: "Speak the word",
+          somatic: true,
+          somaticDescription: "Trace a sigil",
+          material: false,
+        },
+      },
+      "Higher Levels",
+      markers,
+    );
+    const joined = textOf(blocks);
+    expect(joined.indexOf("Scales up")).toBeLessThan(joined.indexOf("Speak the word"));
+    expect(joined.indexOf("Speak the word")).toBeLessThan(joined.indexOf("Trace a sigil"));
+    expect(joined).toContain("ⓥ Speak the word");
+    expect(joined).toContain("ⓢ Trace a sigil");
+  });
+
+  it("omits blocks for disabled or empty components", () => {
+    const blocks = componentDescriptionBlocks(
+      {
+        components: {
+          verbal: false,
+          verbalDescription: "Hidden",
+          somatic: true,
+          somaticDescription: "   ",
+          material: false,
+        },
+      },
+      markers,
+    );
+    expect(blocks).toHaveLength(0);
+  });
+
+  it("returns no blocks when the spell has no components", () => {
+    expect(componentDescriptionBlocks({}, markers)).toHaveLength(0);
+  });
+
+  it("builds the marker text without markdown interpretation", () => {
+    const blocks = componentDescriptionBlocks(
+      {
+        components: {
+          verbal: true,
+          verbalDescription: "**bold** stays literal",
+          somatic: false,
+          material: false,
+        },
+      },
+      markers,
+    );
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].children).toEqual([{ type: "text", value: "ⓥ **bold** stays literal" }]);
   });
 });

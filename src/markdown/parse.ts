@@ -1,4 +1,5 @@
 import { marked, type Token } from "marked";
+import type { SpellComponents } from "@/domain/spells";
 
 export interface InlineNode {
   type: "text" | "strong" | "em" | "code";
@@ -210,12 +211,49 @@ export const HIGHER_LEVELS_HEADING: HeadingBlock = {
   children: [{ type: "text", value: "Higher Levels" }],
 };
 
+export interface ComponentMarkers {
+  verbal: string;
+  somatic: string;
+}
+
+/**
+ * Builds component-description blocks (verbal then somatic) for a spell. A block
+ * is emitted only when the matching component boolean is enabled and the trimmed
+ * description is non-empty. Built directly (not via `marked`) so author text is
+ * never re-interpreted as Markdown.
+ */
+export function componentDescriptionBlocks(
+  spell: { components?: SpellComponents },
+  markers: ComponentMarkers,
+): ParagraphBlock[] {
+  const blocks: ParagraphBlock[] = [];
+  const components = spell.components;
+  if (!components) return blocks;
+  const verbal = components.verbalDescription?.trim();
+  if (components.verbal && verbal) {
+    blocks.push({
+      type: "paragraph",
+      children: [{ type: "text", value: `${markers.verbal} ${verbal}` }],
+    });
+  }
+  const somatic = components.somaticDescription?.trim();
+  if (components.somatic && somatic) {
+    blocks.push({
+      type: "paragraph",
+      children: [{ type: "text", value: `${markers.somatic} ${somatic}` }],
+    });
+  }
+  return blocks;
+}
+
 export function parseSpellBody(
   spell: {
     description: readonly string[];
     higherLevels?: readonly string[];
+    components?: SpellComponents;
   },
-  higherLevelsHeading: string = "Higher Levels",
+  higherLevelsHeading: string,
+  markers: ComponentMarkers,
 ): BlockNode[] {
   const blocks: BlockNode[] = [];
   blocks.push(...parseMarkdown(spell.description.join("\n\n")));
@@ -230,5 +268,6 @@ export function parseSpellBody(
       blocks.push(...parseMarkdown(higher.join("\n\n")));
     }
   }
+  blocks.push(...componentDescriptionBlocks(spell, markers));
   return blocks;
 }

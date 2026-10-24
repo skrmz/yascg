@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import { db } from "@/db/database.ts";
+import Dexie from "dexie";
+import { db, SpellCardsDatabase } from "@/db/database.ts";
 import {
   DeckConflictError,
   addCopy,
@@ -198,5 +199,30 @@ describe("custom spell deletion and undo", () => {
     await expect(
       restoreDeletedSpell(deletion, deletion.activeRevisionAfter),
     ).rejects.toBeInstanceOf(DeckConflictError);
+  });
+});
+
+describe("database migration", () => {
+  it("upgrades a v1 database to v2 while preserving custom spells", async () => {
+    const name = `spell-cards-migration-${Date.now()}`;
+    const legacy = new Dexie(name);
+    legacy.version(1).stores({
+      customSpells: "id, name, updatedAt",
+      savedDecks: "id, updatedAt",
+      activeDeck: "id",
+    });
+    await legacy.open();
+    await legacy.table("customSpells").put(makeCustomSpell({ id: "c1" }));
+    legacy.close();
+
+    const upgraded = new SpellCardsDatabase(name);
+    await upgraded.open();
+    try {
+      expect(await upgraded.customSpells.get("c1")).toBeDefined();
+      expect(await upgraded.srdSpellOverrides.count()).toBe(0);
+    } finally {
+      upgraded.close();
+      await Dexie.delete(name);
+    }
   });
 });

@@ -155,8 +155,9 @@ updates are reviewed through `git diff` on the raw source and the regenerated da
 ## Architecture
 
 - `src/domain/` — Zod schemas, types, limits, deck/baseline rules, ID rules.
-- `src/db/` — Dexie schema v1 (`customSpells`, `savedDecks`, singleton `activeDeck`)
-  with compare-and-swap revisions and advisory `BroadcastChannel` notifications.
+- `src/db/` — Dexie schema v2 (`customSpells`, `savedDecks`, singleton `activeDeck`,
+  `srdSpellOverrides`) with compare-and-swap revisions and advisory `BroadcastChannel`
+  notifications.
 - `src/services/data/` — manifest/dataset loading, language preference, search and
   filters, and deck reference resolution.
 - `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), React
@@ -165,7 +166,9 @@ updates are reviewed through `git diff` on the raw source and the regenerated da
   gating, auto-shrink (8.5pt → 6pt) and multi-card pagination with heading-orphan
   prevention.
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
-- `src/io/` — `1.0.0` JSON export/import with collision review and atomic commits.
+- `src/io/` — JSON export/import with collision review and atomic commits. Custom-spell
+  payloads are version `1.1.0` (they may carry SRD component-text overrides); deck
+  payloads remain version `1.0.0`.
 - `src/pwa/` — service-worker registration and Cache Storage verification.
 - `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE
   spell-card terminology catalogs.
@@ -233,6 +236,11 @@ a backup.
 ## Limitations
 
 - Bundled spells are SRD 5.2.1 only; no non-SRD material is included.
+- Verbal/somatic notes added to an SRD spell are stored locally, scoped to that spell
+  **and** the current language, and never modify the bundled SRD data. An edited SRD spell
+  is marked `*` on its source badge; **Reset to original** removes only that spell/language
+  note. These notes are included only in custom-spell exports (`1.1.0`) and are not part of
+  deck exports (`1.0.0`).
 - No accounts, cloud sync, backend, PDF engine, card backs, or third-party formats.
 - Print geometry is verified in Chromium; Firefox/Safari and physical printers may
   differ and should be validated against the documented settings.

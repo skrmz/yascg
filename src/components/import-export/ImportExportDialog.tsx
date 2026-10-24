@@ -31,18 +31,39 @@ export function ImportExportDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { customSpells, activeDeck, refreshAll } = useApp();
+  const {
+    customSpells,
+    activeDeck,
+    refreshAll,
+    srdSpellOverrides,
+    englishById,
+    manifest,
+    dataLoading,
+    dataError,
+  } = useApp();
   const [notice, setNotice] = useState<Notice | null>(null);
   const [customPlan, setCustomPlan] = useState<CustomImportPlan | null>(null);
   const [strategies, setStrategies] = useState<CollisionStrategy>("skip");
+  const [confirmLossy, setConfirmLossy] = useState(false);
   const [deckPlan, setDeckPlan] = useState<DeckImportPlan | null>(null);
   const [confirmDeck, setConfirmDeck] = useState(false);
   const customInputRef = useRef<HTMLInputElement | null>(null);
   const deckInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Override validation needs the loaded SRD lookup and manifest; analyzing
+  // before they arrive would misreport real spell ids as unknown.
+  const canAnalyzeCustom =
+    !dataLoading && !dataError && manifest.length > 0 && englishById.size > 0;
+
   const exportCustom = () => {
-    downloadJson(customSpellsExportFilename(), buildCustomSpellsPayload(customSpells));
-    setNotice({ tone: "ok", text: `Exported ${customSpells.length} custom spell(s).` });
+    downloadJson(
+      customSpellsExportFilename(),
+      buildCustomSpellsPayload(customSpells, srdSpellOverrides),
+    );
+    setNotice({
+      tone: "ok",
+      text: `Exported ${customSpells.length} custom spell(s) and ${srdSpellOverrides.length} SRD override(s).`,
+    });
   };
 
   const exportDeck = () => {
@@ -55,8 +76,21 @@ export function ImportExportDialog({
   };
 
   const onCustomFile = async (file: File) => {
+    if (!canAnalyzeCustom) {
+      setCustomPlan(null);
+      setNotice({
+        tone: "error",
+        text:
+          dataError ??
+          "SRD validation data is not loaded yet. Wait for the spell library to finish loading, then try again.",
+      });
+      return;
+    }
     const text = await readFileText(file);
-    const analysis = analyzeCustomImport(text, customSpells);
+    const analysis = analyzeCustomImport(text, customSpells, {
+      srdSpellsById: englishById,
+      supportedLocales: manifest.map((entry) => entry.code),
+    });
     if (!analysis.ok) {
       setCustomPlan(null);
       setNotice({ tone: "error", text: analysis.error });
@@ -64,16 +98,21 @@ export function ImportExportDialog({
     }
     setCustomPlan(analysis.plan);
     setStrategies("skip");
-    setNotice(
-      analysis.plan.unknownVersion
-        ? {
-            tone: "ok",
-            text: `Unknown version — Try Import available. ${
-              analysis.plan.entries.length
-            } recognized record(s); unrecognized fields are discarded.`,
-          }
-        : { tone: "ok", text: `${analysis.plan.entries.length} record(s) validated.` },
-    );
+    setConfirmLossy(false);
+    const summary = `${analysis.plan.entries.length} spell record(s) and ${analysis.plan.overrides.length} override record(s) validated.`;
+    if (analysis.plan.lossy) {
+      setNotice({
+        tone: "ok",
+        text: `Unknown version — ${summary} ${analysis.plan.droppedOverrides} override record(s) and dropped field(s) would be discarded. Confirm before importing.`,
+      });
+    } else if (analysis.plan.unknownVersion) {
+      setNotice({
+        tone: "ok",
+        text: `Unknown version — Try Import available. ${summary}`,
+      });
+    } else {
+      setNotice({ tone: "ok", text: summary });
+    }
   };
 
   const commitCustom = async () => {
@@ -85,7 +124,7 @@ export function ImportExportDialog({
       const counts = await applyCustomImport(customPlan, strategies, fingerprints);
       setNotice({
         tone: "ok",
-        text: `Imported ${counts.imported}, overwritten ${counts.overwritten}, copied ${counts.copied}, skipped ${counts.skipped}, remapped ${counts.remapped}.`,
+        text: `Imported ${counts.imported}, overwritten ${counts.overwritten}, copied ${counts.copied}, skipped ${counts.skipped}, remapped ${counts.remapped}, overrides ${counts.overrides}.`,
       });
       if (customPlan.remaps.length > 0) {
         setNotice((previous) => ({
@@ -144,7 +183,7 @@ export function ImportExportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Import / Export JSON"
-        description="Wire version 1.0.0. Export is the recommended backup for local data."
+        description="Custom-spell payloads use version 1.1.0 (with SRD overrides); deck payloads remain version 1.0.0. Export is the recommended backup for local data."
         className="w-[min(92vw,44rem)]"
       >
         <div className="space-y-4">
@@ -167,7 +206,12 @@ export function ImportExportDialog({
               <Button variant="secondary" size="sm" onClick={exportCustom}>
                 Export custom spells
               </Button>
-              <Button variant="outline" size="sm" onClick={() => customInputRef.current?.click()}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!canAnalyzeCustom}
+                onClick={() => customInputRef.current?.click()}
+              >
                 Import custom spells…
               </Button>
               <input
@@ -207,9 +251,29 @@ export function ImportExportDialog({
                 ) : (
                   <p>No collisions with existing custom spells.</p>
                 )}
-                <Button size="sm" onClick={() => void commitCustom()}>
-                  Commit custom-spell import
-                </Button>
+                <p>
+                  {customPlan.entries.length} spell record(s) and {customPlan.overrides.length}{" "}
+                  override record(s) will be applied.
+                </p>
+                {customPlan.lossy ? (
+                  <p className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-amber-300">
+                    Unknown version: {customPlan.droppedOverrides} override record(s) and dropped
+                    field(s)
+                    {customPlan.lossyFields.length > 0
+                      ? ` (${customPlan.lossyFields.join(", ")})`
+                      : ""}{" "}
+                    will be discarded.
+                  </p>
+                ) : null}
+                {customPlan.lossy && !confirmLossy ? (
+                  <Button size="sm" variant="destructive" onClick={() => setConfirmLossy(true)}>
+                    Confirm lossy import…
+                  </Button>
+                ) : (
+                  <Button size="sm" onClick={() => void commitCustom()}>
+                    Commit custom-spell import
+                  </Button>
+                )}
               </div>
             ) : null}
           </section>

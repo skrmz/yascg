@@ -1,12 +1,14 @@
 import type { ActiveDeck, DeckEntry, SavedDeck } from "@/domain/deck";
-import type { Spell } from "@/domain/spells";
+import type { Spell, SrdSpellOverride } from "@/domain/spells";
 import {
   DECK_TYPE,
   EXPORT_VERSION,
   CUSTOM_SPELLS_TYPE,
+  CUSTOM_SPELL_EXPORT_VERSION,
   deckEntryToExport,
   type DeckExportPayload,
-  type SpellExportPayload,
+  type CustomSpellExportPayloadV2,
+  type SrdSpellOverrideExport,
 } from "@/domain/payloads";
 
 export function exportDateStamp(date: Date = new Date()): string {
@@ -24,7 +26,10 @@ export function deckExportFilename(date: Date = new Date()): string {
   return `spell-deck-${exportDateStamp(date)}.json`;
 }
 
-export function buildCustomSpellsPayload(spells: readonly Spell[]): SpellExportPayload {
+export function buildCustomSpellsPayload(
+  spells: readonly Spell[],
+  overrides: readonly SrdSpellOverride[] = [],
+): CustomSpellExportPayloadV2 {
   const custom = spells
     .filter((spell) => spell.source === "Custom")
     .slice()
@@ -32,7 +37,24 @@ export function buildCustomSpellsPayload(spells: readonly Spell[]): SpellExportP
       const byName = a.name.localeCompare(b.name);
       return byName !== 0 ? byName : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });
-  return { version: EXPORT_VERSION, type: CUSTOM_SPELLS_TYPE, spells: custom };
+  const exportedOverrides: SrdSpellOverrideExport[] = overrides
+    .slice()
+    .sort((a, b) => {
+      if (a.spellId !== b.spellId) return a.spellId < b.spellId ? -1 : 1;
+      return a.locale < b.locale ? -1 : a.locale > b.locale ? 1 : 0;
+    })
+    .map((override) => ({
+      spellId: override.spellId,
+      locale: override.locale,
+      ...(override.verbalDescription ? { verbalDescription: override.verbalDescription } : {}),
+      ...(override.somaticDescription ? { somaticDescription: override.somaticDescription } : {}),
+    }));
+  return {
+    version: CUSTOM_SPELL_EXPORT_VERSION,
+    type: CUSTOM_SPELLS_TYPE,
+    spells: custom,
+    srdSpellOverrides: exportedOverrides,
+  };
 }
 
 export function buildDeckPayload(deck: {

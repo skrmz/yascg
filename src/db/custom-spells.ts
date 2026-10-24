@@ -8,6 +8,7 @@ import {
 } from "@/domain/deck";
 import { spellSchema, type Spell } from "@/domain/spells";
 import { newUuid, isReservedSrdId } from "@/domain/ids";
+import { customSpellDraftDefaults } from "@/locales/labels.ts";
 
 export interface CustomSpellDeletion {
   spell: Spell;
@@ -17,15 +18,16 @@ export interface CustomSpellDeletion {
   at: number;
 }
 
-export function createCustomSpellDraft(): Spell {
+export function createCustomSpellDraft(language: string = "en"): Spell {
+  const defaults = customSpellDraftDefaults(language);
   return {
     id: newUuid(),
     name: "",
     level: 0,
     school: "Evocation",
-    castingTime: "1 Action",
-    range: "Self",
-    duration: "Instantaneous",
+    castingTime: defaults.castingTime,
+    range: defaults.range,
+    duration: defaults.duration,
     components: {
       verbal: false,
       somatic: false,

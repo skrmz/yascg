@@ -1,4 +1,7 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import type { SpellSource } from "@/domain/spells";
+import { sourceLabelText } from "@/locales/labels.ts";
 import { cn } from "./cn.ts";
 
 export function Badge({
@@ -29,10 +32,20 @@ export function Badge({
   );
 }
 
-export function SourceBadge({ source }: { source: "SRD-5.2.1" | "Custom" }) {
+export function SourceBadge({
+  source,
+  sourceLabel,
+  overridden = false,
+}: {
+  source: SpellSource;
+  sourceLabel?: string;
+  overridden?: boolean;
+}) {
+  const { t } = useTranslation();
+  const label = sourceLabelText({ source, sourceLabel, overridden }, t);
   return source === "Custom" ? (
-    <Badge tone="custom">Custom</Badge>
+    <Badge tone="custom">{label}</Badge>
   ) : (
-    <Badge tone="srd">SRD 5.2.1</Badge>
+    <Badge tone="srd">{label}</Badge>
   );
 }

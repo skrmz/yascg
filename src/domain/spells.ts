@@ -88,6 +88,12 @@ export interface Spell {
   source: SpellSource;
   sourceLabel?: string;
   updatedAt?: number;
+  /**
+   * Transient, non-persisted marker set by the SRD override merge. It is
+   * intentionally excluded from `spellSchema`, so it is never stored, imported,
+   * or exported.
+   */
+  overridden?: boolean;
 }
 
 export const LIMITS = {
@@ -133,6 +139,20 @@ export const spellComponentsSchema = z.object({
 });
 
 export const spellIdSchema = trimmedNonEmpty(LIMITS.NAME_MAX);
+
+/**
+ * Locale-scoped SRD component-text override. Identity is the `[spellId+locale]`
+ * compound key; only the V/S descriptions are overridable.
+ */
+export const srdSpellOverrideSchema = z.object({
+  spellId: trimmedNonEmpty(LIMITS.NAME_MAX),
+  locale: z.string().trim().min(2).max(35),
+  verbalDescription: optionalMeta,
+  somaticDescription: optionalMeta,
+  updatedAt: z.number().int().nonnegative(),
+});
+
+export type SrdSpellOverride = z.infer<typeof srdSpellOverrideSchema>;
 
 export const spellSchema = z
   .object({

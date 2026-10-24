@@ -2,7 +2,7 @@ import type { CardFitMode, Spell } from "@/domain/spells";
 import type { BlockNode } from "@/markdown/parse.ts";
 
 /** Bump whenever card print styles change so cached measurements invalidate. */
-export const CARD_STYLE_VERSION = "1";
+export const CARD_STYLE_VERSION = "2";
 
 export function contentFingerprint(spell: Spell): string {
   return JSON.stringify({
