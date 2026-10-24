@@ -26,6 +26,7 @@ vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/state/AppProvider.tsx", () => ({
   useApp: () => ({
     librarySpells: holder.spells,
+    languageSpells: holder.spells,
     language: "en",
     activeDeck: holder.activeDeck,
     addSpellToDeck: holder.addSpellToDeck,
@@ -80,6 +81,55 @@ describe("LibraryPane class filter", () => {
     expect(within(popover).getAllByRole("checkbox")).toHaveLength(CORE_CLASSES.length);
     expect(within(popover).queryByRole("checkbox", { name: "Wizard" })).toBeNull();
     expect(within(popover).getByRole("checkbox", { name: "Kämpfer" })).not.toBeNull();
+  });
+});
+
+describe("LibraryPane advanced filters", () => {
+  const selfOnly = makeSpell({
+    id: "srd-self",
+    name: "Self Spell",
+    range: "Self",
+    components: { verbal: true, somatic: false, material: false },
+  });
+  const touchAll = makeSpell({
+    id: "srd-touch",
+    name: "Touch Spell",
+    range: "Touch",
+    components: { verbal: true, somatic: true, material: true },
+  });
+
+  it("filters by the selected range", async () => {
+    holder.spells = [selfOnly, touchAll];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.click(screen.getByRole("button", { name: /Advanced Filters/ }));
+    await user.click(screen.getByLabelText("Range"));
+    await user.click(screen.getByRole("option", { name: "Self" }));
+
+    expect(screen.getByText("Self Spell")).not.toBeNull();
+    expect(screen.queryByText("Touch Spell")).toBeNull();
+  });
+
+  it("requires every selected component", async () => {
+    holder.spells = [selfOnly, touchAll];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.click(screen.getByRole("button", { name: /Advanced Filters/ }));
+    await user.click(screen.getByRole("button", { name: "Components" }));
+    await user.click(screen.getByRole("checkbox", { name: "Somatic" }));
+    await user.keyboard("{Escape}");
+
+    expect(screen.getByText("Touch Spell")).not.toBeNull();
+    expect(screen.queryByText("Self Spell")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Components" }));
+    await user.click(screen.getByRole("checkbox", { name: "Verbal" }));
+    await user.keyboard("{Escape}");
+
+    expect(screen.getByText("Touch Spell")).not.toBeNull();
+    expect(screen.queryByText("Self Spell")).toBeNull();
   });
 });
 

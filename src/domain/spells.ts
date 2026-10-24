@@ -56,6 +56,10 @@ export type AbilityScore = (typeof ABILITY_SCORES)[number];
 export type SpellSource = (typeof SPELL_SOURCES)[number];
 export type CardFitMode = (typeof CARD_FIT_MODES)[number];
 
+export const SPELL_COMPONENT_KEYS = ["verbal", "somatic", "material"] as const;
+
+export type SpellComponentKey = (typeof SPELL_COMPONENT_KEYS)[number];
+
 export interface SpellComponents {
   verbal: boolean;
   verbalDescription?: string;

@@ -24,6 +24,11 @@ export const en = {
     verbal: "V",
     somatic: "S",
     material: "M",
+    label: {
+      verbal: "Verbal",
+      somatic: "Somatic",
+      material: "Material",
+    },
     marker: {
       verbal: "ⓥ",
       somatic: "ⓢ",

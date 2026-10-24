@@ -1,15 +1,22 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, RotateCcw, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
-import { classKey, levelLabelKey, schoolKey } from "@/locales/labels.ts";
-import { CORE_CLASSES, SPELL_SCHOOLS, type Spell, type SpellSource } from "@/domain/spells";
+import { classKey, componentLabelKey, levelLabelKey, schoolKey } from "@/locales/labels.ts";
+import {
+  CORE_CLASSES,
+  SPELL_COMPONENT_KEYS,
+  SPELL_SCHOOLS,
+  type Spell,
+  type SpellSource,
+} from "@/domain/spells";
 import {
   DEFAULT_FILTERS,
   countActiveAdvancedFilters,
   createSearchIndex,
   deriveCastingTimeOptions,
+  deriveRangeOptions,
   filterSpells,
   searchSpells,
   sortSpells,
@@ -60,6 +67,7 @@ function Chip({
 export function LibraryPane() {
   const {
     librarySpells,
+    languageSpells,
     language,
     addSpellToDeck,
     addSpellsToDeck,
@@ -83,11 +91,23 @@ export function LibraryPane() {
     [searched, filters, language],
   );
 
-  const castingOptions = useMemo(() => deriveCastingTimeOptions(librarySpells), [librarySpells]);
+  // REVIEW: Data-derived option lists intentionally use the localized SRD dataset only.
+  // Custom spells keep author-written values across language switches, so deriving from
+  // `librarySpells` mixed languages in these selects (e.g. "Action" and "Aktion").
+  const castingOptions = useMemo(() => deriveCastingTimeOptions(languageSpells), [languageSpells]);
+  const rangeOptions = useMemo(() => deriveRangeOptions(languageSpells), [languageSpells]);
   const advancedCount = countActiveAdvancedFilters(filters);
 
   const patch = (partial: Partial<LibraryFilters>) =>
     setFilters((previous) => ({ ...previous, ...partial }));
+
+  useEffect(() => {
+    setFilters((previous) =>
+      previous.castingTimes.length === 0 && previous.ranges.length === 0
+        ? previous
+        : { ...previous, castingTimes: [], ranges: [] },
+    );
+  }, [language]);
 
   const resetAll = () => {
     setQuery("");
@@ -208,6 +228,36 @@ export function LibraryPane() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Range</span>
+              <Select
+                value={filters.ranges[0] ?? "any"}
+                onValueChange={(value) => patch({ ranges: value === "any" ? [] : [value] })}
+              >
+                <SelectTrigger aria-label="Range" className="h-8 text-xs">
+                  <SelectValue placeholder="Any" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any</SelectItem>
+                  {rangeOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <MultiSelect
+                label="Components"
+                aria-label="Components"
+                allLabel="All components"
+                options={SPELL_COMPONENT_KEYS}
+                selected={filters.components}
+                onChange={(components) => patch({ components })}
+                getLabel={(component) => t(componentLabelKey(component))}
+              />
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground">Concentration</span>

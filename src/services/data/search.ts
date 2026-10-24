@@ -1,5 +1,5 @@
 import Fuse from "fuse.js";
-import type { Spell, SpellSchool, SpellSource } from "@/domain/spells";
+import type { Spell, SpellComponentKey, SpellSchool, SpellSource } from "@/domain/spells";
 
 export const LEVEL_MIN = 0;
 export const LEVEL_MAX = 9;
@@ -14,6 +14,8 @@ export interface LibraryFilters {
   schools: readonly SpellSchool[];
   classes: readonly string[];
   castingTimes: readonly string[];
+  ranges: readonly string[];
+  components: readonly SpellComponentKey[];
   concentration: boolean | null;
   ritual: boolean | null;
   sources: readonly SpellSource[];
@@ -24,15 +26,19 @@ export const DEFAULT_FILTERS: LibraryFilters = {
   schools: [],
   classes: [],
   castingTimes: [],
+  ranges: [],
+  components: [],
   concentration: null,
   ritual: null,
   sources: [],
 };
 
-/** Counts the filters hidden inside the Advanced Filters section (casting time, concentration, ritual). */
+/** Counts the filters hidden inside the Advanced Filters section. */
 export function countActiveAdvancedFilters(filters: LibraryFilters): number {
   let count = 0;
   if (filters.castingTimes.length > 0) count += 1;
+  if (filters.ranges.length > 0) count += 1;
+  if (filters.components.length > 0) count += 1;
   if (filters.concentration !== null) count += 1;
   if (filters.ritual !== null) count += 1;
   return count;
@@ -83,8 +89,14 @@ function matchesAnyGroup<T>(selected: readonly T[], value: T): boolean {
   return selected.length === 0 || selected.includes(value);
 }
 
-function normalizeCastingTime(value: string): string {
+function normalizeFreeText(value: string): string {
   return value.trim().toLocaleLowerCase();
+}
+
+function matchesSelectedText(selected: readonly string[], value: string): boolean {
+  if (selected.length === 0) return true;
+  const normalized = normalizeFreeText(value);
+  return selected.some((entry) => normalizeFreeText(entry) === normalized);
 }
 
 export function matchesFilters(spell: Spell, filters: LibraryFilters): boolean {
@@ -95,11 +107,11 @@ export function matchesFilters(spell: Spell, filters: LibraryFilters): boolean {
     const owns = filters.classes.some((cls) => spell.classes.includes(cls));
     if (!owns) return false;
   }
-  if (filters.castingTimes.length > 0) {
-    const value = normalizeCastingTime(spell.castingTime);
-    if (!filters.castingTimes.some((entry) => normalizeCastingTime(entry) === value)) {
-      return false;
-    }
+  if (!matchesSelectedText(filters.castingTimes, spell.castingTime)) return false;
+  if (!matchesSelectedText(filters.ranges, spell.range)) return false;
+  if (filters.components.length > 0) {
+    const hasAll = filters.components.every((component) => spell.components[component]);
+    if (!hasAll) return false;
   }
   if (filters.concentration !== null && spell.concentration !== filters.concentration) {
     return false;
@@ -131,11 +143,20 @@ export function sortSpells(spells: readonly Spell[], locale: string): Spell[] {
   });
 }
 
-export function deriveCastingTimeOptions(spells: readonly Spell[]): string[] {
+function deriveTextOptions(spells: readonly Spell[], select: (spell: Spell) => string): string[] {
   const set = new Map<string, string>();
   for (const spell of spells) {
-    const key = normalizeCastingTime(spell.castingTime);
-    if (!set.has(key)) set.set(key, spell.castingTime.trim());
+    const raw = select(spell);
+    const key = normalizeFreeText(raw);
+    if (!set.has(key)) set.set(key, raw.trim());
   }
   return [...set.values()].sort((a, b) => a.localeCompare(b));
+}
+
+export function deriveCastingTimeOptions(spells: readonly Spell[]): string[] {
+  return deriveTextOptions(spells, (spell) => spell.castingTime);
+}
+
+export function deriveRangeOptions(spells: readonly Spell[]): string[] {
+  return deriveTextOptions(spells, (spell) => spell.range);
 }

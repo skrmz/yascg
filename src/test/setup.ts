@@ -27,6 +27,19 @@ if (!globalThis.matchMedia) {
   });
 }
 
+if (typeof Element !== "undefined") {
+  const elementStubs = {
+    hasPointerCapture: () => false,
+    setPointerCapture: () => undefined,
+    releasePointerCapture: () => undefined,
+    scrollIntoView: () => undefined,
+  };
+  for (const [name, stub] of Object.entries(elementStubs)) {
+    if (name in Element.prototype) continue;
+    Object.defineProperty(Element.prototype, name, { configurable: true, value: stub });
+  }
+}
+
 if (!globalThis.ResizeObserver) {
   class ResizeObserverStub {
     observe() {}

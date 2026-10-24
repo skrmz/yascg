@@ -4,6 +4,7 @@ import type {
   CoreClass,
   DamageType,
   Spell,
+  SpellComponentKey,
   SpellSchool,
   SpellSource,
 } from "@/domain/spells";
@@ -136,6 +137,18 @@ export type ComponentTranslationKey = (typeof COMPONENT_KEYS)[ComponentKind];
 
 export function componentKey(component: ComponentKind): ComponentTranslationKey {
   return COMPONENT_KEYS[component];
+}
+
+export const COMPONENT_LABEL_KEYS = {
+  verbal: "component.label.verbal",
+  somatic: "component.label.somatic",
+  material: "component.label.material",
+} as const satisfies Record<SpellComponentKey, string>;
+
+export type ComponentLabelTranslationKey = (typeof COMPONENT_LABEL_KEYS)[SpellComponentKey];
+
+export function componentLabelKey(component: SpellComponentKey): ComponentLabelTranslationKey {
+  return COMPONENT_LABEL_KEYS[component];
 }
 
 export const COMPONENT_MARKER_KEYS = {

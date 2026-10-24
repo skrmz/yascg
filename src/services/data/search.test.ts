@@ -5,6 +5,8 @@ import {
   LEVEL_MIN,
   countActiveAdvancedFilters,
   createSearchIndex,
+  deriveCastingTimeOptions,
+  deriveRangeOptions,
   filterSpells,
   hasActiveAdvancedFilters,
   normalizeText,
@@ -119,10 +121,12 @@ describe("filters", () => {
     const advanced = {
       ...DEFAULT_FILTERS,
       castingTimes: ["1 Action"],
+      ranges: ["60 feet"],
+      components: ["verbal"] as const,
       concentration: true,
       ritual: false,
     };
-    expect(countActiveAdvancedFilters(advanced)).toBe(3);
+    expect(countActiveAdvancedFilters(advanced)).toBe(5);
     expect(hasActiveAdvancedFilters(advanced)).toBe(true);
   });
 
@@ -138,6 +142,49 @@ describe("filters", () => {
     expect(
       filterSpells([withTime], { ...DEFAULT_FILTERS, castingTimes: ["1 Bonus Action"] }),
     ).toHaveLength(0);
+  });
+
+  it("compares range by trimmed case-folded exact match", () => {
+    const withRange = makeSpell({ id: "srd-range", name: "Ranged", range: "60 feet" });
+    expect(filterSpells([withRange], { ...DEFAULT_FILTERS, ranges: ["  60 FEET "] })).toHaveLength(
+      1,
+    );
+    expect(filterSpells([withRange], { ...DEFAULT_FILTERS, ranges: ["Self"] })).toHaveLength(0);
+  });
+
+  it("requires every selected component", () => {
+    const verbalOnly = makeSpell({
+      id: "srd-verbal",
+      name: "Verbal",
+      components: { verbal: true, somatic: false, material: false },
+    });
+    const verbalSomatic = makeSpell({
+      id: "srd-vs",
+      name: "Verbal Somatic",
+      components: { verbal: true, somatic: true, material: false },
+    });
+    expect(
+      filterSpells([verbalOnly, verbalSomatic], {
+        ...DEFAULT_FILTERS,
+        components: ["verbal"],
+      }).map((spell) => spell.id),
+    ).toEqual(["srd-verbal", "srd-vs"]);
+    expect(
+      filterSpells([verbalOnly, verbalSomatic], {
+        ...DEFAULT_FILTERS,
+        components: ["verbal", "somatic"],
+      }).map((spell) => spell.id),
+    ).toEqual(["srd-vs"]);
+  });
+
+  it("derives casting-time and range options from the supplied dataset", () => {
+    const spells = [
+      makeSpell({ id: "srd-a", castingTime: "Action", range: "Self" }),
+      makeSpell({ id: "srd-b", castingTime: " action ", range: "Touch" }),
+      makeSpell({ id: "srd-c", castingTime: "Reaction", range: "Self" }),
+    ];
+    expect(deriveCastingTimeOptions(spells)).toEqual(["Action", "Reaction"]);
+    expect(deriveRangeOptions(spells)).toEqual(["Self", "Touch"]);
   });
 
   it("filters by source and class", () => {
