@@ -106,6 +106,8 @@ export function LibraryPane() {
             className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
           <Input
+            id="library-search"
+            name="library-search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search name, class, or description"

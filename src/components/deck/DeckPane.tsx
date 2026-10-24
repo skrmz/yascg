@@ -394,6 +394,8 @@ export function DeckPane() {
           }
         >
           <NativeSelect
+            id="repair-spell"
+            name="repair-spell"
             aria-label="Replacement spell"
             value={repairSpellId}
             onChange={(event) => setRepairSpellId(event.target.value)}
@@ -472,6 +474,8 @@ function DeckRow({
         ) : null}
       </span>
       <NativeSelect
+        id={`fit-mode-${entry.entryId}`}
+        name={`fit-mode-${entry.entryId}`}
         aria-label={`Fit mode for ${name}`}
         className="h-7 w-28 text-xs"
         value={entry.fitMode}

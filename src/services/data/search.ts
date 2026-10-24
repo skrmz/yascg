@@ -54,15 +54,29 @@ export function createSearchIndex(spells: readonly Spell[]): Fuse<Spell> {
     includeScore: true,
     ignoreLocation: true,
     ignoreDiacritics: true,
-    threshold: 0.4,
-    keys: ["name", "classes", "description"],
+    threshold: 0.3,
+    keys: ["name", "classes"],
   });
 }
 
 export function searchSpells(index: Fuse<Spell>, spells: readonly Spell[], query: string): Spell[] {
-  const trimmed = query.trim();
-  if (trimmed === "") return [...spells];
-  return index.search(trimmed).map((result) => result.item);
+  const normalizedQuery = normalizeText(query.trim());
+  if (normalizedQuery === "") return [...spells];
+
+  const nameMatches = spells.filter((spell) => normalizeText(spell.name).includes(normalizedQuery));
+  if (nameMatches.length > 0) return nameMatches;
+
+  const classMatches = spells.filter((spell) =>
+    spell.classes.some((cls) => normalizeText(cls).includes(normalizedQuery)),
+  );
+  if (classMatches.length > 0) return classMatches;
+
+  const descriptionMatches = spells.filter((spell) =>
+    spell.description.some((paragraph) => normalizeText(paragraph).includes(normalizedQuery)),
+  );
+  if (descriptionMatches.length > 0) return descriptionMatches;
+
+  return index.search(normalizedQuery).map((result) => result.item);
 }
 
 function matchesAnyGroup<T>(selected: readonly T[], value: T): boolean {
