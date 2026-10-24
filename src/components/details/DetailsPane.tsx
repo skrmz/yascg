@@ -50,11 +50,6 @@ export function DetailsPane() {
         <p className="text-sm text-muted-foreground">
           Select a spell to preview its card and details.
         </p>
-        <Button onClick={() => setEditing(true)}>
-          <Plus size={16} aria-hidden="true" />
-          New custom spell
-        </Button>
-        <CustomSpellForm open={editing} onOpenChange={setEditing} />
         {canUndo ? (
           <Button variant="outline" size="sm" onClick={() => void undoDelete()}>
             Undo delete

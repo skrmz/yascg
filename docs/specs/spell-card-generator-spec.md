@@ -184,6 +184,7 @@ Search name, classes, and description (case/accent insensitive); for SRD spells 
 ## 6. Custom Spell Management
 
 - Create, edit, duplicate, and delete custom spells in `db.customSpells`; bundled SRD spells are read-only.
+- **Creation entry point:** The Library pane always offers **Create custom spell**, independent of active-deck contents, search/filter results, and the selected spell. Saving adds the spell to `db.customSpells` and refreshes the library/search index; it never adds the spell to the active deck, which changes only through an explicit add action.
 - New spells use `crypto.randomUUID()` and `updatedAt = Date.now()`; edits update the timestamp; duplication creates a new UUID.
 - Defaults: level 0, school Evocation, casting time `1 Action`, range `Self`, duration `Instantaneous`, components false, concentration/ritual false, classes `[]`, description `[""]`.
 - Validate before saving. Report errors inline. A failed IndexedDB write must not appear successful. A custom spell edit or overwrite retains its ID, and cards resolve the current spell body by that ID; saved snapshots are not rewritten.

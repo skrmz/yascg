@@ -16,6 +16,7 @@ Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells 
 - Vite+ with `@vitejs/plugin-react`
 - Tailwind v4 (`@tailwindcss/vite`)
 - shadcn-style Radix primitives
+- Sonner notifications
 - Lucide icons
 - Dexie
 - Zod
@@ -155,9 +156,9 @@ updates are reviewed through `git diff` on the raw source and the regenerated da
 ## Architecture
 
 - `src/domain/` — Zod schemas, types, limits, deck/baseline rules, ID rules.
-- `src/db/` — Dexie schema v2 (`customSpells`, `savedDecks`, singleton `activeDeck`,
-  `srdSpellOverrides`) with compare-and-swap revisions and advisory `BroadcastChannel`
-  notifications.
+- `src/db/` — Dexie schema v3 (`customSpells`, `savedDecks`, singleton `activeDeck`,
+  `srdSpellOverrides`) with compare-and-swap revisions, deck-entry normalization, and
+  advisory `BroadcastChannel` notifications.
 - `src/services/data/` — manifest/dataset loading, language preference, search and
   filters, and deck reference resolution.
 - `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), React
@@ -174,6 +175,19 @@ updates are reviewed through `git diff` on the raw source and the regenerated da
 - `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE
   spell-card terminology catalogs.
 - `src/state/`, `src/components/`, `src/ui/` — application state and UI.
+
+## Deck rules
+
+A deck contains at most one entry per unique spell ID, regardless of how the spell is added.
+Individual add attempts for a spell already in the active deck show a bottom-right Sonner
+notification and leave the deck unchanged. **Append all** adds only spells not already
+present and reports how many were added and skipped.
+
+Deck imports replace the active deck and deduplicate imported entries by spell ID, keeping
+the first occurrence and preserving the relative order of retained entries. The import
+summary reports how many duplicates were removed. Loading a saved deck and upgrading an
+existing database also normalize duplicate entries; no print-quantity or multiple-copy
+mechanism exists.
 
 ## Localization
 

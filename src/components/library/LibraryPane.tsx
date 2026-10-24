@@ -24,6 +24,7 @@ import { MultiSelect } from "@/ui/MultiSelect.tsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select.tsx";
 import { Separator } from "@/ui/Separator.tsx";
 import { cn } from "@/ui/cn.ts";
+import { CustomSpellForm } from "@/components/details/CustomSpellForm.tsx";
 import { LevelRangeSlider } from "./LevelRangeSlider.tsx";
 
 function toggle<T>(values: readonly T[], value: T): T[] {
@@ -70,6 +71,7 @@ export function LibraryPane() {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
   const [confirmReplace, setConfirmReplace] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const index = useMemo(() => createSearchIndex(librarySpells), [librarySpells]);
   const searched = useMemo(
@@ -295,51 +297,68 @@ export function LibraryPane() {
         </div>
       </div>
 
-      <ul className="min-h-0 flex-1 overflow-auto px-2 py-2" aria-label="Spell results">
-        {results.length === 0 ? (
-          <li className="px-2 py-6 text-center text-sm text-muted-foreground">
-            No spells match the current search and filters.
-          </li>
-        ) : null}
-        {results.map((spell) => (
-          <li key={spell.id}>
-            <div
-              className={cn(
-                "flex items-center justify-between gap-2 rounded px-2 py-1.5",
-                spell.id === selectedSpellId ? "bg-accent" : "hover:bg-accent/50",
-              )}
-            >
-              <button
-                type="button"
-                className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                onClick={() => selectSpell(spell.id)}
+      <div className="mt-2 px-3">
+        <Button variant="outline" size="sm" className="w-full" onClick={() => setCreating(true)}>
+          <Plus size={13} aria-hidden="true" />
+          Create custom spell
+        </Button>
+      </div>
+
+      <div className="mt-2 flex min-h-0 flex-1 flex-col">
+        <h2
+          id="spell-results-heading"
+          className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        >
+          Spells
+        </h2>
+        <ul className="min-h-0 flex-1 overflow-auto px-2 py-2" aria-label="Spell results">
+          {results.length === 0 ? (
+            <li className="px-2 py-6 text-center text-sm text-muted-foreground">
+              No spells match the current search and filters.
+            </li>
+          ) : null}
+          {results.map((spell) => (
+            <li key={spell.id}>
+              <div
+                className={cn(
+                  "flex items-center justify-between gap-2 rounded px-2 py-1.5",
+                  spell.id === selectedSpellId ? "bg-accent" : "hover:bg-accent/50",
+                )}
               >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-foreground">
-                    {spell.name}
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  onClick={() => selectSpell(spell.id)}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      {spell.name}
+                    </span>
+                    <span
+                      lang={i18n.resolvedLanguage}
+                      className="block truncate text-xs text-muted-foreground"
+                    >
+                      {t(levelLabelKey(spell.level), { level: spell.level })} &middot;{" "}
+                      {t(schoolKey(spell.school))}
+                    </span>
                   </span>
-                  <span
-                    lang={i18n.resolvedLanguage}
-                    className="block truncate text-xs text-muted-foreground"
-                  >
-                    {t(levelLabelKey(spell.level), { level: spell.level })} &middot;{" "}
-                    {t(schoolKey(spell.school))}
-                  </span>
-                </span>
-                <SourceBadge source={spell.source} />
-              </button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Add ${spell.name} to active deck`}
-                onClick={() => void onAdd(spell)}
-              >
-                <Plus size={16} aria-hidden="true" />
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
+                  <SourceBadge source={spell.source} />
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Add ${spell.name} to active deck`}
+                  onClick={() => void onAdd(spell)}
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <CustomSpellForm open={creating} onOpenChange={setCreating} />
 
       <Dialog open={confirmReplace} onOpenChange={setConfirmReplace}>
         <DialogContent

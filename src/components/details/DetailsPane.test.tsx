@@ -8,6 +8,8 @@ import { DetailsPane } from "./DetailsPane.tsx";
 const holder = vi.hoisted(() => ({
   spell: null as Spell | null,
   addSpellToDeck: vi.fn(),
+  canUndo: false,
+  undoDelete: vi.fn(),
 }));
 
 const toastMock = vi.hoisted(() => ({
@@ -31,8 +33,8 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     saveSrdOverride: () => Promise.resolve(null),
     resetSrdOverride: () => Promise.resolve(true),
     selectSpell: () => {},
-    canUndo: false,
-    undoDelete: () => Promise.resolve(true),
+    canUndo: holder.canUndo,
+    undoDelete: holder.undoDelete,
   }),
 }));
 
@@ -44,7 +46,29 @@ vi.mock("@/cards/fit.tsx", () => ({
 beforeEach(() => {
   holder.spell = makeSpell();
   holder.addSpellToDeck.mockReset().mockResolvedValue("added");
+  holder.canUndo = false;
+  holder.undoDelete.mockReset().mockResolvedValue(true);
   toastMock.info.mockReset();
+});
+
+describe("DetailsPane empty selection", () => {
+  it("keeps the placeholder without offering custom spell creation", () => {
+    holder.spell = null;
+    render(<DetailsPane />);
+    expect(screen.getByText("Select a spell to preview its card and details.")).not.toBeNull();
+    expect(screen.queryByRole("button", { name: /New custom spell/ })).toBeNull();
+  });
+
+  it("still offers Undo delete for a pending deletion", async () => {
+    holder.spell = null;
+    holder.canUndo = true;
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await user.click(screen.getByRole("button", { name: "Undo delete" }));
+
+    expect(holder.undoDelete).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("DetailsPane deck additions", () => {
