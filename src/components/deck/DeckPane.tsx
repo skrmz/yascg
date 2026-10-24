@@ -45,6 +45,7 @@ export function DeckPane() {
     canUndo,
     undoDelete,
     librarySpells,
+    selectSpell,
   } = useApp();
 
   const [nameDraft, setNameDraft] = useState(activeDeck?.name ?? "");
@@ -282,6 +283,9 @@ export function DeckPane() {
               setRepairEntryId(entry.entryId);
               setRepairSpellId("");
             }}
+            onSelect={() => {
+              if (resolution.status === "resolved") selectSpell(resolution.spell.id);
+            }}
             dragProps={{
               draggable: true,
               onDragStart: () => onDragStart(index),
@@ -427,6 +431,7 @@ interface DeckRowProps {
   onMoveDown: () => void;
   onFitMode: (mode: CardFitMode) => void;
   onRepair: () => void;
+  onSelect: () => void;
   dragProps: {
     draggable: boolean;
     onDragStart: () => void;
@@ -446,9 +451,24 @@ function DeckRow({
   onMoveDown,
   onFitMode,
   onRepair,
+  onSelect,
   dragProps,
 }: DeckRowProps) {
   const name = resolution.status === "resolved" ? resolution.spell.name : resolution.referenceName;
+  const nameContent = (
+    <>
+      <span className="block truncate text-sm text-foreground">{name}</span>
+      {resolution.status === "translation-unavailable" ? (
+        <span className="block text-xs text-amber-300">
+          Not available in {language} — kept in deck, omitted from print
+        </span>
+      ) : resolution.status === "missing" ? (
+        <span className="block text-xs text-red-300">
+          Missing reference — repairable, excluded from print
+        </span>
+      ) : null}
+    </>
+  );
   return (
     <li
       className={cn(
@@ -461,18 +481,18 @@ function DeckRow({
     >
       <GripVertical size={14} className="text-muted-foreground" aria-hidden="true" />
       <span className="w-5 text-right text-xs text-muted-foreground">{index + 1}</span>
-      <span className="min-w-[8rem] flex-1">
-        <span className="block truncate text-sm text-foreground">{name}</span>
-        {resolution.status === "translation-unavailable" ? (
-          <span className="block text-xs text-amber-300">
-            Not available in {language} — kept in deck, omitted from print
-          </span>
-        ) : resolution.status === "missing" ? (
-          <span className="block text-xs text-red-300">
-            Missing reference — repairable, excluded from print
-          </span>
-        ) : null}
-      </span>
+      {resolution.status === "resolved" ? (
+        <button
+          type="button"
+          className="min-w-[8rem] flex-1 rounded text-end hover:bg-accent/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          aria-label={`Show ${name} in details`}
+          onClick={onSelect}
+        >
+          {nameContent}
+        </button>
+      ) : (
+        <span className="min-w-[8rem] text-end flex-1">{nameContent}</span>
+      )}
       <NativeSelect
         id={`fit-mode-${entry.entryId}`}
         name={`fit-mode-${entry.entryId}`}
