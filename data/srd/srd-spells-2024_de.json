@@ -3677,7 +3677,7 @@
   },
   {
     "index": "light",
-    "name": "Leicht",
+    "name": "Licht",
     "level": 0,
     "school": "Evocation",
     "classes": ["Bard", "Cleric", "Sorcerer", "Wizard"],

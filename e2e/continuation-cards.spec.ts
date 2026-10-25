@@ -98,6 +98,40 @@ test("Wunsch auto-shrink truncates to one card with a visible ellipsis", async (
   expect((await bodyOverflow(printCards))[0]).toBeLessThanOrEqual(1);
 });
 
+test("multi-card previews arrange cards in responsive rows", async ({ page }) => {
+  await page.goto("/");
+  await switchLanguage(page, /Deutsch/);
+
+  const { details, fitMode } = await addWunsch(page);
+  const cards = details.locator(".card-preview-page");
+
+  await fitMode.selectOption("multi-card");
+  await expect
+    .poll(async () => cards.count(), { message: "Multi-card should paginate Wunsch" })
+    .toBeGreaterThan(1);
+
+  const firstBox = await cards.nth(0).boundingBox();
+  const secondBox = await cards.nth(1).boundingBox();
+  expect(firstBox).not.toBeNull();
+  expect(secondBox).not.toBeNull();
+  // Physical dimensions are preserved and adjacent cards share a row.
+  expect(Math.abs(firstBox!.width - 240)).toBeLessThan(2);
+  expect(Math.abs(firstBox!.height - 336)).toBeLessThan(2);
+  expect(Math.abs(firstBox!.y - secondBox!.y)).toBeLessThan(2);
+
+  await page.setViewportSize({ width: 360, height: 800 });
+  await expect
+    .poll(
+      async () => {
+        const narrowFirst = await cards.nth(0).boundingBox();
+        const narrowSecond = await cards.nth(1).boundingBox();
+        return narrowFirst && narrowSecond ? Math.abs(narrowFirst.y - narrowSecond.y) : 0;
+      },
+      { message: "Narrow viewports should wrap continuation cards" },
+    )
+    .toBeGreaterThan(10);
+});
+
 test("Wunsch multi-card keeps the full description across cards", async ({ page }) => {
   await page.addInitScript(() => {
     window.print = () => undefined;

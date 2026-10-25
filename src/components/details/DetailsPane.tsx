@@ -1,23 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Plus, SquarePen, Trash2 } from "lucide-react";
+import { Copy, Ellipsis, Info, Plus, SquarePen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
-import { CardView, classSummary, materialDetailText } from "@/cards/Card.tsx";
-import {
-  componentKey,
-  componentMarkerKey,
-  damageTypeKey,
-  subclassLabel,
-} from "@/locales/labels.ts";
+import { CardView } from "@/cards/Card.tsx";
 import { useCardFit, AUTO_SHRINK_MIN_PT } from "@/cards/fit.tsx";
 import { LIMITS } from "@/domain/spells";
-import { BlockList } from "@/markdown/render.tsx";
-import { componentDescriptionBlocks, parseMarkdown } from "@/markdown/parse.ts";
 import { Button } from "@/ui/Button.tsx";
-import { Badge, SourceBadge } from "@/ui/Badge.tsx";
+import { SourceBadge } from "@/ui/Badge.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/ui/ContextMenu.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/ui/DropdownMenu.tsx";
 import { CustomSpellForm } from "./CustomSpellForm.tsx";
+import { SpellDetailsDialog } from "./SpellDetailsDialog.tsx";
 
 export function DetailsPane() {
   const {
@@ -30,9 +35,10 @@ export function DetailsPane() {
     canUndo,
     undoDelete,
   } = useApp();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [detailsSpellId, setDetailsSpellId] = useState<string | null>(null);
 
   const fitMode =
     activeDeck?.entries.find((entry) => entry.spellId === selectedSpell?.id)?.fitMode ??
@@ -43,6 +49,10 @@ export function DetailsPane() {
     fitMode,
     language,
   });
+
+  useEffect(() => {
+    setDetailsSpellId(null);
+  }, [selectedSpell?.id]);
 
   if (!selectedSpell) {
     return (
@@ -61,6 +71,8 @@ export function DetailsPane() {
 
   const spell = selectedSpell;
   const isCustom = spell.source === "Custom";
+  const detailsOpen = detailsSpellId !== null && detailsSpellId === spell.id;
+  const openDetails = () => setDetailsSpellId(spell.id);
   const onAdd = async () => {
     const result = await addSpellToDeck(spell);
     if (result === "duplicate") {
@@ -69,13 +81,6 @@ export function DetailsPane() {
       });
     }
   };
-  const descriptionBlocks = parseMarkdown(spell.description.join("\n\n"));
-  const higherBlocks = spell.higherLevels ? parseMarkdown(spell.higherLevels.join("\n\n")) : [];
-  const componentBlocks = componentDescriptionBlocks(spell, {
-    verbal: t(componentMarkerKey("verbal")),
-    somatic: t(componentMarkerKey("somatic")),
-  });
-  const material = materialDetailText(spell, t);
 
   return (
     <section className="flex h-full min-h-0 flex-col" aria-label="Spell preview and details">
@@ -88,10 +93,14 @@ export function DetailsPane() {
             overridden={spell.overridden}
           />
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           <Button size="sm" onClick={() => void onAdd()}>
             <Plus size={14} aria-hidden="true" />
             Add
+          </Button>
+          <Button variant="outline" size="sm" onClick={openDetails} aria-label={t("details.show")}>
+            <Info size={14} aria-hidden="true" />
+            {t("details.show")}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
             <SquarePen size={14} aria-hidden="true" />
@@ -113,115 +122,95 @@ export function DetailsPane() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto p-3">
-        <div className="mb-4 flex flex-wrap items-start gap-4">
-          <div className="card-preview-frame">
-            {fit.result ? (
-              fit.result.pages.map((pageBlocks, index) => (
-                <CardView
-                  key={index}
-                  spell={spell}
-                  blocks={pageBlocks}
-                  cardIndex={index + 1}
-                  cardCount={fit.result!.pages.length}
-                  fontPt={fit.result!.fontPt}
-                  className="card-preview-page"
-                />
-              ))
-            ) : (
-              <div className="rounded border border-dashed border-input p-4 text-xs text-muted-foreground">
-                Measuring card layout…
-              </div>
-            )}
-          </div>
-          <div
-            lang={i18n.resolvedLanguage}
-            className="min-w-[16rem] flex-1 space-y-2 text-sm text-foreground"
-          >
-            {fit.error ? (
-              <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
-                {fit.error}
-              </p>
-            ) : null}
-            {fit.result?.truncated ? (
-              <p className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-xs text-amber-300">
-                Description truncated to fit on one card at {AUTO_SHRINK_MIN_PT}pt. Switch to
-                multi-card mode to display the full description.
-              </p>
-            ) : null}
-            {fit.result?.overflow ? (
-              <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
-                This entry exceeds the {LIMITS.CONTINUATION_CARDS_MAX}-card continuation limit and
-                cannot be printed.
-              </p>
-            ) : null}
-            {fit.result && !fit.result.overflow ? (
-              <p className="text-xs text-muted-foreground">
-                {fit.result.pages.length} physical card
-                {fit.result.pages.length === 1 ? "" : "s"} at {fit.result.fontPt}pt.
-              </p>
-            ) : null}
-            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-              <dt className="text-muted-foreground">{t("spell.metadata.castingTime")}</dt>
-              <dd>{spell.castingTime}</dd>
-              <dt className="text-muted-foreground">{t("spell.metadata.range")}</dt>
-              <dd>{spell.range}</dd>
-              <dt className="text-muted-foreground">{t("spell.metadata.duration")}</dt>
-              <dd>{spell.duration}</dd>
-              <dt className="text-muted-foreground">{t("spell.metadata.components")}</dt>
-              <dd>
-                {spell.components.verbal ? t(componentKey("verbal")) : ""}
-                {spell.components.somatic ? t(componentKey("somatic")) : ""}
-                {spell.components.material ? t(componentKey("material")) : ""}
-                {!spell.components.verbal && !spell.components.somatic && !spell.components.material
-                  ? "\u2014"
-                  : ""}
-              </dd>
-              {material ? (
-                <>
-                  <dt className="text-muted-foreground">{t("spell.metadata.material")}</dt>
-                  <dd>{material}</dd>
-                </>
-              ) : null}
-              <dt className="text-muted-foreground">{t("spell.metadata.classes")}</dt>
-              <dd>{spell.classes.length > 0 ? classSummary(spell.classes, t) : "\u2014"}</dd>
-              <dt className="text-muted-foreground">{t("spell.metadata.subclasses")}</dt>
-              <dd>
-                {spell.subclasses && spell.subclasses.length > 0
-                  ? spell.subclasses.map((id) => subclassLabel(id, t)).join(", ")
-                  : "\u2014"}
-              </dd>
-            </dl>
-            <div className="flex flex-wrap gap-1">
-              {spell.concentration ? <Badge>{t("spell.flag.concentration")}</Badge> : null}
-              {spell.ritual ? <Badge>{t("spell.flag.ritual")}</Badge> : null}
-              {spell.damageTypes?.map((type) => {
-                const key = damageTypeKey(type);
-                return (
-                  <Badge key={type} tone="warning">
-                    {key ? t(key) : type}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
+        <div className="mb-3 space-y-1">
+          {fit.error ? (
+            <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
+              {fit.error}
+            </p>
+          ) : null}
+          {fit.result?.truncated ? (
+            <p className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-xs text-amber-300">
+              Description truncated to fit on one card at {AUTO_SHRINK_MIN_PT}pt. Switch to
+              multi-card mode to display the full description.
+            </p>
+          ) : null}
+          {fit.result?.overflow ? (
+            <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
+              This entry exceeds the {LIMITS.CONTINUATION_CARDS_MAX}-card continuation limit and
+              cannot be printed.
+            </p>
+          ) : null}
+          {fit.result && !fit.result.overflow ? (
+            <p className="text-xs text-muted-foreground">
+              {fit.result.pages.length} physical card
+              {fit.result.pages.length === 1 ? "" : "s"} at {fit.result.fontPt}pt.
+            </p>
+          ) : null}
         </div>
 
-        <div
-          lang={i18n.resolvedLanguage}
-          className="max-w-3xl space-y-2 text-sm leading-relaxed text-foreground"
-        >
-          <BlockList blocks={descriptionBlocks} />
-          {higherBlocks.length > 0 ? (
-            <>
-              <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("spell.higherLevels")}
-              </h3>
-              <BlockList blocks={higherBlocks} />
-            </>
-          ) : null}
-          <BlockList blocks={componentBlocks} />
-        </div>
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <div className="card-preview-frame">
+              {fit.result ? (
+                fit.result.pages.map((pageBlocks, index) => (
+                  <CardView
+                    key={index}
+                    spell={spell}
+                    blocks={pageBlocks}
+                    cardIndex={index + 1}
+                    cardCount={fit.result!.pages.length}
+                    fontPt={fit.result!.fontPt}
+                    className="card-preview-page"
+                  />
+                ))
+              ) : (
+                <div className="rounded border border-dashed border-input p-4 text-xs text-muted-foreground">
+                  Measuring card layout…
+                </div>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="app-no-print absolute right-2 top-2"
+                    aria-label={t("details.moreActions")}
+                    title={t("details.moreActions")}
+                  >
+                    <Ellipsis size={16} aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onSelect={openDetails}>
+                    <Info size={14} aria-hidden="true" />
+                    {t("details.show")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setEditing(true)}>
+                    <SquarePen size={14} aria-hidden="true" />
+                    {t("details.edit")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem onSelect={openDetails}>
+              <Info size={14} aria-hidden="true" />
+              {t("details.show")}
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => setEditing(true)}>
+              <SquarePen size={14} aria-hidden="true" />
+              {t("details.edit")}
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       </div>
+
+      <SpellDetailsDialog
+        spell={spell}
+        open={detailsOpen}
+        onOpenChange={(open) => setDetailsSpellId(open ? spell.id : null)}
+      />
 
       <CustomSpellForm open={editing} onOpenChange={setEditing} spell={spell} />
 

@@ -14,6 +14,8 @@ export function DialogContent({
   children,
   footer,
   className,
+  bodyClassName,
+  closeLabel = "Close",
   lang,
 }: {
   title: string;
@@ -21,6 +23,8 @@ export function DialogContent({
   children?: ReactNode;
   footer?: ReactNode;
   className?: string;
+  bodyClassName?: string;
+  closeLabel?: string;
   lang?: string;
 }) {
   return (
@@ -33,7 +37,7 @@ export function DialogContent({
           className,
         )}
       >
-        <div className="mb-3 flex items-start justify-between gap-4">
+        <div className="mb-3 flex shrink-0 items-start justify-between gap-4">
           <div>
             <DialogPrimitive.Title className="text-lg font-semibold text-foreground">
               {title}
@@ -45,12 +49,12 @@ export function DialogContent({
             ) : null}
           </div>
           <DialogPrimitive.Close asChild>
-            <Button variant="ghost" size="icon" aria-label="Close">
+            <Button variant="ghost" size="icon" aria-label={closeLabel}>
               <X size={16} />
             </Button>
           </DialogPrimitive.Close>
         </div>
-        <div className="text-sm text-foreground">{children}</div>
+        <div className={cn("text-sm text-foreground", bodyClassName)}>{children}</div>
         {footer ? <div className="mt-5 flex justify-end gap-2">{footer}</div> : null}
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>

@@ -156,6 +156,12 @@ export const en = {
     truncated: "Content truncated",
     pageNumber: "{{index}}/{{count}}",
   },
+  details: {
+    show: "Show details",
+    moreActions: "More actions",
+    edit: "Edit",
+    close: "Close",
+  },
   form: {
     title: {
       new: "New custom spell",

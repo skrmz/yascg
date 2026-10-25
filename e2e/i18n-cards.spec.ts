@@ -72,12 +72,21 @@ test("localizes damage-type badges and falls back to the raw English value", asy
   await library.getByRole("button", { name: /^Fire Bolt Cantrip/ }).click();
 
   const details = page.getByRole("region", { name: "Spell preview and details" });
-  await expect(details.getByText("Fire", { exact: true })).toBeVisible();
+  await details.getByRole("button", { name: "Show details" }).click();
+  const englishDialog = page.getByRole("dialog");
+  await expect(englishDialog.getByText("Fire", { exact: true })).toBeVisible();
+  await englishDialog.getByRole("button", { name: "Close" }).click();
+  await expect(englishDialog).toHaveCount(0);
 
   await switchLanguage(page, /Deutsch/);
-  await expect(details.getByText("Feuer", { exact: true })).toBeVisible();
-  await expect(details.getByText("Fire", { exact: true })).toHaveCount(0);
+  await details.getByRole("button", { name: "Details anzeigen" }).click();
+  const germanDialog = page.getByRole("dialog");
+  await expect(germanDialog.getByText("Feuer", { exact: true })).toBeVisible();
+  await expect(germanDialog.getByText("Fire", { exact: true })).toHaveCount(0);
+  await germanDialog.getByRole("button", { name: "Schließen" }).click();
+  await expect(germanDialog).toHaveCount(0);
 
   await switchLanguage(page, /English/);
-  await expect(details.getByText("Fire", { exact: true })).toBeVisible();
+  await details.getByRole("button", { name: "Show details" }).click();
+  await expect(page.getByRole("dialog").getByText("Fire", { exact: true })).toBeVisible();
 });

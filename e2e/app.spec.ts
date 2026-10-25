@@ -62,3 +62,61 @@ test("saves a named deck", async ({ page }) => {
   await page.getByLabel("Saved deck to load").click();
   await expect(page.getByRole("option", { name: /Test Deck/ })).toBeVisible();
 });
+
+test("opens spell details from the persistent header button", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Search spells").fill("Fireball");
+  await page
+    .getByRole("button", { name: /Add Fireball/ })
+    .first()
+    .click();
+
+  const details = page.getByRole("region", { name: "Spell preview and details" });
+  await details.getByRole("button", { name: "Show details" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Fireball" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Casting Time")).toBeVisible();
+  await expect(dialog.getByText("Level 3 \u00b7 Evocation")).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(dialog).toHaveCount(0);
+});
+
+test("opens card actions from the ellipsis menu and the context menu", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Search spells").fill("Fireball");
+  await page
+    .getByRole("button", { name: /Add Fireball/ })
+    .first()
+    .click();
+
+  const details = page.getByRole("region", { name: "Spell preview and details" });
+  await details.getByRole("button", { name: "More actions" }).click();
+  await expect(page.getByRole("menuitem", { name: "Show details" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Edit" })).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menuitem", { name: "Show details" })).toHaveCount(0);
+
+  await page.locator(".card-preview-frame").click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Show details" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Edit" })).toBeVisible();
+
+  await page.getByRole("menuitem", { name: "Show details" }).click();
+  await expect(page.getByRole("dialog", { name: "Fireball" })).toBeVisible();
+});
+
+test("does not open details from a single click on the card", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Search spells").fill("Fireball");
+  await page
+    .getByRole("button", { name: /Add Fireball/ })
+    .first()
+    .click();
+
+  await page.locator(".card-preview-page").first().click();
+
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("menuitem")).toHaveCount(0);
+});

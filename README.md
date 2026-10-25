@@ -168,6 +168,9 @@ updates are reviewed through `git diff` on the raw source and the regenerated da
   measured trailing ellipsis, and multi-card pagination with heading-orphan
   prevention. Continuation cards use a compact header with a localized
   `contd.`/`fortgesetzt` label and omit repeated metadata to maximize body space.
+- `src/components/details/` — card-preview-first details pane, on-demand spell details
+  dialog with full metadata and canonical description, and card actions menus (ellipsis
+  dropdown plus right-click context menu) backed by the existing edit flow.
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
 - `src/io/` — JSON export/import with collision review and atomic commits. Custom-spell
   payloads are version `1.1.0` (they may carry SRD component-text overrides); deck
@@ -213,8 +216,9 @@ codes (e.g. `fr` in tests) fall back to English.
 - Localized content containers carry a `lang` attribute; `document.documentElement.lang`
   is intentionally left untouched.
 
-Out of scope: app chrome, library filter dropdowns, the print dialog, deck pane, dialogs,
-and status/error messages remain English.
+The spell details dialog, including its metadata, description, and close label, is localized with
+the selected spell-data language. Out of scope: app chrome, library filter dropdowns, the print
+dialog, deck pane, confirmation dialogs, and status/error messages remain English.
 
 ## Printing
 

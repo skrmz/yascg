@@ -158,6 +158,12 @@ export const de = {
     truncated: "Inhalt gekürzt",
     pageNumber: "{{index}}/{{count}}",
   },
+  details: {
+    show: "Details anzeigen",
+    moreActions: "Weitere Aktionen",
+    edit: "Bearbeiten",
+    close: "Schließen",
+  },
   form: {
     title: {
       new: "Neuer eigener Zauber",
