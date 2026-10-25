@@ -1,0 +1,118 @@
+import { useState } from "react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vite-plus/test";
+import { makeCustomSpell } from "@/test/fixtures/spells.ts";
+import { ImportExportDialog } from "./ImportExportDialog.tsx";
+
+vi.mock("@/state/AppProvider.tsx", () => ({
+  useApp: () => ({
+    customSpells: [],
+    activeDeck: null,
+    refreshAll: () => undefined,
+    srdSpellOverrides: [],
+    englishById: new Map([["srd-test-spell", { id: "srd-test-spell" }]]),
+    manifest: [{ code: "en" }],
+    dataLoading: false,
+    dataError: null,
+  }),
+}));
+
+const customPayload = JSON.stringify({
+  version: "1.0.0",
+  type: "custom-spells",
+  spells: [makeCustomSpell({ id: "custom-import-1", name: "Imported Spell" })],
+});
+
+function Harness() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Open import/export
+      </button>
+      <ImportExportDialog open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
+async function openAndAnalyzeCustomFile() {
+  const user = userEvent.setup();
+  render(<Harness />);
+  await user.click(screen.getByRole("button", { name: "Open import/export" }));
+  const input = document.querySelector<HTMLInputElement>('input[type="file"]');
+  if (!input) throw new Error("Custom import file input not found");
+  await user.upload(
+    input,
+    new File([customPayload], "custom-spells.json", { type: "application/json" }),
+  );
+  await screen.findByText("1 spell record(s) and 0 override record(s) will be applied.");
+  return user;
+}
+
+describe("ImportExportDialog pending import handling", () => {
+  it("asks before closing with an analyzed import and keeps it when canceled", async () => {
+    const user = await openAndAnalyzeCustomFile();
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(
+      screen.getByText(
+        "An import is ready but has not been applied. Closing the dialog now discards it.",
+      ),
+    ).not.toBeNull();
+    expect(screen.getByRole("dialog", { name: "Import / Export JSON" })).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Keep reviewing" }));
+
+    expect(screen.queryByText(/Closing the dialog now discards it/)).toBeNull();
+    expect(
+      screen.getByText("1 spell record(s) and 0 override record(s) will be applied."),
+    ).not.toBeNull();
+  });
+
+  it("keeps the pending import when dismissing the dialog", async () => {
+    const user = await openAndAnalyzeCustomFile();
+
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.getByText(
+        "An import is ready but has not been applied. Closing the dialog now discards it.",
+      ),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("1 spell record(s) and 0 override record(s) will be applied."),
+    ).not.toBeNull();
+  });
+
+  it("discards the pending import when closing is confirmed", async () => {
+    const user = await openAndAnalyzeCustomFile();
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Discard import and close" }));
+
+    expect(screen.queryByRole("dialog", { name: "Import / Export JSON" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Open import/export" }));
+
+    expect(
+      screen.queryByText("1 spell record(s) and 0 override record(s) will be applied."),
+    ).toBeNull();
+    expect(screen.queryByText(/validated/)).toBeNull();
+  });
+
+  it("resets the pending import from inside the dialog", async () => {
+    const user = await openAndAnalyzeCustomFile();
+
+    await user.click(screen.getByRole("button", { name: "Reset custom import" }));
+
+    expect(
+      screen.queryByText("1 spell record(s) and 0 override record(s) will be applied."),
+    ).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(screen.queryByRole("dialog", { name: "Import / Export JSON" })).toBeNull();
+  });
+});

@@ -131,7 +131,7 @@ export function CardView({
       )}
       <div className="card-body-measured" ref={bodyRef}>
         {material && !isContinuation ? (
-          <p className="card-material" title={material}>
+          <p className="card-material text-end pb-1" title={material}>
             {material}
           </p>
         ) : null}

@@ -48,13 +48,59 @@ export function ImportExportDialog({
   const [confirmLossy, setConfirmLossy] = useState(false);
   const [deckPlan, setDeckPlan] = useState<DeckImportPlan | null>(null);
   const [confirmDeck, setConfirmDeck] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const customInputRef = useRef<HTMLInputElement | null>(null);
   const deckInputRef = useRef<HTMLInputElement | null>(null);
+  const customAnalysisRef = useRef(0);
+  const deckAnalysisRef = useRef(0);
 
   // Override validation needs the loaded SRD lookup and manifest; analyzing
   // before they arrive would misreport real spell ids as unknown.
   const canAnalyzeCustom =
     !dataLoading && !dataError && manifest.length > 0 && englishById.size > 0;
+  const hasPendingImport = customPlan !== null || deckPlan !== null;
+
+  const resetCustomImport = () => {
+    customAnalysisRef.current += 1;
+    setCustomPlan(null);
+    setStrategies("skip");
+    setConfirmLossy(false);
+    setConfirmDiscard(false);
+    setNotice(null);
+  };
+
+  const resetDeckImport = () => {
+    deckAnalysisRef.current += 1;
+    setDeckPlan(null);
+    setConfirmDeck(false);
+    setConfirmDiscard(false);
+    setNotice(null);
+  };
+
+  const resetImportState = () => {
+    resetCustomImport();
+    resetDeckImport();
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      onOpenChange(true);
+      return;
+    }
+    if (hasPendingImport) {
+      setConfirmDiscard(true);
+      return;
+    }
+    resetImportState();
+    setNotice(null);
+    onOpenChange(false);
+  };
+
+  const discardAndClose = () => {
+    resetImportState();
+    setNotice(null);
+    onOpenChange(false);
+  };
 
   const exportCustom = () => {
     downloadJson(
@@ -77,6 +123,8 @@ export function ImportExportDialog({
   };
 
   const onCustomFile = async (file: File) => {
+    const requestId = ++customAnalysisRef.current;
+    setConfirmDiscard(false);
     if (!canAnalyzeCustom) {
       setCustomPlan(null);
       setNotice({
@@ -88,6 +136,7 @@ export function ImportExportDialog({
       return;
     }
     const text = await readFileText(file);
+    if (requestId !== customAnalysisRef.current) return;
     const analysis = analyzeCustomImport(text, customSpells, {
       srdSpellsById: englishById,
       supportedLocales: manifest.map((entry) => entry.code),
@@ -118,6 +167,7 @@ export function ImportExportDialog({
 
   const commitCustom = async () => {
     if (!customPlan) return;
+    setConfirmDiscard(false);
     const fingerprints = new Map(
       customPlan.collisions.map((collision) => [collision.id, collision.fingerprint]),
     );
@@ -146,7 +196,10 @@ export function ImportExportDialog({
   };
 
   const onDeckFile = async (file: File) => {
+    const requestId = ++deckAnalysisRef.current;
+    setConfirmDiscard(false);
     const text = await readFileText(file);
+    if (requestId !== deckAnalysisRef.current) return;
     const analysis = analyzeDeckImport(text);
     if (!analysis.ok) {
       setDeckPlan(null);
@@ -173,6 +226,7 @@ export function ImportExportDialog({
 
   const commitDeck = async () => {
     if (!deckPlan) return;
+    setConfirmDiscard(false);
     const current = activeDeck;
     if (!current) return;
     try {
@@ -203,13 +257,31 @@ export function ImportExportDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         title="Import / Export JSON"
         description="Custom-spell payloads use version 1.1.0 (with SRD overrides); deck payloads remain version 1.0.0. Export is the recommended backup for local data."
         className="w-[min(92vw,44rem)]"
       >
         <div className="space-y-4">
+          {confirmDiscard ? (
+            <div
+              className="space-y-2 rounded border border-amber-400/30 bg-amber-400/10 p-2 text-xs text-amber-300"
+              role="alert"
+            >
+              <p>
+                An import is ready but has not been applied. Closing the dialog now discards it.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setConfirmDiscard(false)}>
+                  Keep reviewing
+                </Button>
+                <Button size="sm" variant="destructive" onClick={discardAndClose}>
+                  Discard import and close
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {notice ? (
             <p
               className={
@@ -288,15 +360,20 @@ export function ImportExportDialog({
                     will be discarded.
                   </p>
                 ) : null}
-                {customPlan.lossy && !confirmLossy ? (
-                  <Button size="sm" variant="destructive" onClick={() => setConfirmLossy(true)}>
-                    Confirm lossy import…
+                <div className="flex flex-wrap items-center gap-2">
+                  {customPlan.lossy && !confirmLossy ? (
+                    <Button size="sm" variant="destructive" onClick={() => setConfirmLossy(true)}>
+                      Confirm lossy import…
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => void commitCustom()}>
+                      Commit custom-spell import
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={resetCustomImport}>
+                    Reset custom import
                   </Button>
-                ) : (
-                  <Button size="sm" onClick={() => void commitCustom()}>
-                    Commit custom-spell import
-                  </Button>
-                )}
+                </div>
               </div>
             ) : null}
           </section>
@@ -334,15 +411,20 @@ export function ImportExportDialog({
                       } will be removed.`
                     : ""}
                 </p>
-                {confirmDeck ? (
-                  <Button size="sm" variant="destructive" onClick={() => void commitDeck()}>
-                    Confirm replace active deck
+                <div className="flex flex-wrap items-center gap-2">
+                  {confirmDeck ? (
+                    <Button size="sm" variant="destructive" onClick={() => void commitDeck()}>
+                      Confirm replace active deck
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => setConfirmDeck(true)}>
+                      Replace active deck…
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={resetDeckImport}>
+                    Reset deck import
                   </Button>
-                ) : (
-                  <Button size="sm" onClick={() => setConfirmDeck(true)}>
-                    Replace active deck…
-                  </Button>
-                )}
+                </div>
               </div>
             ) : null}
           </section>
