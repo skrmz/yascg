@@ -4,7 +4,13 @@ import { useTranslation } from "react-i18next";
 import type { CardFitMode, Spell } from "@/domain/spells";
 import { LIMITS } from "@/domain/spells";
 import { parseSpellBody, type BlockNode } from "@/markdown/parse.ts";
-import { cloneBlock, paginateToPages, truncateBlocksToFit } from "@/markdown/split.ts";
+import {
+  appendEllipsis,
+  cloneBlock,
+  isHeading,
+  paginateToPages,
+  truncateBlocksToFit,
+} from "@/markdown/split.ts";
 import { componentMarkerKey } from "@/locales/labels.ts";
 import { CardView } from "./Card.tsx";
 import { waitForCardFonts } from "./fonts.ts";
@@ -28,6 +34,51 @@ export interface FitResult {
   overflow: boolean;
 }
 
+/**
+ * Truncates to the largest prefix that still fits together with its trailing
+ * ellipsis. Trailing headings and rules are dropped so the card never ends with
+ * a structure that would leave the ellipsis invisible.
+ */
+function truncateSingleCard(
+  source: readonly BlockNode[],
+  measure: MeasureFit,
+): { blocks: BlockNode[]; truncated: boolean } {
+  const result = truncateBlocksToFit(source, (candidate) =>
+    measure(appendEllipsis(candidate), AUTO_SHRINK_MIN_PT, false),
+  );
+  if (!result.truncated) return result;
+
+  const blocks = result.blocks.map(cloneBlock);
+  while (blocks.length > 0) {
+    const last = blocks[blocks.length - 1];
+    if (last.type === "hr" || (isHeading(last) && blocks.length > 1)) blocks.pop();
+    else break;
+  }
+  if (blocks.length === 0) {
+    return {
+      blocks: [{ type: "paragraph", children: [{ type: "text", value: "\u2026" }] }],
+      truncated: true,
+    };
+  }
+  return { blocks: appendEllipsis(blocks), truncated: true };
+}
+
+function fitMultiCard(
+  source: readonly BlockNode[],
+  measure: MeasureFit,
+  maxCards: number,
+): FitResult {
+  let fontPt: number = MULTI_CARD_FONT_PT;
+  const fitsPage = (page: readonly BlockNode[], pageIndex: number) =>
+    measure(page, fontPt, pageIndex > 0);
+  let result = paginateToPages(source, fitsPage, maxCards);
+  if (result.overflow && fontPt > MULTI_CARD_MIN_FONT_PT) {
+    fontPt = MULTI_CARD_MIN_FONT_PT;
+    result = paginateToPages(source, fitsPage, maxCards);
+  }
+  return { pages: result.pages, fontPt, truncated: false, overflow: result.overflow };
+}
+
 export function computeFit(
   blocks: readonly BlockNode[],
   measure: MeasureFit,
@@ -41,9 +92,7 @@ export function computeFit(
         return { pages: [source], fontPt, truncated: false, overflow: false };
       }
     }
-    const truncated = truncateBlocksToFit(source, (candidate) =>
-      measure(candidate, AUTO_SHRINK_MIN_PT, false),
-    );
+    const truncated = truncateSingleCard(source, measure);
     return {
       pages: [truncated.blocks],
       fontPt: AUTO_SHRINK_MIN_PT,
@@ -51,15 +100,7 @@ export function computeFit(
       overflow: false,
     };
   }
-  let fontPt: number = MULTI_CARD_FONT_PT;
-  const fitsPage = (page: readonly BlockNode[], pageIndex: number) =>
-    measure(page, fontPt, pageIndex > 0);
-  let result = paginateToPages(source, fitsPage, maxCards);
-  if (result.overflow && fontPt > MULTI_CARD_MIN_FONT_PT) {
-    fontPt = MULTI_CARD_MIN_FONT_PT;
-    result = paginateToPages(source, fitsPage, maxCards);
-  }
-  return { pages: result.pages, fontPt, truncated: false, overflow: result.overflow };
+  return fitMultiCard(source, measure, maxCards);
 }
 
 const fitCache = new Map<string, FitResult>();

@@ -36,6 +36,13 @@ function headingText(blocks: readonly BlockNode[]): string | null {
   return heading.children.map((child) => child.value).join("");
 }
 
+function lastBlockText(blocks: readonly BlockNode[]): string | null {
+  const last = blocks[blocks.length - 1];
+  if (!last) return null;
+  if (last.type !== "paragraph" && last.type !== "heading") return null;
+  return last.children.map((child) => child.value).join("");
+}
+
 function measureByBlockCount(maxBlocks: number): MeasureFit {
   return (blocks) => blocks.length <= maxBlocks;
 }
@@ -103,7 +110,7 @@ describe("computeFit across localized headings", () => {
     expect(headingText(german.pages[0] ?? [])).toBe("Höhere Grade");
   });
 
-  it("takes the truncation path identically when the heading never fits", () => {
+  it("truncates with a visible ellipsis identically when no single card fits", () => {
     const english = computeFit(
       parseSpellBody(spell, "Higher Levels", markers),
       measureByBlockCount(2),
@@ -116,8 +123,12 @@ describe("computeFit across localized headings", () => {
     );
     expect(english.truncated).toBe(true);
     expect(german.truncated).toBe(true);
-    expect(english.overflow).toBe(false);
-    expect(german.overflow).toBe(false);
+    expect(english.pages).toHaveLength(1);
+    expect(german.pages).toHaveLength(1);
+    expect(lastBlockText(english.pages[0] ?? [])).toBe("Base spell text.\u2026");
+    expect(lastBlockText(german.pages[0] ?? [])).toBe("Base spell text.\u2026");
+    expect(headingText(english.pages[0] ?? [])).toBeNull();
+    expect(headingText(german.pages[0] ?? [])).toBeNull();
   });
 
   it("reports continuation overflow identically for both locales", () => {

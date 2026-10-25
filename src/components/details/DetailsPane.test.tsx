@@ -5,11 +5,19 @@ import type { Spell } from "@/domain/spells";
 import { makeSpell } from "@/test/fixtures/spells.ts";
 import { DetailsPane } from "./DetailsPane.tsx";
 
+interface FitResultStub {
+  pages: unknown[][];
+  fontPt: number;
+  truncated: boolean;
+  overflow: boolean;
+}
+
 const holder = vi.hoisted(() => ({
   spell: null as Spell | null,
   addSpellToDeck: vi.fn(),
   canUndo: false,
   undoDelete: vi.fn(),
+  fit: null as FitResultStub | null,
 }));
 
 const toastMock = vi.hoisted(() => ({
@@ -39,7 +47,7 @@ vi.mock("@/state/AppProvider.tsx", () => ({
 }));
 
 vi.mock("@/cards/fit.tsx", () => ({
-  useCardFit: () => ({ result: null, error: null, measureLayer: null }),
+  useCardFit: () => ({ result: holder.fit, error: null, measureLayer: null }),
   AUTO_SHRINK_MIN_PT: 5,
 }));
 
@@ -48,6 +56,7 @@ beforeEach(() => {
   holder.addSpellToDeck.mockReset().mockResolvedValue("added");
   holder.canUndo = false;
   holder.undoDelete.mockReset().mockResolvedValue(true);
+  holder.fit = null;
   toastMock.info.mockReset();
 });
 
@@ -99,6 +108,45 @@ describe("DetailsPane subclasses row", () => {
     render(<DetailsPane />);
     const value = screen.getByText("Subclasses").nextElementSibling;
     expect(value?.textContent).toBe("\u2014");
+  });
+});
+
+describe("DetailsPane fit notices", () => {
+  it("explains truncation and points to multi-card mode", () => {
+    holder.fit = {
+      pages: [[]],
+      fontPt: 6,
+      truncated: true,
+      overflow: false,
+    };
+    render(<DetailsPane />);
+    expect(
+      screen.getByText(
+        "Description truncated to fit on one card at 5pt. Switch to multi-card mode to display the full description.",
+      ),
+    ).not.toBeNull();
+  });
+
+  it("shows no truncation notice when the content fits", () => {
+    holder.fit = {
+      pages: [[]],
+      fontPt: 8.5,
+      truncated: false,
+      overflow: false,
+    };
+    render(<DetailsPane />);
+    expect(screen.queryByText(/Description truncated/)).toBeNull();
+  });
+
+  it("keeps the blocking notice when the continuation limit is exceeded", () => {
+    holder.fit = {
+      pages: [[], []],
+      fontPt: 8,
+      truncated: false,
+      overflow: true,
+    };
+    render(<DetailsPane />);
+    expect(screen.getByText(/cannot be printed/)).not.toBeNull();
   });
 });
 

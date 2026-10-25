@@ -144,7 +144,8 @@ export function DetailsPane() {
             ) : null}
             {fit.result?.truncated ? (
               <p className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-xs text-amber-300">
-                Content was truncated to fit at {AUTO_SHRINK_MIN_PT}pt. Full text remains below.
+                Description truncated to fit on one card at {AUTO_SHRINK_MIN_PT}pt. Switch to
+                multi-card mode to display the full description.
               </p>
             ) : null}
             {fit.result?.overflow ? (

@@ -164,7 +164,8 @@ updates are reviewed through `git diff` on the raw source and the regenerated da
 - `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), React
   renderer, and deterministic AST splitting/pagination.
 - `src/cards/` — card chrome plus hidden-card measurement, `document.fonts.ready`
-  gating, auto-shrink (8.5pt → 6pt) and multi-card pagination with heading-orphan
+  gating, single-card auto-shrink (8.5pt → 6pt) that truncates at the 6pt floor with a
+  measured trailing ellipsis, and multi-card pagination with heading-orphan
   prevention. Continuation cards use a compact header with a localized
   `contd.`/`fortgesetzt` label and omit repeated metadata to maximize body space.
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
