@@ -4,7 +4,6 @@ import {
   LEVEL_MAX,
   LEVEL_MIN,
   countActiveAdvancedFilters,
-  createSearchIndex,
   deriveCastingTimeOptions,
   deriveDurationOptions,
   deriveRangeOptions,
@@ -26,52 +25,39 @@ const cure = makeSpell({
 const café = makeSpell({ id: "srd-cafe", name: "Café Shield", level: 0, school: "Abjuration" });
 
 describe("search normalization", () => {
-  it("is case and accent insensitive", () => {
+  it("matches names case and accent insensitively", () => {
     expect(normalizeText("Café")).toBe("cafe");
-    const index = createSearchIndex([fireball, cure, café]);
-    const results = searchSpells(index, [fireball, cure, café], "cafe");
-    expect(results.map((spell) => spell.id)).toContain("srd-cafe");
+    expect(searchSpells([fireball, cure, café], "cafe").map((spell) => spell.id)).toEqual([
+      "srd-cafe",
+    ]);
   });
 
   it("returns all spells for an empty query", () => {
-    const index = createSearchIndex([fireball, cure]);
-    expect(searchSpells(index, [fireball, cure], "  ")).toHaveLength(2);
+    expect(searchSpells([fireball, cure], "  ")).toHaveLength(2);
   });
 
-  it("returns only name matches when the query also appears in descriptions", () => {
-    const sparks = makeSpell({
-      id: "srd-sparks",
-      name: "Sparks",
-      description: ["A burst of fire."],
-    });
-    const index = createSearchIndex([fireball, sparks]);
-    const results = searchSpells(index, [fireball, sparks], "fire");
-    expect(results.map((spell) => spell.id)).toEqual(["srd-fireball"]);
+  it("matches substrings of the spell name", () => {
+    expect(searchSpells([fireball, cure], "ball").map((spell) => spell.id)).toEqual([
+      "srd-fireball",
+    ]);
   });
 
-  it("falls back to class matches when no spell name matches", () => {
-    const shield = makeSpell({ id: "srd-shield", name: "Shield", classes: ["Wizard"] });
-    const index = createSearchIndex([fireball, shield]);
-    const results = searchSpells(index, [fireball, shield], "wizard");
-    expect(results.map((spell) => spell.id)).toEqual(["srd-fireball", "srd-shield"]);
-  });
-
-  it("falls back to description matches when no name or class matches", () => {
+  it("ignores descriptions and classes", () => {
     const sparks = makeSpell({
       id: "srd-sparks",
       name: "Sparks",
       classes: ["Sorcerer"],
-      description: ["A flash of restoring light."],
+      description: ["A burst of fire."],
     });
-    const index = createSearchIndex([fireball, sparks]);
-    const results = searchSpells(index, [fireball, sparks], "restoring");
-    expect(results.map((spell) => spell.id)).toEqual(["srd-sparks"]);
+    expect(searchSpells([fireball, sparks], "fire").map((spell) => spell.id)).toEqual([
+      "srd-fireball",
+    ]);
+    expect(searchSpells([fireball, sparks], "sorcerer")).toEqual([]);
+    expect(searchSpells([fireball, sparks], "burst")).toEqual([]);
   });
 
-  it("fuzzy-matches names only when no exact text match exists", () => {
-    const index = createSearchIndex([fireball, cure]);
-    const results = searchSpells(index, [fireball, cure], "fierball");
-    expect(results.map((spell) => spell.id)).toEqual(["srd-fireball"]);
+  it("does not fuzzy-match misspelled names", () => {
+    expect(searchSpells([fireball, cure], "fierball")).toEqual([]);
   });
 });
 

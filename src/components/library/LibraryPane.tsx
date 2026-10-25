@@ -14,7 +14,6 @@ import {
 import {
   DEFAULT_FILTERS,
   countActiveAdvancedFilters,
-  createSearchIndex,
   deriveCastingTimeOptions,
   deriveDurationOptions,
   deriveRangeOptions,
@@ -82,11 +81,7 @@ export function LibraryPane() {
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const index = useMemo(() => createSearchIndex(librarySpells), [librarySpells]);
-  const searched = useMemo(
-    () => searchSpells(index, librarySpells, query),
-    [index, librarySpells, query],
-  );
+  const searched = useMemo(() => searchSpells(librarySpells, query), [librarySpells, query]);
   const results = useMemo(
     () => sortSpells(filterSpells(searched, filters), language),
     [searched, filters, language],
@@ -161,7 +156,7 @@ export function LibraryPane() {
             name="library-search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search name, class, or description"
+            placeholder="Search by spell name"
             aria-label="Search spells"
             className="pl-7"
           />
