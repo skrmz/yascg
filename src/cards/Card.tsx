@@ -148,8 +148,7 @@ export function CardView({
         ) : null}
         {cardCount > 1 ? (
           <span className="card-continuation">
-            {cardIndex > 1 ? `${t("card.continuedFrom", { index: cardIndex - 1 })} \u00b7 ` : ""}
-            {t("card.continuation", { index: cardIndex, count: cardCount })}
+            {t("card.pageNumber", { index: cardIndex, count: cardCount })}
           </span>
         ) : null}
       </footer>

@@ -65,8 +65,8 @@ describe("locale catalogs", () => {
   });
 
   it("interpolates card continuation counts", () => {
-    expect(i18n.t("card.continuation", { lng: "de", index: 2, count: 3 })).toBe("Karte 2 von 3");
-    expect(i18n.t("card.continuedFrom", { lng: "de", index: 1 })).toBe("Fortgesetzt von Karte 1");
+    expect(i18n.t("card.pageNumber", { lng: "en", index: 2, count: 5 })).toBe("2/5");
+    expect(i18n.t("card.pageNumber", { lng: "de", index: 1, count: 5 })).toBe("1/5");
     expect(i18n.t("card.continued", { lng: "en" })).toBe("contd.");
     expect(i18n.t("card.continued", { lng: "de" })).toBe("fortgesetzt");
   });

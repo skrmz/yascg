@@ -154,8 +154,7 @@ export const en = {
   card: {
     continued: "contd.",
     truncated: "Content truncated",
-    continuedFrom: "Continued from Card {{index}}",
-    continuation: "Card {{index}} of {{count}}",
+    pageNumber: "{{index}}/{{count}}",
   },
   form: {
     title: {

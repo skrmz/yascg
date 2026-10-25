@@ -59,9 +59,7 @@ test("Wunsch multi-card continuations use compact headers in preview and print",
     await expect(card.locator(".card-continuation-label")).toHaveText("fortgesetzt");
     await expect(card.locator(".card-metadata")).toHaveCount(0);
     await expect(card.locator(".card-material")).toHaveCount(0);
-    await expect(card.locator(".card-continuation")).toContainText(
-      `Karte ${index + 1} von ${cardCount}`,
-    );
+    await expect(card.locator(".card-continuation")).toHaveText(`${index + 1}/${cardCount}`);
   }
 
   expect((await bodyOverflow(cards)).every((overflow) => overflow <= 1)).toBe(true);
