@@ -89,12 +89,14 @@ describe("LibraryPane advanced filters", () => {
     id: "srd-self",
     name: "Self Spell",
     range: "Self",
+    duration: "Instantaneous",
     components: { verbal: true, somatic: false, material: false },
   });
   const touchAll = makeSpell({
     id: "srd-touch",
     name: "Touch Spell",
     range: "Touch",
+    duration: "1 minute",
     components: { verbal: true, somatic: true, material: true },
   });
 
@@ -109,6 +111,19 @@ describe("LibraryPane advanced filters", () => {
 
     expect(screen.getByText("Self Spell")).not.toBeNull();
     expect(screen.queryByText("Touch Spell")).toBeNull();
+  });
+
+  it("filters by the selected duration", async () => {
+    holder.spells = [selfOnly, touchAll];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.click(screen.getByRole("button", { name: /Advanced Filters/ }));
+    await user.click(screen.getByLabelText("Duration"));
+    await user.click(screen.getByRole("option", { name: "1 minute" }));
+
+    expect(screen.getByText("Touch Spell")).not.toBeNull();
+    expect(screen.queryByText("Self Spell")).toBeNull();
   });
 
   it("requires every selected component", async () => {

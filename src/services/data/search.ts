@@ -15,6 +15,7 @@ export interface LibraryFilters {
   classes: readonly string[];
   castingTimes: readonly string[];
   ranges: readonly string[];
+  durations: readonly string[];
   components: readonly SpellComponentKey[];
   concentration: boolean | null;
   ritual: boolean | null;
@@ -27,6 +28,7 @@ export const DEFAULT_FILTERS: LibraryFilters = {
   classes: [],
   castingTimes: [],
   ranges: [],
+  durations: [],
   components: [],
   concentration: null,
   ritual: null,
@@ -38,6 +40,7 @@ export function countActiveAdvancedFilters(filters: LibraryFilters): number {
   let count = 0;
   if (filters.castingTimes.length > 0) count += 1;
   if (filters.ranges.length > 0) count += 1;
+  if (filters.durations.length > 0) count += 1;
   if (filters.components.length > 0) count += 1;
   if (filters.concentration !== null) count += 1;
   if (filters.ritual !== null) count += 1;
@@ -109,6 +112,7 @@ export function matchesFilters(spell: Spell, filters: LibraryFilters): boolean {
   }
   if (!matchesSelectedText(filters.castingTimes, spell.castingTime)) return false;
   if (!matchesSelectedText(filters.ranges, spell.range)) return false;
+  if (!matchesSelectedText(filters.durations, spell.duration)) return false;
   if (filters.components.length > 0) {
     const hasAll = filters.components.every((component) => spell.components[component]);
     if (!hasAll) return false;
@@ -159,4 +163,8 @@ export function deriveCastingTimeOptions(spells: readonly Spell[]): string[] {
 
 export function deriveRangeOptions(spells: readonly Spell[]): string[] {
   return deriveTextOptions(spells, (spell) => spell.range);
+}
+
+export function deriveDurationOptions(spells: readonly Spell[]): string[] {
+  return deriveTextOptions(spells, (spell) => spell.duration);
 }

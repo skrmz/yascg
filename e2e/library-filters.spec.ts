@@ -64,6 +64,18 @@ test("range and components filters narrow the results", async ({ page }) => {
   await expect(results.getByText("Shield", { exact: true })).toHaveCount(0);
 });
 
+test("duration filter narrows the results", async ({ page }) => {
+  await page.goto("/");
+  const results = page.getByRole("list", { name: "Spell results" });
+  await page.getByRole("button", { name: /Advanced Filters/ }).click();
+
+  await page.getByRole("combobox", { name: "Duration", exact: true }).click();
+  await page.getByRole("option", { name: "8 hours", exact: true }).click();
+
+  await expect(results.getByText("Mage Armor", { exact: true })).toBeVisible();
+  await expect(results.getByText("Fireball", { exact: true })).toHaveCount(0);
+});
+
 test("school multi-select ORs the selected schools", async ({ page }) => {
   await page.goto("/");
   const results = page.getByRole("list", { name: "Spell results" });

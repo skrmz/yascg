@@ -16,6 +16,7 @@ import {
   countActiveAdvancedFilters,
   createSearchIndex,
   deriveCastingTimeOptions,
+  deriveDurationOptions,
   deriveRangeOptions,
   filterSpells,
   searchSpells,
@@ -96,6 +97,7 @@ export function LibraryPane() {
   // `librarySpells` mixed languages in these selects (e.g. "Action" and "Aktion").
   const castingOptions = useMemo(() => deriveCastingTimeOptions(languageSpells), [languageSpells]);
   const rangeOptions = useMemo(() => deriveRangeOptions(languageSpells), [languageSpells]);
+  const durationOptions = useMemo(() => deriveDurationOptions(languageSpells), [languageSpells]);
   const advancedCount = countActiveAdvancedFilters(filters);
 
   const patch = (partial: Partial<LibraryFilters>) =>
@@ -103,9 +105,11 @@ export function LibraryPane() {
 
   useEffect(() => {
     setFilters((previous) =>
-      previous.castingTimes.length === 0 && previous.ranges.length === 0
+      previous.castingTimes.length === 0 &&
+      previous.ranges.length === 0 &&
+      previous.durations.length === 0
         ? previous
-        : { ...previous, castingTimes: [], ranges: [] },
+        : { ...previous, castingTimes: [], ranges: [], durations: [] },
     );
   }, [language]);
 
@@ -241,6 +245,25 @@ export function LibraryPane() {
                 <SelectContent>
                   <SelectItem value="any">Any</SelectItem>
                   {rangeOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Duration</span>
+              <Select
+                value={filters.durations[0] ?? "any"}
+                onValueChange={(value) => patch({ durations: value === "any" ? [] : [value] })}
+              >
+                <SelectTrigger aria-label="Duration" className="h-8 text-xs">
+                  <SelectValue placeholder="Any" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any</SelectItem>
+                  {durationOptions.map((option) => (
                     <SelectItem key={option} value={option}>
                       {option}
                     </SelectItem>

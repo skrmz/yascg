@@ -6,6 +6,7 @@ import {
   countActiveAdvancedFilters,
   createSearchIndex,
   deriveCastingTimeOptions,
+  deriveDurationOptions,
   deriveRangeOptions,
   filterSpells,
   hasActiveAdvancedFilters,
@@ -122,11 +123,12 @@ describe("filters", () => {
       ...DEFAULT_FILTERS,
       castingTimes: ["1 Action"],
       ranges: ["60 feet"],
+      durations: ["Instantaneous"],
       components: ["verbal"] as const,
       concentration: true,
       ritual: false,
     };
-    expect(countActiveAdvancedFilters(advanced)).toBe(5);
+    expect(countActiveAdvancedFilters(advanced)).toBe(6);
     expect(hasActiveAdvancedFilters(advanced)).toBe(true);
   });
 
@@ -150,6 +152,20 @@ describe("filters", () => {
       1,
     );
     expect(filterSpells([withRange], { ...DEFAULT_FILTERS, ranges: ["Self"] })).toHaveLength(0);
+  });
+
+  it("compares duration by trimmed case-folded exact match", () => {
+    const withDuration = makeSpell({
+      id: "srd-duration",
+      name: "Lasting",
+      duration: "1 minute",
+    });
+    expect(
+      filterSpells([withDuration], { ...DEFAULT_FILTERS, durations: [" 1 MINUTE "] }),
+    ).toHaveLength(1);
+    expect(
+      filterSpells([withDuration], { ...DEFAULT_FILTERS, durations: ["Instantaneous"] }),
+    ).toHaveLength(0);
   });
 
   it("requires every selected component", () => {
@@ -177,14 +193,20 @@ describe("filters", () => {
     ).toEqual(["srd-vs"]);
   });
 
-  it("derives casting-time and range options from the supplied dataset", () => {
+  it("derives casting-time, range, and duration options from the supplied dataset", () => {
     const spells = [
-      makeSpell({ id: "srd-a", castingTime: "Action", range: "Self" }),
-      makeSpell({ id: "srd-b", castingTime: " action ", range: "Touch" }),
-      makeSpell({ id: "srd-c", castingTime: "Reaction", range: "Self" }),
+      makeSpell({ id: "srd-a", castingTime: "Action", range: "Self", duration: "Instantaneous" }),
+      makeSpell({ id: "srd-b", castingTime: " action ", range: "Touch", duration: "1 minute" }),
+      makeSpell({
+        id: "srd-c",
+        castingTime: "Reaction",
+        range: "Self",
+        duration: " instantaneous ",
+      }),
     ];
     expect(deriveCastingTimeOptions(spells)).toEqual(["Action", "Reaction"]);
     expect(deriveRangeOptions(spells)).toEqual(["Self", "Touch"]);
+    expect(deriveDurationOptions(spells)).toEqual(["1 minute", "Instantaneous"]);
   });
 
   it("filters by source and class", () => {

@@ -494,18 +494,18 @@ function DeckRow({
       {...dragProps}
     >
       <GripVertical size={14} className="text-muted-foreground" aria-hidden="true" />
-      <span className="w-5 text-right text-xs text-muted-foreground">{index + 1}</span>
+      <span className="w-5 text-start text-xs text-muted-foreground">{index + 1}</span>
       {resolution.status === "resolved" ? (
         <button
           type="button"
-          className="min-w-[8rem] flex-1 rounded text-end hover:bg-accent/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="min-w-[8rem] flex-1 rounded text-start hover:bg-accent/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           aria-label={`Show ${name} in details`}
           onClick={onSelect}
         >
           {nameContent}
         </button>
       ) : (
-        <span className="min-w-[8rem] text-end flex-1">{nameContent}</span>
+        <span className="min-w-[8rem] text-start flex-1">{nameContent}</span>
       )}
       <NativeSelect
         id={`fit-mode-${entry.entryId}`}
