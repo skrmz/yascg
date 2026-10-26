@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, RotateCcw, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
+import { resolveContentLanguage } from "@/content-language.ts";
 import { classKey, componentLabelKey, levelLabelKey, schoolKey } from "@/locales/labels.ts";
 import {
   CORE_CLASSES,
@@ -75,7 +76,7 @@ export function LibraryPane() {
     selectSpell,
     selectedSpellId,
   } = useApp();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
   const [confirmReplace, setConfirmReplace] = useState(false);
@@ -117,8 +118,8 @@ export function LibraryPane() {
     const result = await addSpellToDeck(spell);
     if (result === "added") selectSpell(spell.id);
     if (result === "duplicate") {
-      toast.info("Already in deck", {
-        description: `${spell.name} is already in the active deck.`,
+      toast.info(t("library.toast.alreadyTitle"), {
+        description: t("library.toast.alreadyDescription", { name: spell.name }),
       });
     }
   };
@@ -127,23 +128,21 @@ export function LibraryPane() {
     const result = await addSpellsToDeck(results);
     if (!result.ok || (result.added === 0 && result.skipped === 0)) return;
     if (result.added === 0) {
-      toast.info("No spells added", {
-        description: `${result.skipped} matching spell${result.skipped === 1 ? " is" : "s are"} already in the active deck.`,
+      toast.info(t("library.toast.noAddedTitle"), {
+        description: t("library.toast.noAddedDescription", { count: result.skipped }),
       });
       return;
     }
     toast.success(
-      `Added ${result.added} spell${result.added === 1 ? "" : "s"} to the active deck.`,
+      t("library.toast.addedTitle", { count: result.added }),
       result.skipped > 0
-        ? {
-            description: `Skipped ${result.skipped} already in the active deck.`,
-          }
-        : undefined,
+        ? { description: t("library.toast.skippedDescription", { count: result.skipped }) }
+        : {},
     );
   };
 
   return (
-    <section className="flex h-full min-h-0 flex-col" aria-label="Spell library">
+    <section className="flex h-full min-h-0 flex-col" aria-label={t("library.title")}>
       <div className="space-y-3 p-3">
         <div className="relative">
           <Search
@@ -156,8 +155,8 @@ export function LibraryPane() {
             name="library-search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by spell name"
-            aria-label="Search spells"
+            placeholder={t("library.searchPlaceholder")}
+            aria-label={t("library.searchLabel")}
             className="pl-7"
           />
         </div>
@@ -165,11 +164,11 @@ export function LibraryPane() {
         <LevelRangeSlider value={filters.levels} onChange={(levels) => patch({ levels })} />
 
         <MultiSelect
-          label="Class"
-          aria-label="Class"
-          allLabel="All classes"
+          label={t("library.classFilter")}
+          aria-label={t("library.classFilter")}
+          allLabel={t("library.allClasses")}
           searchable
-          searchPlaceholder="Search classes…"
+          searchPlaceholder={t("library.searchClasses")}
           options={CORE_CLASSES}
           selected={filters.classes}
           onChange={(classes) => patch({ classes })}
@@ -187,9 +186,11 @@ export function LibraryPane() {
               size="sm"
               className="group w-full justify-between"
             >
-              <span>Advanced Filters</span>
+              <span>{t("library.advancedFilters")}</span>
               <span className="flex items-center gap-2">
-                {advancedCount > 0 ? <Badge>{advancedCount} active</Badge> : null}
+                {advancedCount > 0 ? (
+                  <Badge>{t("library.activeFilters", { count: advancedCount })}</Badge>
+                ) : null}
                 <ChevronDown
                   size={15}
                   aria-hidden="true"
@@ -201,25 +202,26 @@ export function LibraryPane() {
           <CollapsibleContent className="space-y-2 overflow-hidden data-[state=closed]:animate-[collapsible-up_180ms_ease-out] data-[state=open]:animate-[collapsible-down_180ms_ease-out] motion-reduce:animate-none">
             <div className="space-y-1">
               <MultiSelect
-                label="School"
-                aria-label="School"
-                allLabel="All schools"
+                label={t("library.school")}
+                aria-label={t("library.school")}
+                allLabel={t("library.allSchools")}
                 options={SPELL_SCHOOLS}
                 selected={filters.schools}
                 onChange={(schools) => patch({ schools })}
+                getLabel={(school) => t(schoolKey(school))}
               />
             </div>
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Casting Time</span>
+              <span className="text-xs text-muted-foreground">{t("library.castingTime")}</span>
               <Select
                 value={filters.castingTimes[0] ?? "any"}
                 onValueChange={(value) => patch({ castingTimes: value === "any" ? [] : [value] })}
               >
-                <SelectTrigger aria-label="Casting time" className="h-8 text-xs">
-                  <SelectValue placeholder="Any" />
+                <SelectTrigger aria-label={t("library.castingTime")} className="h-8 text-xs">
+                  <SelectValue placeholder={t("common.any")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any</SelectItem>
+                  <SelectItem value="any">{t("common.any")}</SelectItem>
                   {castingOptions.map((option) => (
                     <SelectItem key={option} value={option}>
                       {option}
@@ -229,16 +231,16 @@ export function LibraryPane() {
               </Select>
             </div>
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Range</span>
+              <span className="text-xs text-muted-foreground">{t("library.range")}</span>
               <Select
                 value={filters.ranges[0] ?? "any"}
                 onValueChange={(value) => patch({ ranges: value === "any" ? [] : [value] })}
               >
-                <SelectTrigger aria-label="Range" className="h-8 text-xs">
-                  <SelectValue placeholder="Any" />
+                <SelectTrigger aria-label={t("library.range")} className="h-8 text-xs">
+                  <SelectValue placeholder={t("common.any")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any</SelectItem>
+                  <SelectItem value="any">{t("common.any")}</SelectItem>
                   {rangeOptions.map((option) => (
                     <SelectItem key={option} value={option}>
                       {option}
@@ -248,16 +250,16 @@ export function LibraryPane() {
               </Select>
             </div>
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Duration</span>
+              <span className="text-xs text-muted-foreground">{t("library.duration")}</span>
               <Select
                 value={filters.durations[0] ?? "any"}
                 onValueChange={(value) => patch({ durations: value === "any" ? [] : [value] })}
               >
-                <SelectTrigger aria-label="Duration" className="h-8 text-xs">
-                  <SelectValue placeholder="Any" />
+                <SelectTrigger aria-label={t("library.duration")} className="h-8 text-xs">
+                  <SelectValue placeholder={t("common.any")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any</SelectItem>
+                  <SelectItem value="any">{t("common.any")}</SelectItem>
                   {durationOptions.map((option) => (
                     <SelectItem key={option} value={option}>
                       {option}
@@ -268,9 +270,9 @@ export function LibraryPane() {
             </div>
             <div className="space-y-1">
               <MultiSelect
-                label="Components"
-                aria-label="Components"
-                allLabel="All components"
+                label={t("library.components")}
+                aria-label={t("library.components")}
+                allLabel={t("library.allComponents")}
                 options={SPELL_COMPONENT_KEYS}
                 selected={filters.components}
                 onChange={(components) => patch({ components })}
@@ -278,7 +280,7 @@ export function LibraryPane() {
               />
             </div>
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Concentration</span>
+              <span className="text-xs text-muted-foreground">{t("library.concentration")}</span>
               <Select
                 value={
                   filters.concentration === null ? "any" : filters.concentration ? "yes" : "no"
@@ -287,31 +289,31 @@ export function LibraryPane() {
                   patch({ concentration: value === "any" ? null : value === "yes" })
                 }
               >
-                <SelectTrigger aria-label="Concentration" className="h-8 text-xs">
-                  <SelectValue placeholder="Any" />
+                <SelectTrigger aria-label={t("library.concentration")} className="h-8 text-xs">
+                  <SelectValue placeholder={t("common.any")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any</SelectItem>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
+                  <SelectItem value="any">{t("common.any")}</SelectItem>
+                  <SelectItem value="yes">{t("common.yes")}</SelectItem>
+                  <SelectItem value="no">{t("common.no")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Ritual</span>
+              <span className="text-xs text-muted-foreground">{t("library.ritual")}</span>
               <Select
                 value={filters.ritual === null ? "any" : filters.ritual ? "yes" : "no"}
                 onValueChange={(value) =>
                   patch({ ritual: value === "any" ? null : value === "yes" })
                 }
               >
-                <SelectTrigger aria-label="Ritual" className="h-8 text-xs">
-                  <SelectValue placeholder="Any" />
+                <SelectTrigger aria-label={t("library.ritual")} className="h-8 text-xs">
+                  <SelectValue placeholder={t("common.any")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any</SelectItem>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
+                  <SelectItem value="any">{t("common.any")}</SelectItem>
+                  <SelectItem value="yes">{t("common.yes")}</SelectItem>
+                  <SelectItem value="no">{t("common.no")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -320,29 +322,34 @@ export function LibraryPane() {
 
         <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
           <div className="flex flex-wrap items-center gap-1">
-            <span className="mr-1 text-xs text-muted-foreground">Source</span>
+            <span className="mr-1 text-xs text-muted-foreground">{t("library.source")}</span>
             {(["SRD-5.2.1", "Custom"] as SpellSource[]).map((source) => (
               <Chip
                 key={source}
                 active={filters.sources.includes(source)}
                 onClick={() => patch({ sources: toggle(filters.sources, source) })}
               >
-                {source === "Custom" ? "Custom" : "SRD"}
+                {source === "Custom" ? t("source.custom") : t("source.srdShort")}
               </Chip>
             ))}
           </div>
-          <Button variant="outline" size="sm" onClick={resetAll} aria-label="Reset filters">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={resetAll}
+            aria-label={t("library.resetFilters")}
+          >
             <RotateCcw size={13} aria-hidden="true" />
-            Reset Filters
+            {t("library.resetFilters")}
           </Button>
         </div>
       </div>
 
       <Separator className="my-3" />
 
-      <div className="flex items-center justify-between gap-2 border-y border-border px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-y border-border px-3 py-2">
         <span className="text-xs text-muted-foreground" aria-live="polite">
-          {results.length} result{results.length === 1 ? "" : "s"}
+          {t("library.results", { count: results.length })}
         </span>
         <div className="flex gap-2">
           <Button
@@ -352,7 +359,7 @@ export function LibraryPane() {
             onClick={() => void onAppendAll()}
           >
             <Sparkles size={13} aria-hidden="true" />
-            Append all
+            {t("library.appendAll")}
           </Button>
           <Button
             variant="outline"
@@ -360,7 +367,7 @@ export function LibraryPane() {
             disabled={results.length === 0}
             onClick={() => setConfirmReplace(true)}
           >
-            Replace deck
+            {t("library.replaceDeck")}
           </Button>
         </div>
       </div>
@@ -368,7 +375,7 @@ export function LibraryPane() {
       <div className="mt-2 px-3">
         <Button variant="outline" size="sm" className="w-full" onClick={() => setCreating(true)}>
           <Plus size={13} aria-hidden="true" />
-          Create custom spell
+          {t("library.createCustomSpell")}
         </Button>
       </div>
 
@@ -377,52 +384,58 @@ export function LibraryPane() {
           id="spell-results-heading"
           className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          Spells
+          {t("library.spellsHeading")}
         </h2>
-        <ul className="min-h-0 flex-1 overflow-auto px-2 py-2" aria-label="Spell results">
+        <ul
+          className="min-h-0 flex-1 overflow-auto px-2 py-2"
+          aria-label={t("library.resultsAria")}
+        >
           {results.length === 0 ? (
             <li className="px-2 py-6 text-center text-sm text-muted-foreground">
-              No spells match the current search and filters.
+              {t("library.empty")}
             </li>
           ) : null}
-          {results.map((spell) => (
-            <li key={spell.id}>
-              <div
-                className={cn(
-                  "flex items-center justify-between gap-2 rounded px-2 py-1.5",
-                  spell.id === selectedSpellId ? "bg-accent" : "hover:bg-accent/50",
-                )}
-              >
-                <button
-                  type="button"
-                  className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                  onClick={() => selectSpell(spell.id)}
+          {results.map((spell) => {
+            const contentLanguage = resolveContentLanguage(spell, language);
+            return (
+              <li key={spell.id}>
+                <div
+                  className={cn(
+                    "flex flex-wrap items-center justify-between gap-2 rounded px-2 py-1.5",
+                    spell.id === selectedSpellId ? "bg-accent" : "hover:bg-accent/50",
+                  )}
                 >
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-foreground">
-                      {spell.name}
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    onClick={() => selectSpell(spell.id)}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span
+                        lang={contentLanguage}
+                        className="block truncate text-sm font-medium text-foreground"
+                      >
+                        {spell.name}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {t(levelLabelKey(spell.level), { level: spell.level })} &middot;{" "}
+                        {t(schoolKey(spell.school))}
+                      </span>
                     </span>
-                    <span
-                      lang={i18n.resolvedLanguage}
-                      className="block truncate text-xs text-muted-foreground"
-                    >
-                      {t(levelLabelKey(spell.level), { level: spell.level })} &middot;{" "}
-                      {t(schoolKey(spell.school))}
-                    </span>
-                  </span>
-                  <SourceBadge source={spell.source} />
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Add ${spell.name} to active deck`}
-                  onClick={() => void onAdd(spell)}
-                >
-                  <Plus size={16} aria-hidden="true" />
-                </Button>
-              </div>
-            </li>
-          ))}
+                    <SourceBadge source={spell.source} />
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("library.addToDeckAria", { name: spell.name })}
+                    onClick={() => void onAdd(spell)}
+                  >
+                    <Plus size={16} aria-hidden="true" />
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
@@ -430,12 +443,12 @@ export function LibraryPane() {
 
       <Dialog open={confirmReplace} onOpenChange={setConfirmReplace}>
         <DialogContent
-          title="Replace the active deck?"
-          description={`This removes the current active deck entries and replaces them with the ${results.length} matching spell(s). Saved decks are not changed.`}
+          title={t("library.replaceTitle")}
+          description={t("library.replaceDescription", { count: results.length })}
           footer={
             <>
               <Button variant="outline" onClick={() => setConfirmReplace(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -444,7 +457,7 @@ export function LibraryPane() {
                   setConfirmReplace(false);
                 }}
               >
-                Replace deck
+                {t("library.replaceConfirm")}
               </Button>
             </>
           }

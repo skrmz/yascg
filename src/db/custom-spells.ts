@@ -10,6 +10,7 @@ import {
 import { spellSchema, type Spell } from "@/domain/spells";
 import { newUuid, isReservedSrdId } from "@/domain/ids";
 import { customSpellDraftDefaults } from "@/locales/labels.ts";
+import { AppError, message } from "@/locales/messages.ts";
 
 export interface CustomSpellDeletion {
   spell: Spell;
@@ -44,7 +45,10 @@ export function createCustomSpellDraft(language: string = "en"): Spell {
 
 function validateCustomSpell(spell: Spell): Spell {
   if (isReservedSrdId(spell.id)) {
-    throw new Error(`Custom spell IDs must not use the reserved "srd-" prefix.`);
+    throw new AppError(
+      message("error.customSpellReservedId"),
+      'Custom spell IDs must not use the reserved "srd-" prefix.',
+    );
   }
   const result = spellSchema.safeParse({
     ...spell,
@@ -52,7 +56,8 @@ function validateCustomSpell(spell: Spell): Spell {
   });
   if (!result.success) {
     const first = result.error.issues[0];
-    throw new Error(
+    throw new AppError(
+      message("error.customSpellInvalid"),
       `Custom spell is invalid on "${first?.path.join(".") || "spell"}": ${first?.message ?? "unknown error"}`,
     );
   }
@@ -72,13 +77,23 @@ export async function putCustomSpell(spell: Spell): Promise<Spell> {
 
 export async function updateCustomSpell(spell: Spell): Promise<Spell> {
   const existing = await db.customSpells.get(spell.id);
-  if (!existing) throw new Error(`Custom spell "${spell.id}" was not found.`);
+  if (!existing) {
+    throw new AppError(
+      message("error.customSpellNotFound", { id: spell.id }),
+      `Custom spell "${spell.id}" was not found.`,
+    );
+  }
   return putCustomSpell({ ...spell, id: existing.id });
 }
 
 export async function duplicateCustomSpell(id: string): Promise<Spell> {
   const existing = await db.customSpells.get(id);
-  if (!existing) throw new Error(`Custom spell "${id}" was not found.`);
+  if (!existing) {
+    throw new AppError(
+      message("error.customSpellNotFound", { id }),
+      `Custom spell "${id}" was not found.`,
+    );
+  }
   const copy: Spell = {
     ...existing,
     id: newUuid(),
@@ -140,7 +155,10 @@ export async function restoreDeletedSpell(
   return db.transaction("rw", db.customSpells, db.activeDeck, async () => {
     const existing = await db.customSpells.get(deletion.spellId);
     if (existing) {
-      throw new Error(`Cannot undo: the spell ID "${deletion.spellId}" is already in use.`);
+      throw new AppError(
+        message("error.undoIdInUse", { id: deletion.spellId }),
+        `Cannot undo: the spell ID "${deletion.spellId}" is already in use.`,
+      );
     }
     const active = (await db.activeDeck.get(ACTIVE_DECK_ID)) ?? createEmptyActiveDeck();
     if (active.revision !== activeExpectedRevision) {

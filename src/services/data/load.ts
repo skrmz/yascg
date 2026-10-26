@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { spellSchema, type Spell } from "@/domain/spells";
+import { AppError, message } from "@/locales/messages.ts";
 
 export const MANIFEST_URL = "/spell-languages.json";
 
@@ -49,12 +50,17 @@ export const manifestSchema = z
     }
   });
 
-export class DataLoadError extends Error {
+export class DataLoadError extends AppError {
   constructor(
-    message: string,
+    diagnostic: string,
     readonly url: string,
   ) {
-    super(message);
+    super(
+      // The generic descriptor deliberately keeps URLs, status codes and parser
+      // details out of the UI; the diagnostic message retains them for logs.
+      message("error.dataLoad"),
+      diagnostic,
+    );
     this.name = "DataLoadError";
   }
 }

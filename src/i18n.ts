@@ -12,20 +12,32 @@ export function toUiLocale(code: string): UiLocale {
   return code === "de" ? "de" : "en";
 }
 
+export function applyDocumentLanguage(code: string): UiLocale {
+  const locale = toUiLocale(code);
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = locale;
+  }
+  return locale;
+}
+
 const resources = {
   en: { translation: en },
   de: { translation: de },
 } as const;
 
+const initialUiLocale = toUiLocale(readLanguagePreference() ?? "en");
+
 void i18n.use(initReactI18next).init({
   resources,
-  lng: toUiLocale(readLanguagePreference() ?? "en"),
+  lng: initialUiLocale,
   fallbackLng: "en",
   supportedLngs: UI_LOCALES,
   interpolation: { escapeValue: false },
   returnNull: false,
   initAsync: false,
 });
+
+applyDocumentLanguage(initialUiLocale);
 
 declare module "i18next" {
   interface CustomTypeOptions {

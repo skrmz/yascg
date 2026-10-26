@@ -1,5 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vite-plus/test";
+import { useTranslation } from "react-i18next";
 import i18n from "@/i18n.ts";
 import { CardView } from "@/cards/Card.tsx";
 import { parseSpellBody } from "@/markdown/parse.ts";
@@ -41,8 +42,22 @@ afterEach(async () => {
   await setLocale("en");
 });
 
+function LocalizedCard({ spell }: { spell: Spell }) {
+  const { i18n } = useTranslation();
+  return (
+    <CardView
+      spell={spell}
+      blocks={[]}
+      cardIndex={1}
+      cardCount={1}
+      fontPt={8}
+      contentLanguage={i18n.resolvedLanguage ?? "en"}
+    />
+  );
+}
+
 function renderCard(spell: Spell) {
-  return render(<CardView spell={spell} blocks={[]} cardIndex={1} cardCount={1} fontPt={8} />);
+  return render(<LocalizedCard spell={spell} />);
 }
 
 describe("CardView localization", () => {
@@ -113,8 +128,8 @@ describe("CardView continuation layout", () => {
     expect(screen.getByText("contd.")).not.toBeNull();
     expect(screen.queryByText("Casting Time")).toBeNull();
     expect(screen.queryByText("A ruby (100 gp, consumed)")).toBeNull();
-    expect(screen.getByText(/Continued from Card 1/)).not.toBeNull();
-    expect(screen.getByText(/Card 2 of 3/)).not.toBeNull();
+    expect(screen.getByText("2/3")).not.toBeNull();
+    expect(screen.queryByText(/Continued from Card/)).toBeNull();
   });
 
   it("localizes the continuation label in German", async () => {

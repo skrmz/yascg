@@ -22,6 +22,7 @@ export interface CardViewProps {
   className?: string;
   bodyRef?: Ref<HTMLDivElement>;
   continuation?: boolean;
+  contentLanguage?: string;
 }
 
 export function componentSummary(spell: Spell, t: TFunction): string {
@@ -81,8 +82,9 @@ export function CardView({
   className,
   bodyRef,
   continuation,
+  contentLanguage,
 }: CardViewProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const levelLabel = t(levelLabelKey(spell.level), { level: spell.level });
   const labels: string[] = [];
   if (spell.concentration) labels.push(t("spell.flag.concentration"));
@@ -93,7 +95,7 @@ export function CardView({
 
   return (
     <article
-      lang={i18n.resolvedLanguage}
+      lang={contentLanguage}
       className={`spell-card${isContinuation ? " spell-card-continuation" : ""}${
         className ? ` ${className}` : ""
       }`}

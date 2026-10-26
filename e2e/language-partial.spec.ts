@@ -51,9 +51,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function switchLanguage(page: Page, option: RegExp) {
-  await page.getByRole("button", { name: /Spell data language/ }).click();
+  await page.getByRole("button", { name: /Spell data language|Sprache der Zauberdaten/ }).click();
   await page
-    .getByRole("listbox", { name: "Spell data languages" })
+    .getByRole("listbox", { name: /Spell data languages|Sprachen der Zauberdaten/ })
     .getByRole("option", { name: option })
     .click();
 }
@@ -73,7 +73,7 @@ test("switching to an incomplete translation requires confirmation and keeps the
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText(/not available in this language/i)).toBeVisible();
   await expect(dialog.getByText(/1 deck entry/)).toBeVisible();
-  await expect(dialog.getByText(/1 distinct spell/)).toBeVisible();
+  await expect(dialog.getByText(/distinct spell: 1/)).toBeVisible();
 
   // Cancel changes neither language nor deck.
   await dialog.getByRole("button", { name: "Cancel" }).click();

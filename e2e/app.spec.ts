@@ -22,11 +22,11 @@ test("rejects a duplicate spell with a bottom-right notification", async ({ page
   const addButton = page.getByRole("button", { name: /Add Fireball to active deck/ });
   await addButton.click();
   const deck = page.getByRole("region", { name: "Active deck" });
-  await expect(deck.getByText("1 entries")).toBeVisible();
+  await expect(deck.getByText("1 entry")).toBeVisible();
 
   await addButton.click();
   await expect(page.getByText("Fireball is already in the active deck.")).toBeVisible();
-  await expect(deck.getByText("1 entries")).toBeVisible();
+  await expect(deck.getByText("1 entry")).toBeVisible();
 });
 
 test("renders a physical-size card preview", async ({ page }) => {

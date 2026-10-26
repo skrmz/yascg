@@ -1,23 +1,26 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function switchLanguage(page: Page, option: RegExp) {
-  await page.getByRole("button", { name: /Spell data language/ }).click();
+  await page.getByRole("button", { name: /Spell data language|Sprache der Zauberdaten/ }).click();
   await page
-    .getByRole("listbox", { name: "Spell data languages" })
+    .getByRole("listbox", { name: /Spell data languages|Sprachen der Zauberdaten/ })
     .getByRole("option", { name: option })
     .click();
 }
 
 async function addWunsch(page: Page) {
-  const library = page.getByRole("region", { name: "Spell library" });
-  await page.getByLabel("Search spells").fill("Wunsch");
-  await library.getByRole("button", { name: /^Wunsch/ }).click();
+  const library = page.getByRole("region", { name: "Zauberbibliothek" });
+  await page.getByLabel("Zauber suchen").fill("Wunsch");
+  await library
+    .getByRole("button", { name: /^Wunsch/ })
+    .first()
+    .click();
 
-  const details = page.getByRole("region", { name: "Spell preview and details" });
-  await details.getByRole("button", { name: "Add", exact: true }).click();
+  const details = page.getByRole("region", { name: "Zaubervorschau und Details" });
+  await details.getByRole("button", { name: "Hinzufügen", exact: true }).click();
 
-  const deck = page.getByRole("region", { name: "Active deck" });
-  return { details, fitMode: deck.getByLabel("Fit mode for Wunsch") };
+  const deck = page.getByRole("region", { name: "Aktives Deck" });
+  return { details, fitMode: deck.getByLabel("Anpassungsmodus für Wunsch") };
 }
 
 function bodyOverflow(cards: Locator) {
@@ -46,10 +49,10 @@ async function expectContinuationLayout(cards: Locator, count: number) {
 }
 
 async function expectPrintedCards(page: Page, count: number) {
-  await page.getByRole("button", { name: "Print", exact: true }).first().click();
+  await page.getByRole("button", { name: "Drucken", exact: true }).first().click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /^Print/ })
+    .getByRole("button", { name: /drucken/i })
     .click();
   const printCards = page.locator(".print-cell .spell-card");
   await expect(printCards).toHaveCount(count);
@@ -68,8 +71,8 @@ test("Wunsch auto-shrink truncates to one card with a visible ellipsis", async (
 
   await expect(fitMode).toHaveValue("auto-shrink");
   await expect(cards).toHaveCount(1);
-  await expect(details.getByText(/Description truncated to fit on one card at 6pt/)).toBeVisible();
-  await expect(details.getByText(/Switch to multi-card mode/)).toBeVisible();
+  await expect(details.getByText(/Die Beschreibung wurde gekürzt/)).toBeVisible();
+  await expect(details.getByText(/Wechsle in den Mehrkartenmodus/)).toBeVisible();
   await expect(cards.first()).toHaveAttribute("style", /--body-font-pt: 6pt/);
   await expect(cards.first().locator(".card-metadata")).toHaveCount(1);
   await expect(cards.first().locator(".card-continuation-label")).toHaveCount(0);
@@ -92,7 +95,7 @@ test("Wunsch auto-shrink truncates to one card with a visible ellipsis", async (
   expect(
     await page
       .locator(".print-root")
-      .getByText(/Description truncated/)
+      .getByText(/Die Beschreibung wurde gekürzt/)
       .count(),
   ).toBe(0);
   expect((await bodyOverflow(printCards))[0]).toBeLessThanOrEqual(1);
@@ -148,7 +151,7 @@ test("Wunsch multi-card keeps the full description across cards", async ({ page 
     .toBeGreaterThan(1);
   const cardCount = await cards.count();
 
-  await expect(details.getByText(/Description truncated/)).toHaveCount(0);
+  await expect(details.getByText(/Die Beschreibung wurde gekürzt/)).toHaveCount(0);
   await expectContinuationLayout(cards, cardCount);
   expect((await bodyOverflow(cards)).every((overflow) => overflow <= 1)).toBe(true);
 

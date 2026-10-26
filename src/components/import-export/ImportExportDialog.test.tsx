@@ -46,7 +46,7 @@ async function openAndAnalyzeCustomFile() {
     input,
     new File([customPayload], "custom-spells.json", { type: "application/json" }),
   );
-  await screen.findByText("1 spell record(s) and 0 override record(s) will be applied.");
+  await screen.findByText("1 spell record will be applied. 0 override records will be applied.");
   return user;
 }
 
@@ -67,7 +67,7 @@ describe("ImportExportDialog pending import handling", () => {
 
     expect(screen.queryByText(/Closing the dialog now discards it/)).toBeNull();
     expect(
-      screen.getByText("1 spell record(s) and 0 override record(s) will be applied."),
+      screen.getByText("1 spell record will be applied. 0 override records will be applied."),
     ).not.toBeNull();
   });
 
@@ -82,7 +82,7 @@ describe("ImportExportDialog pending import handling", () => {
       ),
     ).not.toBeNull();
     expect(
-      screen.getByText("1 spell record(s) and 0 override record(s) will be applied."),
+      screen.getByText("1 spell record will be applied. 0 override records will be applied."),
     ).not.toBeNull();
   });
 
@@ -97,7 +97,7 @@ describe("ImportExportDialog pending import handling", () => {
     await user.click(screen.getByRole("button", { name: "Open import/export" }));
 
     expect(
-      screen.queryByText("1 spell record(s) and 0 override record(s) will be applied."),
+      screen.queryByText("1 spell record will be applied. 0 override records will be applied."),
     ).toBeNull();
     expect(screen.queryByText(/validated/)).toBeNull();
   });
@@ -108,7 +108,7 @@ describe("ImportExportDialog pending import handling", () => {
     await user.click(screen.getByRole("button", { name: "Reset custom import" }));
 
     expect(
-      screen.queryByText("1 spell record(s) and 0 override record(s) will be applied."),
+      screen.queryByText("1 spell record will be applied. 0 override records will be applied."),
     ).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Close" }));

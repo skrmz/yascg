@@ -70,6 +70,6 @@ describe("PrintSheets component rendering", () => {
     expect(screen.getAllByText("Casting Time")).toHaveLength(1);
     expect(screen.getAllByText("A ruby")).toHaveLength(1);
     expect(screen.getByText("contd.")).not.toBeNull();
-    expect(screen.getByText(/Card 2 of 2/)).not.toBeNull();
+    expect(screen.getByText("2/2")).not.toBeNull();
   });
 });

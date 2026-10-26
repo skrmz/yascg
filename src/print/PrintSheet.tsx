@@ -1,6 +1,7 @@
 import type { Spell } from "@/domain/spells";
 import type { BlockNode } from "@/markdown/parse.ts";
 import { CardView } from "@/cards/Card.tsx";
+import { resolveContentLanguage } from "@/content-language.ts";
 
 export type PaperSize = "letter" | "A4";
 export const CARDS_PER_SHEET = 9;
@@ -35,6 +36,7 @@ export interface PrintSheetsProps {
   paperSize: PaperSize;
   cuttingBorders: boolean;
   sheetPrefix?: string;
+  datasetLanguage?: string;
 }
 
 /** Renders 3x3 physical sheets. Geometry is governed entirely by print.css. */
@@ -43,6 +45,7 @@ export function PrintSheets({
   paperSize,
   cuttingBorders,
   sheetPrefix = "sheet",
+  datasetLanguage,
 }: PrintSheetsProps) {
   const sheets = buildSheets(cards);
   return (
@@ -65,6 +68,11 @@ export function PrintSheets({
                     cardIndex={card.cardIndex}
                     cardCount={card.cardCount}
                     fontPt={card.fontPt}
+                    contentLanguage={
+                      datasetLanguage
+                        ? resolveContentLanguage(card.spell, datasetLanguage)
+                        : undefined
+                    }
                     className="print-card"
                   />
                 </div>

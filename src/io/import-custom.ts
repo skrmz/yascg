@@ -12,6 +12,7 @@ import {
   readVersion,
 } from "@/domain/payloads";
 import { newUuid } from "@/domain/ids";
+import { AppError, message, type MessageDescriptor } from "@/locales/messages.ts";
 
 export interface CustomImportEntry {
   record: Spell;
@@ -37,7 +38,7 @@ export interface OverrideImportError {
   index: number;
   spellId: string;
   locale: string;
-  reason: string;
+  reason: MessageDescriptor;
 }
 
 export interface CustomImportPlan {
@@ -54,7 +55,7 @@ export interface CustomImportPlan {
 
 export type CustomImportAnalysis =
   | { ok: true; plan: CustomImportPlan }
-  | { ok: false; error: string; overrideErrors?: OverrideImportError[] };
+  | { ok: false; error: MessageDescriptor; overrideErrors?: OverrideImportError[] };
 
 export interface CustomImportOptions {
   srdSpellsById?: ReadonlyMap<string, Spell>;
@@ -72,9 +73,9 @@ export interface CustomImportCounts {
   overrides: number;
 }
 
-export class ImportConflictError extends Error {
-  constructor(message: string) {
-    super(message);
+export class ImportConflictError extends AppError {
+  constructor(message: MessageDescriptor, diagnostic?: string) {
+    super(message, diagnostic);
     this.name = "ImportConflictError";
   }
 }
@@ -124,22 +125,27 @@ export function analyzeCustomImport(
   options: CustomImportOptions = {},
 ): CustomImportAnalysis {
   if (byteLength(text) > LIMITS.IMPORT_BYTES_MAX) {
-    return { ok: false, error: "The file exceeds the 5 MiB custom-spell import limit." };
+    return { ok: false, error: message("importExport.error.fileTooLargeCustom") };
   }
   let raw: unknown;
   try {
     raw = JSON.parse(text) as unknown;
   } catch {
-    return { ok: false, error: "The file is not valid JSON." };
+    return { ok: false, error: message("importExport.error.invalidJson") };
   }
   if (!raw || typeof raw !== "object") {
-    return { ok: false, error: "The payload must be a JSON object." };
+    return { ok: false, error: message("importExport.error.payloadObject") };
   }
   const type = readType(raw);
   if (type !== CUSTOM_SPELLS_TYPE) {
     return {
       ok: false,
-      error: `Expected a "custom-spells" payload but found "${type ?? "missing"}".`,
+      error: type
+        ? message("importExport.error.expectedType", {
+            expected: CUSTOM_SPELLS_TYPE,
+            actual: type,
+          })
+        : message("importExport.error.expectedTypeMissing", { expected: CUSTOM_SPELLS_TYPE }),
     };
   }
   const version = readVersion(raw);
@@ -158,9 +164,10 @@ export function analyzeCustomImport(
       const issue = parsed.error.issues[0];
       return {
         ok: false,
-        error: `Invalid ${EXPORT_VERSION} payload on "${issue?.path.join(".") || "payload"}": ${
-          issue?.message ?? "unknown error"
-        }.`,
+        error: message("importExport.error.invalidPayload", {
+          version: EXPORT_VERSION,
+          path: issue?.path.join(".") || "payload",
+        }),
       };
     }
     spells = parsed.data.spells;
@@ -170,9 +177,10 @@ export function analyzeCustomImport(
       const issue = spellsResult.error.issues[0];
       return {
         ok: false,
-        error: `Invalid ${CUSTOM_SPELL_EXPORT_VERSION} payload on "spells.${
-          issue?.path.join(".") || "?"
-        }": ${issue?.message ?? "unknown error"}.`,
+        error: message("importExport.error.invalidPayload", {
+          version: CUSTOM_SPELL_EXPORT_VERSION,
+          path: `spells.${issue?.path.join(".") || "?"}`,
+        }),
       };
     }
     spells = spellsResult.data;
@@ -182,12 +190,12 @@ export function analyzeCustomImport(
     } else if (Array.isArray(maybeOverrides)) {
       rawOverrides = maybeOverrides;
     } else {
-      return { ok: false, error: 'The "srdSpellOverrides" field must be an array.' };
+      return { ok: false, error: message("importExport.error.overridesNotArray") };
     }
   } else {
     const list = (raw as { spells?: unknown }).spells;
     if (!Array.isArray(list)) {
-      return { ok: false, error: 'The "spells" field must be an array.' };
+      return { ok: false, error: message("importExport.error.spellsNotArray") };
     }
     spells = [];
     for (let index = 0; index < list.length; index += 1) {
@@ -195,7 +203,7 @@ export function analyzeCustomImport(
       if (!extracted) {
         return {
           ok: false,
-          error: `Unknown-version record at index ${index} is missing required 1.0.0 fields.`,
+          error: message("importExport.error.unknownRecordMissing", { index }),
         };
       }
       spells.push(extracted);
@@ -221,8 +229,7 @@ export function analyzeCustomImport(
     ) {
       return {
         ok: false,
-        error:
-          "SRD validation data is not loaded yet; reload the spell data before importing overrides.",
+        error: message("importExport.error.overridesValidationUnavailable"),
       };
     }
     const overrideErrors: OverrideImportError[] = [];
@@ -238,7 +245,10 @@ export function analyzeCustomImport(
           index,
           spellId: typeof candidate.spellId === "string" ? candidate.spellId : "",
           locale: typeof candidate.locale === "string" ? candidate.locale : "",
-          reason: result.errors.join(" "),
+          reason:
+            result.errors.length === 1
+              ? result.errors[0]
+              : message("importExport.error.overrideInvalidSummary"),
         });
         return;
       }
@@ -257,12 +267,7 @@ export function analyzeCustomImport(
     if (overrideErrors.length > 0) {
       return {
         ok: false,
-        error: `Invalid SRD override record(s): ${overrideErrors
-          .map(
-            (entry) =>
-              `#${entry.index} (${entry.spellId || "?"}/${entry.locale || "?"}): ${entry.reason}`,
-          )
-          .join("; ")}`,
+        error: message("importExport.error.overrideInvalidSummary"),
         overrideErrors,
       };
     }
@@ -279,11 +284,17 @@ export function analyzeCustomImport(
     if (spell.source !== "Custom") {
       return {
         ok: false,
-        error: `Record "${spell.name}" has source "${spell.source}"; SRD-sourced records cannot be imported as custom spells.`,
+        error: message("importExport.error.sourceNotCustom", {
+          name: spell.name,
+          source: spell.source,
+        }),
       };
     }
     if (seenInputIds.has(spell.id)) {
-      return { ok: false, error: `Duplicate spell ID "${spell.id}" inside the import file.` };
+      return {
+        ok: false,
+        error: message("importExport.error.duplicateId", { id: spell.id }),
+      };
     }
     seenInputIds.add(spell.id);
 
@@ -296,7 +307,10 @@ export function analyzeCustomImport(
       remaps.push({ from: spell.id, to: replacement });
     }
     if (finalIds.has(record.id)) {
-      return { ok: false, error: `Duplicate final spell ID "${record.id}" after remapping.` };
+      return {
+        ok: false,
+        error: message("importExport.error.duplicateFinalId", { id: record.id }),
+      };
     }
     finalIds.add(record.id);
 
@@ -358,6 +372,7 @@ export async function applyCustomImport(
         const current = await db.customSpells.get(entry.collision.id);
         if (!current || !reviewed || fingerprint(current) !== reviewed) {
           throw new ImportConflictError(
+            message("importExport.error.collisionChanged", { id: entry.collision.id }),
             `Custom spell "${entry.collision.id}" changed since collision review; re-run the import review.`,
           );
         }

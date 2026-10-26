@@ -75,7 +75,7 @@ describe("LibraryPane class filter", () => {
     await i18n.changeLanguage("de");
     const user = userEvent.setup();
     render(<LibraryPane />);
-    await user.click(screen.getByRole("button", { name: "Class" }));
+    await user.click(screen.getByRole("button", { name: "Klasse" }));
     const popover = screen.getByRole("dialog");
     await user.click(within(popover).getByRole("checkbox", { name: "Magier" }));
     expect(within(popover).getAllByRole("checkbox")).toHaveLength(CORE_CLASSES.length);

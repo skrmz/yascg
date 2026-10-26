@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import {
@@ -15,11 +16,17 @@ import {
   type CustomImportPlan,
 } from "@/io/import-custom.ts";
 import { analyzeDeckImport, applyDeckImport, type DeckImportPlan } from "@/io/import-deck.ts";
+import {
+  message,
+  toMessageDescriptor,
+  translateMessage,
+  type MessageDescriptor,
+} from "@/locales/messages.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { NativeSelect } from "@/ui/Field.tsx";
 
-type Notice = { tone: "ok" | "error"; text: string };
+type Notice = { tone: "ok" | "error"; texts: MessageDescriptor[] };
 
 async function readFileText(file: File): Promise<string> {
   return file.text();
@@ -42,6 +49,7 @@ export function ImportExportDialog({
     dataLoading,
     dataError,
   } = useApp();
+  const { t } = useTranslation();
   const [notice, setNotice] = useState<Notice | null>(null);
   const [customPlan, setCustomPlan] = useState<CustomImportPlan | null>(null);
   const [strategies, setStrategies] = useState<CollisionStrategy>("skip");
@@ -109,7 +117,10 @@ export function ImportExportDialog({
     );
     setNotice({
       tone: "ok",
-      text: `Exported ${customSpells.length} custom spell(s) and ${srdSpellOverrides.length} SRD override(s).`,
+      texts: [
+        message("importExport.exportedSpells", { count: customSpells.length }),
+        message("importExport.exportedOverrides", { count: srdSpellOverrides.length }),
+      ],
     });
   };
 
@@ -119,7 +130,7 @@ export function ImportExportDialog({
       deckExportFilename(),
       buildDeckPayload({ name: activeDeck.name, entries: activeDeck.entries }),
     );
-    setNotice({ tone: "ok", text: "Exported the active deck." });
+    setNotice({ tone: "ok", texts: [message("importExport.exportedDeck")] });
   };
 
   const onCustomFile = async (file: File) => {
@@ -129,9 +140,7 @@ export function ImportExportDialog({
       setCustomPlan(null);
       setNotice({
         tone: "error",
-        text:
-          dataError ??
-          "SRD validation data is not loaded yet. Wait for the spell library to finish loading, then try again.",
+        texts: [dataError ?? message("importExport.error.validationUnavailable")],
       });
       return;
     }
@@ -143,25 +152,49 @@ export function ImportExportDialog({
     });
     if (!analysis.ok) {
       setCustomPlan(null);
-      setNotice({ tone: "error", text: analysis.error });
+      const texts: MessageDescriptor[] = [analysis.error];
+      for (const entry of analysis.overrideErrors ?? []) {
+        texts.push(
+          message("importExport.error.overrideAt", {
+            index: entry.index,
+            spellId: entry.spellId || "?",
+            locale: entry.locale || "?",
+          }),
+        );
+        texts.push(entry.reason);
+      }
+      setNotice({ tone: "error", texts });
       return;
     }
     setCustomPlan(analysis.plan);
     setStrategies("skip");
     setConfirmLossy(false);
-    const summary = `${analysis.plan.entries.length} spell record(s) and ${analysis.plan.overrides.length} override record(s) validated.`;
+    const validatedTexts: MessageDescriptor[] = [
+      message("importExport.validatedSpells", { count: analysis.plan.entries.length }),
+      message("importExport.validatedOverrides", { count: analysis.plan.overrides.length }),
+    ];
     if (analysis.plan.lossy) {
       setNotice({
         tone: "ok",
-        text: `Unknown version — ${summary} ${analysis.plan.droppedOverrides} override record(s) and dropped field(s) would be discarded. Confirm before importing.`,
+        texts: [
+          message("importExport.unknownVersionTry"),
+          ...validatedTexts,
+          message("importExport.lossyDiscard", {
+            count: analysis.plan.droppedOverrides,
+            fields:
+              analysis.plan.lossyFields.length > 0
+                ? ` (${analysis.plan.lossyFields.join(", ")})`
+                : "",
+          }),
+        ],
       });
     } else if (analysis.plan.unknownVersion) {
       setNotice({
         tone: "ok",
-        text: `Unknown version — Try Import available. ${summary}`,
+        texts: [message("importExport.unknownVersionTry"), ...validatedTexts],
       });
     } else {
-      setNotice({ tone: "ok", text: summary });
+      setNotice({ tone: "ok", texts: validatedTexts });
     }
   };
 
@@ -173,25 +206,29 @@ export function ImportExportDialog({
     );
     try {
       const counts = await applyCustomImport(customPlan, strategies, fingerprints);
-      setNotice({
-        tone: "ok",
-        text: `Imported ${counts.imported}, overwritten ${counts.overwritten}, copied ${counts.copied}, skipped ${counts.skipped}, remapped ${counts.remapped}, overrides ${counts.overrides}.`,
-      });
+      const texts: MessageDescriptor[] = [
+        message("importExport.importedCounts", {
+          imported: counts.imported,
+          overwritten: counts.overwritten,
+          copied: counts.copied,
+          skipped: counts.skipped,
+          remapped: counts.remapped,
+          overrides: counts.overrides,
+        }),
+      ];
       if (customPlan.remaps.length > 0) {
-        setNotice((previous) => ({
-          tone: "ok",
-          text: `${previous?.text ?? ""} Remapped: ${customPlan.remaps
-            .map((remap) => `${remap.from} → ${remap.to}`)
-            .join(", ")}`,
-        }));
+        texts.push(
+          message("importExport.remapped", {
+            items: customPlan.remaps.map((remap) => `${remap.from} → ${remap.to}`).join(", "),
+          }),
+        );
       }
+      setNotice({ tone: "ok", texts });
       setCustomPlan(null);
       refreshAll();
     } catch (error) {
-      setNotice({
-        tone: "error",
-        text: error instanceof Error ? error.message : String(error),
-      });
+      console.error("Failed to apply custom-spell import:", error);
+      setNotice({ tone: "error", texts: [toMessageDescriptor(error)] });
     }
   };
 
@@ -203,25 +240,24 @@ export function ImportExportDialog({
     const analysis = analyzeDeckImport(text);
     if (!analysis.ok) {
       setDeckPlan(null);
-      setNotice({ tone: "error", text: analysis.error });
+      setNotice({ tone: "error", texts: [analysis.error] });
       return;
     }
     setDeckPlan(analysis.plan);
     setConfirmDeck(false);
-    const duplicateText =
-      analysis.plan.removedDuplicates > 0
-        ? ` ${analysis.plan.removedDuplicates} duplicate entr${
-            analysis.plan.removedDuplicates === 1 ? "y" : "ies"
-          } will be removed.`
-        : "";
-    setNotice({
-      tone: "ok",
-      text: analysis.plan.unknownVersion
-        ? `Unknown version — Try Import available. Confirm to replace the active deck.${duplicateText}`
-        : `${analysis.plan.entries.length} deck entr${
-            analysis.plan.entries.length === 1 ? "y" : "ies"
-          } validated. Confirm to replace the active deck.${duplicateText}`,
-    });
+    const texts: MessageDescriptor[] = [
+      analysis.plan.unknownVersion
+        ? message("importExport.unknownVersionDeck")
+        : message("importExport.validatedDeck", { count: analysis.plan.entries.length }),
+    ];
+    if (analysis.plan.removedDuplicates > 0) {
+      texts.push(
+        message("importExport.duplicateWillBeRemoved", {
+          count: analysis.plan.removedDuplicates,
+        }),
+      );
+    }
+    setNotice({ tone: "ok", texts });
   };
 
   const commitDeck = async () => {
@@ -231,36 +267,36 @@ export function ImportExportDialog({
     if (!current) return;
     try {
       await applyDeckImport(deckPlan, current.revision);
-      const duplicateText =
-        deckPlan.removedDuplicates > 0
-          ? ` Removed ${deckPlan.removedDuplicates} duplicate entr${
-              deckPlan.removedDuplicates === 1 ? "y" : "ies"
-            }.`
-          : "";
-      setNotice({ tone: "ok", text: `Active deck replaced.${duplicateText}` });
-      toast.success("Deck imported", {
+      const texts: MessageDescriptor[] = [message("importExport.activeDeckReplaced")];
+      if (deckPlan.removedDuplicates > 0) {
+        texts.push(
+          message("importExport.duplicateRemoved", {
+            count: deckPlan.removedDuplicates,
+          }),
+        );
+      }
+      setNotice({ tone: "ok", texts });
+      toast.success(t("importExport.deckImportedTitle"), {
         description:
           deckPlan.removedDuplicates > 0
-            ? `Removed ${deckPlan.removedDuplicates} duplicate entr${
-                deckPlan.removedDuplicates === 1 ? "y" : "ies"
-              } from the imported deck.`
-            : "The active deck was replaced.",
+            ? t("importExport.deckImportedDescription", {
+                count: deckPlan.removedDuplicates,
+              })
+            : t("importExport.deckImportedDefault"),
       });
       setDeckPlan(null);
       refreshAll();
     } catch (error) {
-      setNotice({
-        tone: "error",
-        text: error instanceof Error ? error.message : String(error),
-      });
+      console.error("Failed to apply deck import:", error);
+      setNotice({ tone: "error", texts: [toMessageDescriptor(error)] });
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        title="Import / Export JSON"
-        description="Custom-spell payloads use version 1.1.0 (with SRD overrides); deck payloads remain version 1.0.0. Export is the recommended backup for local data."
+        title={t("importExport.title")}
+        description={t("importExport.description")}
         className="w-[min(92vw,44rem)]"
       >
         <div className="space-y-4">
@@ -269,15 +305,13 @@ export function ImportExportDialog({
               className="space-y-2 rounded border border-amber-400/30 bg-amber-400/10 p-2 text-xs text-amber-300"
               role="alert"
             >
-              <p>
-                An import is ready but has not been applied. Closing the dialog now discards it.
-              </p>
+              <p>{t("importExport.discardNotice")}</p>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => setConfirmDiscard(false)}>
-                  Keep reviewing
+                  {t("importExport.keepReviewing")}
                 </Button>
                 <Button size="sm" variant="destructive" onClick={discardAndClose}>
-                  Discard import and close
+                  {t("importExport.discardClose")}
                 </Button>
               </div>
             </div>
@@ -291,15 +325,17 @@ export function ImportExportDialog({
               }
               role="status"
             >
-              {notice.text}
+              {notice.texts.map((text) => translateMessage(t, text)).join(" ")}
             </p>
           ) : null}
 
           <section className="space-y-2 rounded border border-border p-3">
-            <h3 className="text-sm font-semibold text-foreground">Custom spells</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              {t("importExport.customSpells")}
+            </h3>
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" size="sm" onClick={exportCustom}>
-                Export custom spells
+                {t("importExport.exportCustom")}
               </Button>
               <Button
                 variant="outline"
@@ -307,7 +343,7 @@ export function ImportExportDialog({
                 disabled={!canAnalyzeCustom}
                 onClick={() => customInputRef.current?.click()}
               >
-                Import custom spells…
+                {t("importExport.importCustom")}
               </Button>
               <input
                 ref={customInputRef}
@@ -326,52 +362,67 @@ export function ImportExportDialog({
                 {customPlan.collisions.length > 0 ? (
                   <>
                     <p>
-                      {customPlan.collisions.length} existing collision(s):{" "}
-                      {customPlan.collisions.map((collision) => collision.incomingName).join(", ")}
+                      {t("importExport.collisions", {
+                        count: customPlan.collisions.length,
+                        names: customPlan.collisions
+                          .map((collision) => collision.incomingName)
+                          .join(", "),
+                      })}
                     </p>
                     <label className="flex items-center gap-2">
-                      Conflict handling
+                      {t("importExport.conflictHandling")}
                       <NativeSelect
-                        aria-label="Collision strategy"
-                        className="h-7 w-40 text-xs"
+                        aria-label={t("importExport.collisionStrategy")}
+                        className="h-7 w-44 text-xs"
                         value={strategies}
                         onChange={(event) => setStrategies(event.target.value as CollisionStrategy)}
                       >
-                        <option value="skip">Skip</option>
-                        <option value="keep-both">Keep both</option>
-                        <option value="overwrite">Overwrite existing</option>
+                        <option value="skip">{t("importExport.skip")}</option>
+                        <option value="keep-both">{t("importExport.keepBoth")}</option>
+                        <option value="overwrite">{t("importExport.overwriteExisting")}</option>
                       </NativeSelect>
                     </label>
                   </>
                 ) : (
-                  <p>No collisions with existing custom spells.</p>
+                  <p>{t("importExport.noCollisions")}</p>
                 )}
                 <p>
-                  {customPlan.entries.length} spell record(s) and {customPlan.overrides.length}{" "}
-                  override record(s) will be applied.
+                  {translateMessage(
+                    t,
+                    message("importExport.appliedSpells", {
+                      count: customPlan.entries.length,
+                    }),
+                  )}{" "}
+                  {translateMessage(
+                    t,
+                    message("importExport.appliedOverrides", {
+                      count: customPlan.overrides.length,
+                    }),
+                  )}
                 </p>
                 {customPlan.lossy ? (
                   <p className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-amber-300">
-                    Unknown version: {customPlan.droppedOverrides} override record(s) and dropped
-                    field(s)
-                    {customPlan.lossyFields.length > 0
-                      ? ` (${customPlan.lossyFields.join(", ")})`
-                      : ""}{" "}
-                    will be discarded.
+                    {t("importExport.lossy", {
+                      overrides: customPlan.droppedOverrides,
+                      fields:
+                        customPlan.lossyFields.length > 0
+                          ? ` (${customPlan.lossyFields.join(", ")})`
+                          : "",
+                    })}
                   </p>
                 ) : null}
                 <div className="flex flex-wrap items-center gap-2">
                   {customPlan.lossy && !confirmLossy ? (
                     <Button size="sm" variant="destructive" onClick={() => setConfirmLossy(true)}>
-                      Confirm lossy import…
+                      {t("importExport.confirmLossy")}
                     </Button>
                   ) : (
                     <Button size="sm" onClick={() => void commitCustom()}>
-                      Commit custom-spell import
+                      {t("importExport.commitCustom")}
                     </Button>
                   )}
                   <Button size="sm" variant="ghost" onClick={resetCustomImport}>
-                    Reset custom import
+                    {t("importExport.resetCustom")}
                   </Button>
                 </div>
               </div>
@@ -379,13 +430,15 @@ export function ImportExportDialog({
           </section>
 
           <section className="space-y-2 rounded border border-border p-3">
-            <h3 className="text-sm font-semibold text-foreground">Active deck</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              {t("importExport.activeDeck")}
+            </h3>
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" size="sm" onClick={exportDeck}>
-                Export active deck
+                {t("importExport.exportDeck")}
               </Button>
               <Button variant="outline" size="sm" onClick={() => deckInputRef.current?.click()}>
-                Import deck…
+                {t("importExport.importDeck")}
               </Button>
               <input
                 ref={deckInputRef}
@@ -402,27 +455,28 @@ export function ImportExportDialog({
             {deckPlan ? (
               <div className="space-y-2 rounded border border-border bg-muted/40 p-2 text-xs">
                 <p>
-                  {deckPlan.entries.length} entr{deckPlan.entries.length === 1 ? "y" : "ies"}
-                  {deckPlan.name ? ` — name "${deckPlan.name}"` : ""}. Import replaces the active
-                  deck and leaves saved decks untouched.
+                  {t("importExport.deckPlan", {
+                    count: deckPlan.entries.length,
+                    name: deckPlan.name ? t("importExport.deckName", { name: deckPlan.name }) : "",
+                  })}
                   {deckPlan.removedDuplicates > 0
-                    ? ` ${deckPlan.removedDuplicates} duplicate entr${
-                        deckPlan.removedDuplicates === 1 ? "y" : "ies"
-                      } will be removed.`
+                    ? ` ${t("importExport.duplicateWillBeRemoved", {
+                        count: deckPlan.removedDuplicates,
+                      })}`
                     : ""}
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   {confirmDeck ? (
                     <Button size="sm" variant="destructive" onClick={() => void commitDeck()}>
-                      Confirm replace active deck
+                      {t("importExport.confirmReplace")}
                     </Button>
                   ) : (
                     <Button size="sm" onClick={() => setConfirmDeck(true)}>
-                      Replace active deck…
+                      {t("importExport.replaceActive")}
                     </Button>
                   )}
                   <Button size="sm" variant="ghost" onClick={resetDeckImport}>
-                    Reset deck import
+                    {t("importExport.resetDeck")}
                   </Button>
                 </div>
               </div>

@@ -11,6 +11,7 @@ import {
 import { newEntryId } from "@/domain/ids";
 import { type ActiveDeckRecord, type DeckEntry, dedupeDeckEntries } from "@/domain/deck";
 import { mutateActiveDeck, replaceDeck } from "@/db/active-deck.ts";
+import { message, type MessageDescriptor } from "@/locales/messages.ts";
 
 export interface DeckImportPlan {
   version: string | null;
@@ -20,7 +21,9 @@ export interface DeckImportPlan {
   removedDuplicates: number;
 }
 
-export type DeckImportAnalysis = { ok: true; plan: DeckImportPlan } | { ok: false; error: string };
+export type DeckImportAnalysis =
+  | { ok: true; plan: DeckImportPlan }
+  | { ok: false; error: MessageDescriptor };
 
 function byteLength(text: string): number {
   return new TextEncoder().encode(text).length;
@@ -28,22 +31,24 @@ function byteLength(text: string): number {
 
 export function analyzeDeckImport(text: string): DeckImportAnalysis {
   if (byteLength(text) > LIMITS.IMPORT_BYTES_MAX) {
-    return { ok: false, error: "The file exceeds the 5 MiB deck import limit." };
+    return { ok: false, error: message("importExport.error.fileTooLargeDeck") };
   }
   let raw: unknown;
   try {
     raw = JSON.parse(text) as unknown;
   } catch {
-    return { ok: false, error: "The file is not valid JSON." };
+    return { ok: false, error: message("importExport.error.invalidJson") };
   }
   if (!raw || typeof raw !== "object") {
-    return { ok: false, error: "The payload must be a JSON object." };
+    return { ok: false, error: message("importExport.error.payloadObject") };
   }
   const type = readType(raw);
   if (type !== DECK_TYPE) {
     return {
       ok: false,
-      error: `Expected a "deck" payload but found "${type ?? "missing"}".`,
+      error: type
+        ? message("importExport.error.expectedType", { expected: DECK_TYPE, actual: type })
+        : message("importExport.error.expectedTypeMissing", { expected: DECK_TYPE }),
     };
   }
   const version = readVersion(raw);
@@ -55,13 +60,14 @@ export function analyzeDeckImport(text: string): DeckImportAnalysis {
       const issue = parsed.error.issues[0];
       return {
         ok: false,
-        error: `Invalid 1.0.0 deck payload on "${issue?.path.join(".") || "payload"}": ${
-          issue?.message ?? "unknown error"
-        }.`,
+        error: message("importExport.error.invalidPayload", {
+          version: EXPORT_VERSION,
+          path: issue?.path.join(".") || "payload",
+        }),
       };
     }
     if (parsed.data.entries.length > LIMITS.DECK_ENTRIES_MAX) {
-      return { ok: false, error: "The deck contains more than 2,000 entries." };
+      return { ok: false, error: message("importExport.error.deckTooLarge") };
     }
     const entries = dedupeDeckEntries(parsed.data.entries);
     return {
@@ -78,10 +84,10 @@ export function analyzeDeckImport(text: string): DeckImportAnalysis {
 
   const list = (raw as { entries?: unknown }).entries;
   if (!Array.isArray(list)) {
-    return { ok: false, error: 'The "entries" field must be an array.' };
+    return { ok: false, error: message("importExport.error.entriesNotArray") };
   }
   if (list.length > LIMITS.DECK_ENTRIES_MAX) {
-    return { ok: false, error: "The deck contains more than 2,000 entries." };
+    return { ok: false, error: message("importExport.error.deckTooLarge") };
   }
   const entries: DeckExportEntry[] = [];
   for (let index = 0; index < list.length; index += 1) {
@@ -89,7 +95,7 @@ export function analyzeDeckImport(text: string): DeckImportAnalysis {
     if (!extracted) {
       return {
         ok: false,
-        error: `Unknown-version entry at index ${index} is missing required 1.0.0 fields.`,
+        error: message("importExport.error.unknownEntryMissing", { index }),
       };
     }
     entries.push(extracted);

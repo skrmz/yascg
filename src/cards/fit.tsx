@@ -174,7 +174,7 @@ export interface UseCardFitOptions {
 export interface UseCardFitResult {
   result: FitResult | null;
   ready: boolean;
-  error: string | null;
+  error: boolean;
   measureLayer: ReactNode;
 }
 
@@ -185,7 +185,7 @@ export function useCardFit({ spell, fitMode, language }: UseCardFitOptions): Use
   const { measure, layer } = useMeasurer();
   const [result, setResult] = useState<FitResult | null>(null);
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
   const markers = useMemo(
     () => ({
@@ -219,7 +219,7 @@ export function useCardFit({ spell, fitMode, language }: UseCardFitOptions): Use
     if (cached) {
       setResult(cached);
       setReady(true);
-      setError(null);
+      setError(false);
       return;
     }
     let cancelled = false;
@@ -237,11 +237,12 @@ export function useCardFit({ spell, fitMode, language }: UseCardFitOptions): Use
         fitCache.set(cacheKey, computed);
         setResult(computed);
         setReady(true);
-        setError(null);
+        setError(false);
       } catch (cause) {
         if (!cancelled) {
           setReady(true);
-          setError(cause instanceof Error ? cause.message : String(cause));
+          console.error("Failed to measure card layout:", cause);
+          setError(true);
         }
       }
     };

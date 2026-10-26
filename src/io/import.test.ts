@@ -64,14 +64,14 @@ describe("custom spell import analysis", () => {
       [],
     );
     expect(analysis.ok).toBe(false);
-    if (!analysis.ok) expect(analysis.error).toContain("Duplicate");
+    if (!analysis.ok) expect(analysis.error.key).toBe("importExport.error.duplicateId");
   });
 
   it("rejects SRD-sourced records", () => {
     const srd = makeCustomSpell({ id: "c1", source: "SRD-5.2.1" });
     const analysis = analyzeCustomImport(payload([srd]), []);
     expect(analysis.ok).toBe(false);
-    if (!analysis.ok) expect(analysis.error).toContain("SRD");
+    if (!analysis.ok) expect(analysis.error.key).toBe("importExport.error.sourceNotCustom");
   });
 
   it("rejects class identifiers outside the 12 core classes", () => {
@@ -252,7 +252,8 @@ describe("custom-spell export/import with SRD overrides", () => {
   it("refuses to validate overrides when SRD data is not loaded", () => {
     const analysis = analyzeCustomImport(payloadV2([], [overrideRecord]), []);
     expect(analysis.ok).toBe(false);
-    if (!analysis.ok) expect(analysis.error).toContain("not loaded");
+    if (!analysis.ok)
+      expect(analysis.error.key).toBe("importExport.error.overridesValidationUnavailable");
   });
 
   it("collects every invalid override record and aborts", () => {

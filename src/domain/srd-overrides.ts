@@ -1,5 +1,6 @@
 import { isReservedSrdId } from "./ids.ts";
 import { LIMITS, type Spell } from "./spells.ts";
+import { message, type MessageDescriptor } from "@/locales/messages.ts";
 
 /**
  * Shared validation for SRD component-text overrides. Used by both UI writes
@@ -23,7 +24,7 @@ export type SrdOverrideInput = SrdSpellOverrideInput;
 
 export type SrdOverrideValidationResult =
   | { ok: true; value: SrdSpellOverrideInput }
-  | { ok: false; errors: string[] };
+  | { ok: false; errors: MessageDescriptor[] };
 
 const ALLOWED_KEYS = new Set(["spellId", "locale", "verbalDescription", "somaticDescription"]);
 
@@ -43,46 +44,48 @@ export function validateSrdOverride(
   input: SrdOverrideInput,
   context: SrdOverrideValidationContext,
 ): SrdOverrideValidationResult {
-  const errors: string[] = [];
+  const errors: MessageDescriptor[] = [];
 
   for (const key of Object.keys(input)) {
-    if (!ALLOWED_KEYS.has(key)) errors.push(`Unsupported override field "${key}".`);
+    if (!ALLOWED_KEYS.has(key)) {
+      errors.push(message("error.srdOverrideUnsupportedField", { field: key }));
+    }
   }
 
   const spellId = typeof input.spellId === "string" ? input.spellId.trim() : "";
   if (spellId === "") {
-    errors.push("spellId must not be empty.");
+    errors.push(message("error.srdOverrideSpellIdEmpty"));
   } else if (!isReservedSrdId(spellId)) {
-    errors.push(`"${spellId}" is not a canonical SRD spell id.`);
+    errors.push(message("error.srdOverrideNotSrdId", { spellId }));
   }
   const canonical = spellId ? context.srdSpellsById.get(spellId) : undefined;
   if (spellId !== "" && isReservedSrdId(spellId) && !canonical) {
-    errors.push(`Unknown SRD spell "${spellId}".`);
+    errors.push(message("error.srdOverrideUnknownSpell", { spellId }));
   }
 
   const locale = typeof input.locale === "string" ? input.locale.trim() : "";
   if (locale === "") {
-    errors.push("locale must not be empty.");
+    errors.push(message("error.srdOverrideLocaleEmpty"));
   } else if (!context.supportedLocales.includes(locale)) {
-    errors.push(`Unsupported locale "${locale}".`);
+    errors.push(message("error.srdOverrideUnsupportedLocale", { locale }));
   }
 
   const verbalDescription = normalizeDescription(input.verbalDescription);
   const somaticDescription = normalizeDescription(input.somaticDescription);
 
   if (verbalDescription && verbalDescription.length > LIMITS.META_MAX) {
-    errors.push(`verbalDescription exceeds ${LIMITS.META_MAX} characters.`);
+    errors.push(message("error.srdOverrideVerbalTooLong", { max: LIMITS.META_MAX }));
   }
   if (somaticDescription && somaticDescription.length > LIMITS.META_MAX) {
-    errors.push(`somaticDescription exceeds ${LIMITS.META_MAX} characters.`);
+    errors.push(message("error.srdOverrideSomaticTooLong", { max: LIMITS.META_MAX }));
   }
 
   if (canonical) {
     if (verbalDescription && !canonical.components.verbal) {
-      errors.push(`Spell "${spellId}" has no verbal component.`);
+      errors.push(message("error.srdOverrideNoVerbal", { spellId }));
     }
     if (somaticDescription && !canonical.components.somatic) {
-      errors.push(`Spell "${spellId}" has no somatic component.`);
+      errors.push(message("error.srdOverrideNoSomatic", { spellId }));
     }
   }
 

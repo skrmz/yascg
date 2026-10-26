@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { Button } from "./Button.tsx";
 import { Checkbox } from "./Checkbox.tsx";
@@ -25,17 +26,18 @@ export function MultiSelect<T extends string>({
   selected,
   onChange,
   searchable = false,
-  searchPlaceholder = "Search…",
+  searchPlaceholder,
   allLabel,
   getLabel,
   className,
   "aria-label": ariaLabel,
 }: MultiSelectProps<T>) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const labelFor = (option: T): string => (getLabel ? getLabel(option) : option);
-  const accessibleLabel = label ?? ariaLabel ?? "Options";
+  const accessibleLabel = label ?? ariaLabel ?? t("common.options");
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase();
@@ -46,10 +48,10 @@ export function MultiSelect<T extends string>({
 
   const summary =
     selected.length === 0
-      ? (allLabel ?? "All")
+      ? (allLabel ?? t("common.all"))
       : selected.length === 1
         ? labelFor(selected[0])
-        : `${selected.length} selected`;
+        : t("common.selectedCount", { count: selected.length });
   const fullSummary = selected.map(labelFor).join(", ");
   const toggle = (value: T) => {
     onChange(
@@ -68,7 +70,7 @@ export function MultiSelect<T extends string>({
         <Button
           type="button"
           variant="outline"
-          aria-label={ariaLabel ?? label}
+          aria-label={ariaLabel ?? label ?? accessibleLabel}
           className={cn("w-full justify-between gap-2 font-normal", className)}
         >
           <span className="flex min-w-0 items-baseline gap-1.5 text-sm">
@@ -90,15 +92,15 @@ export function MultiSelect<T extends string>({
               autoFocus
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder={searchPlaceholder}
-              aria-label={`Search ${accessibleLabel.toLocaleLowerCase()}`}
+              placeholder={searchPlaceholder ?? t("common.searchPlaceholder")}
+              aria-label={t("common.searchOptions", { label: accessibleLabel })}
               className="h-8"
             />
           </div>
         ) : null}
         <div className="max-h-64 overflow-auto p-2">
           {filtered.length === 0 ? (
-            <p className="px-1 py-2 text-xs text-muted-foreground">No options.</p>
+            <p className="px-1 py-2 text-xs text-muted-foreground">{t("common.noOptions")}</p>
           ) : (
             <ul className="space-y-0.5">
               {filtered.map((option) => (
@@ -114,7 +116,7 @@ export function MultiSelect<T extends string>({
           )}
         </div>
         <div className="flex items-center justify-between gap-2 border-t border-border p-2 text-xs text-muted-foreground">
-          <span>{selected.length} selected</span>
+          <span>{t("common.selectedCount", { count: selected.length })}</span>
           <Button
             type="button"
             variant="ghost"
@@ -122,7 +124,7 @@ export function MultiSelect<T extends string>({
             disabled={selected.length === 0}
             onClick={() => onChange([])}
           >
-            Clear
+            {t("common.clear")}
           </Button>
         </div>
       </PopoverContent>

@@ -45,9 +45,9 @@ test("precaches shell, manifest, datasets, and fonts, then works offline", async
   await expect(page.getByRole("heading", { name: "Spell Card Generator" })).toBeVisible();
 
   // Offline language switching uses only precached assets (zero network requests).
-  await page.getByRole("button", { name: /Spell data language/ }).click();
+  await page.getByRole("button", { name: /Spell data language|Sprache der Zauberdaten/ }).click();
   await page
-    .getByRole("listbox", { name: "Spell data languages" })
+    .getByRole("listbox", { name: /Spell data languages|Sprachen der Zauberdaten/ })
     .getByRole("option", { name: /Deutsch/ })
     .click();
   await expect(page.getByRole("button", { name: /Deutsch/ })).toBeVisible();

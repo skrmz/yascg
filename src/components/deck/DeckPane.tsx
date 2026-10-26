@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowDown,
   ArrowUp,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
+import { resolveContentLanguage } from "@/content-language.ts";
 import type { DeckEntry } from "@/domain/deck";
 import type { CardFitMode } from "@/domain/spells";
 import type { EntryResolution } from "@/services/data/resolution.ts";
@@ -46,6 +48,7 @@ export function DeckPane() {
     librarySpells,
     selectSpell,
   } = useApp();
+  const { t, i18n } = useTranslation();
 
   const [nameDraft, setNameDraft] = useState(activeDeck?.name ?? "");
   const [loadTarget, setLoadTarget] = useState("");
@@ -90,25 +93,25 @@ export function DeckPane() {
   const repairTarget = librarySpells.find((spell) => spell.id === repairSpellId);
 
   return (
-    <section className="flex h-full min-h-0 flex-col" aria-label="Active deck">
+    <section className="flex h-full min-h-0 flex-col" aria-label={t("deck.title")}>
       <div className="space-y-2 border-b border-border p-3">
         <div className="flex items-center gap-2">
           <Label htmlFor="deck-name" className="sr-only">
-            Active deck name
+            {t("deck.nameLabel")}
           </Label>
           <Input
             id="deck-name"
             value={nameDraft}
-            placeholder="Untitled deck"
+            placeholder={t("deck.namePlaceholder")}
             onChange={(event) => setNameDraft(event.target.value)}
             className="flex-1"
           />
           {dirty ? (
             <span
               className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[0.7rem] font-semibold text-amber-300"
-              title="The active deck differs from its saved baseline"
+              title={t("deck.unsavedTitle")}
             >
-              Unsaved
+              {t("deck.unsaved")}
             </span>
           ) : null}
         </div>
@@ -120,7 +123,7 @@ export function DeckPane() {
             disabled={nameDraft.trim() === ""}
           >
             <Save size={13} aria-hidden="true" />
-            Save as new
+            {t("deck.saveAsNew")}
           </Button>
           <Button
             size="sm"
@@ -132,12 +135,12 @@ export function DeckPane() {
               !activeDeck || nameDraft.trim() === "" || nameDraft.trim() === activeDeck.name
             }
           >
-            Rename
+            {t("deck.rename")}
           </Button>
           <Button size="sm" variant="outline" onClick={() => setIoOpen(true)}>
             <Upload size={13} aria-hidden="true" />
             <Download size={13} aria-hidden="true" />
-            Import / Export
+            {t("deck.importExport")}
           </Button>
           <Button
             size="sm"
@@ -146,43 +149,43 @@ export function DeckPane() {
             disabled={printable === 0}
           >
             <Printer size={13} aria-hidden="true" />
-            Print
+            {t("deck.print")}
           </Button>
         </div>
         <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-          <span>{entries.length} entries</span>
+          <span>{t("deck.entries", { count: entries.length })}</span>
           <span aria-hidden="true">&middot;</span>
-          <span>{printable} printable</span>
+          <span>{t("deck.printable", { count: printable })}</span>
           {unavailableCount > 0 ? (
             <>
               <span aria-hidden="true">&middot;</span>
               <span className="text-amber-300">
-                {unavailableCount} not in {language}
+                {t("deck.notInLanguage", { count: unavailableCount, language })}
               </span>
             </>
           ) : null}
           {missingCount > 0 ? (
             <>
               <span aria-hidden="true">&middot;</span>
-              <span className="text-red-300">{missingCount} missing</span>
+              <span className="text-red-300">{t("deck.missing", { count: missingCount })}</span>
             </>
           ) : null}
         </div>
         <div className="space-y-2">
           <div className="space-y-1.5">
-            <Label htmlFor="load-target">Load saved deck</Label>
+            <Label htmlFor="load-target">{t("deck.loadSaved")}</Label>
             <Select value={loadTarget} onValueChange={setLoadTarget}>
               <SelectTrigger
                 id="load-target"
-                aria-label="Saved deck to load"
+                aria-label={t("deck.savedDeckToLoad")}
                 className="h-8 text-xs"
               >
-                <SelectValue placeholder="Select a saved deck…" />
+                <SelectValue placeholder={t("deck.selectSaved")} />
               </SelectTrigger>
               <SelectContent>
                 {savedDecks.map((deck) => (
                   <SelectItem key={deck.id} value={deck.id}>
-                    {deck.name} — {new Date(deck.updatedAt).toLocaleString()}
+                    {deck.name} — {new Date(deck.updatedAt).toLocaleString(i18n.resolvedLanguage)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -197,18 +200,18 @@ export function DeckPane() {
                 else void loadSaved(loadTarget);
               }}
             >
-              Load
+              {t("deck.load")}
             </Button>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="overwrite-target">Overwrite saved deck</Label>
+            <Label htmlFor="overwrite-target">{t("deck.overwriteSaved")}</Label>
             <Select value={overwriteTarget} onValueChange={setOverwriteTarget}>
               <SelectTrigger
                 id="overwrite-target"
-                aria-label="Saved deck to overwrite"
+                aria-label={t("deck.savedDeckToOverwrite")}
                 className="h-8 text-xs"
               >
-                <SelectValue placeholder="Select a saved deck…" />
+                <SelectValue placeholder={t("deck.selectSaved")} />
               </SelectTrigger>
               <SelectContent>
                 {savedDecks.map((deck) => (
@@ -229,7 +232,7 @@ export function DeckPane() {
                 }
               }}
             >
-              Overwrite
+              {t("deck.overwrite")}
             </Button>
             <Button
               size="sm"
@@ -239,7 +242,7 @@ export function DeckPane() {
               onClick={() => setDeleteTarget(overwriteDeckInfo?.id ?? null)}
             >
               <Trash2 size={13} aria-hidden="true" />
-              Delete saved deck
+              {t("deck.deleteSavedDeck")}
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -249,11 +252,11 @@ export function DeckPane() {
               disabled={entries.length === 0}
               onClick={() => setConfirmClear(true)}
             >
-              Clear
+              {t("common.clear")}
             </Button>
             {canUndo ? (
               <Button size="sm" variant="secondary" onClick={() => void undoDelete()}>
-                Undo delete
+                {t("deck.undoDelete")}
               </Button>
             ) : null}
           </div>
@@ -265,7 +268,7 @@ export function DeckPane() {
           id="deck-entries-heading"
           className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          Deck entries
+          {t("deck.heading")}
         </h2>
         <ol
           id="deck-entries"
@@ -273,47 +276,52 @@ export function DeckPane() {
           aria-labelledby="deck-entries-heading"
         >
           {entries.length === 0 ? (
-            <li className="p-4 text-center text-sm text-muted-foreground">
-              The active deck is empty. Add spells from the library.
-            </li>
+            <li className="p-4 text-center text-sm text-muted-foreground">{t("deck.empty")}</li>
           ) : null}
-          {resolvedEntries.map(({ entry, resolution }, index) => (
-            <DeckRow
-              key={entry.entryId}
-              entry={entry}
-              index={index}
-              resolution={resolution}
-              language={language}
-              onRemove={() => void removeFromDeck(entry.entryId)}
-              onMoveUp={() => void moveDeckEntry(entry.entryId, -1)}
-              onMoveDown={() => void moveDeckEntry(entry.entryId, 1)}
-              onFitMode={(mode) => void setDeckEntryFitMode(entry.entryId, mode)}
-              onRepair={() => {
-                setRepairEntryId(entry.entryId);
-                setRepairSpellId("");
-              }}
-              onSelect={() => {
-                if (resolution.status === "resolved") selectSpell(resolution.spell.id);
-              }}
-              dragProps={{
-                draggable: true,
-                onDragStart: () => onDragStart(index),
-                onDragOver: (event) => event.preventDefault(),
-                onDrop: () => onDrop(index),
-              }}
-            />
-          ))}
+          {resolvedEntries.map(({ entry, resolution }, index) => {
+            const contentLanguage =
+              resolution.status === "resolved"
+                ? resolveContentLanguage(resolution.spell, language)
+                : undefined;
+            return (
+              <DeckRow
+                key={entry.entryId}
+                entry={entry}
+                index={index}
+                resolution={resolution}
+                language={language}
+                contentLanguage={contentLanguage}
+                onRemove={() => void removeFromDeck(entry.entryId)}
+                onMoveUp={() => void moveDeckEntry(entry.entryId, -1)}
+                onMoveDown={() => void moveDeckEntry(entry.entryId, 1)}
+                onFitMode={(mode) => void setDeckEntryFitMode(entry.entryId, mode)}
+                onRepair={() => {
+                  setRepairEntryId(entry.entryId);
+                  setRepairSpellId("");
+                }}
+                onSelect={() => {
+                  if (resolution.status === "resolved") selectSpell(resolution.spell.id);
+                }}
+                dragProps={{
+                  draggable: true,
+                  onDragStart: () => onDragStart(index),
+                  onDragOver: (event) => event.preventDefault(),
+                  onDrop: () => onDrop(index),
+                }}
+              />
+            );
+          })}
         </ol>
       </div>
 
       <Dialog open={confirmClear} onOpenChange={setConfirmClear}>
         <DialogContent
-          title="Clear the active deck?"
-          description="This removes all entries from the active deck. The deck name, saved association, and saved decks are kept."
+          title={t("deck.clearTitle")}
+          description={t("deck.clearDescription")}
           footer={
             <>
               <Button variant="outline" onClick={() => setConfirmClear(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -322,7 +330,7 @@ export function DeckPane() {
                   setConfirmClear(false);
                 }}
               >
-                Clear deck
+                {t("deck.clearConfirm")}
               </Button>
             </>
           }
@@ -331,12 +339,12 @@ export function DeckPane() {
 
       <Dialog open={confirmLoad} onOpenChange={setConfirmLoad}>
         <DialogContent
-          title="Replace the active deck?"
-          description="The active deck has unsaved changes. Loading a saved deck replaces them. Saved decks are not changed."
+          title={t("deck.loadTitle")}
+          description={t("deck.loadDescription")}
           footer={
             <>
               <Button variant="outline" onClick={() => setConfirmLoad(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -345,7 +353,7 @@ export function DeckPane() {
                   setConfirmLoad(false);
                 }}
               >
-                Replace active deck
+                {t("deck.loadConfirm")}
               </Button>
             </>
           }
@@ -354,12 +362,12 @@ export function DeckPane() {
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent
-          title="Delete saved deck?"
-          description="This permanently deletes the saved snapshot. The active deck content is not changed unless it was associated with this snapshot."
+          title={t("deck.deleteTitle")}
+          description={t("deck.deleteDescription")}
           footer={
             <>
               <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -369,7 +377,7 @@ export function DeckPane() {
                   setOverwriteTarget("");
                 }}
               >
-                Delete saved deck
+                {t("deck.deleteConfirm")}
               </Button>
             </>
           }
@@ -381,12 +389,12 @@ export function DeckPane() {
         onOpenChange={(open) => !open && setRepairEntryId(null)}
       >
         <DialogContent
-          title="Repair missing reference"
-          description="Rebind this entry to an existing spell. Only the active deck is changed; saved snapshots remain untouched."
+          title={t("deck.repairTitle")}
+          description={t("deck.repairDescription")}
           footer={
             <>
               <Button variant="outline" onClick={() => setRepairEntryId(null)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 disabled={!repairTarget}
@@ -398,8 +406,10 @@ export function DeckPane() {
                       name: repairTarget.name,
                     }).then((result) => {
                       if (result === "duplicate") {
-                        toast.info("Already in deck", {
-                          description: `${repairTarget.name} is already in the active deck.`,
+                        toast.info(t("library.toast.alreadyTitle"), {
+                          description: t("library.toast.alreadyDescription", {
+                            name: repairTarget.name,
+                          }),
                         });
                       }
                     });
@@ -408,7 +418,7 @@ export function DeckPane() {
                 }}
               >
                 <Wrench size={13} aria-hidden="true" />
-                Repair
+                {t("deck.repairConfirm")}
               </Button>
             </>
           }
@@ -416,14 +426,15 @@ export function DeckPane() {
           <NativeSelect
             id="repair-spell"
             name="repair-spell"
-            aria-label="Replacement spell"
+            aria-label={t("deck.replacementSpell")}
             value={repairSpellId}
             onChange={(event) => setRepairSpellId(event.target.value)}
           >
-            <option value="">Choose a spell…</option>
+            <option value="">{t("deck.chooseSpell")}</option>
             {librarySpells.map((spell) => (
               <option key={spell.id} value={spell.id}>
-                {spell.name} ({spell.source === "Custom" ? "Custom" : "SRD"})
+                {spell.name} (
+                {spell.source === "Custom" ? t("source.custom") : t("source.srdShort")})
               </option>
             ))}
           </NativeSelect>
@@ -441,6 +452,7 @@ interface DeckRowProps {
   index: number;
   resolution: EntryResolution;
   language: string;
+  contentLanguage?: string;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -460,6 +472,7 @@ function DeckRow({
   index,
   resolution,
   language,
+  contentLanguage,
   onRemove,
   onMoveUp,
   onMoveDown,
@@ -468,18 +481,17 @@ function DeckRow({
   onSelect,
   dragProps,
 }: DeckRowProps) {
+  const { t } = useTranslation();
   const name = resolution.status === "resolved" ? resolution.spell.name : resolution.referenceName;
   const nameContent = (
     <>
-      <span className="block truncate text-sm text-foreground">{name}</span>
+      <span lang={contentLanguage} className="block truncate text-sm text-foreground">
+        {name}
+      </span>
       {resolution.status === "translation-unavailable" ? (
-        <span className="block text-xs text-amber-300">
-          Not available in {language} — kept in deck, omitted from print
-        </span>
+        <span className="block text-xs text-amber-300">{t("deck.notAvailable", { language })}</span>
       ) : resolution.status === "missing" ? (
-        <span className="block text-xs text-red-300">
-          Missing reference — repairable, excluded from print
-        </span>
+        <span className="block text-xs text-red-300">{t("deck.missingReference")}</span>
       ) : null}
     </>
   );
@@ -499,37 +511,52 @@ function DeckRow({
         <button
           type="button"
           className="min-w-[8rem] flex-1 rounded text-start hover:bg-accent/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          aria-label={`Show ${name} in details`}
+          aria-label={t("deck.showAria", { name })}
           onClick={onSelect}
         >
           {nameContent}
         </button>
       ) : (
-        <span className="min-w-[8rem] text-start flex-1">{nameContent}</span>
+        <span className="min-w-[8rem] flex-1 text-start">{nameContent}</span>
       )}
       <NativeSelect
         id={`fit-mode-${entry.entryId}`}
         name={`fit-mode-${entry.entryId}`}
-        aria-label={`Fit mode for ${name}`}
-        className="h-7 w-28 text-xs"
+        aria-label={t("deck.fitModeAria", { name })}
+        className="h-7 w-32 text-xs"
         value={entry.fitMode}
         onChange={(event) => onFitMode(event.target.value as CardFitMode)}
       >
-        <option value="auto-shrink">Auto-shrink</option>
-        <option value="multi-card">Multi-card</option>
+        <option value="auto-shrink">{t("deck.autoShrink")}</option>
+        <option value="multi-card">{t("deck.multiCard")}</option>
       </NativeSelect>
       {resolution.status === "missing" ? (
-        <Button variant="ghost" size="icon" aria-label="Repair entry" onClick={onRepair}>
+        <Button variant="ghost" size="icon" aria-label={t("deck.repairAria")} onClick={onRepair}>
           <Wrench size={14} aria-hidden="true" />
         </Button>
       ) : null}
-      <Button variant="ghost" size="icon" aria-label={`Move ${name} up`} onClick={onMoveUp}>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={t("deck.moveUpAria", { name })}
+        onClick={onMoveUp}
+      >
         <ArrowUp size={14} aria-hidden="true" />
       </Button>
-      <Button variant="ghost" size="icon" aria-label={`Move ${name} down`} onClick={onMoveDown}>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={t("deck.moveDownAria", { name })}
+        onClick={onMoveDown}
+      >
         <ArrowDown size={14} aria-hidden="true" />
       </Button>
-      <Button variant="ghost" size="icon" aria-label={`Remove ${name}`} onClick={onRemove}>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={t("deck.removeAria", { name })}
+        onClick={onRemove}
+      >
         <Trash2 size={14} aria-hidden="true" />
       </Button>
     </li>

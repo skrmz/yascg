@@ -10,7 +10,5 @@ peerDependencyRules:
     vite: "*"
 packages:
   - "."
-ignoredBuiltDependencies:
-  - esbuild
-onlyBuiltDependencies:
-  - esbuild
+allowBuilds:
+  esbuild: true

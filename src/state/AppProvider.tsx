@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -71,6 +72,7 @@ import {
 import type { ActiveDeckRecord, DeckEntry, SavedDeck } from "@/domain/deck";
 import { hasSpellEntry } from "@/domain/deck";
 import type { CardFitMode, Spell, SpellSource, SrdSpellOverride } from "@/domain/spells";
+import { message, toMessageDescriptor, type MessageDescriptor } from "@/locales/messages.ts";
 
 export type AddSpellResult = "added" | "duplicate" | "error";
 
@@ -81,6 +83,8 @@ export interface AddSpellsResult {
 }
 
 export type RepairDeckEntryResult = "repaired" | "duplicate" | "error";
+
+export type LanguageStatus = "loading" | "ready" | "failed";
 
 export interface ResolvedDeckEntry {
   entry: DeckEntry;
@@ -94,7 +98,7 @@ export interface PendingLanguageSwitch {
 }
 
 export interface DeckConflictState {
-  message: string;
+  message: MessageDescriptor;
   expectedRevision: number;
   actualRevision: number;
 }
@@ -102,7 +106,8 @@ export interface DeckConflictState {
 export interface AppContextValue {
   manifest: BundledSpellLanguage[];
   language: string;
-  languageNotice: string | null;
+  languageStatus: LanguageStatus;
+  languageNotice: MessageDescriptor | null;
   dismissLanguageNotice: () => void;
   englishSpells: Spell[];
   languageSpells: Spell[];
@@ -112,8 +117,9 @@ export interface AppContextValue {
   languageById: ReadonlyMap<string, Spell>;
   customById: ReadonlyMap<string, Spell>;
   dataLoading: boolean;
-  dataError: string | null;
+  dataError: MessageDescriptor | null;
   retryData: () => void;
+  dismissDataError: () => void;
 
   selectedSpellId: string | null;
   selectSpell: (id: string | null) => void;
@@ -124,7 +130,7 @@ export interface AppContextValue {
   dirty: boolean;
   resolvedEntries: ResolvedDeckEntry[];
 
-  deckError: string | null;
+  deckError: MessageDescriptor | null;
   clearDeckError: () => void;
   conflict: DeckConflictState | null;
   reloadLatest: () => void;
@@ -183,10 +189,6 @@ function toMap(spells: readonly Spell[]): Map<string, Spell> {
   return new Map(spells.map((spell) => [spell.id, spell]));
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 function reportQueryFailure<T>(label: string, error: unknown, fallback: T): T {
   const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   console.error(`Failed to load ${label}: ${detail}`);
@@ -196,21 +198,28 @@ function reportQueryFailure<T>(label: string, error: unknown, fallback: T): T {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [manifest, setManifest] = useState<BundledSpellLanguage[]>([]);
   const [language, setLanguage] = useState<string>("en");
-  const [languageNotice, setLanguageNotice] = useState<string | null>(null);
+  const [languageStatus, setLanguageStatus] = useState<LanguageStatus>("loading");
+  const [languageNotice, setLanguageNotice] = useState<MessageDescriptor | null>(null);
   const [datasets, setDatasets] = useState<Record<string, Spell[]>>({});
   const [dataLoading, setDataLoading] = useState(true);
-  const [dataError, setDataError] = useState<string | null>(null);
+  const [dataError, setDataError] = useState<MessageDescriptor | null>(null);
   const [retryToken, setRetryToken] = useState(0);
 
   const [selectedSpellId, setSelectedSpellId] = useState<string | null>(null);
 
-  const [deckError, setDeckError] = useState<string | null>(null);
+  const [deckError, setDeckError] = useState<MessageDescriptor | null>(null);
   const [conflict, setConflict] = useState<DeckConflictState | null>(null);
   const [lastDeletion, setLastDeletion] = useState<CustomSpellDeletion | null>(null);
   const [pendingLanguageSwitch, setPendingLanguageSwitch] = useState<PendingLanguageSwitch | null>(
     null,
   );
   const [refreshToken, setRefreshToken] = useState(0);
+  const loadGenerationRef = useRef(0);
+  const switchGenerationRef = useRef(0);
+  const datasetsRef = useRef(datasets);
+  datasetsRef.current = datasets;
+  const languageStatusRef = useRef(languageStatus);
+  languageStatusRef.current = languageStatus;
 
   const activeDeck = useLiveQuery(
     () => readActiveDeck().catch((error) => reportQueryFailure("active deck", error, null)),
@@ -243,39 +252,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return subscribeToChanges(() => refreshAll());
   }, [refreshAll]);
 
+  // Invalidate any in-flight initialization or language switch after unmount.
+  useEffect(() => {
+    return () => {
+      loadGenerationRef.current += 1;
+      switchGenerationRef.current += 1;
+    };
+  }, []);
+
   // Load manifest + English + selected language datasets.
   useEffect(() => {
     let cancelled = false;
+    const generation = ++loadGenerationRef.current;
+    const isCurrent = () => !cancelled && generation === loadGenerationRef.current;
     const load = async () => {
       setDataLoading(true);
+      setLanguageStatus("loading");
+      setDataError(null);
+      setLanguageNotice(null);
       try {
         clearDataCache();
         const loadedManifest = await loadManifest();
-        if (cancelled) return;
+        if (!isCurrent()) return;
         setManifest(loadedManifest);
 
         const preference = readLanguagePreference();
         const resolved = resolveInitialLanguage(loadedManifest, preference);
+        const loaded: Record<string, Spell[]> = {
+          en: await loadLanguageDataset("en"),
+        };
+        if (resolved.code !== "en") {
+          loaded[resolved.code] = await loadLanguageDataset(resolved.code);
+        }
+        if (!isCurrent()) return;
         if (resolved.fallbackFrom) {
           clearLanguagePreference();
-          setLanguageNotice(
-            `The previously selected language "${resolved.fallbackFrom}" is no longer available. Switched to English.`,
-          );
         }
-        const codesToLoad = new Set<string>(["en", resolved.code]);
-        const loaded: Record<string, Spell[]> = {};
-        for (const code of codesToLoad) {
-          loaded[code] = await loadLanguageDataset(code);
-        }
-        if (cancelled) return;
         setDatasets(loaded);
         setLanguage(resolved.code);
+        setLanguageStatus("ready");
         setDataError(null);
+        if (resolved.fallbackFrom) {
+          setLanguageNotice(message("language.fallback", { code: resolved.fallbackFrom }));
+        }
       } catch (error) {
-        if (cancelled) return;
-        setDataError(errorMessage(error));
+        if (!isCurrent()) return;
+        console.error("Failed to load spell data:", error);
+        setLanguage("en");
+        setLanguageStatus("failed");
+        setDataError(message("error.dataLoad"));
       } finally {
-        if (!cancelled) setDataLoading(false);
+        if (isCurrent()) setDataLoading(false);
       }
     };
     void load();
@@ -360,14 +387,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         if (error instanceof DeckConflictError) {
           setConflict({
-            message: error.message,
+            message: toMessageDescriptor(error),
             expectedRevision: error.expectedRevision,
             actualRevision: error.actualRevision,
           });
           refreshAll();
           return false;
         }
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
         return false;
       }
     },
@@ -512,14 +539,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         if (error instanceof DeckConflictError) {
           setConflict({
-            message: error.message,
+            message: toMessageDescriptor(error),
             expectedRevision: error.expectedRevision,
             actualRevision: error.actualRevision,
           });
           refreshAll();
           return null;
         }
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
         return null;
       }
     },
@@ -542,20 +569,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setDeckError(null);
       } catch (error) {
         if (error instanceof SavedDeckConflictError) {
-          setDeckError(error.message);
+          setDeckError(toMessageDescriptor(error));
           refreshAll();
           return;
         }
         if (error instanceof DeckConflictError) {
           setConflict({
-            message: error.message,
+            message: toMessageDescriptor(error),
             expectedRevision: error.expectedRevision,
             actualRevision: error.actualRevision,
           });
           refreshAll();
           return;
         }
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
       }
     },
     [refreshAll],
@@ -571,14 +598,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         if (error instanceof DeckConflictError) {
           setConflict({
-            message: error.message,
+            message: toMessageDescriptor(error),
             expectedRevision: error.expectedRevision,
             actualRevision: error.actualRevision,
           });
           refreshAll();
           return;
         }
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
       }
     },
     [refreshAll],
@@ -595,14 +622,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         if (error instanceof DeckConflictError) {
           setConflict({
-            message: error.message,
+            message: toMessageDescriptor(error),
             expectedRevision: error.expectedRevision,
             actualRevision: error.actualRevision,
           });
           refreshAll();
           return;
         }
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
       }
     },
     [refreshAll],
@@ -616,7 +643,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshAll();
         return saved;
       } catch (error) {
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
         return null;
       }
     },
@@ -634,7 +661,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshAll();
         return saved;
       } catch (error) {
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
         return null;
       }
     },
@@ -649,7 +676,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshAll();
         return true;
       } catch (error) {
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
         return false;
       }
     },
@@ -663,7 +690,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         publishChange("custom-spells");
         refreshAll();
       } catch (error) {
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
       }
     },
     [refreshAll],
@@ -683,14 +710,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         if (error instanceof DeckConflictError) {
           setConflict({
-            message: error.message,
+            message: toMessageDescriptor(error),
             expectedRevision: error.expectedRevision,
             actualRevision: error.actualRevision,
           });
           refreshAll();
           return false;
         }
-        setDeckError(errorMessage(error));
+        setDeckError(toMessageDescriptor(error));
         return false;
       }
     },
@@ -713,82 +740,103 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshAll();
       return true;
     } catch (error) {
-      setDeckError(errorMessage(error));
+      setDeckError(toMessageDescriptor(error));
       setLastDeletion(null);
       refreshAll();
       return false;
     }
   }, [lastDeletion, activeDeck, refreshAll]);
 
-  const switchToLanguage = useCallback(
-    async (code: string) => {
-      if (!datasets[code]) {
-        try {
-          const dataset = await loadLanguageDataset(code);
-          setDatasets((previous) => ({ ...previous, [code]: dataset }));
-        } catch (error) {
-          setLanguageNotice(
-            `Failed to load language "${code}": ${errorMessage(error)}. Staying on the current language.`,
-          );
-          return;
-        }
+  const commitLanguageSwitch = useCallback(
+    async (code: string, requestId: number, expectedRevision?: number): Promise<boolean> => {
+      let targetDataset = datasetsRef.current[code];
+      try {
+        targetDataset ??= await loadLanguageDataset(code);
+      } catch (error) {
+        if (requestId !== switchGenerationRef.current) return false;
+        console.error(`Failed to load language "${code}":`, error);
+        setLanguageNotice(message("language.loadFailed", { code }));
+        return false;
       }
-      setLanguage(code);
+      if (requestId !== switchGenerationRef.current) return false;
+
+      if (expectedRevision !== undefined) {
+        const latest = await getActiveDeck();
+        if (requestId !== switchGenerationRef.current) return false;
+        if (latest.revision !== expectedRevision) return false;
+      }
+
       const writeResult = writeLanguagePreference(code);
-      if (!writeResult.persisted) {
-        setLanguageNotice(
-          "Language changed for this session, but the preference could not be saved and will not survive a reload.",
-        );
-      }
+      setDatasets((previous) => ({ ...previous, [code]: targetDataset }));
+      setLanguage(code);
+      setLanguageStatus("ready");
+      setPendingLanguageSwitch(null);
+      setLanguageNotice(writeResult.persisted ? null : message("language.preferenceFailed"));
+      return true;
     },
-    [datasets],
+    [],
   );
 
   const requestLanguageSwitch = useCallback(
     async (code: string): Promise<boolean> => {
       if (code === language) return false;
-      let targetDataset = datasets[code];
+      if (languageStatusRef.current !== "ready") return false;
+      const requestId = ++switchGenerationRef.current;
+      let targetDataset = datasetsRef.current[code];
       if (!targetDataset) {
         try {
           targetDataset = await loadLanguageDataset(code);
-          setDatasets((previous) => ({ ...previous, [code]: targetDataset as Spell[] }));
         } catch (error) {
-          setLanguageNotice(`Failed to load language "${code}": ${errorMessage(error)}.`);
+          if (requestId !== switchGenerationRef.current) return false;
+          console.error(`Failed to load language "${code}":`, error);
+          setLanguageNotice(message("language.loadFailed", { code }));
           return false;
         }
       }
+      if (requestId !== switchGenerationRef.current) return false;
+      const deck = await getActiveDeck();
+      if (requestId !== switchGenerationRef.current) return false;
       const targetById = toMap(targetDataset);
-      const deck = activeDeck ?? (await getActiveDeck());
       const impact = computeLanguageSwitchImpact(deck.entries, targetById);
       if (impact.affectedEntries === 0) {
-        await switchToLanguage(code);
-        return true;
+        return commitLanguageSwitch(code, requestId);
       }
       setPendingLanguageSwitch({ code, impact, activeRevision: deck.revision });
       return false;
     },
-    [language, datasets, activeDeck, switchToLanguage],
+    [language, commitLanguageSwitch],
   );
 
   const confirmLanguageSwitch = useCallback(async (): Promise<boolean> => {
     if (!pendingLanguageSwitch) return false;
+    const requestId = ++switchGenerationRef.current;
+    const code = pendingLanguageSwitch.code;
+    let targetDataset = datasetsRef.current[code];
+    try {
+      targetDataset ??= await loadLanguageDataset(code);
+    } catch (error) {
+      if (requestId !== switchGenerationRef.current) return false;
+      console.error(`Failed to load language "${code}":`, error);
+      setLanguageNotice(message("language.loadFailed", { code }));
+      return false;
+    }
+    if (requestId !== switchGenerationRef.current) return false;
     const latest = await getActiveDeck();
+    if (requestId !== switchGenerationRef.current) return false;
     if (latest.revision !== pendingLanguageSwitch.activeRevision) {
-      const targetDataset = datasets[pendingLanguageSwitch.code];
-      const targetById = toMap(targetDataset ?? []);
+      const targetById = toMap(targetDataset);
       setPendingLanguageSwitch({
-        code: pendingLanguageSwitch.code,
+        code,
         impact: computeLanguageSwitchImpact(latest.entries, targetById),
         activeRevision: latest.revision,
       });
       return false;
     }
-    await switchToLanguage(pendingLanguageSwitch.code);
-    setPendingLanguageSwitch(null);
-    return true;
-  }, [pendingLanguageSwitch, datasets, switchToLanguage]);
+    return commitLanguageSwitch(code, requestId, pendingLanguageSwitch.activeRevision);
+  }, [pendingLanguageSwitch, commitLanguageSwitch]);
 
   const cancelLanguageSwitch = useCallback(() => {
+    switchGenerationRef.current += 1;
     setPendingLanguageSwitch(null);
   }, []);
 
@@ -801,6 +849,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({
       manifest,
       language,
+      languageStatus,
       languageNotice,
       dismissLanguageNotice: () => setLanguageNotice(null),
       englishSpells,
@@ -813,6 +862,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dataLoading,
       dataError,
       retryData: () => setRetryToken((token) => token + 1),
+      dismissDataError: () => setDataError(null),
       selectedSpellId,
       selectSpell: setSelectedSpellId,
       selectedSpell,
@@ -858,6 +908,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [
       manifest,
       language,
+      languageStatus,
       languageNotice,
       englishSpells,
       languageSpells,

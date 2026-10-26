@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronDown } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover.tsx";
 import { cn } from "@/ui/cn.ts";
 
 export function LanguagePicker() {
-  const { manifest, language, requestLanguageSwitch } = useApp();
+  const { manifest, language, languageStatus, requestLanguageSwitch } = useApp();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLUListElement | null>(null);
@@ -59,8 +61,9 @@ export function LanguagePicker() {
           type="button"
           aria-haspopup="listbox"
           aria-expanded={open}
-          aria-label={`Spell data language: ${currentLabel}`}
-          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          aria-label={t("language.pickerTrigger", { language: currentLabel })}
+          disabled={languageStatus !== "ready"}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="font-medium">{current ? current.displayName : language}</span>
           <ChevronDown size={14} aria-hidden="true" />
@@ -70,7 +73,7 @@ export function LanguagePicker() {
         <ul
           ref={listRef}
           role="listbox"
-          aria-label="Spell data languages"
+          aria-label={t("language.pickerList")}
           tabIndex={0}
           onKeyDown={onKeyDown}
           className="max-h-64 overflow-auto outline-none"

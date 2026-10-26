@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CloudOff, RefreshCw, Wifi } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
 import { setupOffline, verifyOfflineAssets, type OfflineState } from "@/pwa/register.ts";
@@ -9,6 +10,7 @@ const VERIFY_INTERVAL_MS = 500;
 
 export function OfflineStatus() {
   const { manifest } = useApp();
+  const { t } = useTranslation();
   const [state, setState] = useState<OfflineState>({ status: "setting-up" });
   const [applyUpdate, setApplyUpdate] = useState<(() => void) | null>(null);
 
@@ -64,12 +66,12 @@ export function OfflineStatus() {
 
   const label =
     state.status === "ready"
-      ? "Offline ready"
+      ? t("offline.ready")
       : state.status === "incomplete"
-        ? "Offline setup incomplete"
+        ? t("offline.incomplete")
         : state.status === "setting-up"
-          ? "Setting up offline access"
-          : "Offline unknown";
+          ? t("offline.settingUp")
+          : t("offline.unknown");
 
   return (
     <div className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
@@ -80,14 +82,14 @@ export function OfflineStatus() {
       )}
       <span aria-live="polite">{label}</span>
       {state.status === "incomplete" ? (
-        <Button variant="outline" size="sm" onClick={retry} aria-label="Retry offline setup">
+        <Button variant="outline" size="sm" onClick={retry} aria-label={t("offline.retryAria")}>
           <RefreshCw size={12} aria-hidden="true" />
-          Retry
+          {t("offline.retry")}
         </Button>
       ) : null}
       {applyUpdate ? (
         <Button variant="secondary" size="sm" onClick={() => applyUpdate()}>
-          Update available
+          {t("offline.updateAvailable")}
         </Button>
       ) : null}
     </div>

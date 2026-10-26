@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { ZodIssue } from "zod";
 import { useApp } from "@/state/AppProvider.tsx";
 import { createCustomSpellDraft } from "@/db/custom-spells.ts";
 import {
@@ -13,6 +14,7 @@ import {
   type SpellSchool,
 } from "@/domain/spells";
 import { classKey, schoolKey } from "@/locales/labels.ts";
+import { message, translateMessage, type MessageDescriptor } from "@/locales/messages.ts";
 import { classSummary } from "@/cards/Card.tsx";
 import { Button } from "@/ui/Button.tsx";
 import { Checkbox } from "@/ui/Checkbox.tsx";
@@ -73,9 +75,36 @@ function toDraft(spell: Spell): DraftState {
   };
 }
 
+function validationDescriptor(issue: ZodIssue): MessageDescriptor {
+  const path = issue.path.map(String).join(".");
+  const root = String(issue.path[0] ?? "");
+  if (root === "name") {
+    return issue.code === "too_big"
+      ? message("form.error.name", { max: LIMITS.NAME_MAX })
+      : message("form.error.nameRequired");
+  }
+  if (root === "level") return message("form.error.level");
+  if (root === "classes") return message("form.error.classes");
+  if (root === "description") return message("form.error.description");
+  if (root === "higherLevels") return message("form.error.higherLevels");
+  if (root === "castingTime") {
+    return message("form.error.castingTime", { max: LIMITS.FREETEXT_AUTHORED_MAX });
+  }
+  if (root === "range") {
+    return message("form.error.range", { max: LIMITS.FREETEXT_AUTHORED_MAX });
+  }
+  if (root === "duration") {
+    return message("form.error.duration", { max: LIMITS.FREETEXT_AUTHORED_MAX });
+  }
+  if (root === "components" || path.startsWith("components.")) {
+    return message("form.error.metaTooLong", { max: LIMITS.META_MAX });
+  }
+  return message("form.error.generic");
+}
+
 export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormProps) {
   const { saveCustomSpell, selectSpell, saveSrdOverride, resetSrdOverride, language } = useApp();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const isSrd = spell?.source === "SRD-5.2.1";
 
   // The live `language` must never reset an open draft: read it through a ref
@@ -92,7 +121,9 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
     [spell, session.language],
   );
   const [draft, setDraft] = useState<DraftState>(() => toDraft(base));
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, MessageDescriptor>>({});
+  const errorText = (field: string): string | undefined =>
+    errors[field] ? translateMessage(t, errors[field]) : undefined;
 
   useEffect(() => {
     if (!open) return;
@@ -168,22 +199,22 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
       source: "Custom",
     };
 
-    const nextErrors: Record<string, string> = {};
+    const nextErrors: Record<string, MessageDescriptor> = {};
     const maxLength = LIMITS.FREETEXT_AUTHORED_MAX;
     if (draft.castingTime.trim().length > maxLength) {
-      nextErrors.castingTime = t("form.error.castingTime", { max: maxLength });
+      nextErrors.castingTime = message("form.error.castingTime", { max: maxLength });
     }
     if (draft.range.trim().length > maxLength) {
-      nextErrors.range = t("form.error.range", { max: maxLength });
+      nextErrors.range = message("form.error.range", { max: maxLength });
     }
     if (draft.duration.trim().length > maxLength) {
-      nextErrors.duration = t("form.error.duration", { max: maxLength });
+      nextErrors.duration = message("form.error.duration", { max: maxLength });
     }
     const parsed = spellSchema.safeParse(candidate);
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         const key = String(issue.path[0] ?? "form");
-        if (!nextErrors[key]) nextErrors[key] = issue.message;
+        if (!nextErrors[key]) nextErrors[key] = validationDescriptor(issue);
       }
     }
     setErrors(nextErrors);
@@ -201,12 +232,11 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
       <DialogContent
         title={t(spell ? "form.title.edit" : "form.title.new")}
         description={t(isSrd ? "form.descriptionSrd" : "form.description")}
-        lang={i18n.resolvedLanguage}
         className="w-[min(92vw,42rem)]"
         footer={
           <>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             {isSrd && spell?.overridden ? (
               <Button variant="outline" onClick={() => void onReset()}>
@@ -227,7 +257,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
               aria-invalid={Boolean(errors.name)}
               disabled={isSrd}
             />
-            <FieldError>{errors.name}</FieldError>
+            <FieldError>{errorText("name")}</FieldError>
           </div>
           <div>
             <Label htmlFor="cs-level">{t("form.level")}</Label>
@@ -241,7 +271,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
               aria-invalid={Boolean(errors.level)}
               disabled={isSrd}
             />
-            <FieldError>{errors.level}</FieldError>
+            <FieldError>{errorText("level")}</FieldError>
           </div>
           <div>
             <Label htmlFor="cs-school">{t("form.school")}</Label>
@@ -268,7 +298,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
               aria-invalid={Boolean(errors.castingTime)}
               disabled={isSrd}
             />
-            <FieldError>{errors.castingTime}</FieldError>
+            <FieldError>{errorText("castingTime")}</FieldError>
           </div>
           <div>
             <Label htmlFor="cs-range">{t("spell.metadata.range")}</Label>
@@ -280,7 +310,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
               aria-invalid={Boolean(errors.range)}
               disabled={isSrd}
             />
-            <FieldError>{errors.range}</FieldError>
+            <FieldError>{errorText("range")}</FieldError>
           </div>
           <div>
             <Label htmlFor="cs-duration">{t("spell.metadata.duration")}</Label>
@@ -292,7 +322,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
               aria-invalid={Boolean(errors.duration)}
               disabled={isSrd}
             />
-            <FieldError>{errors.duration}</FieldError>
+            <FieldError>{errorText("duration")}</FieldError>
           </div>
           <div className="flex items-end gap-3">
             <Checkbox
@@ -410,7 +440,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
                     return key ? t(key) : cls;
                   }}
                 />
-                <FieldError>{errors.classes}</FieldError>
+                <FieldError>{errorText("classes")}</FieldError>
               </>
             )}
           </div>
@@ -423,7 +453,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
               disabled={isSrd}
               onChange={(event) => update("description", event.target.value)}
             />
-            <FieldError>{errors.description}</FieldError>
+            <FieldError>{errorText("description")}</FieldError>
           </div>
           <div className="col-span-2">
             <Label htmlFor="cs-higher">{t("form.higherLevels")}</Label>
@@ -434,7 +464,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
               disabled={isSrd}
               onChange={(event) => update("higherLevels", event.target.value)}
             />
-            <FieldError>{errors.higherLevels}</FieldError>
+            <FieldError>{errorText("higherLevels")}</FieldError>
           </div>
         </div>
       </DialogContent>

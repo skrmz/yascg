@@ -12,13 +12,20 @@ import {
 } from "@/domain/deck";
 import type { CardFitMode, SpellSource } from "@/domain/spells";
 import { newEntryId } from "@/domain/ids";
+import { AppError, message } from "@/locales/messages.ts";
 
-export class DeckConflictError extends Error {
+export class DeckConflictError extends AppError {
   constructor(
     readonly expectedRevision: number,
     readonly actualRevision: number,
   ) {
-    super(`Active deck revision changed (expected ${expectedRevision}, found ${actualRevision}).`);
+    super(
+      message("error.deckConflict", {
+        expected: expectedRevision,
+        actual: actualRevision,
+      }),
+      `Active deck revision changed (expected ${expectedRevision}, found ${actualRevision}).`,
+    );
     this.name = "DeckConflictError";
   }
 }

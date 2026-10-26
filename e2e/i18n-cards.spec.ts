@@ -1,9 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function switchLanguage(page: Page, option: RegExp) {
-  await page.getByRole("button", { name: /Spell data language/ }).click();
+  await page.getByRole("button", { name: /Spell data language|Sprache der Zauberdaten/ }).click();
   await page
-    .getByRole("listbox", { name: "Spell data languages" })
+    .getByRole("listbox", { name: /Spell data languages|Sprachen der Zauberdaten/ })
     .getByRole("option", { name: option })
     .click();
 }
@@ -18,7 +18,7 @@ async function selectFireball(page: Page) {
 async function layoutState(page: Page) {
   return {
     cards: await page.locator(".card-preview-page").count(),
-    status: (await page.getByText(/physical card/).textContent()) ?? "",
+    status: (await page.getByText(/physical card|physische Karte/).textContent()) ?? "",
     truncated: await page.getByText(/Content was truncated/).count(),
     overflow: await page.getByText(/exceeds the \d+-card continuation limit/).count(),
   };
@@ -51,7 +51,7 @@ test("cycles card terminology EN to DE and back without stale fit or overflow", 
   // German card text is longer than English and may auto-shrink further; the
   // physical card count and fit guarantees must still hold.
   expect(german.cards).toBe(english.cards);
-  expect(german.status).toMatch(/^\d+ physical cards? at \d+(?:\.\d+)?pt\.$/);
+  expect(german.status).toMatch(/^\d+ physische Karten? bei \d+(?:\.\d+)? pt\.$/);
   expect(german.truncated).toBe(0);
   expect(german.overflow).toBe(0);
 
@@ -79,7 +79,8 @@ test("localizes damage-type badges and falls back to the raw English value", asy
   await expect(englishDialog).toHaveCount(0);
 
   await switchLanguage(page, /Deutsch/);
-  await details.getByRole("button", { name: "Details anzeigen" }).click();
+  const germanDetails = page.getByRole("region", { name: "Zaubervorschau und Details" });
+  await germanDetails.getByRole("button", { name: "Details anzeigen" }).click();
   const germanDialog = page.getByRole("dialog");
   await expect(germanDialog.getByText("Feuer", { exact: true })).toBeVisible();
   await expect(germanDialog.getByText("Fire", { exact: true })).toHaveCount(0);

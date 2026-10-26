@@ -11,14 +11,20 @@ import {
 import { cloneEntries } from "./active-deck.ts";
 import { DeckConflictError } from "./active-deck.ts";
 import { newUuid } from "@/domain/ids";
+import { AppError, message } from "@/locales/messages.ts";
 
-export class SavedDeckConflictError extends Error {
+export class SavedDeckConflictError extends AppError {
   constructor(
     readonly savedDeckId: string,
     readonly expectedRevision: number,
     readonly actualRevision: number,
   ) {
     super(
+      message("error.savedDeckConflict", {
+        id: savedDeckId,
+        expected: expectedRevision,
+        actual: actualRevision,
+      }),
       `Saved deck "${savedDeckId}" revision changed (expected ${expectedRevision}, found ${actualRevision}).`,
     );
     this.name = "SavedDeckConflictError";
@@ -76,7 +82,7 @@ export async function saveNewDeck(
 ): Promise<SavedDeckWriteResult> {
   const trimmed = name.trim();
   if (trimmed.length === 0 || trimmed.length > 120) {
-    throw new Error("Deck name must be 1-120 characters.");
+    throw new AppError(message("error.deckNameLength"), "Deck name must be 1-120 characters.");
   }
   const id = newUuid();
   const now = Date.now();
@@ -106,7 +112,7 @@ export async function overwriteSavedDeck(options: {
 }): Promise<SavedDeckWriteResult> {
   const trimmed = options.name.trim();
   if (trimmed.length === 0 || trimmed.length > 120) {
-    throw new Error("Deck name must be 1-120 characters.");
+    throw new AppError(message("error.deckNameLength"), "Deck name must be 1-120 characters.");
   }
   return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
     const existing = await db.savedDecks.get(options.targetSavedId);
@@ -143,7 +149,12 @@ export async function loadSavedDeck(
   return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
     const saved = await db.savedDecks.get(savedId);
-    if (!saved) throw new Error(`Saved deck "${savedId}" was not found.`);
+    if (!saved) {
+      throw new AppError(
+        message("error.savedDeckMissing", { id: savedId }),
+        `Saved deck "${savedId}" was not found.`,
+      );
+    }
     const entries = dedupeDeckEntries(cloneEntries(saved.entries));
     const active: ActiveDeckRecord = {
       ...current,

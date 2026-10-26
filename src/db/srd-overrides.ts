@@ -5,6 +5,7 @@ import {
   type SrdOverrideInput,
   type SrdOverrideValidationContext,
 } from "@/domain/srd-overrides.ts";
+import { AppError, message } from "@/locales/messages.ts";
 
 export type { SrdOverrideInput, SrdOverrideValidationContext };
 
@@ -34,7 +35,12 @@ export async function putSrdOverride(
   context: SrdOverrideValidationContext,
 ): Promise<SrdSpellOverride | null> {
   const result = validateSrdOverride(input, context);
-  if (!result.ok) throw new Error(result.errors.join(" "));
+  if (!result.ok) {
+    throw new AppError(
+      message("error.srdOverrideInvalid"),
+      result.errors.map((descriptor) => descriptor.key).join(" "),
+    );
+  }
   const { value } = result;
   if (!value.verbalDescription && !value.somaticDescription) {
     await deleteSrdOverride(value.spellId, value.locale);

@@ -2,7 +2,7 @@
 
 Offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards. Browse the SRD 5.2.1 spell library in multiple languages, create custom spells, assemble one active deck, save and load named decks, and print 2.5in x 3.5in (63.5mm x 88.9mm) cards 9-up on US Letter or A4 paper. All data stays in your browser unless you export it as JSON.
 
-Specification: [`docs/specs/spell-card-generator-spec.md`](docs/specs/spell-card-generator-spec.md).
+Specification: [`docs/specs/MAIN-spec.md`](docs/specs/MAIN-spec.md).
 
 ## Attribution
 
@@ -26,7 +26,7 @@ Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells 
 
 ## Toolchain
 
-Requires **Node.js >= 24** and **pnpm v12+** with the unified **Vite+ (`vp`)** toolchain (Vite, Rolldown, Vitest, Oxlint, Oxfmt). Repository guidance lives in [`AGENTS.md`](AGENTS.md).
+Requires **Node.js >= 26** and **pnpm v12+** with the unified **Vite+ (`vp`)** toolchain (Vite, Rolldown, Vitest, Oxlint, Oxfmt). Repository guidance lives in [`AGENTS.md`](AGENTS.md).
 
 ```powershell
 pnpm install         # or: vp install
@@ -195,30 +195,40 @@ mechanism exists.
 
 ## Localization
 
-Spell-card terminology (card labels, metadata terms, school/class names, component
-letters, damage-type badges, the "Higher Levels" heading, and the custom-spell form) is
-localized with
-`react-i18next`, using English as the fallback and German as the second locale. The
+The complete application interface is localized with `react-i18next` in English and
+German, including navigation, library controls, deck management, print and import/export
+dialogs, confirmations, validation, toasts, status messages, and accessible names. The
 locale follows the existing **spell data language** selection (`en`/`de` in
-`src/data/spell-languages.json`); there is no separate UI-language control. Unknown
-codes (e.g. `fr` in tests) fall back to English.
+`src/data/spell-languages.json`); there is no separate UI-language control. English is
+the fallback for unknown codes. Switching languages updates the UI without a reload.
 
 - Catalogs are TypeScript modules under `src/locales/` (`en.ts`, `de.ts`) so no
-  `resolveJsonModule` is needed; `de` is checked for key parity via
-  `satisfies Translations`.
+  `resolveJsonModule` is needed. `de` is checked for key parity via
+  `satisfies Translations`; use complete sentences, interpolation, and
+  `_one`/`_other` plural keys rather than concatenating translated fragments.
 - School/class names, component letters, and damage-type names are localized at
   presentation time via `src/locales/labels.ts`; unknown damage types fall back to the
   raw stored value. Bundled and generated SRD datasets (`src/data/**`) are never
-  modified, and canonical mechanics/enums stay English.
+  modified, and canonical mechanics, filter values, paper identifiers, and persisted
+  data stay unchanged.
+- Runtime notices and errors are stored as typed descriptors from
+  `src/locales/messages.ts` and translated only at render time. Unexpected exception
+  text is logged to the console and replaced with a generic localized message. Import
+  validation may expose deliberately selected field paths and constraints within
+  localized framing, but never raw exception text.
 - The initial locale is seeded synchronously from the stored preference
-  (`spellCards.language`) before first paint, and card fitting re-measures on locale
-  change, so switching languages never leaves stale measurements.
-- Localized content containers carry a `lang` attribute; `document.documentElement.lang`
-  is intentionally left untouched.
+  (`spellCards.language`) before first paint. Initial data loading, unsupported
+  preferences, retry, and interactive switches keep the last committed language until a
+  new dataset is ready. `document.documentElement.lang` follows the resolved UI locale.
+- Bundled, unmodified SRD content carries its actual dataset language via
+  `resolveContentLanguage`; custom spells, imported content, and SRD overrides can mix
+  author languages and therefore omit a content `lang`. Card fitting re-measures on
+  locale change, so switching languages never leaves stale measurements.
 
-The spell details dialog, including its metadata, description, and close label, is localized with
-the selected spell-data language. Out of scope: app chrome, library filter dropdowns, the print
-dialog, deck pane, confirmation dialogs, and status/error messages remain English.
+Intentional exclusions: the YASCG product name, exact SRD legal attribution (rendered
+with `lang="en"`), manifest language endonyms, dataset-authored spell names and content,
+user-entered or persisted names/content, export filenames and identifiers, paper product
+names (US Letter / ISO A4), and technical diagnostics that are logged but not shown.
 
 ## Printing
 

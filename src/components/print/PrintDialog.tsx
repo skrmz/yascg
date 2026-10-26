@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { Printer } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
 import { LIMITS } from "@/domain/spells";
@@ -19,6 +20,7 @@ export function PrintDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { resolvedEntries, language, activeDeck } = useApp();
+  const { t } = useTranslation();
   const [paperSize, setPaperSize] = useState<PaperSize>("letter");
   const [cuttingBorders, setCuttingBorders] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -102,16 +104,18 @@ export function PrintDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          title="Print spell cards"
-          description="Cards are 2.5in x 3.5in (63.5mm x 88.9mm), 9 per sheet."
+          title={t("print.title")}
+          description={t("print.description")}
           footer={
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button disabled={!canPrint} onClick={startPrint}>
                 <Printer size={14} aria-hidden="true" />
-                Print {printCards.length > 0 ? `${printCards.length} card(s)` : ""}
+                {printCards.length > 0
+                  ? t("print.printCards", { count: printCards.length })
+                  : t("print.printAction")}
               </Button>
             </>
           }
@@ -119,9 +123,9 @@ export function PrintDialog({
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-sm">
-                Paper
+                {t("print.paper")}
                 <NativeSelect
-                  aria-label="Paper size"
+                  aria-label={t("print.paperSize")}
                   className="h-8 w-36"
                   value={paperSize}
                   onChange={(event) => setPaperSize(event.target.value as PaperSize)}
@@ -131,45 +135,43 @@ export function PrintDialog({
                 </NativeSelect>
               </label>
               <Checkbox
-                label="Cutting borders"
+                label={t("print.cuttingBorders")}
                 checked={cuttingBorders}
                 onChange={(event) => setCuttingBorders(event.target.checked)}
               />
             </div>
 
             <div className="rounded border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
-              <p className="font-semibold text-foreground">Print settings</p>
+              <p className="font-semibold text-foreground">{t("print.settings")}</p>
               <ul className="mt-1 list-disc pl-4">
-                <li>Scale: 100% / Actual Size — do not use “Fit to page”.</li>
-                <li>Margins: None or Minimum.</li>
-                <li>Disable browser headers and footers.</li>
-                <li>
-                  Hardware non-printable margins or driver scaling can still shift physical
-                  dimensions; verify with a test sheet.
-                </li>
+                <li>{t("print.scale")}</li>
+                <li>{t("print.margins")}</li>
+                <li>{t("print.headers")}</li>
+                <li>{t("print.hardware")}</li>
               </ul>
             </div>
 
             {blocked ? (
               <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
-                {overflowEntries.length} entr
-                {overflowEntries.length === 1 ? "y" : "ies"} exceed the{" "}
-                {LIMITS.CONTINUATION_CARDS_MAX}-card continuation limit and must be split or
-                shortened before printing.
+                {t("print.overflow", {
+                  count: overflowEntries.length,
+                  max: LIMITS.CONTINUATION_CARDS_MAX,
+                })}
               </p>
             ) : null}
 
             {omissionTotal > 0 ? (
               <div className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-xs text-amber-200">
                 <p>
-                  {unavailableCount} entr{unavailableCount === 1 ? "y" : "ies"} not available in{" "}
-                  {language} and {missingCount} missing reference
-                  {missingCount === 1 ? "" : "s"} will be omitted from printing. Deck entries are
-                  not deleted.
+                  {t("print.notAvailable", {
+                    count: unavailableCount,
+                    language,
+                  })}{" "}
+                  {t("print.missing", { count: missingCount })} {t("print.notDeleted")}
                 </p>
                 <div className="mt-2">
                   <Checkbox
-                    label="Omit these cards and continue"
+                    label={t("print.omitConfirm")}
                     checked={confirmed}
                     onChange={(event) => setConfirmed(event.target.checked)}
                   />
@@ -178,17 +180,22 @@ export function PrintDialog({
             ) : null}
 
             {!fits.ready && printCards.length > 0 ? (
-              <p className="text-xs text-muted-foreground">Preparing card layout…</p>
+              <p className="text-xs text-muted-foreground">{t("print.preparing")}</p>
             ) : null}
             {activeDeck && activeDeck.entries.length === 0 ? (
-              <p className="text-xs text-muted-foreground">The active deck is empty.</p>
+              <p className="text-xs text-muted-foreground">{t("print.emptyDeck")}</p>
             ) : null}
           </div>
         </DialogContent>
       </Dialog>
       {job
         ? createPortal(
-            <PrintSheets cards={job} paperSize={paperSize} cuttingBorders={cuttingBorders} />,
+            <PrintSheets
+              cards={job}
+              paperSize={paperSize}
+              cuttingBorders={cuttingBorders}
+              datasetLanguage={language}
+            />,
             document.body,
           )
         : null}
