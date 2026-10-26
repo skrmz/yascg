@@ -215,13 +215,30 @@ describe("migrateSource", () => {
 });
 
 describe("serializeMigrated", () => {
-  it("writes 2-space indented LF output with a trailing newline", () => {
+  it("writes 2-space indented LF output with compact short arrays", () => {
     const { content } = migrateSource([legacyAcidArrow], "srd-spells-2024.json");
     const text = serializeMigrated(content);
     expect(text.startsWith("[\n  {\n    ")).toBe(true);
     expect(text.endsWith("}\n]\n")).toBe(true);
     expect(text.includes("\r")).toBe(false);
+    expect(text).toContain('"classes": ["Wizard"]');
+    expect(text).toContain('"components": ["V", "S", "M"]');
     expect(JSON.parse(text)).toEqual(content);
+  });
+
+  it("wraps arrays that do not fit on one 80-column line", () => {
+    const text = serializeMigrated({
+      name: "Long list",
+      values: [
+        "Cleric: Life Domain",
+        "Cleric: Peace",
+        "Cleric: Solidarity (PSA)",
+        "Paladin: Oath of Devotion",
+        "Sorcerer: Clockwork Sorcery",
+      ],
+    });
+    expect(text).toContain('"values": [\n');
+    expect(text).toContain('  "values": [\n    "Cleric: Life Domain",');
   });
 
   it("is deterministic", () => {

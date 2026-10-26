@@ -233,9 +233,50 @@ export function migrateSource(raw: unknown, fileName: string): SourceMigration {
   return { fileName, content, changed: true, report };
 }
 
-/** Deterministic serialization: 2-space indent, LF line endings, trailing newline. */
+const SERIALIZE_WIDTH = 80;
+
+function serializedObject(value: Record<string, unknown>, indent: number): string {
+  const entries = Object.entries(value);
+  if (entries.length === 0) return "{}";
+  const padding = " ".repeat(indent + 2);
+  const body = entries
+    .map(([key, entry]) => {
+      const encodedKey = JSON.stringify(key);
+      return `${padding}${encodedKey}: ${serializedValue(entry, indent + 2, encodedKey.length + 2)}`;
+    })
+    .join(",\n");
+  return `{\n${body}\n${" ".repeat(indent)}}`;
+}
+
+function serializedArray(value: readonly unknown[], indent: number, prefixLength: number): string {
+  if (value.length === 0) return "[]";
+  const inline = `[${value.map((entry) => JSON.stringify(entry)).join(", ")}]`;
+  const fitsInline =
+    value.every((entry) => entry === null || typeof entry !== "object") &&
+    indent + prefixLength + inline.length <= SERIALIZE_WIDTH;
+  if (fitsInline) return inline;
+  const padding = " ".repeat(indent + 2);
+  const body = value
+    .map((entry) => `${padding}${serializedValue(entry, indent + 2, 0)}`)
+    .join(",\n");
+  return `[\n${body}\n${" ".repeat(indent)}]`;
+}
+
+function serializedValue(value: unknown, indent: number, prefixLength: number): string {
+  if (Array.isArray(value)) return serializedArray(value, indent, prefixLength);
+  if (value !== null && typeof value === "object") {
+    return serializedObject(value as Record<string, unknown>, indent);
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * Deterministic serialization matching the committed source format: 2-space
+ * indentation, LF line endings, trailing newline, and compact primitive arrays
+ * when they fit within 80 columns.
+ */
 export function serializeMigrated(content: unknown): string {
-  return `${JSON.stringify(content, null, 2)}\n`;
+  return `${serializedValue(content, 0, 0)}\n`;
 }
 
 function datasetBasenameFor(fileName: string): string | undefined {

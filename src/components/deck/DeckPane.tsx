@@ -93,8 +93,8 @@ export function DeckPane() {
   const repairTarget = librarySpells.find((spell) => spell.id === repairSpellId);
 
   return (
-    <section className="flex h-full min-h-0 flex-col" aria-label={t("deck.title")}>
-      <div className="space-y-2 border-b border-border p-3">
+    <section id="deck-panel" className="flex h-full min-h-0 flex-col" aria-label={t("deck.title")}>
+      <div id="deck-controls" className="space-y-2 border-b border-border p-3">
         <div className="flex items-center gap-2">
           <Label htmlFor="deck-name" className="sr-only">
             {t("deck.nameLabel")}
@@ -263,7 +263,7 @@ export function DeckPane() {
         </div>
       </div>
 
-      <div className="mt-2 flex min-h-0 flex-1 flex-col">
+      <div id="deck-entries-container" className="mt-2 flex min-h-0 flex-1 flex-col">
         <h2
           id="deck-entries-heading"
           className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
