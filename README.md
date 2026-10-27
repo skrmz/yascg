@@ -1,36 +1,29 @@
 # YASCG - Yet Another Spell Card Generator
 
-Offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards. Browse the SRD 5.2.1 spell library in multiple languages, create custom spells, assemble one active deck, save and load named decks, and print 2.5in x 3.5in (63.5mm x 88.9mm) cards 9-up on US Letter or A4 paper. All data stays in your browser unless you export it as JSON.
+Offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards. Browse the SRD 5.2.1
+spell library in multiple languages, create custom spells, assemble one active deck, save and
+load named decks, and print 2.5in x 3.5in (63.5mm x 88.9mm) cards 9-up on US Letter or A4
+paper. All data stays in your browser unless you export it as JSON.
 
-Specification: [`docs/specs/MAIN-spec.md`](docs/specs/MAIN-spec.md).
+## Features
 
-## Attribution
+- Browse and search the bundled SRD 5.2.1 library with advanced filters for level, class,
+  school, components, casting time, concentration, ritual, and source.
+- English and German bundled spell data, build-time translation support, and editable custom
+  spells with JSON import/export.
+- Keep one active deck and save or load named decks locally.
+- Preview spell cards, open full details, render safe Markdown, and print with auto-shrink or
+  multi-card continuation.
+- Work offline after the app shell and bundled data are cached, with the interface localized
+  in English or German alongside the spell data.
 
-This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/.
+## Getting started
 
-Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells are labeled `Custom`. No Wizards of the Coast logos or D&D trademarks are used.
-
-## Tech Stack
-
-- React 19 + TypeScript strict
-- Vite+ with `@vitejs/plugin-react`
-- Tailwind v4 (`@tailwindcss/vite`)
-- shadcn-style Radix primitives
-- Sonner notifications
-- Lucide icons
-- Dexie
-- Zod
-- Fuse.js,
-- `marked` token walker
-- i18next + react-i18next (spell-card terminology, EN/DE).
-
-## Toolchain
-
-Requires **Node.js >= 26** and **pnpm v12+** with the unified **Vite+ (`vp`)** toolchain (Vite, Rolldown, Vitest, Oxlint, Oxfmt). Repository guidance lives in [`AGENTS.md`](AGENTS.md).
+Local development requires **Node.js >= 26** and **pnpm v12+** with the unified
+**Vite+ (`vp`)** toolchain.
 
 ```powershell
 pnpm install         # or: vp install
-pnpm run normalize:srd
 pnpm run dev         # vp dev
 pnpm run check       # vp check  (lint, format, typecheck)
 pnpm run test        # vp test
@@ -40,205 +33,26 @@ pnpm exec playwright install chromium
 pnpm run test:e2e
 ```
 
-## Bundled data and normalization
+Open the local URL printed by the development server. Bundled SRD datasets are generated
+from `data/srd/` by `pnpm run normalize:srd`; `pnpm run build` runs that step automatically.
+The full toolchain workflow and architecture are documented in
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Contributor guidance lives in
+[AGENTS.md](AGENTS.md).
 
-Raw inputs live in `data/srd/`:
+## Usage
 
-- `srd-spells-2024.json` — canonical English input.
-- `srd-spells-2024_<LANG>.json` — optional translation inputs (`<LANG>` is a canonical
-  BCP 47 tag, e.g. `de`, `pt-BR`). New files are discovered automatically; there is no
-  language allowlist.
-
-Both use the canonical source shape: a bare JSON array of spells with a string `school`
-holding a canonical English school name, `classes` as canonical English class-name
-strings, `components` as `V`/`S`/`M` letters, `damage.damage_type` as a canonical
-lowercase slug, and an optional `subclasses` array of `"<Class>: <Subclass>"` identifiers.
-`damage.damage_at_slot_level` and `attack_type` are retained verbatim as raw-source
-metadata but are ignored by normalization. Non-dataset reference material (for example
-`srd-spells-2024_extended-props.json`) belongs in `data/reference/`, not `data/srd/`,
-because every `srd-spells-2024*` JSON file there is treated as an input.
-
-Bundled spells populate `subclasses` with canonical identifiers reconciled from
-`data/reference/srd-spells-2024_extended-props.json` (204 of 339 spells, 698 assignments).
-Only the 48 official 2024 subclasses (see `docs/subclasses.md`) are localized; reference-only
-subclasses are preserved verbatim and fall back to the English name, and Artificer subclasses
-are excluded and reported. See "Subclass reconciliation" below.
-
-`scripts/normalize-srd.ts` discovers inputs, normalizes them into the application
-`Spell` schema, cross-validates translations against the canonical English mechanics,
-and writes build artifacts to `src/data/` (served as Vite's `publicDir`):
-
-- `spells.srd.json` — canonical English dataset.
-- `spells.srd.<lang>.json` — one dataset per discovered language.
-- `spell-languages.json` — the static language manifest (`code`, `displayName`,
-  `dataset`).
-
-Stable IDs derive from the upstream `index` slug (`index: "acid-splash"` →
-`id: "srd-acid-splash"`) and are identical across every language. Translated text is
-preserved; language-independent mechanics are normalized to canonical values.
-
-### Source structure adapters
-
-- **Shared adapter** (`scripts/srd/shared-translation.ts` → `scripts/srd/english.ts`) handles
-  the canonical source shape and is used for English and every translation, including `de`.
-  There are no language-specific adapters, and the former German adapter and
-  `convert:german-srd` repair script have been removed.
-- Unsupported source structures fail the build with the offending filename and index
-  instead of being skipped.
-
-### Source format migration
-
-`scripts/migrate-srd-source-format.ts` is the one-time utility that converts a legacy
-5e-bits source (object `school.index`, `classes[].index`, object `damage.damage_type`,
-top-level `url`) into the canonical shape:
-
-```powershell
-pnpm exec tsx scripts/migrate-srd-source-format.ts           # dry run (default): report only
-pnpm exec tsx scripts/migrate-srd-source-format.ts --apply   # write the converted sources
-```
-
-- Options: `--input-dir <dir>` (default `data/srd`), `--files <a,b>` (default both
-  datasets), `--report <path>` (write the JSON report to a file).
-- It converts `school`, `classes[]` and `damage.damage_type` to canonical scalars, removes
-  the top-level `url`, preserves `damage.damage_at_slot_level` and `attack_type` verbatim,
-  validates any existing `subclasses` as canonical identifiers, and keeps entry/property
-  order with 2-space indentation, LF line endings and a trailing newline.
-- Before writing anything it verifies the converted sources normalize back to the committed
-  `src/data/spells.srd*.json` datasets; `--apply` stages and validates both outputs, then
-  swaps them in atomically with a backup that is restored if a later replacement fails.
-  Re-running on already-migrated files reports a no-op.
-- Legacy files reaching `normalize:srd` fail with a message pointing at this tool. The
-  utility is temporary and may be deleted once no legacy sources remain.
-
-### Subclass reconciliation
-
-`scripts/migrate-srd-subclasses.ts` is the one-time utility that populates the optional raw
-`subclasses` field from `data/reference/srd-spells-2024_extended-props.json`:
-
-```powershell
-pnpm exec tsx scripts/migrate-srd-subclasses.ts                                   # dry run (default)
-pnpm exec tsx scripts/migrate-srd-subclasses.ts --apply --report data/reference/subclass-reconciliation.json
-```
-
-- Options: `--input-dir <dir>` (default `data/srd`), `--reference <path>`, `--files <a,b>`
-  (default both datasets), `--report <path>`, `--apply`.
-- Reference identifiers are reconciled to canonical `"<Class>: <Subclass>"` identifiers via an
-  explicit alias table (no fuzzy matching), reference-only subclasses are preserved verbatim,
-  and Artificer subclasses are excluded and reported. English is matched by spell name (with
-  the single `Arance Hand` → `Arcane Hand` typo alias); the German source is matched by `index`
-  because its names are localized, so EN/DE assignments are identical.
-- It inserts `subclasses` immediately after `classes`, sorts identifiers, omits empty lists, and
-  never touches any other field. Before writing it normalizes both sources in memory and asserts
-  every field **except** `subclasses` still matches the committed `src/data/spells.srd*.json`
-  datasets (mechanics unchanged), then writes atomically with backup/rollback. Re-running is a
-  no-op.
-- The committed report (`data/reference/subclass-reconciliation.json`) records the catalog
-  coverage, alias map, reference-only and excluded identifiers, unmatched names, dedup
-  collisions, and per-file population counts.
-
-### Drift protection
-
-`src/test/srd-dataset.test.ts` normalizes the checked-in `data/srd/` sources and asserts
-they reproduce the committed `src/data/spells.srd*.json` datasets (baseline read from the
-Git object store, so a local `pnpm run build` cannot mask a regression). Intentional source
-updates are reviewed through `git diff` on the raw source and the regenerated datasets.
-
-### Adding a translation
-
-1. Add `data/srd/srd-spells-2024_<LANG>.json` using the canonical source shape described
-   above. There is no separate adapter for `de`: localized free text is preserved while
-   school/class/damage/subclass mechanics use the canonical English identifiers.
-2. Run `pnpm run normalize:srd`. Partial coverage is valid; unknown IDs, duplicate
-   indices, malformed JSON, malformed subclass identifiers, or conflicting canonical
-   mechanics fail the build.
-3. Confirm the language appears in `src/data/spell-languages.json` and the UI.
-
-## Architecture
-
-- `src/domain/` — Zod schemas, types, limits, deck/baseline rules, ID rules.
-- `src/db/` — Dexie schema v3 (`customSpells`, `savedDecks`, singleton `activeDeck`,
-  `srdSpellOverrides`) with compare-and-swap revisions, deck-entry normalization, and
-  advisory `BroadcastChannel` notifications.
-- `src/services/data/` — manifest/dataset loading, language preference, search and
-  filters, and deck reference resolution.
-- `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), React
-  renderer, and deterministic AST splitting/pagination.
-- `src/cards/` — card chrome plus hidden-card measurement, `document.fonts.ready`
-  gating, single-card auto-shrink (8.5pt → 6pt) that truncates at the 6pt floor with a
-  measured trailing ellipsis, and multi-card pagination with heading-orphan
-  prevention. Continuation cards use a compact header with a localized
-  `contd.`/`fortgesetzt` label and omit repeated metadata to maximize body space.
-- `src/components/details/` — card-preview-first details pane, on-demand spell details
-  dialog with full metadata and canonical description, and card actions menus (ellipsis
-  dropdown plus right-click context menu) backed by the existing edit flow.
-- `src/print/` — strict physical print CSS and 3x3 sheet rendering.
-- `src/io/` — JSON export/import with collision review and atomic commits. Custom-spell
-  payloads are version `1.1.0` (they may carry SRD component-text overrides); deck
-  payloads remain version `1.0.0`.
-- `src/pwa/` — service-worker registration and Cache Storage verification.
-- `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE
-  spell-card terminology catalogs.
-- `src/state/`, `src/components/`, `src/ui/` — application state and UI.
-
-## Deck rules
-
-A deck contains at most one entry per unique spell ID, regardless of how the spell is added.
-Individual add attempts for a spell already in the active deck show a bottom-right Sonner
-notification and leave the deck unchanged. **Append all** adds only spells not already
+Browse the library, open a spell for details, and add spells to the **Active Deck**. Create
+custom spells from the library and edit them from the details view. The Active Deck pane
+manages the single active deck, saved decks, and JSON import/export for custom spells and
+decks. Decks contain at most one entry per spell; **Append all** skips spells that are already
 present and reports how many were added and skipped.
 
-Deck imports replace the active deck and deduplicate imported entries by spell ID, keeping
-the first occurrence and preserving the relative order of retained entries. The import
-summary reports how many duplicates were removed. Loading a saved deck and upgrading an
-existing database also normalize duplicate entries; no print-quantity or multiple-copy
-mechanism exists.
+### Printing
 
-## Localization
-
-The complete application interface is localized with `react-i18next` in English and
-German, including navigation, library controls, deck management, print and import/export
-dialogs, confirmations, validation, toasts, status messages, and accessible names. The
-locale follows the existing **spell data language** selection (`en`/`de` in
-`src/data/spell-languages.json`); there is no separate UI-language control. English is
-the fallback for unknown codes. Switching languages updates the UI without a reload.
-
-- Catalogs are TypeScript modules under `src/locales/` (`en.ts`, `de.ts`) so no
-  `resolveJsonModule` is needed. `de` is checked for key parity via
-  `satisfies Translations`; use complete sentences, interpolation, and
-  `_one`/`_other` plural keys rather than concatenating translated fragments.
-- School/class names, component letters, and damage-type names are localized at
-  presentation time via `src/locales/labels.ts`; unknown damage types fall back to the
-  raw stored value. Bundled and generated SRD datasets (`src/data/**`) are never
-  modified, and canonical mechanics, filter values, paper identifiers, and persisted
-  data stay unchanged.
-- Runtime notices and errors are stored as typed descriptors from
-  `src/locales/messages.ts` and translated only at render time. Unexpected exception
-  text is logged to the console and replaced with a generic localized message. Import
-  validation may expose deliberately selected field paths and constraints within
-  localized framing, but never raw exception text.
-- The initial locale is seeded synchronously from the stored preference
-  (`spellCards.language`) before first paint. Initial data loading, unsupported
-  preferences, retry, and interactive switches keep the last committed language until a
-  new dataset is ready. `document.documentElement.lang` follows the resolved UI locale.
-- Bundled, unmodified SRD content carries its actual dataset language via
-  `resolveContentLanguage`; custom spells, imported content, and SRD overrides can mix
-  author languages and therefore omit a content `lang`. Card fitting re-measures on
-  locale change, so switching languages never leaves stale measurements.
-
-Intentional exclusions: the YASCG product name, exact SRD legal attribution (rendered
-with `lang="en"`), manifest language endonyms, dataset-authored spell names and content,
-user-entered or persisted names/content, export filenames and identifiers, paper product
-names (US Letter / ISO A4), and technical diagnostics that are logged but not shown.
-
-## Printing
-
-Open **Print** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per sheet on a
-centered 7.5in x 10.5in grid.
-
-In **Multi-Card** mode, the first card keeps the full header and metadata block.
-Continuation cards keep the card header with a localized `contd.`/`fortgesetzt` label,
-omit the repeated metadata, and use the extra space for description text; pagination is
-measured against these continuation layouts so preview and print match.
+Open **Print** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per sheet on a centered
+7.5in x 10.5in grid. In **Multi-Card** mode, the first card keeps the full header and
+metadata block; continuation cards use a compact header with a localized
+`contd.`/`fortgesetzt` label and omit repeated metadata so more description fits.
 
 Before printing, configure your browser/printer:
 
@@ -247,35 +61,67 @@ Before printing, configure your browser/printer:
 - Margins: **None** or **Minimum**.
 - Disable browser **headers and footers**.
 
-Cards whose spell body is not available in the selected language, or whose reference is
-missing, are omitted from printing without changing the deck; separate counts are shown
-and confirmation is required. Entries that would exceed the 100-continuation-card limit
-block printing with an actionable error.
+Cards whose spell body is unavailable in the selected language, or whose reference is
+missing, are omitted from printing without changing the deck; the app shows separate counts
+and asks for confirmation. Entries that would exceed the 100-continuation-card limit block
+printing with an actionable error.
 
-Exact physical sizing depends partly on hardware non-printable margins and driver
-scaling. Verify with a test sheet and measure the printed grid; deviations outside the
-±1mm tolerance should be investigated rather than "fixed" with CSS scaling.
+Exact physical sizing depends partly on hardware non-printable margins and driver scaling.
+Verify with a test sheet and measure the printed grid; deviations outside the ±1mm tolerance
+should be investigated rather than "fixed" with CSS scaling.
 
-## Offline behavior
+## Technology stack
 
-`vite-plugin-pwa` precaches the app shell, JS/CSS, local fonts, the language manifest,
-and every bundled dataset as one versioned release. The header shows **Setting up
-offline access** until Cache Storage verifiably contains every required asset, then
-**Offline ready**. Failures show **Offline setup incomplete — Retry**. Language
-switching after precache performs no network requests.
+- React 19 + TypeScript (strict) on Vite+ with `@vitejs/plugin-react`, Tailwind v4
+  (`@tailwindcss/vite`), and shadcn-style Radix primitives.
+- Sonner notifications, Lucide icons, Dexie (IndexedDB), Zod, Fuse.js, and a safe `marked`
+  token walker.
+- i18next + react-i18next for English/German presentation; `vite-plugin-pwa` for offline
+  caching.
 
-IndexedDB is not guaranteed permanent. If local storage is unavailable or quota is
-exceeded, an actionable banner appears; export custom spells and decks as JSON to keep
-a backup.
+## Offline behavior and data storage
+
+The app precaches its shell, scripts, styles, local fonts, language manifest, and every
+bundled dataset as one versioned release. The header shows **Setting up offline access**
+until Cache Storage verifiably contains every required asset, then **Offline ready**.
+Failures show **Offline setup incomplete — Retry**. Language switching after precache
+performs no network requests.
+
+Spells, decks, and local SRD notes are stored in the browser's IndexedDB; the language
+preference is stored separately in `localStorage`. IndexedDB is not guaranteed permanent. If
+local storage is unavailable or quota is exceeded, the app shows an actionable banner —
+export custom spells and decks as JSON to keep a backup.
 
 ## Limitations
 
 - Bundled spells are SRD 5.2.1 only; no non-SRD material is included.
-- Verbal/somatic notes added to an SRD spell are stored locally, scoped to that spell
-  **and** the current language, and never modify the bundled SRD data. An edited SRD spell
-  is marked `*` on its source badge; **Reset to original** removes only that spell/language
-  note. These notes are included only in custom-spell exports (`1.1.0`) and are not part of
-  deck exports (`1.0.0`).
+- Verbal/somatic notes added to an SRD spell are stored locally, scoped to that spell **and**
+  the current language, and never modify the bundled SRD data. An edited SRD spell is marked
+  `*` on its source badge; **Reset to original** removes only that local note. These notes
+  are included only in custom-spell exports (`1.1.0`) and are not part of deck exports
+  (`1.0.0`).
 - No accounts, cloud sync, backend, PDF engine, card backs, or third-party formats.
-- Print geometry is verified in Chromium; Firefox/Safari and physical printers may
-  differ and should be validated against the documented settings.
+- Print geometry is verified in Chromium; Firefox/Safari and physical printers may differ
+  and should be validated against the documented settings.
+
+## Attribution and licensing
+
+This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by
+Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is
+licensed under the Creative Commons Attribution 4.0 International License, available at
+https://creativecommons.org/licenses/by/4.0/.
+
+Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells are labeled
+`Custom`. No Wizards of the Coast logos or D&D trademarks are used.
+
+## Documentation
+
+- [Development guide](docs/DEVELOPMENT.md) — toolchain, architecture, SRD maintenance,
+  localization, and technical printing/offline details.
+- [SRD data pipeline](docs/srd-data-pipeline.md) — source format, normalization, migrations,
+  and the translation workflow.
+- [Custom spell import guide](docs/custom-spell-import-guide.md) — JSON format and import
+  behavior.
+- [Official subclass catalog](docs/subclasses.md) — the canonical 2024 subclass list.
+- [Product specification](docs/specs/MAIN-spec.md).
+- [Agent and contributor guidance](AGENTS.md).

@@ -50,6 +50,7 @@ release. Add a tool name to select part of the graph. For example, run
 
 Consult these files only when relevant to the task:
 
-- `README.md` — setup, operational workflows, printing, and source-update procedures.
+- `README.md` — project overview, features, local development, usage, printing, and licensing.
+- `docs/DEVELOPMENT.md` — toolchain, architecture, deck rules, localization, technical printing/offline details, and SRD maintenance workflows.
 - `docs/srd-data-pipeline.md` — raw SRD source shape, normalization, translations, and the legacy-format migration workflow.
 - `scripts/normalize-srd.ts` — SRD normalization implementation.
