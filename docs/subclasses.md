@@ -101,7 +101,7 @@ Here are the 48 official subclasses (from the DnD 5.5e 2024 player's handbook) g
 
 ## Magier (Wizard)
 
--   Abjurer → Bannzauberer
--   Diviner → Wahrsager
+-   Abjurer → Bannmagier
+-   Diviner → Seher
 -   Evoker → Hervorrufer  
 -   Illusionist → Illusionist
