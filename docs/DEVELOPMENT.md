@@ -22,7 +22,9 @@ command.
 | `pnpm run check` (`vp check`) | Format, lint, and type-check. |
 | `pnpm run test` (`vp test`) | Run unit and integration tests. |
 | `pnpm run build` | Run `normalize:srd`, then `vp build`. |
-| `pnpm run preview` (`vp preview`) | Preview the production build. |
+| `pnpm run preview` (`vp preview`) | Preview the production build in the local Workers runtime. |
+| `pnpm run deploy` | Build, then `wrangler deploy` to Cloudflare Workers. |
+| `pnpm exec wrangler deploy --dry-run` | Validate the Wrangler configuration and build output without uploading. |
 | `pnpm exec playwright install chromium` | Install the Chromium browser for E2E tests. |
 | `pnpm run test:e2e` | Run the Playwright end-to-end tests. |
 
@@ -33,6 +35,52 @@ is maintained in [AGENTS.md](../AGENTS.md).
 Generated datasets under `src/data/` are committed build artifacts. Vite serves `src/data/`
 as its `publicDir`; do not hand-edit generated SRD datasets or bypass normalization
 validation.
+
+## Cloudflare Workers deployment
+
+The app is a pure client-side React SPA with no server API, so it deploys to
+**Cloudflare Workers with Static Assets** (not Pages, and not an SSR framework). The setup is
+the static-SPA variant in the
+[Cloudflare deployment guide](cloudflare-deployment-guide.md#a-static-react-spa):
+
+- `wrangler.jsonc` (repository root) is the input configuration. `name` must stay `yascg`,
+  and `assets.not_found_handling` is `single-page-application` so unknown routes fall back to
+  `index.html` for the PWA and direct links. Do not set `assets.directory`; the Cloudflare
+  Vite plugin fills it from the client build.
+- `vite.config.ts` registers `cloudflare()` after the framework and CSS plugins. The plugin
+  runs both `vp dev` and `vp preview` in the local `workerd` runtime so routing, headers, and
+  asset serving match production. It is intentionally omitted in Vitest's `test` mode:
+  Vitest cannot attach a server to the extra Vite environments the plugin creates.
+- `vp build` writes the client build, the generated `wrangler.json` snapshot, and
+  `.assetsignore` to `dist/`, plus `.wrangler/deploy/config.json` so `wrangler deploy` from
+  the repository root uses the build output. Never edit files in `dist/` or `.wrangler/`;
+  they are generated and Git-ignored.
+- `pnpm-workspace.yaml` allowlists the `workerd` build script. `package.json` pins pnpm with
+  an exact `packageManager` entry because the Workers Builds image ships an older pnpm that
+  predates `allowBuilds`.
+- `compatibility_date` is a deliberate calendar date, not a version. Keep it at or below the
+  newest date supported by the installed `workerd` binary (currently `2026-10-26`); a newer
+  date makes `pnpm run preview` and E2E fail locally. Move it forward only after updating
+  Wrangler and re-running the preview/E2E checks, never automatically on every deploy.
+
+Local verification and deployment:
+
+```powershell
+pnpm run build
+pnpm exec wrangler deploy --dry-run
+pnpm run preview
+pnpm run test:e2e
+pnpm run deploy
+```
+
+For Cloudflare's Git integration (Workers Builds), use build command `pnpm run build` and
+deploy command `pnpm exec wrangler deploy` (or `npx wrangler deploy`); the deploy command
+intentionally does not rebuild because Workers Builds already ran the build step. Root
+directory is `/`, the Worker name must match `wrangler.jsonc` (`yascg`), and the production
+branch is `main`. Preview builds are enabled per branch settings. No API tokens or secrets are
+needed: the deployment is fully static, and no secret may be placed in public `VITE_*`
+variables. The service worker and bundled datasets are ordinary static assets; a new build
+publishes new hashed files and the PWA update flow prompts before reloading.
 
 ## Architecture
 

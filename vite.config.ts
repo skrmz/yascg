@@ -2,9 +2,10 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite-plus";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { cloudflare } from "@cloudflare/vite-plugin";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   staged: {
     "*": "vp check --fix",
   },
@@ -27,6 +28,9 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // The Cloudflare plugin creates extra Vite environments, which Vitest
+    // cannot attach while collecting the unit test suite.
+    ...(mode === "test" ? [] : [cloudflare()]),
     VitePWA({
       registerType: "prompt",
       injectRegister: false,
@@ -87,4 +91,4 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     restoreMocks: true,
   },
-});
+}));

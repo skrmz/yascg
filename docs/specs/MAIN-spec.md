@@ -38,6 +38,7 @@ Do not display Wizards of the Coast logos or D&D trademarks. Label custom spells
 ## 3. Technology and Architecture
 
 - **Runtime/toolchain:** Node.js >= 24, pnpm v12+, React, TypeScript (strict), and the unified Vite+ (`vp`) toolchain. Repository-level implementation guidance in `AGENTS.md` is normative for agent-assisted work unless it conflicts with this specification.
+- **Hosting:** Deploy the static SPA to Cloudflare Workers with Static Assets using `@cloudflare/vite-plugin` and Wrangler. The committed `wrangler.jsonc` sets the Worker name and `assets.not_found_handling: "single-page-application"` for client-side routes; there is no server API, SSR entry point, or backend runtime. `vite build` emits the client build plus the Wrangler output configuration, and Wrangler deploys that build output. The Cloudflare plugin is excluded from Vitest's `test` mode.
 - **Offline:** `vite-plugin-pwa` / Workbox precache of application shell, JS/CSS, the generated language manifest, every bundled language dataset, and required local fonts, including the self-hosted Latin-subset card fonts used for titles and body copy.
 - **Persistence:** Dexie.js (IndexedDB) stores `customSpells`, `savedDecks`, and singleton `activeDeck` state. Store the language preference separately (for example `localStorage`), never in deck or spell records. Failed preference storage does not block an in-memory language selection.
 - **Validation:** Zod for stored records, imported JSON, and normalized SRD data.
@@ -284,6 +285,7 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 - First-load readiness means required assets, the language manifest, and **every** bundled language dataset are available together in the service-worker cache. Until then, show **Setting up offline access**; if installation/precache fails, show **Offline setup incomplete — Retry** and explain that offline use is not yet guaranteed. The online app may remain usable while caching completes. Retry requests a fresh cache/install attempt; never claim offline-ready based only on service-worker registration.
 - Cache the manifest and all corresponding datasets as a coherent versioned release, never advertising mixed-version or absent assets as offline-ready. Language switching after full precache must work without network access.
 - Card typography assets are self-hosted WOFF2 files included in the precache release. Offline card preview, measurement, and printing must use those local faces; Google Fonts is not required for card rendering.
+- Production hosting is static: Cloudflare serves the built client assets and the service worker over HTTPS, and all user data remains in the browser. Deployment must not introduce server-side storage, API endpoints, or secrets, and public `VITE_*` variables must never contain secrets. The SPA fallback must not intercept or alter static asset paths, and the PWA service worker and precached datasets must deploy as ordinary immutable static files.
 - Restore the saved language preference only if its tag occurs in the current manifest; otherwise use English. If a previously selected language was removed, visibly explain the fallback to English and clear/update the stale preference without changing any deck. If a dataset cannot be loaded/validated despite being listed, show an error and offer retry; retain the current working language where possible, or visibly fall back to English if necessary. Never silently show English spell bodies under a different language selection. If preference persistence fails, keep the in-memory selection and indicate that it may not survive reload.
 - Use existing keyboard, label, focus and modal accessibility rules for the language dropdown and confirmation. Apply the same untrusted-JSON/Markdown sanitation and Unicode-safe rendering rules to every language.
 - Version caches; prompt when an update is ready and reload cleanly to avoid mixed-version assets. Do not erase IndexedDB during app updates.
@@ -325,6 +327,7 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 27. Spell-card titles use Vollkorn 700 with natural capitalization, and card body/rules/stats use Alegreya Sans 500 with the specified fallbacks; application chrome remains on Karla, Cormorant Garamond, and IBM Plex Mono.
 28. Required card fonts are explicitly loaded and verified before measurement and `window.print()`; long titles wrap without clipping, and card text uses near-black `#111`, weight 500, line-height 1.28, and `0.01em` tracking without changing card dimensions or causing overflow in previously valid cards.
 29. The Preview & Details pane defaults to card previews without a duplicate metadata/description pane; the full canonical metadata and description open on demand from the persistent header control, the accessible actions dropdown, and the preview context menu, and the details dialog stays current with the selected spell and closes on selection change.
+30. The production build deploys to Cloudflare Workers Static Assets: `wrangler.jsonc` names the Worker and enables the single-page-application fallback, `pnpm run build` produces the client build and Wrangler output configuration, `wrangler deploy --dry-run` succeeds, and preview/E2E runs exercise the built app in the Workers runtime with the PWA and client routes intact. The `compatibility_date` stays at or below the installed `workerd` support date.
 
 ## 13. Implementation Plan
 
@@ -336,6 +339,7 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 6. Implement `1.0.0` JSON import/export, unknown-version safe fallback, collision/remapping review, limits, missing-reference repair, and atomic validation.
 7. Implement Letter/A4 print layout, explicit card-font readiness, pre-print guidance, and cross-browser verification.
 8. Configure PWA cache/update lifecycle for all language assets; test offline behavior, accessibility, storage/schema failures, two-tab concurrency, and language compatibility.
+9. Configure Cloudflare Workers Static Assets (Wrangler input configuration, Cloudflare Vite plugin, pinned pnpm, allowlisted `workerd` build), verify build output with a deploy dry run and Workers-runtime preview/E2E, and document the Workers Builds settings.
 
 ## 14. Post-v1.0.0
 
@@ -407,6 +411,7 @@ Runtime: **Node.js >= 24** with **pnpm v12+**. Use the unified **Vite+ (`vp`)** 
     "normalize:srd": "tsx scripts/normalize-srd.ts",
     "build": "pnpm run normalize:srd && vp build",
     "preview": "vp preview",
+    "deploy": "pnpm run build && wrangler deploy",
     "test": "vp test",
     "check": "vp check"
   }
@@ -414,3 +419,5 @@ Runtime: **Node.js >= 24** with **pnpm v12+**. Use the unified **Vite+ (`vp`)** 
 ```
 
 `vp check` is the single verification command for linting, formatting, and typechecking, using oxlint, oxfmt, and `tsc` through the configured Vite+ workflow.
+
+`pnpm run deploy` is for local one-step deployment. Cloudflare Workers Builds runs `pnpm run build` and `pnpm exec wrangler deploy` as separate build and deploy commands, so the deploy command itself must not rebuild.

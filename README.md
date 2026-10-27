@@ -39,6 +39,26 @@ The full toolchain workflow and architecture are documented in
 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Contributor guidance lives in
 [AGENTS.md](AGENTS.md).
 
+## Deployment
+
+The app is a static SPA and deploys to **Cloudflare Workers with Static Assets** using the
+Cloudflare Vite plugin and Wrangler. `wrangler.jsonc` defines the `yascg` Worker and the
+single-page-application fallback; no server API or secrets are involved.
+
+```powershell
+pnpm run build
+pnpm exec wrangler deploy --dry-run
+pnpm run preview      # Workers runtime preview
+pnpm run deploy       # build + wrangler deploy
+```
+
+For Cloudflare's Git integration, set the build command to `pnpm run build` and the deploy
+command to `pnpm exec wrangler deploy`, with `yascg` as the Worker name and `/` as the root
+directory. `pnpm preview` and the E2E suite also run against the local Workers runtime.
+Deployment details, the Workers Builds settings, and the `compatibility_date` rule are in
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#cloudflare-workers-deployment) and the
+[Cloudflare deployment guide](docs/cloudflare-deployment-guide.md).
+
 ## Usage
 
 Browse the library, open a spell for details, and add spells to the **Active Deck**. Create
@@ -78,6 +98,8 @@ should be investigated rather than "fixed" with CSS scaling.
   token walker.
 - i18next + react-i18next for English/German presentation; `vite-plugin-pwa` for offline
   caching.
+- Cloudflare Workers Static Assets via `@cloudflare/vite-plugin` and Wrangler for production
+  hosting.
 
 ## Offline behavior and data storage
 
@@ -117,7 +139,9 @@ Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells 
 ## Documentation
 
 - [Development guide](docs/DEVELOPMENT.md) — toolchain, architecture, SRD maintenance,
-  localization, and technical printing/offline details.
+  localization, technical printing/offline details, and Cloudflare deployment.
+- [Cloudflare deployment guide](docs/cloudflare-deployment-guide.md) — Workers setup,
+  Workers Builds settings, and framework-specific notes.
 - [SRD data pipeline](docs/srd-data-pipeline.md) — source format, normalization, migrations,
   and the translation workflow.
 - [Custom spell import guide](docs/custom-spell-import-guide.md) — JSON format and import

@@ -8,6 +8,7 @@
     "normalize:srd": "tsx scripts/normalize-srd.ts",
     "build": "pnpm run normalize:srd && vp build",
     "preview": "vp preview",
+    "deploy": "pnpm run build && wrangler deploy",
     "test": "vp test",
     "check": "vp check",
     "test:e2e": "playwright test"
@@ -45,6 +46,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.65.0",
     "@playwright/test": "^1.64.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -58,7 +60,8 @@
     "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "catalog:",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "wrangler": "^4.153.0"
   },
   "devEngines": {
     "packageManager": {
@@ -66,5 +69,6 @@
       "version": "12.11.2",
       "onFail": "download"
     }
-  }
+  },
+  "packageManager": "pnpm@12.11.2"
 }

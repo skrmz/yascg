@@ -45,12 +45,26 @@ release. Add a tool name to select part of the graph. For example, run
   canonical enums for translation. The UI locale follows the spell data language.
 - Run `vp check` and `vp test` after relevant changes.
 - Run normalization and affected E2E tests when changing data processing or application behavior.
+- Keep the app deployable as a static Cloudflare Worker: `wrangler.jsonc` is the input
+  configuration, production is assets-only with the SPA fallback, and no server API,
+  backend runtime, or secrets may be introduced. Do not set `assets.directory`; the
+  Cloudflare Vite plugin fills it from the build output. `pnpm run build` emits the
+  generated `dist/wrangler.json` consumed by `wrangler deploy`; never edit `dist/` or
+  `.wrangler/`.
+- Preserve the Cloudflare Vite plugin's exclusion in Vitest `test` mode, the `workerd`
+  build allowlist, and the exact `packageManager` pin. `compatibility_date` must not exceed
+  the installed `workerd` support date; move it forward deliberately and re-run
+  `pnpm run preview`/E2E instead of bumping it on every deploy.
+- Verify deployment changes with `pnpm run build`,
+  `pnpm exec wrangler deploy --dry-run`, and `pnpm run preview` (E2E runs against this
+  Workers-runtime preview).
 
 ## Task-specific documentation
 
 Consult these files only when relevant to the task:
 
-- `README.md` — project overview, features, local development, usage, printing, and licensing.
-- `docs/DEVELOPMENT.md` — toolchain, architecture, deck rules, localization, technical printing/offline details, and SRD maintenance workflows.
+- `README.md` — project overview, features, local development, deployment, usage, printing, and licensing.
+- `docs/DEVELOPMENT.md` — toolchain, architecture, deck rules, localization, technical printing/offline details, Cloudflare deployment, and SRD maintenance workflows.
+- `docs/cloudflare-deployment-guide.md` — Workers Static Assets setup, Workers Builds dashboard settings, and framework-specific notes.
 - `docs/srd-data-pipeline.md` — raw SRD source shape, normalization, translations, and the legacy-format migration workflow.
 - `scripts/normalize-srd.ts` — SRD normalization implementation.
