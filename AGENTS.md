@@ -59,12 +59,36 @@ release. Add a tool name to select part of the graph. For example, run
   `pnpm exec wrangler deploy --dry-run`, and `pnpm run preview` (E2E runs against this
   Workers-runtime preview).
 
+## Documentation ownership
+
+Keep one authoritative location for each change-prone fact; link elsewhere instead of copying
+whole sections.
+
+| Change | Authoritative location | Keep elsewhere to a link/summary |
+| --- | --- | --- |
+| User-visible behavior, invariants, edge cases, acceptance | `docs/specs/MAIN-spec.md` | README user help, DEVELOPMENT implementation notes |
+| Product overview, features, quick start, usage, printing settings, backup guidance, attribution | `README.md` | MAIN-spec may state the requirement |
+| Commands, module map, implementation details, debugging, tests | `docs/DEVELOPMENT.md` | README quick start only |
+| Raw SRD shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection | `docs/srd-data-pipeline.md` | DEVELOPMENT integration note only |
+| Cloudflare config, Workers Builds, deploy operations, `compatibility_date` | `docs/cloudflare-deployment-guide.md` | MAIN-spec stable hosting constraints; DEVELOPMENT integration gotchas |
+| Custom-spell JSON format, examples, collisions, SRD override import/export | `docs/custom-spell-import-guide.md` | MAIN-spec §8 semantics |
+| Official 2024 subclass catalog | `docs/subclasses.md` | Link from pipeline/spec |
+| Agent workflow, review checklist, documentation policy | `AGENTS.md` | — |
+
+Do not duplicate command tables, package scripts, payload schemas, or full deployment
+procedures across documents. Update relative links and anchors when headings move. If a
+documentation change requires a config or code change, separate it and run `pnpm run check`,
+`pnpm run test`, and the relevant build/E2E checks.
+
 ## Task-specific documentation
 
 Consult these files only when relevant to the task:
 
-- `README.md` — project overview, features, local development, deployment, usage, printing, and licensing.
-- `docs/DEVELOPMENT.md` — toolchain, architecture, deck rules, localization, technical printing/offline details, and SRD maintenance workflows.
+- `README.md` — product overview, quick start, user usage, printing settings, backup, and licensing.
+- `docs/DEVELOPMENT.md` — toolchain, architecture, deck persistence implementation, localization internals, printing/offline implementation, and testing.
 - `docs/cloudflare-deployment-guide.md` — Workers Static Assets setup, Workers Builds dashboard settings, and framework-specific notes.
 - `docs/srd-data-pipeline.md` — raw SRD source shape, normalization, translations, and the legacy-format migration workflow.
+- `docs/specs/MAIN-spec.md` — current product behavior contract and verification matrix.
+- `docs/custom-spell-import-guide.md` — custom-spell JSON format and import behavior.
+- `docs/subclasses.md` — official subclass catalog.
 - `scripts/normalize-srd.ts` — SRD normalization implementation.

@@ -7,96 +7,78 @@ paper. All data stays in your browser unless you export it as JSON.
 
 ## Features
 
-- Browse and search the bundled SRD 5.2.1 library with advanced filters for level, class,
-  school, components, casting time, concentration, ritual, and source.
+- Browse and search the bundled SRD 5.2.1 library with filters for level, class, school,
+  components, casting time, concentration, ritual, and source.
 - English and German bundled spell data, build-time translation support, and editable custom
   spells with JSON import/export.
 - Keep one active deck and save or load named decks locally.
 - Preview spell cards, open full details, render safe Markdown, and print with auto-shrink or
   multi-card continuation.
-- Work offline after the app shell and bundled data are cached, with the interface localized
-  in English or German alongside the spell data.
+- Work offline after the app shell and bundled data are cached. The interface is localized in
+  English and German and follows the selected spell-data language; a language without a UI
+  catalog keeps its spell data and uses the English interface.
 
-## Getting started
+## Quick start
 
-Local development requires **Node.js >= 26** and **pnpm v12+** with the unified
-**Vite+ (`vp`)** toolchain.
-
-```powershell
-pnpm install         # or: vp install
-pnpm run dev         # vp dev
-pnpm run check       # vp check  (lint, format, typecheck)
-pnpm run test        # vp test
-pnpm run build       # normalize:srd + vp build
-pnpm run preview     # vp preview
-pnpm exec playwright install chromium
-pnpm run test:e2e
-```
-
-Open the local URL printed by the development server. Bundled SRD datasets are generated
-from `data/srd/` by `pnpm run normalize:srd`; `pnpm run build` runs that step automatically.
-The full toolchain workflow and architecture are documented in
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Contributor guidance lives in
-[AGENTS.md](AGENTS.md).
-
-## Deployment
-
-The app is a static SPA and deploys to **Cloudflare Workers with Static Assets** using the
-Cloudflare Vite plugin and Wrangler. `wrangler.jsonc` defines the `yascg` Worker and the
-single-page-application fallback; no server API or secrets are involved.
+Local development requires **Node.js 24.11+ (24 LTS) or 26 LTS** and **pnpm v12+** with the
+unified **Vite+ (`vp`)** toolchain.
 
 ```powershell
-pnpm run build
-pnpm exec wrangler deploy --dry-run
-pnpm run preview      # Workers runtime preview
-pnpm run deploy       # build + wrangler deploy
+pnpm install
+pnpm run dev
 ```
 
-For Cloudflare's Git integration, set the build command to `pnpm run build` and the deploy
-command to `pnpm exec wrangler deploy`, with `yascg` as the Worker name and `/` as the root
-directory. `pnpm preview` and the E2E suite also run against the local Workers runtime.
-Deployment details, the Workers Builds settings, and the `compatibility_date` rule are in
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#cloudflare-workers-deployment) and the
+Run `pnpm run check` and `pnpm run test` before submitting changes. The complete command
+reference, E2E setup, architecture, and testing workflow are in the
+[development guide](docs/DEVELOPMENT.md#toolchain-and-commands).
+
+Bundled SRD datasets are generated from `data/srd/` by `pnpm run normalize:srd`;
+`pnpm run build` runs that step automatically. Never edit generated files under `src/data/` by
+hand.
+
+Hosting is a static SPA on Cloudflare Workers Static Assets with the SPA fallback and no server
+API or secrets. Build, preview, Workers Builds, and `compatibility_date` operations are in the
 [Cloudflare deployment guide](docs/cloudflare-deployment-guide.md).
 
-## Usage
+## Using the app
 
 Browse the library, open a spell for details, and add spells to the **Active Deck**. Create
 custom spells from the library and edit them from the details view. Decks contain at most one
-entry per spell; **Append all** skips spells that are already present and reports how many were
-added and skipped.
+entry per spell; **Append all** skips spells already present and reports how many were added
+and skipped. **Replace deck** replaces the active entries after confirmation.
 
-The Active Deck is always persisted locally as you edit it; "unsaved" never means
-"unpersisted". Named snapshots are independent of the working deck:
+The active deck is always stored locally as you edit it; "unsaved" never means "unpersisted".
+Named snapshots are independent of the working deck:
 
 - Edit the active deck name inline. Enter or blur commits, Escape cancels.
-- **Save** updates the associated named snapshot. A deck without an associated snapshot opens
+- **Save** updates the associated named snapshot. A deck without an association opens
   **Save As…** instead.
 - **Save As…** in the deck actions menu always creates a new named snapshot, including from a
   blank workspace. Duplicate names are allowed.
 - **Open…** lists saved snapshots by name and update time; open one to replace the active deck,
-  or delete it from the same dialog. Opening while the active deck has unsaved changes asks
-  for confirmation.
+  or delete it from the same dialog. Opening while the active deck has unsaved changes asks for
+  confirmation.
 - **New deck** blanks the active workspace without deleting saved snapshots. **Clear entries**
   removes only the active entries and keeps the name and snapshot association.
 - The status label distinguishes **Saved**, **Unsaved changes**, **Not saved as a deck**, and
   **New deck**.
 
-**Import / export deck** in the deck actions menu exports the current active deck as
-unversioned JSON: its name, ordered spell references, and display settings. Spell bodies and
-SRD edits are not included; import replaces only the active deck and does not create or modify
-named snapshots or spell definitions. **Custom spell import/export** in the Library pane next
-to **Create custom spell** exports complete custom spell definitions and SRD component-text
-overrides (including your edited verbal/somatic notes). The two formats are separate: deck
-export is **not** a backup of custom spells or SRD overrides. For a complete backup, export
-custom spells first, then the deck.
+**Import / export deck** in the deck actions menu exports the current active deck as unversioned
+JSON: its name, ordered spell references, and display settings. Spell bodies and SRD edits are
+not included; import replaces only the active deck and does not create or modify named snapshots
+or spell definitions. **Custom spell import/export** in the Library pane next to **Create custom
+spell** exports complete custom spell definitions and SRD component-text overrides (including
+your edited verbal/somatic notes). The two formats are separate: deck export is **not** a backup
+of custom spells or SRD overrides. For a complete backup, export custom spells first, then the
+deck. The exact deck and import edge-case rules are in the
+[product specification](docs/specs/MAIN-spec.md#7-active-and-saved-decks).
 
-### Printing
+## Printing
 
 Open **Print** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per sheet on a centered
-7.5in x 10.5in grid. In **Multi-Card** mode, the first card keeps the full header and
-metadata block; continuation cards use a compact header with a localized
-`contd.`/`fortgesetzt` label and omit repeated metadata so more description fits.
+7.5in x 10.5in grid. In **Multi-Card** mode, the first card keeps the full header and metadata
+block; continuation cards use a compact header with a localized `contd.`/`fortgesetzt` label and
+omit repeated metadata so more description fits.
 
 Before printing, configure your browser/printer:
 
@@ -105,32 +87,20 @@ Before printing, configure your browser/printer:
 - Margins: **None** or **Minimum**.
 - Disable browser **headers and footers**.
 
-Cards whose spell body is unavailable in the selected language, or whose reference is
-missing, are omitted from printing without changing the deck; the app shows separate counts
-and asks for confirmation. Entries that would exceed the 100-continuation-card limit block
-printing with an actionable error.
+Cards whose spell body is unavailable in the selected language, or whose reference is missing,
+are omitted from printing without changing the deck; the app shows separate counts and asks for
+confirmation. Entries that would exceed the 100-continuation-card limit block printing with an
+actionable error.
 
 Exact physical sizing depends partly on hardware non-printable margins and driver scaling.
 Verify with a test sheet and measure the printed grid; deviations outside the ±1mm tolerance
 should be investigated rather than "fixed" with CSS scaling.
 
-## Technology stack
+## Offline behavior and data safety
 
-- React 19 + TypeScript (strict) on Vite+ with `@vitejs/plugin-react`, Tailwind v4
-  (`@tailwindcss/vite`), and shadcn-style Radix primitives.
-- Sonner notifications, Lucide icons, Dexie (IndexedDB), Zod, Fuse.js, and a safe `marked`
-  token walker.
-- i18next + react-i18next for English/German presentation; `vite-plugin-pwa` for offline
-  caching.
-- Cloudflare Workers Static Assets via `@cloudflare/vite-plugin` and Wrangler for production
-  hosting.
-
-## Offline behavior and data storage
-
-The app precaches its shell, scripts, styles, local fonts, language manifest, and every
-bundled dataset as one versioned release. The header shows **Setting up offline access**
-until Cache Storage verifiably contains every required asset, then **Offline ready**.
-Failures show **Offline setup incomplete — Retry**. Language switching after precache
+After the first successful load, the header shows **Setting up offline access** until the app
+shell, local fonts, language manifest, and bundled datasets are cached. It then shows **Offline
+ready**; failures show **Offline setup incomplete — Retry**. Language switching after precache
 performs no network requests.
 
 Spells, decks, and local SRD notes are stored in the browser's IndexedDB; the language
@@ -146,11 +116,11 @@ actions menu. To restore, import both files; the two exports cover different dat
 - Bundled spells are SRD 5.2.1 only; no non-SRD material is included.
 - Verbal/somatic notes added to an SRD spell are stored locally, scoped to that spell **and**
   the current language, and never modify the bundled SRD data. An edited SRD spell is marked
-  `*` on its source badge; **Reset to original** removes only that local note. These notes
-  are included only in custom-spell exports and are not part of deck exports.
+  `*` on its source badge; **Reset to original** removes only that local note. These notes are
+  included only in custom-spell exports and are not part of deck exports.
 - No accounts, cloud sync, backend, PDF engine, card backs, or third-party formats.
-- Print geometry is verified in Chromium; Firefox/Safari and physical printers may differ
-  and should be validated against the documented settings.
+- Print geometry is verified in Chromium; Firefox/Safari and physical printers may differ and
+  should be validated against the documented settings.
 
 ## Attribution and licensing
 
@@ -164,14 +134,15 @@ Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells 
 
 ## Documentation
 
-- [Development guide](docs/DEVELOPMENT.md) — toolchain, architecture, SRD maintenance,
-  localization, technical printing/offline details, and Cloudflare deployment.
-- [Cloudflare deployment guide](docs/cloudflare-deployment-guide.md) — Workers setup,
-  Workers Builds settings, and framework-specific notes.
-- [SRD data pipeline](docs/srd-data-pipeline.md) — source format, normalization, migrations,
-  and the translation workflow.
+- [Development guide](docs/DEVELOPMENT.md) — commands, architecture, implementation notes,
+  localization, printing/offline internals, and testing.
+- [Product specification](docs/specs/MAIN-spec.md) — current behavioral contract and
+  verification matrix.
+- [SRD data pipeline](docs/srd-data-pipeline.md) — source format, normalization, translations,
+  migrations, and subclass reconciliation.
+- [Cloudflare deployment guide](docs/cloudflare-deployment-guide.md) — Workers Static Assets,
+  Workers Builds, and deployment operations.
 - [Custom spell import guide](docs/custom-spell-import-guide.md) — JSON format and import
   behavior.
 - [Official subclass catalog](docs/subclasses.md) — the canonical 2024 subclass list.
-- [Product specification](docs/specs/MAIN-spec.md).
 - [Agent and contributor guidance](AGENTS.md).

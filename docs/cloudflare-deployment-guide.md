@@ -2,67 +2,77 @@
 
 Cloudflare now recommends **Workers** (Pages is the legacy workflow, still selectable via "Continue to Pages"). Workers has two shapes: a static SPA, or an SPA plus an API Worker.
 
-> **This repository** implements variant **A** (static React SPA, no API Worker) with `@cloudflare/vite-plugin` and Wrangler. The plugin is registered as `cloudflare()` (no separate Worker entry) and is skipped in Vitest `test` mode. The committed `wrangler.jsonc`, build/deploy scripts, and verification steps are documented in [DEVELOPMENT.md](DEVELOPMENT.md#cloudflare-workers-deployment). Sections B and C describe optional application variants that are **not** configured here. Sections D and G document the Cloudflare Workers Builds configuration and GitHub integration used by this project. Section E describes the legacy Pages workflow.
+> **This repository** implements variant **A** (static React SPA, no API Worker) with `@cloudflare/vite-plugin` and Wrangler. The plugin is registered as `cloudflare()` (no separate Worker entry) and is skipped in Vitest `test` mode. Sections B and C describe optional application variants that are **not** configured here. Sections D and G document the Cloudflare Workers Builds configuration and GitHub integration used by this project. Section E describes the legacy Pages workflow.
+>
+> The repository-specific integration notes (Vitest exclusion and local `workerd` preview) are in [DEVELOPMENT.md](DEVELOPMENT.md#cloudflare-vite-plugin-integration). The README keeps only a one-sentence hosting summary; this guide owns the operational details.
 
-## A. Static React SPA
+## A. Static React SPA (this repository)
 
-1. Install the adapter:
+This repository is the asset-only static-SPA variant. The production Worker has no `main` entry and serves the client build plus the SPA fallback. Use the values below rather than the generic example when reconfiguring or recreating the project.
 
-```powershell
-pnpm add -D @cloudflare/vite-plugin wrangler
-```
+### A.1 Repository values
 
-2. `vite.config.ts`:
+| Setting | Value |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| Worker name | `yascg` (`wrangler.jsonc` → `name`) |
+| Compatibility date | `2026-10-26`; never newer than the installed `workerd` support date |
+| Cloudflare config | `wrangler.jsonc` at the repository root; do not set `assets.directory` |
+| Build | `pnpm run build` (`normalize:srd` then `vp build`) |
+| Local preview | `pnpm run preview` (`vp preview`, local Workers runtime) |
+| Deploy (local) | `pnpm run deploy` (build, then `wrangler deploy`) |
+| Deploy (CI) | `pnpm exec wrangler deploy` after the separate build step |
+| Package manager | `pnpm@12.11.2`, pinned exactly in `package.json` |
+| Runtime | Node.js 24.11+ or 26 LTS |
+| Vite plugin | `cloudflare()` after the React and Tailwind plugins |
 
-```ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { cloudflare } from '@cloudflare/vite-plugin';
+### A.2 Configuration
 
-export default defineConfig({
-  plugins: [react(), cloudflare({ viteEnvironment: { name: 'worker' } })],
-});
-```
-
-For a purely static/asset-only Worker with no `main` entry (as in this repository), use `cloudflare()` without the `viteEnvironment` option. If tests share this config, omit the plugin in Vitest's `test` mode: Vitest cannot attach servers to the extra Vite environments the plugin creates.
-
-3. `wrangler.jsonc` (root):
+1. The Worker is asset-only. `wrangler.jsonc` is:
 
 ```jsonc
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "my-app",
-  "compatibility_date": "2026-10-27",
-  "assets": { "not_found_handling": "single-page-application" },
-  "previews": {}
+  "name": "yascg",
+  "compatibility_date": "2026-10-26",
+  "assets": {
+    "not_found_handling": "single-page-application",
+  },
 }
 ```
 
-Do **not** set `assets.directory` — with the Vite plugin it is filled from the client build automatically. `not_found_handling` is what gives client-side routing its SPA fallback.
+Do **not** set `assets.directory` — the Cloudflare Vite plugin fills it from the client build. `not_found_handling` gives client-side routing its SPA fallback. `compatibility_date` is a calendar date, not a version: move it forward deliberately after updating Wrangler and re-running preview/E2E, never automatically on every deploy. A date newer than the installed `workerd` support date makes local preview and E2E fail.
 
-`compatibility_date` is a calendar date, not a version: set it to today's date when onboarding and move it forward deliberately after testing — never bump it automatically on every deploy. It must not be newer than the newest date supported by the installed `workerd` binary; otherwise local preview and E2E fail even though production may accept the date.
+2. Register the plugin in `vite.config.ts` with no `viteEnvironment` option for the static variant:
 
-4. Scripts in `package.json` — keep the usual dev/build entries (use `tsc -b && vite build` if your TS setup builds through tsc):
+```ts
+import { defineConfig } from "vite-plus";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { cloudflare } from "@cloudflare/vite-plugin";
 
-```json
-"dev": "vite",
-"build": "vite build",
-"preview": "vite preview",
-"deploy": "vite build && wrangler deploy",
-"cf-typegen": "wrangler types"
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    tailwindcss(),
+    ...(mode === "test" ? [] : [cloudflare()]),
+  ],
+}));
 ```
 
-`deploy` builds and deploys in one step locally; Workers Builds runs its build command and deploy command as two separate steps instead.
+The plugin is omitted in Vitest `test` mode because Vitest cannot attach a server to the extra Vite environments it creates. `vp dev` and `vp preview` otherwise run in the local `workerd` runtime.
 
-**Local preview vs. Cloudflare Worker Preview**
+3. Build and deploy scripts in `package.json`:
 
-- `pnpm preview` executes `vite preview`, serving the locally built application for inspection.
-- `pnpm exec wrangler preview` creates or updates a deployed Cloudflare Worker Preview for the current branch.
-- Cloudflare Workers Builds uses `npx wrangler preview` for non-production branches when preview builds are enabled.
+```json
+"dev": "vp dev",
+"build": "pnpm run normalize:srd && vp build",
+"preview": "vp preview",
+"deploy": "pnpm run build && wrangler deploy"
+```
 
-The Vite preview command does not create a Cloudflare Preview URL.
+`pnpm run deploy` builds and deploys in one step locally. Workers Builds runs the build command and deploy command as two separate steps, so the deploy command there must not rebuild.
 
-5. pnpm build-script allowlist (`pnpm-workspace.yaml`) so CI installs don't fail with `ERR_PNPM_IGNORED_BUILDS` (pnpm 11+ enables `strictDepBuilds` by default, failing installs on unreviewed build scripts):
+4. Keep the pnpm build-script allowlist in `pnpm-workspace.yaml` so CI installs do not fail with `ERR_PNPM_IGNORED_BUILDS`:
 
 ```yaml
 allowBuilds:
@@ -70,9 +80,9 @@ allowBuilds:
   workerd: true
 ```
 
-Other dependencies with lifecycle scripts may also need approval — run `pnpm approve-builds` to review them (approvals are written to `allowBuilds`), and commit `pnpm-workspace.yaml` together with `pnpm-lock.yaml`. The Workers Builds image ships pnpm 10.11.1 by default, which predates `allowBuilds`: pin the pnpm version you use (11+) with an exact `packageManager` entry in `package.json`, e.g. `"packageManager": "pnpm@12.15.0"` — no ranges.
+Other dependencies with lifecycle scripts may also need approval — run `pnpm approve-builds` and commit the updated `pnpm-workspace.yaml` with `pnpm-lock.yaml`. The exact `packageManager` pin in `package.json` is required because the Workers Builds image ships an older pnpm.
 
-6. `.gitignore` (a stock Vite template already ignores `dist` — keep that entry if it exists):
+5. `.gitignore` must keep the generated outputs out of Git:
 
 ```gitignore
 dist
@@ -80,18 +90,27 @@ dist
 .dev.vars*
 ```
 
-7. Verify and deploy:
+6. Verify and deploy:
 
 ```powershell
-pnpm build
+pnpm run build
 pnpm exec wrangler deploy --dry-run
-pnpm preview
-pnpm exec wrangler deploy
+pnpm run preview
+pnpm run test:e2e
+pnpm run deploy
 ```
+
+`pnpm run build` emits the client build, the generated `dist/wrangler.json`, and `.assetsignore` to `dist/`, plus `.wrangler/deploy/config.json` so `wrangler deploy` from the repository root uses the build output. Never edit `dist/` or `.wrangler/`; both are generated and Git-ignored.
+
+**Local preview vs. Cloudflare Worker Preview**
+
+- `pnpm run preview` (`vp preview`) runs the built app through the Cloudflare Vite plugin in local `workerd`, so routing, headers, and asset serving match production. It does not create a Cloudflare Preview URL.
+- `pnpm exec wrangler preview` creates or updates a deployed Cloudflare Worker Preview for the current branch.
+- Cloudflare Workers Builds uses `npx wrangler preview` for non-production branches when preview builds are enabled.
 
 ## B. Adding an API Worker
 
-First set up TypeScript for the Worker code so `ExportedHandler` resolves (otherwise `pnpm build` fails at `tsc`):
+First set up TypeScript for the Worker code so `ExportedHandler` resolves (otherwise `pnpm run build` fails at `tsc`):
 
 ```powershell
 pnpm add -D @cloudflare/workers-types
@@ -159,20 +178,24 @@ Configuration is framework-specific — don't mix entry points between framework
 
 ### D. Dashboard (Workers Builds)
 
-| Field           | Value                                                                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Worker name     | must match `wrangler.jsonc` `name`                                                                                                       |
-| Build command   | `pnpm build`                                                                                                                             |
-| Deploy command  | `pnpm exec wrangler deploy` (`npx wrangler deploy` is the documented default; any package manager works)                                 |
-| Preview command | `pnpm exec wrangler preview` (enable preview builds in branch settings first)                                                            |
-| Root directory  | `/`                                                                                                                                      |
-| Node version    | default 24.22.1 (Node 22 also preinstalled) satisfies Vite 8 (Node ≥20.19/≥22.12) — only set `NODE_VERSION` if you need a specific minor |
-| pnpm version    | image default is pnpm 10.11.1 — pin yours via `packageManager` in `package.json` (exact version)                                         |
-| API token       | leave empty — auto-generated                                                                                                             |
+| Field           | Value                                                                                                                       |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Worker name     | `yascg` (must match `wrangler.jsonc` → `name`)                                                                               |
+| Build command   | `pnpm run build`                                                                                                            |
+| Deploy command  | `pnpm exec wrangler deploy` (`npx wrangler deploy` is the documented default; any package manager works)                    |
+| Preview command | `pnpm exec wrangler preview` (enable preview builds in branch settings first)                                                |
+| Root directory  | `/`                                                                                                                         |
+| Node version    | set `NODE_VERSION` to `24` or `26` if the image default is older than 24.11; the repo supports Node.js 24.11+ or 26 LTS     |
+| pnpm version    | image default may be older — the exact `packageManager` pin in `package.json` (`pnpm@12.11.2`) supplies the project version |
+| Production branch | `main`                                                                                                                     |
+| Build watch paths | `*`                                                                                                                       |
+| Enable preview builds | Optional; required for per-branch preview deployments                                                                 |
+| Cloudflare Access | Disabled for a public app                                                                                                 |
+| API token       | leave empty — auto-generated                                                                                                |
 
 ## E. Legacy Pages variant
 
-If you specifically need Pages: connect via "Continue to Pages", build `pnpm build`, output `dist`, leave deploy command empty, and add `public/_redirects` with `/* /index.html 200` for SPA routing.
+If you specifically need Pages: connect via "Continue to Pages", build `pnpm run build`, output `dist`, leave deploy command empty, and add `public/_redirects` with `/* /index.html 200` for SPA routing.
 
 ## F. Official Cloudflare deployment documentation
 
@@ -191,21 +214,10 @@ If you specifically need Pages: connect via "Continue to Pages", build `pnpm bui
 4. Select **GitHub**.
 5. Authenticate with GitHub and authorize Cloudflare to access your repository.
 6. Select the repository containing your application.
-7. Configure the application:
-
-| Setting                        | Value                                                   |
-| ------------------------------ | ------------------------------------------------------- |
-| Project name                   | `my-app` (must match `wrangler.jsonc` → `name`)         |
-| Build command                  | `pnpm run build`                                        |
-| Deploy command                 | `npx wrangler deploy`                                   |
-| Preview command                | `npx wrangler preview`                                  |
-| Production branch              | `main` (or your actual production branch)               |
-| Root directory                 | `/` (if the app is at the repository root)              |
-| Build watch paths (include)    | `*` (watch repository paths for changes)                |
-| Enable preview builds          | Enabled                                                 |
-| Protect with Cloudflare Access | Disabled for a public app                               |
-| API token                      | Leave the automatically generated/default configuration |
-
+7. Configure the application using the authoritative settings in
+   [D. Dashboard (Workers Builds)](#d-dashboard-workers-builds). In particular: project name
+   `yascg`, build `pnpm run build`, deploy `pnpm exec wrangler deploy`, preview
+   `pnpm exec wrangler preview`, production branch `main`, and root directory `/`.
 8. Click **Save and Deploy**.
 9. Check the build logs for successful installation, compilation and deployment.
 10. Open the generated `*.workers.dev` URL and verify that the application works, including client-side routes.

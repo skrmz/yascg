@@ -1,24 +1,35 @@
 # Development
 
-Technical and maintenance documentation for YASCG. For the project overview, features, and
-usage, see the [README](../README.md). For the raw SRD source format, normalization,
-translation, and migration procedures, see [SRD Data Pipeline & Normalization](srd-data-pipeline.md).
-Repository guidance for contributors and coding agents is in [AGENTS.md](../AGENTS.md), and
-the product specification is [MAIN-spec.md](specs/MAIN-spec.md).
+Technical and maintenance documentation for YASCG. For product behavior and acceptance
+criteria, see the [product specification](specs/MAIN-spec.md). For user help, backup guidance,
+and printing settings, see the [README](../README.md).
+
+## Documentation map
+
+| Document | Owns |
+| --- | --- |
+| [README](../README.md) | Product overview, quick start, user help, printing settings, backup guidance, attribution |
+| [Product specification](specs/MAIN-spec.md) | Current behavioral contract and verification matrix |
+| **This guide** | Contributor setup, commands, module map, implementation details, debugging, tests |
+| [SRD data pipeline](srd-data-pipeline.md) | Raw source shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection |
+| [Cloudflare deployment guide](cloudflare-deployment-guide.md) | Workers Static Assets configuration, Workers Builds, deployment operations, `compatibility_date` |
+| [Custom spell import guide](custom-spell-import-guide.md) | Custom-spell JSON format, examples, collisions, SRD override import/export |
+| [Official subclass catalog](subclasses.md) | Canonical official 2024 subclass list |
+| [AGENTS.md](../AGENTS.md) | Agent/contributor workflow, tests to run, review checklist, documentation ownership |
 
 ## Toolchain and commands
 
-Requires **Node.js >= 26** and **pnpm v12+** with the unified **Vite+ (`vp`)** toolchain
-(Vite, Rolldown, Vitest, Oxlint, Oxfmt). `vp <name>` runs a built-in command, while
-`vp run <name>` runs a `package.json` script or a `vite.config.ts` task; scripts cannot
-overwrite built-ins. Check `package.json` and `vite.config.ts` before adding or invoking a
-command.
+Requires **Node.js 24.11+ (24 LTS) or 26 LTS** and **pnpm v12+** with the unified **Vite+
+(`vp`)** toolchain (Vite, Rolldown, Vitest, Oxlint, Oxfmt). The repository is currently
+developed on Node.js 26 LTS. `vp <name>` runs a built-in command, while `vp run <name>` runs a
+`package.json` script or a `vite.config.ts` task; scripts cannot overwrite built-ins. Check
+`package.json` and `vite.config.ts` before adding or invoking a command.
 
 | Command | Purpose |
 | ------------------------------------------------------------ | ------------------------------------------------- |
 | `pnpm install` (or `vp install`) | Install dependencies. |
 | `pnpm run normalize:srd` | Normalize `data/srd/` into the committed `src/data/` artifacts. |
-| `pnpm run dev` (`vp dev`) | Start the development server. |
+| `pnpm run dev` (`vp dev`) | Start the development server in the local Workers runtime. |
 | `pnpm run check` (`vp check`) | Format, lint, and type-check. |
 | `pnpm run test` (`vp test`) | Run unit and integration tests. |
 | `pnpm run build` | Run `normalize:srd`, then `vp build`. |
@@ -32,379 +43,202 @@ Run `vp check` and `vp test` after relevant changes. Changing data processing or
 behavior also requires normalization and the affected E2E tests. The complete review checklist
 is maintained in [AGENTS.md](../AGENTS.md).
 
-Generated datasets under `src/data/` are committed build artifacts. Vite serves `src/data/`
-as its `publicDir`; do not hand-edit generated SRD datasets or bypass normalization
-validation.
-
-## Cloudflare Workers deployment
-
-The app is a pure client-side React SPA with no server API, so it deploys to
-**Cloudflare Workers with Static Assets** (not Pages, and not an SSR framework). The setup is
-the static-SPA variant in the
-[Cloudflare deployment guide](cloudflare-deployment-guide.md#a-static-react-spa):
-
-- `wrangler.jsonc` (repository root) is the input configuration. `name` must stay `yascg`,
-  and `assets.not_found_handling` is `single-page-application` so unknown routes fall back to
-  `index.html` for the PWA and direct links. Do not set `assets.directory`; the Cloudflare
-  Vite plugin fills it from the client build.
-- `vite.config.ts` registers `cloudflare()` after the framework and CSS plugins. The plugin
-  runs both `vp dev` and `vp preview` in the local `workerd` runtime so routing, headers, and
-  asset serving match production. It is intentionally omitted in Vitest's `test` mode:
-  Vitest cannot attach a server to the extra Vite environments the plugin creates.
-- `vp build` writes the client build, the generated `wrangler.json` snapshot, and
-  `.assetsignore` to `dist/`, plus `.wrangler/deploy/config.json` so `wrangler deploy` from
-  the repository root uses the build output. Never edit files in `dist/` or `.wrangler/`;
-  they are generated and Git-ignored.
-- `pnpm-workspace.yaml` allowlists the `workerd` build script. `package.json` pins pnpm with
-  an exact `packageManager` entry because the Workers Builds image ships an older pnpm that
-  predates `allowBuilds`.
-- `compatibility_date` is a deliberate calendar date, not a version. Keep it at or below the
-  newest date supported by the installed `workerd` binary (currently `2026-10-26`); a newer
-  date makes `pnpm run preview` and E2E fail locally. Move it forward only after updating
-  Wrangler and re-running the preview/E2E checks, never automatically on every deploy.
-
-Local verification and deployment:
-
-```powershell
-pnpm run build
-pnpm exec wrangler deploy --dry-run
-pnpm run preview
-pnpm run test:e2e
-pnpm run deploy
-```
-
-For Cloudflare's Git integration (Workers Builds), use build command `pnpm run build` and
-deploy command `pnpm exec wrangler deploy` (or `npx wrangler deploy`); the deploy command
-intentionally does not rebuild because Workers Builds already ran the build step. Root
-directory is `/`, the Worker name must match `wrangler.jsonc` (`yascg`), and the production
-branch is `main`. Preview builds are enabled per branch settings. No API tokens or secrets are
-needed: the deployment is fully static, and no secret may be placed in public `VITE_*`
-variables. The service worker and bundled datasets are ordinary static assets; a new build
-publishes new hashed files and the PWA update flow prompts before reloading.
+Generated datasets under `src/data/` are committed build artifacts. Vite serves `src/data/` as
+its `publicDir`; do not hand-edit generated SRD datasets or bypass normalization validation.
 
 ## Architecture
 
 Paths are relative to the repository root.
 
-- `src/domain/` — Zod schemas, types, limits, deck/baseline/status rules, ID rules.
+- `src/domain/` — Zod schemas, types, limits, deck/baseline/status rules, ID rules, subclass
+  registry, and import/export payload schemas (`payloads.ts`).
 - `src/db/` — Dexie schema v4 (`customSpells`, `savedDecks`, singleton `activeDeck`,
   `srdSpellOverrides`) with compare-and-swap revisions, saved-snapshot revision tokens,
   deck-entry normalization, and advisory `BroadcastChannel` notifications.
-- `src/services/data/` — manifest/dataset loading, language preference, search and
-  filters, and deck reference resolution.
+- `src/services/data/` — manifest/dataset loading, language preference, search and filters, and
+  deck reference resolution.
 - `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), React
   renderer, and deterministic AST splitting/pagination.
-- `src/cards/` — card chrome plus hidden-card measurement, `document.fonts.ready`
-  gating, single-card auto-shrink (8.5pt → 6pt) that truncates at the 6pt floor with a
-  measured trailing ellipsis, and multi-card pagination with heading-orphan
-  prevention. Continuation cards use a compact header with a localized
-  `contd.`/`fortgesetzt` label and omit repeated metadata to maximize body space.
-- `src/components/details/` — card-preview-first details pane, on-demand spell details
-  dialog with full metadata and canonical description, and card actions menus (ellipsis
-  dropdown plus right-click context menu) backed by the existing edit flow.
+- `src/cards/` — card chrome plus hidden-card measurement, `document.fonts` gating, single-card
+  auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor, and multi-card
+  pagination with heading-orphan prevention.
+- `src/components/details/` — card-preview-first details pane, on-demand spell details dialog,
+  and card actions menus backed by the edit flow.
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
 - `src/io/` — unversioned JSON export/import with collision review and atomic commits.
-  Deck files carry spell references, name, and display settings; custom-spell files carry
-  complete custom spell definitions and SRD component-text overrides.
 - `src/pwa/` — service-worker registration and Cache Storage verification.
-- `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE
-  spell-card terminology catalogs.
+- `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE catalogs.
 - `src/state/`, `src/components/`, `src/ui/` — application state and UI.
 
-## SRD data and normalization
+## Cloudflare Vite plugin integration
 
-The [SRD Data Pipeline & Normalization](srd-data-pipeline.md) document is the authoritative
-reference for the raw source specification, field table, mechanics cross-validation,
-normalization implementation, and step-by-step translation workflow. This section summarizes
-the responsibilities and the details that are unique to day-to-day maintenance.
+Deployment configuration and Workers Builds settings are owned by the
+[Cloudflare deployment guide](cloudflare-deployment-guide.md). Keep these repository-specific
+integration constraints in mind:
 
-### Inputs and generated artifacts
+- `vite.config.ts` registers `cloudflare()` after the React and Tailwind plugins. The plugin is
+  intentionally omitted in Vitest's `test` mode because Vitest cannot attach a server to the
+  extra Vite environments the plugin creates.
+- `vp dev` and `vp preview` run through the Cloudflare plugin in the local `workerd` runtime, so
+  routing, headers, and asset serving match production. `pnpm run test:e2e` uses this preview.
+- `vp build` writes the client build plus the generated `dist/wrangler.json` and
+  `.wrangler/deploy/config.json`; never edit `dist/` or `.wrangler/`.
+- `wrangler.jsonc` remains the input configuration; do not set `assets.directory`, because the
+  plugin fills it from the build output.
+- No server API, backend runtime, or secrets may be introduced.
 
-Raw inputs live in `data/srd/`:
+## Deck persistence and migration
 
-- `srd-spells-2024.json` — canonical English input.
-- `srd-spells-2024_<LANG>.json` — optional translation inputs (`<LANG>` is a canonical
-  BCP 47 tag, e.g. `de`, `pt-BR`). New files are discovered automatically; there is no
-  language allowlist.
+Product semantics for statuses, Save/Save As/Open, dirty state, import, Clear entries, repair,
+and language switching are owned by [MAIN-spec §7](specs/MAIN-spec.md#7-active-and-saved-decks).
+This section maps those contracts to the implementation.
 
-Both use the canonical source shape: a bare JSON array of spells with a string `school`
-holding a canonical English school name, `classes` as canonical English class-name
-strings, `components` as `V`/`S`/`M` letters, `damage.damage_type` as a canonical
-lowercase slug, and an optional `subclasses` array of `"<Class>: <Subclass>"` identifiers.
-`damage.damage_at_slot_level` and `attack_type` are retained verbatim as raw-source
-metadata but are ignored by normalization. Non-dataset reference material (for example
-`srd-spells-2024_extended-props.json`) belongs in `data/reference/`, not `data/srd/`,
-because every `srd-spells-2024*` JSON file there is treated as an input.
+- `getDeckStatus` (`src/domain/deck.ts`) derives the four-state status from association and dirty
+  state; inconsistent persisted combinations are errors rather than statuses.
+- The active deck is a Dexie singleton whose `revision` is the active CAS token. An associated
+  deck stores `savedDeckId` and a non-null `baseline`; an unassociated deck omits the
+  `savedDeckId` property entirely and stores `baseline: null`. Do not serialize
+  `savedDeckId: undefined`. Each saved snapshot has its own `revision` (starting at `1`); the
+  active baseline records the observed `savedRevision`. `updatedAt` is display-only.
+- `mutateActiveDeck` (`src/db/active-deck.ts`) performs active-only edits with an expected
+  revision. `saveNewDeck`, `saveAssociatedDeck`, `loadSavedDeck`, `deleteSavedDeck`,
+  `newActiveDeck`, and `renameActiveDeck` (`src/db/saved-decks.ts`) implement the lifecycle
+  operations. Associated Save and Delete verify both the expected active revision and
+  `baseline.savedRevision` inside the same transaction. Missing or stale snapshots raise
+  `SavedDeckConflictError`; the deck pane routes that to Save As/Open recovery.
+- `DeckPane` owns the inline name edit session (tied to the active revision) and flushes pending
+  edits before Save/Save As/Open/New deck/import/Clear. Inline rename staleness returns a
+  non-destructive stale outcome and must not open the global cross-tab conflict dialog.
+- `SaveAsDialog` and `OpenDeckDialog` perform their own validation/confirmation through provider
+  actions; the deck actions menu holds Save As, New deck, deck import/export, and Clear entries.
+  A saved-snapshot Save conflict offers Save As or Open.
+- `src/db/database.ts` defines `version(4)`. It normalizes saved-deck revisions below `1` to
+  `1`, and sets `baseline.savedRevision` only when the stored baseline name and ordered
+  deduplicated entries exactly match the associated saved snapshot. Unverifiable associations
+  keep the token absent (no fabricated token, association preserved, no active revision bump);
+  Save then blocks until the user opens the snapshot or uses Save As.
+- Cross-tab notifications (`src/db/notifications.ts`) are advisory. Revision checks inside
+  transactions are authoritative; a conflict keeps the user's uncommitted intent available and
+  routes to the Reload Latest/Cancel or Save As/Open recovery described in the specification.
 
-Bundled spells populate `subclasses` with canonical identifiers reconciled from
-`data/reference/srd-spells-2024_extended-props.json` (204 of 339 spells, 698 assignments).
-Only the 48 official 2024 subclasses (see [subclasses.md](subclasses.md)) are localized;
-reference-only subclasses are preserved verbatim and fall back to the English name, and
-Artificer subclasses are excluded and reported. See "Subclass reconciliation" below.
+## Import and export routing
 
-`scripts/normalize-srd.ts` discovers inputs, normalizes them into the application `Spell`
-schema, cross-validates translations against the canonical English mechanics, and writes
-build artifacts to `src/data/` (served as Vite's `publicDir`):
+The authoritative format semantics are in
+[MAIN-spec §8](specs/MAIN-spec.md#8-json-import-and-export); the user-facing custom format is
+in the [custom spell import guide](custom-spell-import-guide.md). Implementation structure:
 
-- `spells.srd.json` — canonical English dataset.
-- `spells.srd.<lang>.json` — one dataset per discovered language.
-- `spell-languages.json` — the static language manifest (`code`, `displayName`,
-  `dataset`).
-
-Stable IDs derive from the upstream `index` slug (`index: "acid-splash"` →
-`id: "srd-acid-splash"`) and are identical across every language. Translated text is
-preserved; language-independent mechanics are normalized to canonical values.
-
-### Source structure adapters
-
-- **Shared adapter** (`scripts/srd/shared-translation.ts` → `scripts/srd/english.ts`)
-  handles the canonical source shape and is used for English and every translation,
-  including `de`. There are no language-specific adapters, and the former German adapter
-  and `convert:german-srd` repair script have been removed.
-- Unsupported source structures fail the build with the offending filename and index
-  instead of being skipped.
-
-### Source format migration
-
-`scripts/migrate-srd-source-format.ts` is the one-time utility that converts a legacy
-5e-bits source (object `school.index`, `classes[].index`, object `damage.damage_type`,
-top-level `url`) into the canonical shape:
-
-```powershell
-pnpm exec tsx scripts/migrate-srd-source-format.ts           # dry run (default): report only
-pnpm exec tsx scripts/migrate-srd-source-format.ts --apply   # write the converted sources
-```
-
-It converts `school`, `classes[]`, and `damage.damage_type` to canonical scalars, removes
-the top-level `url`, validates any existing `subclasses` as canonical identifiers, and
-preserves `damage.damage_at_slot_level` and `attack_type` verbatim. Entry and property order
-are kept with 2-space indentation, LF line endings, and a trailing newline. Before writing,
-it verifies the converted sources normalize back to the committed
-`src/data/spells.srd*.json` datasets; `--apply` stages and validates both outputs, then swaps
-them in atomically with a backup that is restored if a later replacement fails. Re-running on
-already-migrated files reports a no-op. Options are `--input-dir <dir>` (default `data/srd`),
-`--files <a,b>` (default both datasets), and `--report <path>`. Legacy files reaching
-`normalize:srd` fail with a message pointing at this tool. The utility is temporary and may
-be deleted once no legacy sources remain. Full conversion and atomic-write guarantees are
-documented in
-[§2.F of the data pipeline](srd-data-pipeline.md#f-legacy-source-migration-one-time-utility).
-
-### Subclass reconciliation
-
-`scripts/migrate-srd-subclasses.ts` is the one-time utility that populates the optional raw
-`subclasses` field from `data/reference/srd-spells-2024_extended-props.json`:
-
-```powershell
-pnpm exec tsx scripts/migrate-srd-subclasses.ts                                   # dry run (default)
-pnpm exec tsx scripts/migrate-srd-subclasses.ts --apply --report data/reference/subclass-reconciliation.json
-```
-
-Reference identifiers are reconciled to canonical `"<Class>: <Subclass>"` identifiers via an
-explicit alias table (no fuzzy matching), reference-only subclasses are preserved verbatim,
-and Artificer subclasses are excluded and reported. English is matched by spell name (with
-the single `Arance Hand` → `Arcane Hand` typo alias); the German source is matched by
-`index` because its names are localized, so EN/DE assignments are identical. The tool
-inserts `subclasses` immediately after `classes`, sorts identifiers, omits empty lists, and
-never touches any other field. Before writing it normalizes both sources in memory and
-asserts every field **except** `subclasses` still matches the committed
-`src/data/spells.srd*.json` datasets (mechanics unchanged), then writes atomically with
-backup/rollback. Re-running is a no-op. Options are `--input-dir <dir>` (default `data/srd`),
-`--reference <path>`, `--files <a,b>` (default both datasets), `--report <path>`, and
-`--apply`. The committed report (`data/reference/subclass-reconciliation.json`) records
-catalog coverage, the alias map, reference-only and excluded identifiers, unmatched names,
-dedup collisions, and per-file population counts. Full options and guarantees are in
-[§2.G of the data pipeline](srd-data-pipeline.md#g-subclass-reconciliation-one-time-utility).
-
-### Drift protection
-
-`src/test/srd-dataset.test.ts` normalizes the checked-in `data/srd/` sources and asserts
-they reproduce the committed `src/data/spells.srd*.json` datasets (baseline read from the
-Git object store, so a local `pnpm run build` cannot mask a regression). Intentional source
-updates are reviewed through `git diff` on the raw source and the regenerated datasets. The
-test also verifies the 339-spell count, unique and sorted IDs, populated subclass counts,
-subclass parent validity, unchanged non-subclass mechanics, and EN/DE assignment parity; see
-[§3.A of the data pipeline](srd-data-pipeline.md#a-drift-protection-regression-test-no-snapshot-file).
-
-### Adding a translation
-
-1. Add `data/srd/srd-spells-2024_<LANG>.json` using the canonical source shape described
-   above. There is no separate adapter for `de`: localized free text is preserved while
-   school/class/damage/subclass mechanics use the canonical English identifiers.
-2. Run `pnpm run normalize:srd`. Partial coverage is valid; unknown IDs, duplicate
-   indices, malformed JSON, malformed subclass identifiers, or conflicting canonical
-   mechanics fail the build.
-3. Confirm the language appears in `src/data/spell-languages.json` and the UI.
-
-The full procedure, including BCP 47 naming, source-shape validation, cross-validation
-rules, and the service-worker refresh step after adding a language, is documented in
-[§4 of the data pipeline](srd-data-pipeline.md#4-adding-or-updating-srd-translations-german-french-spanish-etc).
-
-## Deck rules
-
-A deck contains at most one entry per unique spell ID, regardless of how the spell is added.
-Individual add attempts for a spell already in the active deck show a bottom-right Sonner
-notification and leave the deck unchanged. **Append all** adds only spells not already
-present and reports how many were added and skipped.
-
-### Association, status, and persistence
-
-The active deck is a Dexie singleton whose `revision` is the active CAS token. An associated
-deck stores `savedDeckId` and a non-null `baseline`; an unassociated deck omits the
-`savedDeckId` property entirely and stores `baseline: null`. Do not serialize
-`savedDeckId: undefined`. Each saved snapshot has its own `revision` (starting at `1`) and the
-active baseline records the observed `savedRevision`; `updatedAt` is display-only.
-
-`getDeckStatus` maps the four valid combinations to **Saved**, **Unsaved changes**, **Not
-saved as a deck**, and **New deck**. Associated decks with a null baseline or missing token,
-and unassociated decks with a non-null baseline, are **invalid** state errors rather than
-clean decks.
-
-- `mutateActiveDeck` (active-only edits) trims names and rejects overlong values; it never
-  silently slices.
-- `saveNewDeck` (Save As) creates a snapshot at revision `1` and binds name, entries,
-  association, and baseline in one transaction.
-- `saveAssociatedDeck` (Save) validates the expected active revision and
-  `baseline.savedRevision`, updates only the associated snapshot, and advances both revisions
-  atomically. A clean deck is a no-op; missing/stale snapshots raise
-  `SavedDeckConflictError`.
-- `loadSavedDeck` (Open) CAS-checks the active revision, no-ops on an identical clean
-  association, and otherwise replaces active content and baseline with the selected saved
-  revision.
-- `deleteSavedDeck` CAS-checks active and saved revisions; deleting the associated snapshot
-  clears the association/baseline and advances the active revision.
-- `newActiveDeck` blanks the singleton (saved snapshots untouched) and no-ops on an already
-  blank workspace. `renameActiveDeck` changes only the committed name and validates according
-  to association; stale inline edits return a non-destructive stale outcome.
-
-### UI and import/export routing
-
-`DeckPane` owns the inline name edit session (tied to the active revision) and flushes pending
-edits before Save/Save As/Open/New deck/import/Clear. Inline rename staleness must not open the
-global cross-tab conflict dialog. `SaveAsDialog` and `OpenDeckDialog` perform their own
-validation/confirmation through provider actions; the deck actions menu holds Save As, New
-deck, deck import/export, and Clear entries. A saved-snapshot Save conflict offers Save As or
-Open.
-
-Deck import/export is `DeckImportExportDialog`; custom-spell import/export is
-`CustomSpellImportExportDialog`, triggered from `LibraryPane` next to **Create custom spell**.
-They share presentation helpers in `components/import-export/shared.tsx` but keep separate
-analysis, validation, and commit paths. Deck exports are not backups of custom spells or SRD
-overrides. Imports adopt the payload name, clear the association/baseline, and never touch
-named snapshots.
-
-Both JSON formats are **unversioned** and strictly validated; there is no legacy,
-unknown-version, or fallback-parsing path. A deck file requires `type: "deck"`, `name`,
-`exportedAt`, and `entries` (`spellId`, `fitMode`, `reference.source`, `reference.name`) and
-must not contain extra top-level keys. A custom-spell file requires `type: "custom-spells"`
-and `spells`, may contain `srdSpellOverrides`, and rejects extra top-level keys; each override
-is validated against the loaded SRD data. Both imports are capped at 5 MiB (decks also at
-2,000 entries), are validated in full before any write, and commit atomically.
-
-For a complete backup, export custom spells first and the active deck second; restoring both
-files recreates the spell definitions/SRD edits and the deck references. Deck exports never
-include spell bodies, and custom-spell exports never include deck structure.
-
-Deck imports and database upgrades deduplicate entries by spell ID, keeping the first
-occurrence and preserving the relative order of retained entries. The import summary reports
-how many duplicates were removed; no print-quantity or multiple-copy mechanism exists.
-
-### Dexie v4 migration
-
-`version(4)` normalizes saved-deck revisions below `1` to `1`. For associated active decks it
-sets `baseline.savedRevision` only when the stored baseline name and ordered deduplicated
-entries exactly match the associated saved snapshot. Unverifiable associations keep the token
-absent (no fabricated token, association preserved, no active revision bump); Save then blocks
-until the user opens the snapshot or uses Save As.
+- `src/domain/payloads.ts` — strict wire schemas, payload types, and `deckEntryToExport`.
+- `src/io/export.ts` — payload builders and JSON download helper.
+- `src/io/import-deck.ts`, `src/io/import-custom.ts` — full-payload validation, collision
+  analysis, ID remapping, override validation, and atomic commit paths.
+- `src/components/import-export/DeckImportExportDialog.tsx` — deck import/export dialog.
+- `src/components/import-export/CustomSpellImportExportDialog.tsx` — custom-spell dialog,
+  triggered from `LibraryPane` next to **Create custom spell**.
+- Both dialogs share presentation helpers in `components/import-export/shared.tsx` but keep
+  separate analysis, validation, and commit paths.
+- Custom spells persist in the Dexie `customSpells` table; SRD component-text overrides persist
+  per `[spellId+locale]` in `srdSpellOverrides` (added by the additive `version(2)` migration).
+  The override merge happens at read time over the loaded dataset and never mutates the shared
+  dataset cache or `src/data/**`.
 
 ## Localization
 
-The complete application interface is localized with `react-i18next` in English and
-German, including navigation, library controls, deck management, print and import/export
-dialogs, confirmations, validation, toasts, status messages, and accessible names. The
-locale follows the existing **spell data language** selection (`en`/`de` in
-`src/data/spell-languages.json`); there is no separate UI-language control. English is
-the fallback for unknown codes. Switching languages updates the UI without a reload.
+The interface is localized with `react-i18next` in English and German. The locale follows the
+selected spell-data language; `toUiLocale` maps `de` to German and every other code to English,
+so manifest languages without a UI catalog keep their spell data and use the English UI.
+Product-level switching and confirmation behavior is owned by
+[MAIN-spec §5](specs/MAIN-spec.md#5-workspace-and-library) and
+[§7](specs/MAIN-spec.md#7-active-and-saved-decks).
 
 - Catalogs are TypeScript modules under `src/locales/` (`en.ts`, `de.ts`) so no
-  `resolveJsonModule` is needed. `de` is checked for key parity via
-  `satisfies Translations`; use complete sentences, interpolation, and
-  `_one`/`_other` plural keys rather than concatenating translated fragments.
-- School/class names, component letters, and damage-type names are localized at
-  presentation time via `src/locales/labels.ts`; unknown damage types fall back to the
-  raw stored value. Bundled and generated SRD datasets (`src/data/**`) are never
-  modified, and canonical mechanics, filter values, paper identifiers, and persisted
-  data stay unchanged.
-- Runtime notices and errors are stored as typed descriptors from
-  `src/locales/messages.ts` and translated only at render time. Unexpected exception
-  text is logged to the console and replaced with a generic localized message. Import
-  validation may expose deliberately selected field paths and constraints within
-  localized framing, but never raw exception text.
+  `resolveJsonModule` is needed. `de` is checked for key parity via `satisfies Translations`; use
+  complete sentences, interpolation, and `_one`/`_other` plural keys rather than concatenating
+  translated fragments.
+- School/class names, component letters, damage-type names, and subclass labels are localized at
+  presentation time via `src/locales/labels.ts`; unknown values fall back to the raw stored
+  value or English name. Bundled and generated SRD datasets (`src/data/**`) are never modified,
+  and canonical mechanics, filter values, paper identifiers, and persisted data stay unchanged.
+- Runtime notices and errors are stored as typed descriptors from `src/locales/messages.ts` and
+  translated only at render time. Unexpected exception text is logged to the console and
+  replaced with a generic localized message. Import validation may expose deliberately selected
+  field paths and constraints within localized framing, but never raw exception text.
 - The initial locale is seeded synchronously from the stored preference
-  (`spellCards.language`) before first paint. Initial data loading, unsupported
-  preferences, retry, and interactive switches keep the last committed language until a
-  new dataset is ready. `document.documentElement.lang` follows the resolved UI locale.
+  (`spellCards.language`) before first paint. Initial data loading, unsupported preferences,
+  retry, and interactive switches keep the last committed language until a new dataset is ready.
+  `document.documentElement.lang` follows the resolved UI locale (`applyDocumentLanguage` in
+  `src/i18n.ts`).
 - Bundled, unmodified SRD content carries its actual dataset language via
-  `resolveContentLanguage`; custom spells, imported content, and SRD overrides can mix
-  author languages and therefore omit a content `lang`. Card fitting re-measures on
-  locale change, so switching languages never leaves stale measurements.
+  `resolveContentLanguage`; custom spells, imported content, and SRD overrides can mix author
+  languages and therefore omit a content `lang`. Card fitting re-measures on locale change, so
+  switching languages never leaves stale measurements.
 
-Intentional exclusions: the YASCG product name, exact SRD legal attribution (rendered
-with `lang="en"`), manifest language endonyms, dataset-authored spell names and content,
-user-entered or persisted names/content, export filenames and identifiers, paper product
-names (US Letter / ISO A4), and technical diagnostics that are logged but not shown.
+Intentional exclusions: the YASCG product name, exact SRD legal attribution (rendered with
+`lang="en"`), manifest language endonyms, dataset-authored spell names and content, user-entered
+or persisted names/content, export filenames and identifiers, paper product names (US Letter /
+ISO A4), and technical diagnostics that are logged but not shown.
 
-## Printing
+## Cards, printing, and offline
 
-User-facing print steps and browser/printer settings are documented in the
-[README](../README.md#printing). The print pipeline renders cards at 2.5in x 3.5in, nine
-per sheet on a centered 7.5in x 10.5in grid.
+Product geometry, typography, pagination, print omission, and offline guarantees are owned by
+the [product specification](specs/MAIN-spec.md#9-card-layout-and-text-fitting); user print
+settings are in the [README](../README.md#printing). Implementation details:
 
-In **Multi-Card** mode, the first card keeps the full header and metadata block.
-Continuation cards keep the card header with a localized `contd.`/`fortgesetzt` label,
-omit the repeated metadata, and use the extra space for description text; pagination is
-measured against these continuation layouts so preview and print match.
+- `src/cards/fit.tsx` measures actual rendered heights in a hidden fixed-size card, caches by
+  content/language/fit mode, and implements auto-shrink and multi-card pagination. Measurement
+  runs only on content/style changes, never on every scroll event.
+- `src/cards/fonts.ts` explicitly requests and checks every card face/weight before measurement
+  and `window.print()`; `src/print/print.css` self-hosts the card families as WOFF2 assets.
+- `src/print/PrintSheet.tsx` builds the 3x3 sheets and `src/print/print.css` owns the physical
+  `@page`, grid, and card CSS.
+- `src/pwa/register.ts` verifies that the shell, manifest, every bundled dataset, and at least
+  one local font are present in Cache Storage before the UI claims offline readiness. It uses a
+  `prompt` update flow and never infers readiness from service-worker registration alone.
+- Application data lives in the Dexie tables declared in `src/db/database.ts`; the language
+  preference lives in `localStorage` under `spellCards.language`.
+- To debug offline behavior, build and preview through the Workers runtime, then inspect Cache
+  Storage, the service worker, and IndexedDB in DevTools. A new build publishes new hashed
+  assets and prompts before reloading.
 
-Cards whose spell body is not available in the selected language, or whose reference is
-missing, are omitted from printing without changing the deck; separate counts are shown
-and confirmation is required. Entries that would exceed the 100-continuation-card limit
-block printing with an actionable error.
+## SRD data integration
 
-Exact physical sizing depends partly on hardware non-printable margins and driver
-scaling. Verify with a test sheet and measure the printed grid; deviations outside the
-±1mm tolerance should be investigated rather than "fixed" with CSS scaling. Print geometry
-is verified in Chromium; Firefox/Safari and physical printers may differ and should be
-validated against the documented settings.
+The [SRD data pipeline](srd-data-pipeline.md) is authoritative for raw source shape,
+normalization, translations, generated artifacts, migrations, subclass reconciliation, and
+drift protection. Day-to-day integration points:
 
-## Offline behavior and storage
+- Run `pnpm run normalize:srd` after changing `data/srd/`; `pnpm run build` runs it first.
+- Generated outputs are `src/data/spells.srd.json`, `src/data/spells.srd.<lang>.json`, and
+  `src/data/spell-languages.json`. They are committed but must never be edited by hand.
+- `src/test/srd-dataset.test.ts` normalizes the checked-in sources and compares them with the
+  committed datasets read from the Git object store, so a local build cannot mask drift.
+- Code entry points are `scripts/normalize-srd.ts`, `scripts/srd/`, and the runtime loaders in
+  `src/services/data/load.ts`. Do not add language-specific adapters or weaken the raw schema;
+  unsupported source structures fail the build with a filename and index.
 
-`vite-plugin-pwa` precaches the app shell, JS/CSS, local fonts, the language manifest,
-and every bundled dataset as one versioned release. The header shows **Setting up
-offline access** until Cache Storage verifiably contains every required asset, then
-**Offline ready**. Failures show **Offline setup incomplete — Retry**. Language
-switching after precache performs no network requests.
+## Local verification
 
-IndexedDB is not guaranteed permanent. If local storage is unavailable or quota is
-exceeded, an actionable banner appears; export custom spells and decks as JSON to keep
-a backup. The language preference is stored separately in `localStorage` under
-`spellCards.language`; application data lives in Dexie tables. See
-[SRD Data Pipeline & Normalization](srd-data-pipeline.md#b-runtime-loading-in-the-app)
-for manifest and runtime dataset loading.
+```powershell
+pnpm install
+pnpm run check
+pnpm run test
+pnpm run normalize:srd
+pnpm run build
+pnpm exec wrangler deploy --dry-run
+pnpm run preview
+pnpm exec playwright install chromium
+pnpm run test:e2e
+```
 
-## Limitations and data constraints
+- Unit/integration tests run under Vitest with `jsdom` and `fake-indexeddb`; the Cloudflare
+  plugin is excluded in `test` mode.
+- E2E tests run with Playwright against `pnpm run preview`, which serves the Workers-runtime
+  build.
+- Print checks should use the print preview and a 100%-scale PDF test sheet. Chromium is the
+  verified browser to date; Firefox and Safari are validation targets, not yet verified.
+- When adding a language or changing generated data, clear the service-worker cache or hard
+  refresh after rebuilding so the preview does not serve stale assets.
 
-- Bundled spells are SRD 5.2.1 only; no non-SRD material is included.
-- Verbal/somatic notes added to an SRD spell are stored locally, scoped to that spell
-  **and** the current language, and never modify the bundled SRD data. An edited SRD spell
-  is marked `*` on its source badge; **Reset to original** removes only that spell/language
-  note. These notes are included only in custom-spell exports and are not part of deck
-  exports.
-- No accounts, cloud sync, backend, PDF engine, card backs, or third-party formats.
-- Print geometry is verified in Chromium; Firefox/Safari and physical printers may
-  differ and should be validated against the documented settings.
+## Limitations
 
-Related references:
-
-- [Custom Spell JSON & Import Guide](custom-spell-import-guide.md)
-- [Official subclass catalog](subclasses.md)
-- [Product specification](specs/MAIN-spec.md)
-- [SRD data pipeline](srd-data-pipeline.md)
+User-facing limitations (SRD-only content, local SRD notes, no accounts/sync/PDF/card backs,
+and print variability) are documented in the [README](../README.md#limitations). Product scope
+exclusions are in [MAIN-spec §1](specs/MAIN-spec.md#1-purpose-and-scope).

@@ -1,6 +1,6 @@
 # Custom Spell JSON & Import Guide
 
-This guide shows how to define custom spells in JSON and import them into Yet Another Spell Card Generator. It is aimed at users who want to author spells by hand or generate them with a script; no build tools are required.
+This guide shows how to define custom spells in JSON and import them into Yet Another Spell Card Generator. It is aimed at users who want to author spells by hand or generate them with a script; no build tools are required. The import/export validation, collision, remapping, and active-deck semantics are owned by [MAIN-spec §8](specs/MAIN-spec.md#8-json-import-and-export); this guide is the field-by-field usage reference.
 
 > **Custom spells are not SRD source files.** The app imports the internal `Spell` shape described here, not the raw SRD shape in [`srd-data-pipeline.md`](srd-data-pipeline.md). A bare JSON array is **not** accepted, and fields such as `index`, `casting_time`, or `damage.damage_type` do not belong in this format.
 
@@ -249,5 +249,7 @@ You can omit `srdSpellOverrides` entirely. Normal app exports always include it,
 
 ## Related documentation
 
+- [`specs/MAIN-spec.md`](specs/MAIN-spec.md#8-json-import-and-export) — authoritative import/export semantics.
 - [`srd-data-pipeline.md`](srd-data-pipeline.md) — built-in SRD data pipeline and canonical mechanics.
-- [`specs/MAIN-spec.md`](specs/MAIN-spec.md) — product specification.
+- [`DEVELOPMENT.md`](DEVELOPMENT.md#import-and-export-routing) — implementation entry points and storage.
+- [`README.md`](../README.md) — user help and backup guidance.
