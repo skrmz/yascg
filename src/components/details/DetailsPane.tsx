@@ -156,14 +156,14 @@ export function DetailsPane() {
               {fit.result ? (
                 fit.result.pages.map((pageBlocks, index) => (
                   <CardView
-                    key={index}
+                    key={`${spell.id}-${index}`}
                     spell={spell}
                     blocks={pageBlocks}
                     cardIndex={index + 1}
                     cardCount={fit.result!.pages.length}
                     fontPt={fit.result!.fontPt}
                     contentLanguage={contentLanguage}
-                    className="card-preview-page"
+                    className="card-preview-page animate-reveal-subtle"
                   />
                 ))
               ) : (

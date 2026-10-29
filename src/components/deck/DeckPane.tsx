@@ -248,7 +248,7 @@ export function DeckPane() {
           <div className="flex flex-wrap items-center gap-1.5">
             <Button
               size="sm"
-              variant="ghost"
+              variant="outline"
               disabled={entries.length === 0}
               onClick={() => setConfirmClear(true)}
             >
@@ -498,7 +498,7 @@ function DeckRow({
   return (
     <li
       className={cn(
-        "mb-1 flex flex-wrap items-center gap-1 rounded border px-2 py-1.5",
+        "mb-1 flex flex-wrap supports-[flex-wrap:balance]:[flex-wrap:balance] items-center gap-1 rounded border px-2 py-1.5",
         resolution.status === "resolved"
           ? "border-border bg-card"
           : "border-dashed border-amber-400/30 bg-amber-400/10",

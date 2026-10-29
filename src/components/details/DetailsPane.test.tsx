@@ -107,6 +107,26 @@ describe("DetailsPane preview-only default layout", () => {
     expect(screen.queryByText("A test spell.")).toBeNull();
   });
 
+  it("remounts the card preview when the selected spell changes so the reveal animation restarts", () => {
+    holder.spell = makeSpell({ id: "srd-fireball", name: "Fireball" });
+    holder.fit = {
+      pages: [[]],
+      fontPt: 8.5,
+      truncated: false,
+      overflow: false,
+    };
+    const { container, rerender } = render(<DetailsPane />);
+    const first = container.querySelector(".card-preview-page");
+    expect(first).not.toBeNull();
+
+    holder.spell = makeSpell({ id: "srd-light", name: "Light" });
+    rerender(<DetailsPane />);
+
+    const second = container.querySelector(".card-preview-page");
+    expect(second).not.toBeNull();
+    expect(second).not.toBe(first);
+  });
+
   it("opens the details dialog without mutating deck state", async () => {
     holder.spell = makeSpell({
       id: "srd-fireball",

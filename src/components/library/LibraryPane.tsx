@@ -199,7 +199,7 @@ export function LibraryPane() {
               </span>
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2 overflow-hidden data-[state=closed]:animate-[collapsible-up_180ms_ease-out] data-[state=open]:animate-[collapsible-down_180ms_ease-out] motion-reduce:animate-none">
+          <CollapsibleContent className="space-y-2">
             <div className="space-y-1">
               <MultiSelect
                 label={t("library.school")}
@@ -345,7 +345,7 @@ export function LibraryPane() {
         </div>
       </div>
 
-      <Separator className="my-3" />
+      <Separator className="my-3 !bg-transparent" />
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-y border-border px-3 py-2">
         <span className="text-xs text-muted-foreground" aria-live="polite">
@@ -387,7 +387,7 @@ export function LibraryPane() {
           {t("library.spellsHeading")}
         </h2>
         <ul
-          className="min-h-0 flex-1 overflow-auto px-2 py-2"
+          className="min-h-0 flex-1 overflow-auto px-2 py-2 [scrollbar-gutter:stable]"
           aria-label={t("library.resultsAria")}
         >
           {results.length === 0 ? (
