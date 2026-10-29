@@ -103,9 +103,9 @@ Paths are relative to the repository root.
   dialog with full metadata and canonical description, and card actions menus (ellipsis
   dropdown plus right-click context menu) backed by the existing edit flow.
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
-- `src/io/` — JSON export/import with collision review and atomic commits. Custom-spell
-  payloads are version `1.1.0` (they may carry SRD component-text overrides); deck
-  payloads remain version `1.0.0`.
+- `src/io/` — unversioned JSON export/import with collision review and atomic commits.
+  Deck files carry spell references, name, and display settings; custom-spell files carry
+  complete custom spell definitions and SRD component-text overrides.
 - `src/pwa/` — service-worker registration and Cache Storage verification.
 - `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE
   spell-card terminology catalogs.
@@ -292,6 +292,18 @@ analysis, validation, and commit paths. Deck exports are not backups of custom s
 overrides. Imports adopt the payload name, clear the association/baseline, and never touch
 named snapshots.
 
+Both JSON formats are **unversioned** and strictly validated; there is no legacy,
+unknown-version, or fallback-parsing path. A deck file requires `type: "deck"`, `name`,
+`exportedAt`, and `entries` (`spellId`, `fitMode`, `reference.source`, `reference.name`) and
+must not contain extra top-level keys. A custom-spell file requires `type: "custom-spells"`
+and `spells`, may contain `srdSpellOverrides`, and rejects extra top-level keys; each override
+is validated against the loaded SRD data. Both imports are capped at 5 MiB (decks also at
+2,000 entries), are validated in full before any write, and commit atomically.
+
+For a complete backup, export custom spells first and the active deck second; restoring both
+files recreates the spell definitions/SRD edits and the deck references. Deck exports never
+include spell bodies, and custom-spell exports never include deck structure.
+
 Deck imports and database upgrades deduplicate entries by spell ID, keeping the first
 occurrence and preserving the relative order of retained entries. The import summary reports
 how many duplicates were removed; no print-quantity or multiple-copy mechanism exists.
@@ -384,8 +396,8 @@ for manifest and runtime dataset loading.
 - Verbal/somatic notes added to an SRD spell are stored locally, scoped to that spell
   **and** the current language, and never modify the bundled SRD data. An edited SRD spell
   is marked `*` on its source badge; **Reset to original** removes only that spell/language
-  note. These notes are included only in custom-spell exports (`1.1.0`) and are not part of
-  deck exports (`1.0.0`).
+  note. These notes are included only in custom-spell exports and are not part of deck
+  exports.
 - No accounts, cloud sync, backend, PDF engine, card backs, or third-party formats.
 - Print geometry is verified in Chromium; Firefox/Safari and physical printers may
   differ and should be validated against the documented settings.

@@ -3,7 +3,7 @@
 **Status:** Implementation specification  
 **Ruleset:** Dungeons & Dragons 5.5e (2024); SRD 5.2.1 only for bundled spells  
 **Product type:** Offline-first web app / installable PWA  
-**Version:** 1.0.0 (specification and JSON wire/payload version)
+**Version:** 1.0.0 (specification)
 
 ---
 
@@ -123,13 +123,17 @@ export interface ActiveDeck {
   // Baseline of the last explicitly opened/saved snapshot; null means unassociated.
   baseline: { name: string; entries: DeckEntry[]; savedRevision?: number } | null;
 }
-export interface SpellExportPayload {
-  version: "1.0.0";
+export interface CustomSpellExportPayload {
   type: "custom-spells";
   spells: Spell[];
+  srdSpellOverrides?: Array<{
+    spellId: string;
+    locale: string;
+    verbalDescription?: string;
+    somaticDescription?: string;
+  }>;
 }
 export interface DeckExportPayload {
-  version: "1.0.0";
   type: "deck";
   name: string;
   exportedAt: number;
@@ -164,7 +168,7 @@ The language manifest lists exactly one available asset per unique canonical lan
 - `description`: at least one string (may be empty); `higherLevels`: optional array. Limit each item to 20,000 characters and combined description/higher-level text to 50,000 characters.
 - Optional metadata strings and damage types: max 500 characters per value; optional arrays contain strings only. Component booleans required; absent optional details are allowed.
 - `source` required. `updatedAt` is set/updated for custom spells; it may be absent on bundled spells.
-- Reject invalid required fields rather than inventing game-rule values. Ignore unknown JSON fields after warning on version mismatch; never preserve unknown fields on export.
+- Reject invalid required fields rather than inventing game-rule values. Reject unknown top-level payload fields; unknown fields inside a spell record are stripped. Never preserve unknown fields on export. JSON formats are unversioned.
 - Reject duplicate spell IDs *within an import file* before writing anything. Check uniqueness before and after any ID remapping; remapped IDs must be newly generated UUIDs not already used in the bundled dataset, local database, or current import batch. Existing-database collisions are handled separately (§8).
 - Translation build validation rejects duplicate `index` or SRD IDs within any one file and conflicting canonical mechanics across files; the same SRD ID across separate language files is expected and valid.
 - Zod schemas are the runtime authority. Infer validated application types from Zod schemas where possible; interfaces above document the wire/storage shape, not a substitute for runtime validation. Define explicit schemas for each export format and the persisted active/saved deck records.
@@ -227,25 +231,26 @@ Search name, classes, and description (case/accent insensitive); for SRD spells 
 
 ### 8.1 Custom spells
 
-- Export `SpellExportPayload` with `version: "1.0.0"`, sorted by name then ID; include only `source: "Custom"`. Filename `spell-card-generator-custom-spells-YYYY-MM-DD.json`.
-- Import cap: 5 MiB. Parse and validate the entire payload before applying changes. The supported payload is `{version:"1.0.0",type:"custom-spells",spells:[...]}`. Invalid JSON, wrong `type`, duplicate IDs inside the input, or invalid required fields cause **no import** and a readable error report. Validate duplicate input IDs before any collision remapping.
-- If `version` is `"1.0.0"`, validate strictly against the current schema. For any other version, show **Unknown version — Try Import / Cancel**. **Try Import** extracts only fields recognized by the current `1.0.0` schema, discards unknown fields, and succeeds only if all required fields pass current validation. Never infer missing mandatory fields or imply compatibility with unknown semantics. Reject unknown top-level payload shapes and incorrect `type` values. Optional fields may use safe schema defaults only.
+- Export `CustomSpellExportPayload` sorted by name then ID; include only `source: "Custom"` spells plus all local SRD component-text overrides (verbal/somatic descriptions; `updatedAt` is not exported). Filename `spell-card-generator-custom-spells-YYYY-MM-DD.json`. The format is unversioned.
+- Import cap: 5 MiB. Parse and validate the entire payload before applying changes. The supported payload is `{type:"custom-spells",spells:[...],srdSpellOverrides?:[...]}`. Invalid JSON, wrong `type`, unknown top-level fields, duplicate IDs inside the input, or invalid required fields cause **no import** and a readable error report. Validate duplicate input IDs before any collision remapping.
+- Validate strictly against the current schema; there is no version field, unknown-version path, legacy compatibility path, or fallback parsing. Optional fields may use safe schema defaults only.
 - **Source safety:** Accept only records whose source is `Custom` for custom-spell imports. If a record says `SRD-5.2.1`, reject it rather than silently converting licensed SRD content. Do not import bundled spells as custom content.
 - **ID namespace:** `srd-` (case-sensitive) is reserved for bundled spells. Remap any imported custom ID beginning `srd-` to a new UUID, whether or not that exact SRD ID currently exists. Preserve other valid IDs so deck references remain stable. Report all remaps with old/new IDs. Reject blank IDs and duplicate original IDs; guarantee unique final IDs.
+- **SRD overrides:** `srdSpellOverrides` is optional and carries only `spellId`, `locale`, `verbalDescription`, and `somaticDescription`. Each record is validated against the loaded SRD data and language manifest (known `srd-` ID, supported locale, description only for an enabled component, bounded length); empty records are no-ops, and any invalid record aborts the whole import. Importing a payload without the field leaves local overrides unchanged.
 - **Existing custom ID collisions:** Before commit, display count and names of all conflicting spells. Offer **Overwrite Existing**, **Keep Both** (new UUID for each incoming conflicting spell), or **Skip** as a single batch-wide choice. Overwrite retains the ID, updates `updatedAt`, and refreshes all cards that reference it; show a prominent warning naming the affected records. Keep Both does not rebind existing deck entries. SRD records are never overwritten.
 - Commit chosen records in a single Dexie transaction; validate final IDs and payloads before commit. An unexpected storage error rolls back the batch; show counts (imported/overwritten/copied/skipped/remapped) only after success. If another tab changes a collision target before commit, abort and re-run collision review rather than overwrite silently.
 
 ### 8.2 Decks
 
-- Export `DeckExportPayload` with `version: "1.0.0"` and references only (not full spell bodies). Filename `spell-deck-YYYY-MM-DD.json`. Export current active deck, not the saved-deck collection. Do not export `entryId`, `revision`, or `baseline`.
-- Import maximum: 5 MiB JSON and 2,000 entries. The supported payload is `{version:"1.0.0",type:"deck",name,exportedAt,entries:[{spellId,fitMode,reference:{source,name}}]}`. Validate the entire payload and all entries before any write; wrong `type`, invalid `fitMode`, missing/invalid `spellId`, invalid reference source/name, or excess limits cause atomic rejection.
-- If `version` is `"1.0.0"`, validate strictly against the current schema. For any other version, show **Unknown version — Try Import / Cancel**. **Try Import** extracts only fields recognized by the current `1.0.0` schema and rejects any entry missing mandatory `spellId`, `fitMode`, or `reference.source/name`. Unknown fields are discarded. Do not infer references from names, migrate historical shapes, or claim full future compatibility.
+- Export `DeckExportPayload` with references only (not full spell bodies). Filename `spell-deck-YYYY-MM-DD.json`. Export current active deck, not the saved-deck collection. Do not export `entryId`, `revision`, or `baseline`. The format is unversioned.
+- Import maximum: 5 MiB JSON and 2,000 entries. The supported payload is `{type:"deck",name,exportedAt,entries:[{spellId,fitMode,reference:{source,name}}]}`. Validate the entire payload and all entries before any write; unknown top-level fields, wrong `type`, invalid `fitMode`, missing/invalid `spellId`, invalid reference source/name, or excess limits cause atomic rejection.
+- Validate strictly against the current schema; there is no version field, unknown-version path, legacy compatibility path, or fallback parsing. Do not infer references from names, migrate historical shapes, or claim future compatibility.
 - Deck import/export and custom-spell import/export are separate workflows: deck JSON tools live in the deck actions menu, while custom-spell import/export lives in the Library pane next to **Create custom spell**. A deck export is not a backup of custom spell definitions or SRD overrides; say so in the dialog.
 - Import replaces the active deck only after review and one explicit confirmation; a dirty active deck shows a discard warning. Cancel, validation failure, stale-revision conflict, or storage failure must leave persisted state unchanged. Generate unique UUID `entryId` values on import; deduplicate imported entries by `spellId` (keep the first occurrence and preserve relative order) and report the removed count. Adopt the imported name (empty `""` when the format legitimately permits it), omit `savedDeckId`, set `baseline` to null, and increment revision. Import never creates, updates, or deletes a saved snapshot; a populated imported deck shows **Not saved as a deck** and first-time Save opens Save As.
 - Resolve `SRD-5.2.1` references **only** against bundled SRD IDs and `Custom` references **only** against custom IDs. Never silently rebind by name or across sources. If absent, retain an unresolved entry labeled by `reference.name`; allow repair to an existing spell or removal. Re-evaluate resolution on library changes. Unresolved entries remain visible but are **excluded from printing**, with a count and confirmation before print.
 - **Cross-device transfer:** Import custom spells first, then the deck. IDs ordinarily remain stable. If custom import remapped an ID, display a remap report; deck references are not automatically rewritten across separately imported files. Repair affected entries manually. No combined package or persistent remapping database is required.
 
-**Language compatibility:** Export payloads use wire version `"1.0.0"`. Exports contain canonical SRD IDs and `reference` hints, not selected language or bundled spell bodies. Import/load decks in any selected language without migrating or rewriting their entries. The stored `reference.name` may be English or translated and is never used for matching. A missing translation yields a placeholder, not a missing-reference repair suggestion. Imported custom spells retain their contents and behavior regardless of selected SRD language.
+**Language compatibility:** Export payloads are unversioned and contain canonical SRD IDs and `reference` hints, not selected language or bundled spell bodies. Import/load decks in any selected language without migrating or rewriting their entries. The stored `reference.name` may be English or translated and is never used for matching. A missing translation yields a placeholder, not a missing-reference repair suggestion. Imported custom spells retain their contents and behavior regardless of selected SRD language.
 
 ## 9. Card Layout and Text Fitting
 
@@ -309,8 +314,8 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 5. Deleting a custom spell removes its active-deck entry after confirmation, without modifying saved snapshots.
 6. Active deck survives reload; **Save**, **Save As**, **Open**, **New deck**, and **Clear entries** follow §7; opening saved snapshots while dirty requires confirmation, including the currently associated snapshot.
 7. Individual duplicate additions are rejected with a bottom-right notification. Bulk add supports Append (skipping spells already in the deck and reporting counts) or confirmed Replace; uniqueness and ordering persist.
-8. Custom imports strictly support the `1.0.0` envelope; reject duplicate IDs and SRD-sourced records; batch collision review, namespace remapping, rollback, remap reporting, and unknown-version safe fallback are tested.
-9. Deck exports use version `1.0.0` and reference stable IDs without spell bodies; imports replace only after confirmation, enforce 5 MiB/2,000-entry limits, and handle unresolved references without incorrect rebinding; unknown versions use the explicit safe fallback.
+8. Custom imports use the unversioned `{type:"custom-spells",spells,srdSpellOverrides?}` envelope; reject unknown top-level fields, duplicate IDs, and SRD-sourced records; batch collision review, namespace remapping, override validation, rollback, and remap reporting are tested.
+9. Deck exports use the unversioned `{type:"deck",name,exportedAt,entries}` envelope and reference stable IDs without spell bodies; imports replace only after confirmation, enforce 5 MiB/2,000-entry limits, and handle unresolved references without incorrect rebinding; no unknown-version fallback exists.
 10. Auto-shrink always produces one card, uses 8.5–6 pt steps, and truncates at 6 pt with a visible ellipsis measured into the card plus a preview-only warning; multi-card retains complete text.
 11. Multi-card mode retains complete description/Higher Levels text across consecutive continuation cards.
 12. Letter and A4 print previews arrange up to nine 2.5″ × 3.5″ cards per sheet, optional cutting borders, and no printed warnings.
@@ -326,7 +331,7 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 22. Every translation `index` is identical to its canonical English spell; normalization produces the same `srd-` ID. Unknown/missing/duplicate indices, invalid schema, conflicting canonical mechanics or bad language filenames fail the build; incomplete but valid translations pass.
 23. A fully covered deck switches languages immediately. For incomplete coverage, confirmation reports accurate affected entry and distinct-spell counts; cancel changes nothing; confirmation preserves all active/saved entries, ordering, dirty state, baseline and revisions.
 24. Unavailable translations show distinguishable deck placeholders and are omitted from printing with separate counts/confirmation; switching back restores their content. Search, filters, sorting, details, layout and print reflect selected language while custom spells remain unchanged.
-25. Selected language persists outside deck records; missing selected languages visibly fall back to English. Import/export wire version is `1.0.0`; unknown versions require explicit best-effort opt-in and never invoke historical migration adapters. A pending switch is revalidated after concurrent deck edits.
+25. Selected language persists outside deck records; missing selected languages visibly fall back to English. Deck and custom-spell JSON formats are unversioned and strictly validated with no legacy or unknown-version path. A pending switch is revalidated after concurrent deck edits.
 26. Associated Save and Delete verify both the expected active revision and the expected saved revision (`baseline.savedRevision`) in one transaction. Legacy records lacking a verifiable token remain blocked for association-based Save until Open or Save As refreshes the association.
 27. Deck import adopts the validated imported name, clears association/baseline, increments the active revision, and never creates, updates, or deletes named snapshots; a populated import shows **Not saved as a deck** and first-time Save opens Save As.
 28. Deck and custom-spell import/export are independent dialogs; custom-spell tools are reachable from the Library pane, and deck export clearly states that it does not back up custom spells or SRD overrides.
@@ -343,7 +348,7 @@ Print with `window.print()` and dedicated strict CSS only. The application shell
 3. Implement library, per-language Fuse search/filters/sorting, language selector and preference, and custom spell CRUD.
 4. Build safe Markdown details, card preview with isolated card typography, and measured text-fitting/pagination.
 5. Implement deck ordering, uniqueness, save/load, dirty-state confirmation, delete/undo, and non-destructive language switching with confirmation.
-6. Implement `1.0.0` JSON import/export, unknown-version safe fallback, collision/remapping review, limits, missing-reference repair, and atomic validation.
+6. Implement unversioned JSON import/export, collision/remapping review, limits, missing-reference repair, and atomic validation.
 7. Implement Letter/A4 print layout, explicit card-font readiness, pre-print guidance, and cross-browser verification.
 8. Configure PWA cache/update lifecycle for all language assets; test offline behavior, accessibility, storage/schema failures, two-tab concurrency, and language compatibility.
 9. Configure Cloudflare Workers Static Assets (Wrangler input configuration, Cloudflare Vite plugin, pinned pnpm, allowlisted `workerd` build), verify build output with a deploy dry run and Workers-runtime preview/E2E, and document the Workers Builds settings.
@@ -376,12 +381,12 @@ These invariants are normative and must be covered by automated tests:
 | Legacy association with matching/mismatching baseline                          | Dexie v4 sets the token only when verifiable; mismatches remain tokenless and Save is blocked with Open/Save As recovery   |
 | Repair missing spell in active deck                                            | Only active reference changed; saved snapshot unchanged                                                                     |
 | Re-import deleted spell with original ID/source                                | Existing missing references automatically resolve                                                                           |
-| Import valid `1.0.0` custom-spell payload                                      | Strictly validated; collision/remap review applied; atomic commit                                                           |
-| Import valid `1.0.0` deck payload                                              | Strictly validated; active deck replaced only after confirmation; order retained and duplicates removed with reported count  |
+| Import valid custom-spell payload                                               | Strictly validated; collision/remap/override review applied; atomic commit                                                  |
+| Import valid deck payload                                                      | Strictly validated; active deck replaced only after confirmation; order retained and duplicates removed with reported count  |
 | Import duplicate IDs                                                           | Whole batch rejected without writes                                                                                         |
 | Import reserved `srd-` custom ID                                               | Unique UUID remap, old/new mapping shown; bundled SRD unchanged                                                             |
 | Import SRD-sourced record as custom                                            | Rejected; not relabeled as Custom                                                                                           |
-| Unknown JSON version                                                           | **Unknown version — Try Import / Cancel**; opt-in extracts recognized fields only and never infers missing mandatory fields |
+| Unknown top-level JSON field or missing required field                         | Rejected atomically with a readable validation error; no fallback parsing                                                    |
 | Two tabs mutate same active revision                                           | Exactly one succeeds; other receives conflict, no silent overwrite                                                          |
 | Two tabs save the same associated snapshot                                   | Both expected active and saved revisions are checked; exactly one succeeds, the other receives a Save As/Open conflict      |
 | IndexedDB quota or transaction failure                                         | No success message or partial linked operation                                                                              |

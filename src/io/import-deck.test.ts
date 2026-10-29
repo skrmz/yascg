@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { db } from "@/db/database.ts";
 import { getActiveDeck, mutateActiveDeck, makeEntry } from "@/db/active-deck.ts";
 import { analyzeDeckImport, applyDeckImport } from "@/io/import-deck.ts";
+import { buildDeckPayload } from "@/io/export.ts";
+import type { DeckEntry } from "@/domain/deck.ts";
 
-function deckPayload(entries: unknown[], version = "1.0.0"): string {
+function deckPayload(entries: unknown[]): string {
   return JSON.stringify({
-    version,
     type: "deck",
     name: "Imported",
     exportedAt: Date.now(),
@@ -25,7 +26,7 @@ beforeEach(async () => {
 });
 
 describe("deck import analysis", () => {
-  it("accepts a valid 1.0.0 deck and deduplicates repeated spell IDs", () => {
+  it("accepts a valid deck and deduplicates repeated spell IDs", () => {
     const analysis = analyzeDeckImport(deckPayload([validEntry, validEntry]));
     expect(analysis.ok).toBe(true);
     if (analysis.ok) {
@@ -59,10 +60,38 @@ describe("deck import analysis", () => {
     }
   });
 
+  it("round-trips an exported deck with references and order preserved", () => {
+    const entries: DeckEntry[] = [
+      {
+        entryId: "e1",
+        spellId: "srd-fireball",
+        fitMode: "auto-shrink",
+        reference: { source: "SRD-5.2.1", name: "Fireball" },
+      },
+      {
+        entryId: "e2",
+        spellId: "custom-1",
+        fitMode: "multi-card",
+        reference: { source: "Custom", name: "Homebrew" },
+      },
+    ];
+    const analysis = analyzeDeckImport(JSON.stringify(buildDeckPayload({ name: "Deck", entries })));
+    expect(analysis.ok).toBe(true);
+    if (analysis.ok) {
+      expect(analysis.plan.name).toBe("Deck");
+      expect(analysis.plan.entries).toEqual([
+        { spellId: "srd-fireball", fitMode: "auto-shrink", reference: validEntry.reference },
+        {
+          spellId: "custom-1",
+          fitMode: "multi-card",
+          reference: { source: "Custom", name: "Homebrew" },
+        },
+      ]);
+    }
+  });
+
   it("rejects a wrong type", () => {
-    const analysis = analyzeDeckImport(
-      JSON.stringify({ version: "1.0.0", type: "custom-spells", entries: [] }),
-    );
+    const analysis = analyzeDeckImport(JSON.stringify({ type: "custom-spells", entries: [] }));
     expect(analysis.ok).toBe(false);
   });
 
@@ -71,16 +100,28 @@ describe("deck import analysis", () => {
     expect(analysis.ok).toBe(false);
   });
 
+  it("rejects unknown top-level fields", () => {
+    const analysis = analyzeDeckImport(
+      JSON.stringify({
+        type: "deck",
+        name: "Imported",
+        exportedAt: Date.now(),
+        entries: [],
+        extra: true,
+      }),
+    );
+    expect(analysis.ok).toBe(false);
+  });
+
+  it("rejects missing required fields", () => {
+    const analysis = analyzeDeckImport(JSON.stringify({ type: "deck", entries: [] }));
+    expect(analysis.ok).toBe(false);
+  });
+
   it("enforces the 2000-entry cap", () => {
     const entries = Array.from({ length: 2001 }, () => validEntry);
     const analysis = analyzeDeckImport(deckPayload(entries));
     expect(analysis.ok).toBe(false);
-  });
-
-  it("supports unknown-version opt-in with recognized fields", () => {
-    const analysis = analyzeDeckImport(deckPayload([validEntry], "9.9.9"));
-    expect(analysis.ok).toBe(true);
-    if (analysis.ok) expect(analysis.plan.unknownVersion).toBe(true);
   });
 });
 

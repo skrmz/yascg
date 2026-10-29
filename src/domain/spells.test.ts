@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { LIMITS, spellSchema, srdSpellOverrideSchema } from "@/domain/spells";
-import {
-  CUSTOM_SPELLS_TYPE,
-  EXPORT_VERSION,
-  extractRecognizedSpell,
-  customSpellExportPayloadSchemaV1,
-} from "@/domain/payloads";
+import { CUSTOM_SPELLS_TYPE, customSpellExportPayloadSchema } from "@/domain/payloads";
 import { makeSpell } from "@/test/fixtures/spells.ts";
 
 describe("spellSchema", () => {
@@ -104,10 +99,9 @@ describe("spellSchema", () => {
     expect(spellSchema.safeParse(makeSpell({ subclasses: ["   "] })).success).toBe(false);
   });
 
-  it("round-trips subclasses through the export payload and extraction", () => {
+  it("round-trips subclasses through the export payload", () => {
     const spell = makeSpell({ subclasses: ["Cleric: War"] });
-    const parsed = customSpellExportPayloadSchemaV1.safeParse({
-      version: EXPORT_VERSION,
+    const parsed = customSpellExportPayloadSchema.safeParse({
       type: CUSTOM_SPELLS_TYPE,
       spells: [spell],
     });
@@ -115,7 +109,6 @@ describe("spellSchema", () => {
     if (parsed.success) {
       expect(parsed.data.spells[0].subclasses).toEqual(["Cleric: War"]);
     }
-    expect(extractRecognizedSpell(spell)?.subclasses).toEqual(["Cleric: War"]);
   });
 
   it("strips the transient overridden marker on parse", () => {

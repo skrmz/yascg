@@ -1,11 +1,8 @@
 import { LIMITS } from "@/domain/spells";
 import {
   DECK_TYPE,
-  EXPORT_VERSION,
   deckExportPayloadSchema,
-  extractRecognizedDeckEntry,
   readType,
-  readVersion,
   type DeckExportEntry,
 } from "@/domain/payloads";
 import { newEntryId } from "@/domain/ids";
@@ -14,8 +11,6 @@ import { mutateActiveDeck, replaceDeck } from "@/db/active-deck.ts";
 import { message, type MessageDescriptor } from "@/locales/messages.ts";
 
 export interface DeckImportPlan {
-  version: string | null;
-  unknownVersion: boolean;
   name: string;
   entries: DeckExportEntry[];
   removedDuplicates: number;
@@ -51,68 +46,26 @@ export function analyzeDeckImport(text: string): DeckImportAnalysis {
         : message("importExport.error.expectedTypeMissing", { expected: DECK_TYPE }),
     };
   }
-  const version = readVersion(raw);
-  const unknownVersion = version !== EXPORT_VERSION;
-
-  if (!unknownVersion) {
-    const parsed = deckExportPayloadSchema.safeParse(raw);
-    if (!parsed.success) {
-      const issue = parsed.error.issues[0];
-      return {
-        ok: false,
-        error: message("importExport.error.invalidPayload", {
-          version: EXPORT_VERSION,
-          path: issue?.path.join(".") || "payload",
-        }),
-      };
-    }
-    if (parsed.data.entries.length > LIMITS.DECK_ENTRIES_MAX) {
-      return { ok: false, error: message("importExport.error.deckTooLarge") };
-    }
-    const entries = dedupeDeckEntries(parsed.data.entries);
+  const parsed = deckExportPayloadSchema.safeParse(raw);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
     return {
-      ok: true,
-      plan: {
-        version,
-        unknownVersion,
-        name: parsed.data.name,
-        entries,
-        removedDuplicates: parsed.data.entries.length - entries.length,
-      },
+      ok: false,
+      error: message("importExport.error.invalidPayload", {
+        path: issue?.path.join(".") || "payload",
+      }),
     };
   }
-
-  const list = (raw as { entries?: unknown }).entries;
-  if (!Array.isArray(list)) {
-    return { ok: false, error: message("importExport.error.entriesNotArray") };
-  }
-  if (list.length > LIMITS.DECK_ENTRIES_MAX) {
+  if (parsed.data.entries.length > LIMITS.DECK_ENTRIES_MAX) {
     return { ok: false, error: message("importExport.error.deckTooLarge") };
   }
-  const entries: DeckExportEntry[] = [];
-  for (let index = 0; index < list.length; index += 1) {
-    const extracted = extractRecognizedDeckEntry(list[index]);
-    if (!extracted) {
-      return {
-        ok: false,
-        error: message("importExport.error.unknownEntryMissing", { index }),
-      };
-    }
-    entries.push(extracted);
-  }
-  const name =
-    typeof (raw as { name?: unknown }).name === "string"
-      ? (raw as { name: string }).name.slice(0, 120)
-      : "";
-  const uniqueEntries = dedupeDeckEntries(entries);
+  const entries = dedupeDeckEntries(parsed.data.entries);
   return {
     ok: true,
     plan: {
-      version,
-      unknownVersion,
-      name,
-      entries: uniqueEntries,
-      removedDuplicates: entries.length - uniqueEntries.length,
+      name: parsed.data.name,
+      entries,
+      removedDuplicates: parsed.data.entries.length - entries.length,
     },
   };
 }

@@ -18,7 +18,6 @@ vi.mock("@/state/AppProvider.tsx", () => ({
 }));
 
 const customPayload = JSON.stringify({
-  version: "1.0.0",
   type: "custom-spells",
   spells: [makeCustomSpell({ id: "custom-import-1", name: "Imported Spell" })],
 });

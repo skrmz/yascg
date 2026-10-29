@@ -249,7 +249,7 @@ Custom spells are authored, stored, and imported in the application's **internal
 
 | Concept                    | Raw SRD input (§2)                    | Custom spell / `Spell` schema                                                    |
 | -------------------------- | ------------------------------------- | -------------------------------------------------------------------------------- |
-| Top level                  | JSON array of entries                 | import envelope `{version,type,spells:[...]}`; each stored record is one `Spell` |
+| Top level                  | JSON array of entries                 | import envelope `{type,spells:[...],srdSpellOverrides?:[...]}`; each stored record is one `Spell` |
 | Identity                   | `index` slug → `id: "srd-<index>"`    | `id` supplied directly (UUID for new spells); `srd-` prefix reserved             |
 | Level                      | `level`                               | `level`                                                                          |
 | School                     | `school` canonical name (`Evocation`) | `school` canonical enum name (`Evocation`)                                       |
@@ -263,26 +263,12 @@ Custom spells are authored, stored, and imported in the application's **internal
 
 #### B. Import envelope
 
-Custom-spell export/import uses versioned strict schemas in `src/domain/payloads.ts`. The
-**deck** payload version stays `EXPORT_VERSION = "1.0.0"`; custom-spell payloads use
-`CUSTOM_SPELL_EXPORT_VERSION = "1.1.0"`.
-
-Version `1.0.0` (`customSpellExportPayloadSchemaV1`, legacy, no overrides):
+Custom-spell export/import uses one unversioned strict schema in `src/domain/payloads.ts`
+(`customSpellExportPayloadSchema`). Deck JSON is a separate unversioned format and does not
+carry spell definitions or overrides.
 
 ```json
 {
-  "version": "1.0.0",
-  "type": "custom-spells",
-  "spells": []
-}
-```
-
-Version `1.1.0` (`customSpellExportPayloadSchemaV2`, adds an optional `srdSpellOverrides`
-array):
-
-```json
-{
-  "version": "1.1.0",
   "type": "custom-spells",
   "spells": [],
   "srdSpellOverrides": [
@@ -292,21 +278,16 @@ array):
 ```
 
 - `type` must be exactly `"custom-spells"`; other payload types are rejected.
-- New custom-spell exports always stamp `1.1.0`, even when `srdSpellOverrides` is empty.
-- The importer accepts `1.0.0` and `1.1.0`. A `1.0.0` payload carries no overrides and leaves
-  local overrides untouched. Any other version triggers the best-effort **Unknown version —
-  Try Import** path: only fields recognized by the current schema are extracted, unknown
-  fields are discarded, and all mandatory fields must still be present. A recognized
-  `1.1.0` payload is never routed through this fallback.
-- Unknown versions that contain a non-empty `srdSpellOverrides` (or other dropped fields) are
-  marked **lossy**: the reported override record(s) and fields require explicit confirmation
-  before commit, so overrides are never silently discarded.
-- Each override record is validated with `validateSrdOverride` (`src/domain/srd-overrides.ts`):
-  `spellId` must be a canonical `srd-` id present in the loaded SRD data, `locale` must be a
-  manifest locale, only `verbalDescription`/`somaticDescription` may be present, both are
-  bounded by `META_MAX` (500), and a description is only allowed for a component enabled on
-  the canonical spell. Every invalid record is reported (index, `spellId`, `locale`, reason)
-  and the whole import aborts atomically. Empty override records are no-ops.
+- There is no `version` field, unknown-version path, or legacy compatibility path. Exports
+  always use this format, even when `spells` or `srdSpellOverrides` is empty.
+- `srdSpellOverrides` is optional. Importing a payload without it leaves local overrides
+  untouched. Each override record is validated with `validateSrdOverride`
+  (`src/domain/srd-overrides.ts`): `spellId` must be a canonical `srd-` id present in the
+  loaded SRD data, `locale` must be a manifest locale, only
+  `verbalDescription`/`somaticDescription` may be present, both are bounded by `META_MAX`
+  (500), and a description is only allowed for a component enabled on the canonical spell.
+  Every invalid record is reported (index, `spellId`, `locale`, reason) and the whole import
+  aborts atomically. Empty override records are no-ops.
 - The envelope is a strict object, so unknown top-level keys are rejected. Individual spell
   objects are non-strict, so unknown spell keys are silently stripped.
 - The import payload is capped at **5 MiB**; oversize files are rejected before parsing.
@@ -362,7 +343,6 @@ Custom spells persist in the Dexie `customSpells` table (`src/db/database.ts`), 
 
 ```json
 {
-  "version": "1.0.0",
   "type": "custom-spells",
   "spells": [
     {

@@ -34,7 +34,6 @@ export function CustomSpellImportExportDialog({
   const [notice, setNotice] = useState<Notice | null>(null);
   const [plan, setPlan] = useState<CustomImportPlan | null>(null);
   const [strategies, setStrategies] = useState<CollisionStrategy>("skip");
-  const [confirmLossy, setConfirmLossy] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const analysisRef = useRef(0);
@@ -49,7 +48,6 @@ export function CustomSpellImportExportDialog({
     analysisRef.current += 1;
     setPlan(null);
     setStrategies("skip");
-    setConfirmLossy(false);
     setConfirmDiscard(false);
     setNotice(null);
   };
@@ -121,34 +119,13 @@ export function CustomSpellImportExportDialog({
     }
     setPlan(analysis.plan);
     setStrategies("skip");
-    setConfirmLossy(false);
-    const validatedTexts: MessageDescriptor[] = [
-      message("importExport.validatedSpells", { count: analysis.plan.entries.length }),
-      message("importExport.validatedOverrides", { count: analysis.plan.overrides.length }),
-    ];
-    if (analysis.plan.lossy) {
-      setNotice({
-        tone: "ok",
-        texts: [
-          message("importExport.unknownVersionTry"),
-          ...validatedTexts,
-          message("importExport.lossyDiscard", {
-            count: analysis.plan.droppedOverrides,
-            fields:
-              analysis.plan.lossyFields.length > 0
-                ? ` (${analysis.plan.lossyFields.join(", ")})`
-                : "",
-          }),
-        ],
-      });
-    } else if (analysis.plan.unknownVersion) {
-      setNotice({
-        tone: "ok",
-        texts: [message("importExport.unknownVersionTry"), ...validatedTexts],
-      });
-    } else {
-      setNotice({ tone: "ok", texts: validatedTexts });
-    }
+    setNotice({
+      tone: "ok",
+      texts: [
+        message("importExport.validatedSpells", { count: analysis.plan.entries.length }),
+        message("importExport.validatedOverrides", { count: analysis.plan.overrides.length }),
+      ],
+    });
   };
 
   const commitCustom = async () => {
@@ -251,25 +228,10 @@ export function CustomSpellImportExportDialog({
                   {t("importExport.appliedSpells", { count: plan.entries.length })}{" "}
                   {t("importExport.appliedOverrides", { count: plan.overrides.length })}
                 </p>
-                {plan.lossy ? (
-                  <p className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-amber-300">
-                    {t("importExport.lossy", {
-                      overrides: plan.droppedOverrides,
-                      fields:
-                        plan.lossyFields.length > 0 ? ` (${plan.lossyFields.join(", ")})` : "",
-                    })}
-                  </p>
-                ) : null}
                 <div className="flex flex-wrap items-center gap-2">
-                  {plan.lossy && !confirmLossy ? (
-                    <Button size="sm" variant="destructive" onClick={() => setConfirmLossy(true)}>
-                      {t("importExport.confirmLossy")}
-                    </Button>
-                  ) : (
-                    <Button size="sm" onClick={() => void commitCustom()}>
-                      {t("importExport.commitCustom")}
-                    </Button>
-                  )}
+                  <Button size="sm" onClick={() => void commitCustom()}>
+                    {t("importExport.commitCustom")}
+                  </Button>
                   <Button size="sm" variant="ghost" onClick={resetImport}>
                     {t("importExport.resetCustom")}
                   </Button>

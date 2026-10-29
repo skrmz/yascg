@@ -2,18 +2,18 @@ import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { db } from "@/db/database.ts";
 import { analyzeCustomImport, applyCustomImport, ImportConflictError } from "@/io/import-custom.ts";
 import { buildCustomSpellsPayload } from "@/io/export.ts";
-import { customSpellExportPayloadSchemaV2 } from "@/domain/payloads.ts";
+import { customSpellExportPayloadSchema } from "@/domain/payloads.ts";
 import { putCustomSpell } from "@/db/custom-spells.ts";
 import { getSrdOverride, putSrdOverride } from "@/db/srd-overrides.ts";
 import type { SrdOverrideValidationContext } from "@/domain/srd-overrides.ts";
 import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
 
-function payload(spells: unknown[], version = "1.0.0"): string {
-  return JSON.stringify({ version, type: "custom-spells", spells });
+function payload(spells: unknown[]): string {
+  return JSON.stringify({ type: "custom-spells", spells });
 }
 
-function payloadV2(spells: unknown[], overrides?: unknown[]): string {
-  const body: Record<string, unknown> = { version: "1.1.0", type: "custom-spells", spells };
+function payloadWithOverrides(spells: unknown[], overrides?: unknown[]): string {
+  const body: Record<string, unknown> = { type: "custom-spells", spells };
   if (overrides !== undefined) body.srdSpellOverrides = overrides;
   return JSON.stringify(body);
 }
@@ -41,20 +41,33 @@ beforeEach(async () => {
 });
 
 describe("custom spell import analysis", () => {
-  it("accepts a valid 1.0.0 payload", () => {
+  it("accepts a valid payload", () => {
     const analysis = analyzeCustomImport(payload([makeCustomSpell({ id: "c1" })]), []);
     expect(analysis.ok).toBe(true);
     if (analysis.ok) {
       expect(analysis.plan.entries).toHaveLength(1);
-      expect(analysis.plan.unknownVersion).toBe(false);
     }
   });
 
   it("rejects a wrong payload type", () => {
+    const analysis = analyzeCustomImport(JSON.stringify({ type: "deck", spells: [] }), []);
+    expect(analysis.ok).toBe(false);
+  });
+
+  it("rejects unknown top-level fields", () => {
     const analysis = analyzeCustomImport(
-      JSON.stringify({ version: "1.0.0", type: "deck", spells: [] }),
+      JSON.stringify({
+        type: "custom-spells",
+        spells: [],
+        extra: true,
+      }),
       [],
     );
+    expect(analysis.ok).toBe(false);
+  });
+
+  it("rejects missing required fields", () => {
+    const analysis = analyzeCustomImport(payload([{ id: "c1", name: "Incomplete" }]), []);
     expect(analysis.ok).toBe(false);
   });
 
@@ -82,14 +95,6 @@ describe("custom spell import analysis", () => {
     expect(analysis.ok).toBe(false);
   });
 
-  it("rejects unknown-version records with unsupported classes", () => {
-    const analysis = analyzeCustomImport(
-      payload([makeCustomSpell({ id: "c1", classes: ["Artificer"] })], "2.0.0"),
-      [],
-    );
-    expect(analysis.ok).toBe(false);
-  });
-
   it("remaps reserved srd- custom IDs to UUIDs", () => {
     const analysis = analyzeCustomImport(payload([makeCustomSpell({ id: "srd-forged" })]), []);
     expect(analysis.ok).toBe(true);
@@ -97,23 +102,6 @@ describe("custom spell import analysis", () => {
       expect(analysis.plan.remaps).toHaveLength(1);
       expect(analysis.plan.entries[0].record.id.startsWith("srd-")).toBe(false);
     }
-  });
-
-  it("flags unknown versions for opt-in Try Import", () => {
-    const analysis = analyzeCustomImport(
-      payload([{ ...makeCustomSpell({ id: "c1" }), extra: true }], "2.0.0"),
-      [],
-    );
-    expect(analysis.ok).toBe(true);
-    if (analysis.ok) {
-      expect(analysis.plan.unknownVersion).toBe(true);
-      expect(analysis.plan.entries).toHaveLength(1);
-    }
-  });
-
-  it("rejects unknown-version records missing required fields", () => {
-    const analysis = analyzeCustomImport(payload([{ id: "c1", name: "Incomplete" }], "2.0.0"), []);
-    expect(analysis.ok).toBe(false);
   });
 
   it("detects collisions with existing custom spells", () => {
@@ -174,26 +162,33 @@ describe("custom spell import commit", () => {
 });
 
 describe("custom-spell export/import with SRD overrides", () => {
-  it("stamps 1.1.0 on new custom-spell exports and omits updatedAt", () => {
+  it("exports an unversioned payload and omits updatedAt", () => {
     const body = buildCustomSpellsPayload(
       [makeCustomSpell({ id: "c1" })],
       [{ spellId: "srd-fireball", locale: "en", verbalDescription: "Speak", updatedAt: 5 }],
     );
-    expect(body.version).toBe("1.1.0");
+    expect(body).not.toHaveProperty("version");
     expect(body.srdSpellOverrides).toHaveLength(1);
-    expect(body.srdSpellOverrides[0]).not.toHaveProperty("updatedAt");
-    // The writer output validates against the declared version-aware wire schema.
-    expect(customSpellExportPayloadSchemaV2.safeParse(body).success).toBe(true);
+    expect(body.srdSpellOverrides?.[0]).not.toHaveProperty("updatedAt");
+    expect(customSpellExportPayloadSchema.safeParse(body).success).toBe(true);
   });
 
-  it("rejects a 1.1.0 payload whose override carries updatedAt (strict wire shape)", () => {
+  it("rejects an override that carries updatedAt (strict wire shape)", () => {
     const malformed = {
-      version: "1.1.0",
       type: "custom-spells",
       spells: [],
       srdSpellOverrides: [{ spellId: "srd-fireball", locale: "en", updatedAt: 1 }],
     };
-    expect(customSpellExportPayloadSchemaV2.safeParse(malformed).success).toBe(false);
+    expect(customSpellExportPayloadSchema.safeParse(malformed).success).toBe(false);
+  });
+
+  it("rejects overrides that are not an array", () => {
+    const analysis = analyzeCustomImport(
+      JSON.stringify({ type: "custom-spells", spells: [], srdSpellOverrides: {} }),
+      [],
+      overrideOptions,
+    );
+    expect(analysis.ok).toBe(false);
   });
 
   it("round-trips overrides through export and import", async () => {
@@ -212,7 +207,7 @@ describe("custom-spell export/import with SRD overrides", () => {
     expect((await getSrdOverride("srd-fireball", "en"))?.verbalDescription).toBe("Speak");
   });
 
-  it("leaves local overrides unchanged when importing a legacy 1.0.0 payload", async () => {
+  it("leaves local overrides unchanged when the payload has no overrides", async () => {
     await putSrdOverride(
       { spellId: "srd-fireball", locale: "en", verbalDescription: "Keep" },
       overrideContext,
@@ -229,7 +224,7 @@ describe("custom-spell export/import with SRD overrides", () => {
       { spellId: "srd-fireball", locale: "en", verbalDescription: "Keep" },
       overrideContext,
     );
-    for (const text of [payloadV2([], undefined), payloadV2([], [])]) {
+    for (const text of [payloadWithOverrides([], undefined), payloadWithOverrides([], [])]) {
       const analysis = analyzeCustomImport(text, [], overrideOptions);
       expect(analysis.ok).toBe(true);
       if (!analysis.ok) return;
@@ -241,7 +236,7 @@ describe("custom-spell export/import with SRD overrides", () => {
 
   it("drops empty override records as no-ops", () => {
     const analysis = analyzeCustomImport(
-      payloadV2([], [{ spellId: "srd-fireball", locale: "en" }]),
+      payloadWithOverrides([], [{ spellId: "srd-fireball", locale: "en" }]),
       [],
       overrideOptions,
     );
@@ -250,7 +245,7 @@ describe("custom-spell export/import with SRD overrides", () => {
   });
 
   it("refuses to validate overrides when SRD data is not loaded", () => {
-    const analysis = analyzeCustomImport(payloadV2([], [overrideRecord]), []);
+    const analysis = analyzeCustomImport(payloadWithOverrides([], [overrideRecord]), []);
     expect(analysis.ok).toBe(false);
     if (!analysis.ok)
       expect(analysis.error.key).toBe("importExport.error.overridesValidationUnavailable");
@@ -258,7 +253,7 @@ describe("custom-spell export/import with SRD overrides", () => {
 
   it("collects every invalid override record and aborts", () => {
     const analysis = analyzeCustomImport(
-      payloadV2(
+      payloadWithOverrides(
         [],
         [
           { spellId: "srd-unknown", locale: "en", verbalDescription: "x" },
@@ -274,28 +269,10 @@ describe("custom-spell export/import with SRD overrides", () => {
     if (!analysis.ok) expect(analysis.overrideErrors).toHaveLength(4);
   });
 
-  it("flags unknown versions with overrides as lossy", () => {
-    const analysis = analyzeCustomImport(
-      JSON.stringify({
-        version: "2.0.0",
-        type: "custom-spells",
-        spells: [makeCustomSpell({ id: "c1" })],
-        srdSpellOverrides: [overrideRecord],
-      }),
-      [],
-    );
-    expect(analysis.ok).toBe(true);
-    if (analysis.ok) {
-      expect(analysis.plan.lossy).toBe(true);
-      expect(analysis.plan.droppedOverrides).toBe(1);
-      expect(analysis.plan.overrides).toHaveLength(0);
-    }
-  });
-
   it("aborts the whole batch, including overrides, when a collision target changed", async () => {
     const existing = await putCustomSpell(makeCustomSpell({ id: "c1", name: "Existing" }));
     const analysis = analyzeCustomImport(
-      payloadV2([makeCustomSpell({ id: "c1", name: "Incoming" })], [overrideRecord]),
+      payloadWithOverrides([makeCustomSpell({ id: "c1", name: "Incoming" })], [overrideRecord]),
       [existing],
       overrideOptions,
     );

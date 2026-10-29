@@ -76,9 +76,7 @@ export function DeckImportExportDialog({
     }
     setPlan(analysis.plan);
     const texts: MessageDescriptor[] = [
-      analysis.plan.unknownVersion
-        ? message("importExport.unknownVersionDeck")
-        : message("importExport.validatedDeck", { count: analysis.plan.entries.length }),
+      message("importExport.validatedDeck", { count: analysis.plan.entries.length }),
     ];
     if (analysis.plan.removedDuplicates > 0) {
       texts.push(

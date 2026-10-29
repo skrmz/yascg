@@ -27,7 +27,6 @@ vi.mock("@/state/AppProvider.tsx", () => ({
 }));
 
 const deckPayload = JSON.stringify({
-  version: "1.0.0",
   type: "deck",
   name: "Imported",
   exportedAt: 1,

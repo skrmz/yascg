@@ -1,16 +1,7 @@
-import { z } from "zod";
 import { db } from "@/db/database.ts";
 import { LIMITS, spellSchema, type Spell } from "@/domain/spells";
 import { validateSrdOverride, type SrdOverrideInput } from "@/domain/srd-overrides.ts";
-import {
-  CUSTOM_SPELLS_TYPE,
-  CUSTOM_SPELL_EXPORT_VERSION,
-  EXPORT_VERSION,
-  customSpellExportPayloadSchemaV1,
-  extractRecognizedSpell,
-  readType,
-  readVersion,
-} from "@/domain/payloads";
+import { CUSTOM_SPELLS_TYPE, customSpellImportPayloadSchema, readType } from "@/domain/payloads";
 import { newUuid } from "@/domain/ids";
 import { AppError, message, type MessageDescriptor } from "@/locales/messages.ts";
 
@@ -42,15 +33,10 @@ export interface OverrideImportError {
 }
 
 export interface CustomImportPlan {
-  version: string | null;
-  unknownVersion: boolean;
   entries: CustomImportEntry[];
   remaps: Array<{ from: string; to: string }>;
   collisions: CustomImportCollision[];
   overrides: CustomImportOverride[];
-  lossy: boolean;
-  lossyFields: string[];
-  droppedOverrides: number;
 }
 
 export type CustomImportAnalysis =
@@ -80,43 +66,12 @@ export class ImportConflictError extends AppError {
   }
 }
 
-const RECOGNIZED_SPELL_KEYS = new Set([
-  "id",
-  "name",
-  "level",
-  "school",
-  "castingTime",
-  "range",
-  "components",
-  "duration",
-  "concentration",
-  "ritual",
-  "classes",
-  "subclasses",
-  "savingThrow",
-  "damageTypes",
-  "description",
-  "higherLevels",
-  "source",
-  "sourceLabel",
-  "updatedAt",
-]);
-
-const RECOGNIZED_TOP_KEYS = new Set(["version", "type", "spells", "srdSpellOverrides"]);
-
 function byteLength(text: string): number {
   return new TextEncoder().encode(text).length;
 }
 
 function fingerprint(spell: Spell): string {
   return JSON.stringify(spell);
-}
-
-function collectUnknownSpellFields(record: unknown, index: number, into: string[]): void {
-  if (!record || typeof record !== "object") return;
-  for (const key of Object.keys(record as Record<string, unknown>)) {
-    if (!RECOGNIZED_SPELL_KEYS.has(key)) into.push(`spells[${index}].${key}`);
-  }
 }
 
 export function analyzeCustomImport(
@@ -148,74 +103,18 @@ export function analyzeCustomImport(
         : message("importExport.error.expectedTypeMissing", { expected: CUSTOM_SPELLS_TYPE }),
     };
   }
-  const version = readVersion(raw);
-  const isV1 = version === EXPORT_VERSION;
-  const isV2 = version === CUSTOM_SPELL_EXPORT_VERSION;
-  const unknownVersion = !isV1 && !isV2;
-
-  let spells: Spell[];
-  let rawOverrides: unknown[] = [];
-  const lossyFields: string[] = [];
-  let droppedOverrides = 0;
-
-  if (isV1) {
-    const parsed = customSpellExportPayloadSchemaV1.safeParse(raw);
-    if (!parsed.success) {
-      const issue = parsed.error.issues[0];
-      return {
-        ok: false,
-        error: message("importExport.error.invalidPayload", {
-          version: EXPORT_VERSION,
-          path: issue?.path.join(".") || "payload",
-        }),
-      };
-    }
-    spells = parsed.data.spells;
-  } else if (isV2) {
-    const spellsResult = z.array(spellSchema).safeParse((raw as { spells?: unknown }).spells);
-    if (!spellsResult.success) {
-      const issue = spellsResult.error.issues[0];
-      return {
-        ok: false,
-        error: message("importExport.error.invalidPayload", {
-          version: CUSTOM_SPELL_EXPORT_VERSION,
-          path: `spells.${issue?.path.join(".") || "?"}`,
-        }),
-      };
-    }
-    spells = spellsResult.data;
-    const maybeOverrides = (raw as { srdSpellOverrides?: unknown }).srdSpellOverrides;
-    if (maybeOverrides === undefined) {
-      rawOverrides = [];
-    } else if (Array.isArray(maybeOverrides)) {
-      rawOverrides = maybeOverrides;
-    } else {
-      return { ok: false, error: message("importExport.error.overridesNotArray") };
-    }
-  } else {
-    const list = (raw as { spells?: unknown }).spells;
-    if (!Array.isArray(list)) {
-      return { ok: false, error: message("importExport.error.spellsNotArray") };
-    }
-    spells = [];
-    for (let index = 0; index < list.length; index += 1) {
-      const extracted = extractRecognizedSpell(list[index]);
-      if (!extracted) {
-        return {
-          ok: false,
-          error: message("importExport.error.unknownRecordMissing", { index }),
-        };
-      }
-      spells.push(extracted);
-      collectUnknownSpellFields(list[index], index, lossyFields);
-    }
-    for (const key of Object.keys(raw as Record<string, unknown>)) {
-      if (!RECOGNIZED_TOP_KEYS.has(key)) lossyFields.push(key);
-    }
-    const dropped = (raw as { srdSpellOverrides?: unknown }).srdSpellOverrides;
-    if (Array.isArray(dropped)) droppedOverrides = dropped.length;
-    else if (dropped !== undefined) lossyFields.push("srdSpellOverrides");
+  const parsed = customSpellImportPayloadSchema.safeParse(raw);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return {
+      ok: false,
+      error: message("importExport.error.invalidPayload", {
+        path: issue?.path.join(".") || "payload",
+      }),
+    };
   }
+  const spells = parsed.data.spells;
+  const rawOverrides = parsed.data.srdSpellOverrides ?? [];
 
   const overrides: CustomImportOverride[] = [];
   if (rawOverrides.length > 0) {
@@ -333,15 +232,10 @@ export function analyzeCustomImport(
   return {
     ok: true,
     plan: {
-      version,
-      unknownVersion,
       entries,
       remaps,
       collisions,
       overrides,
-      lossy: lossyFields.length > 0 || droppedOverrides > 0,
-      lossyFields,
-      droppedOverrides,
     },
   };
 }

@@ -256,12 +256,13 @@ export const en = {
   importExport: {
     deckTitle: "Import / export deck",
     deckDescription:
-      "Deck JSON uses version 1.0.0 and replaces the active deck. Saved decks are not changed.",
+      "Exports the active deck's spell references, name, and display settings. Spell definitions and SRD edits are not included. Import replaces the active deck but preserves saved decks and existing spell definitions.",
     customTitle: "Import / export custom spells",
     customDescription:
-      "Custom-spell JSON uses version 1.1.0 and includes SRD overrides. Export is the recommended backup for custom spells.",
+      "Exports custom spell definitions and edits to SRD spells, including component descriptions. Use this together with deck exports for a complete backup of your spell content and deck references.",
     deckBackupNotice: "Deck JSON is not a backup of custom spells or SRD overrides.",
-    customBackupNotice: "This export backs up custom spell definitions and SRD overrides.",
+    customBackupNotice:
+      "This export backs up custom spell definitions and edits to SRD spells, including component descriptions.",
     dirtyReplaceWarning:
       "The active deck has unsaved changes. Importing replaces them; saved decks are not changed.",
     discardNotice:
@@ -287,13 +288,6 @@ export const en = {
     appliedOverrides: "{{count}} override record will be applied.",
     appliedOverrides_one: "{{count}} override record will be applied.",
     appliedOverrides_other: "{{count}} override records will be applied.",
-    lossy:
-      "Unknown version: {{overrides}} override records and dropped fields{{fields}} will be discarded.",
-    lossyDiscard: "{{count}} override record and dropped fields{{fields}} would be discarded.",
-    lossyDiscard_one: "{{count}} override record and dropped fields{{fields}} would be discarded.",
-    lossyDiscard_other:
-      "{{count}} override records and dropped fields{{fields}} would be discarded.",
-    confirmLossy: "Confirm lossy import…",
     commitCustom: "Commit custom-spell import",
     resetCustom: "Reset custom import",
     deckPlan:
@@ -325,9 +319,6 @@ export const en = {
     validatedOverrides: "{{count}} override record validated.",
     validatedOverrides_one: "{{count}} override record validated.",
     validatedOverrides_other: "{{count}} override records validated.",
-    unknownVersionTry: "Unknown version — Try Import available.",
-    unknownVersionDeck:
-      "Unknown version — Try Import available. Confirm to replace the active deck.",
     validatedDeck: "{{count}} deck entry validated. Confirm to replace the active deck.",
     validatedDeck_one: "{{count}} deck entry validated. Confirm to replace the active deck.",
     validatedDeck_other: "{{count}} deck entries validated. Confirm to replace the active deck.",
@@ -347,12 +338,7 @@ export const en = {
       payloadObject: "The payload must be a JSON object.",
       expectedType: 'Expected a "{{expected}}" payload but found "{{actual}}".',
       expectedTypeMissing: 'Expected a "{{expected}}" payload but found none.',
-      spellsNotArray: 'The "spells" field must be an array.',
-      entriesNotArray: 'The "entries" field must be an array.',
-      overridesNotArray: 'The "srdSpellOverrides" field must be an array.',
-      invalidPayload: 'Invalid {{version}} payload on "{{path}}".',
-      unknownRecordMissing: "Unknown-version record at index {{index}} is missing required fields.",
-      unknownEntryMissing: "Unknown-version entry at index {{index}} is missing required fields.",
+      invalidPayload: 'Invalid payload on "{{path}}".',
       validationUnavailable:
         "SRD validation data is not loaded yet. Wait for the spell library to finish loading, then try again.",
       overridesValidationUnavailable:

@@ -22,18 +22,16 @@ The file must be a JSON object (the import envelope) containing an array of spel
 
 ```json
 {
-  "version": "1.1.0",
   "type": "custom-spells",
   "spells": []
 }
 ```
 
-- `version` — use `"1.1.0"` (current) or `"1.0.0"` (legacy). Unknown versions take a best-effort path and may discard fields, so prefer `1.1.0`.
 - `type` — must be exactly `"custom-spells"`.
 - `spells` — array of spell records; it may be empty but is required.
-- `srdSpellOverrides` — optional, `1.1.0` only; see [SRD component-text overrides](#optional-srd-component-text-overrides).
+- `srdSpellOverrides` — optional; see [SRD component-text overrides](#optional-srd-component-text-overrides).
 
-For supported versions the envelope is strict: unknown **top-level** keys are rejected. Unknown keys **inside a spell record** are silently discarded rather than rejected, so a typo can be lost without an error (this includes `locale` or `language`; see [Language and translations](#language-and-translations)). IDs must be unique within the file; a duplicate ID aborts the whole import.
+The format is unversioned: there is no `version` field and no legacy or unknown-version compatibility path. The envelope is strict: unknown **top-level** keys are rejected. Unknown keys **inside a spell record** are silently discarded rather than rejected, so a typo can be lost without an error (this includes `locale` or `language`; see [Language and translations](#language-and-translations)). IDs must be unique within the file; a duplicate ID aborts the whole import.
 
 ## Spell fields
 
@@ -120,7 +118,6 @@ Optional component detail fields:
 
 ```json
 {
-  "version": "1.1.0",
   "type": "custom-spells",
   "spells": [
     {
@@ -208,11 +205,10 @@ Do not expect **Overwrite existing** to link versions: it replaces the stored re
 
 ## Optional: SRD component-text overrides
 
-A `1.1.0` file may also carry SRD spell overrides. These let you attach verbal/somatic notes to bundled SRD spells without modifying `src/data/`:
+A custom-spell file may also carry SRD spell overrides. These let you attach verbal/somatic notes to bundled SRD spells without modifying `src/data/`:
 
 ```json
 {
-  "version": "1.1.0",
   "type": "custom-spells",
   "spells": [],
   "srdSpellOverrides": [
@@ -241,7 +237,7 @@ You can omit `srdSpellOverrides` entirely. Normal app exports always include it,
 | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `The payload must be a JSON object.`                         | The file is a bare array or another JSON value. Wrap the spells in the envelope object.                                                                                                                                                                  |
 | `Expected a "custom-spells" payload…`                        | `type` is missing or is not `"custom-spells"` (for example a deck export).                                                                                                                                                                               |
-| `Invalid 1.1.0 payload on "spells.0.…"`                      | A mandatory field is missing, has the wrong type, is out of range, or uses a non-canonical `school`/`classes`/`savingThrow` value.                                                                                                                       |
+| `Invalid payload on "spells.0.…"`                            | A mandatory field is missing, has the wrong type, is out of range, or uses a non-canonical `school`/`classes`/`savingThrow` value.                                                                                                                       |
 | `Duplicate spell ID "…" inside the import file.`             | Give every record a unique `id` — including different-language versions of the same spell.                                                                                                                                                               |
 | Same spell in another language reports a collision           | Expected. Custom spells have no language dimension and are not linked; use a distinct `id` per language version. **Skip** discards the incoming record, **Keep both** creates an unrelated random-ID copy, **Overwrite existing** replaces the original. |
 | `locale` / `language` in a spell record has no effect        | These fields are not part of the custom spell shape and are silently discarded. Language variants must be separate records with distinct IDs.                                                                                                            |

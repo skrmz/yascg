@@ -260,14 +260,14 @@ export const de = {
   importExport: {
     deckTitle: "Deck importieren/exportieren",
     deckDescription:
-      "Deck-JSON verwendet Version 1.0.0 und ersetzt das aktive Deck. Gespeicherte Decks werden nicht geändert.",
+      "Exportiert die Zauberverweise, den Namen und die Anzeigeeinstellungen des aktiven Decks. Zauberdefinitionen und SRD-Änderungen sind nicht enthalten. Der Import ersetzt das aktive Deck, behält aber gespeicherte Decks und vorhandene Zauberdefinitionen bei.",
     customTitle: "Eigene Zauber importieren/exportieren",
     customDescription:
-      "Eigene Zauber verwenden JSON Version 1.1.0 inklusive SRD-Überschreibungen. Der Export ist die empfohlene Sicherung für eigene Zauber.",
+      "Exportiert eigene Zauberdefinitionen und Änderungen an SRD-Zaubern, einschließlich Komponentenbeschreibungen. Verwende diesen Export zusammen mit Deck-Exporten für eine vollständige Sicherung deiner Zauberinhalte und Deckverweise.",
     deckBackupNotice:
       "Deck-JSON ist keine Sicherung von eigenen Zaubern oder SRD-Überschreibungen.",
     customBackupNotice:
-      "Dieser Export sichert Definitionen eigener Zauber und SRD-Überschreibungen.",
+      "Dieser Export sichert Definitionen eigener Zauber und Änderungen an SRD-Zaubern, einschließlich Komponentenbeschreibungen.",
     dirtyReplaceWarning:
       "Das aktive Deck enthält nicht gespeicherte Änderungen. Der Import ersetzt sie; gespeicherte Decks werden nicht geändert.",
     discardNotice:
@@ -293,15 +293,6 @@ export const de = {
     appliedOverrides: "{{count}} Überschreibungsdatensatz wird angewendet.",
     appliedOverrides_one: "{{count}} Überschreibungsdatensatz wird angewendet.",
     appliedOverrides_other: "{{count}} Überschreibungsdatensätze werden angewendet.",
-    lossy:
-      "Unbekannte Version: {{overrides}} Überschreibungsdatensätze und verworfene Felder{{fields}} werden verworfen.",
-    lossyDiscard:
-      "{{count}} Überschreibungsdatensatz und verworfene Felder{{fields}} würden verworfen.",
-    lossyDiscard_one:
-      "{{count}} Überschreibungsdatensatz und verworfene Felder{{fields}} würden verworfen.",
-    lossyDiscard_other:
-      "{{count}} Überschreibungsdatensätze und verworfene Felder{{fields}} würden verworfen.",
-    confirmLossy: "Verlustbehafteten Import bestätigen…",
     commitCustom: "Import eigener Zauber übernehmen",
     resetCustom: "Import eigener Zauber zurücksetzen",
     deckPlan:
@@ -333,9 +324,6 @@ export const de = {
     validatedOverrides: "{{count}} Überschreibungsdatensatz validiert.",
     validatedOverrides_one: "{{count}} Überschreibungsdatensatz validiert.",
     validatedOverrides_other: "{{count}} Überschreibungsdatensätze validiert.",
-    unknownVersionTry: "Unbekannte Version — Testimport verfügbar.",
-    unknownVersionDeck:
-      "Unbekannte Version — Testimport verfügbar. Bestätige, um das aktive Deck zu ersetzen.",
     validatedDeck: "{{count}} Deck-Eintrag validiert. Bestätige, um das aktive Deck zu ersetzen.",
     validatedDeck_one:
       "{{count}} Deck-Eintrag validiert. Bestätige, um das aktive Deck zu ersetzen.",
@@ -358,14 +346,7 @@ export const de = {
       payloadObject: "Die Nutzdaten müssen ein JSON-Objekt sein.",
       expectedType: 'Es wurden "{{expected}}"-Nutzdaten erwartet, gefunden wurde "{{actual}}".',
       expectedTypeMissing: 'Es wurden "{{expected}}"-Nutzdaten erwartet, gefunden wurde nichts.',
-      spellsNotArray: 'Das Feld "spells" muss ein Array sein.',
-      entriesNotArray: 'Das Feld "entries" muss ein Array sein.',
-      overridesNotArray: 'Das Feld "srdSpellOverrides" muss ein Array sein.',
-      invalidPayload: 'Ungültige {{version}}-Nutzdaten bei "{{path}}".',
-      unknownRecordMissing:
-        "Ein Datensatz mit unbekannter Version bei Index {{index}} enthält nicht alle erforderlichen Felder.",
-      unknownEntryMissing:
-        "Ein Eintrag mit unbekannter Version bei Index {{index}} enthält nicht alle erforderlichen Felder.",
+      invalidPayload: 'Ungültige Nutzdaten bei "{{path}}".',
       validationUnavailable:
         "Die SRD-Validierungsdaten sind noch nicht geladen. Warte, bis die Zauberbibliothek fertig geladen ist, und versuche es erneut.",
       overridesValidationUnavailable:

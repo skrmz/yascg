@@ -2,12 +2,10 @@ import type { ActiveDeck, DeckEntry, SavedDeck } from "@/domain/deck";
 import type { Spell, SrdSpellOverride } from "@/domain/spells";
 import {
   DECK_TYPE,
-  EXPORT_VERSION,
   CUSTOM_SPELLS_TYPE,
-  CUSTOM_SPELL_EXPORT_VERSION,
   deckEntryToExport,
   type DeckExportPayload,
-  type CustomSpellExportPayloadV2,
+  type CustomSpellExportPayload,
   type SrdSpellOverrideExport,
 } from "@/domain/payloads";
 
@@ -29,7 +27,7 @@ export function deckExportFilename(date: Date = new Date()): string {
 export function buildCustomSpellsPayload(
   spells: readonly Spell[],
   overrides: readonly SrdSpellOverride[] = [],
-): CustomSpellExportPayloadV2 {
+): CustomSpellExportPayload {
   const custom = spells
     .filter((spell) => spell.source === "Custom")
     .slice()
@@ -50,7 +48,6 @@ export function buildCustomSpellsPayload(
       ...(override.somaticDescription ? { somaticDescription: override.somaticDescription } : {}),
     }));
   return {
-    version: CUSTOM_SPELL_EXPORT_VERSION,
     type: CUSTOM_SPELLS_TYPE,
     spells: custom,
     srdSpellOverrides: exportedOverrides,
@@ -62,7 +59,6 @@ export function buildDeckPayload(deck: {
   entries: readonly DeckEntry[];
 }): DeckExportPayload {
   return {
-    version: EXPORT_VERSION,
     type: DECK_TYPE,
     name: deck.name,
     exportedAt: Date.now(),

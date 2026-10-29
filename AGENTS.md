@@ -64,7 +64,7 @@ release. Add a tool name to select part of the graph. For example, run
 Consult these files only when relevant to the task:
 
 - `README.md` — project overview, features, local development, deployment, usage, printing, and licensing.
-- `docs/DEVELOPMENT.md` — toolchain, architecture, deck rules, localization, technical printing/offline details, Cloudflare deployment, and SRD maintenance workflows.
+- `docs/DEVELOPMENT.md` — toolchain, architecture, deck rules, localization, technical printing/offline details, and SRD maintenance workflows.
 - `docs/cloudflare-deployment-guide.md` — Workers Static Assets setup, Workers Builds dashboard settings, and framework-specific notes.
 - `docs/srd-data-pipeline.md` — raw SRD source shape, normalization, translations, and the legacy-format migration workflow.
 - `scripts/normalize-srd.ts` — SRD normalization implementation.
