@@ -98,6 +98,7 @@ describe("deck import commit", () => {
     expect(active.entries).toHaveLength(1);
     expect(active.entries[0].spellId).toBe("srd-fireball");
     expect(active.savedDeckId).toBeUndefined();
+    expect(Object.hasOwn(active, "savedDeckId")).toBe(false);
     expect(active.baseline).toBeNull();
     expect(active.revision).toBe(2);
     expect((await getActiveDeck()).entries).toHaveLength(1);

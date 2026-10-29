@@ -2,13 +2,7 @@
 
 Cloudflare now recommends **Workers** (Pages is the legacy workflow, still selectable via "Continue to Pages"). Workers has two shapes: a static SPA, or an SPA plus an API Worker.
 
-> **This repository** implements variant **A** (static React SPA, no API Worker) with
-> `@cloudflare/vite-plugin` and Wrangler. The plugin is registered as `cloudflare()` (no
-> separate Worker entry) and is skipped in Vitest `test` mode. The committed
-> `wrangler.jsonc`, build/deploy scripts, and verification steps are documented in
-> [DEVELOPMENT.md](DEVELOPMENT.md#cloudflare-workers-deployment). Sections B–D describe
-> optional variants and are **not** configured here; section C (SSR) does not apply to this
-> project.
+> **This repository** implements variant **A** (static React SPA, no API Worker) with `@cloudflare/vite-plugin` and Wrangler. The plugin is registered as `cloudflare()` (no separate Worker entry) and is skipped in Vitest `test` mode. The committed `wrangler.jsonc`, build/deploy scripts, and verification steps are documented in [DEVELOPMENT.md](DEVELOPMENT.md#cloudflare-workers-deployment). Sections B and C describe optional application variants that are **not** configured here. Sections D and G document the Cloudflare Workers Builds configuration and GitHub integration used by this project. Section E describes the legacy Pages workflow.
 
 ## A. Static React SPA
 
@@ -30,10 +24,7 @@ export default defineConfig({
 });
 ```
 
-For a purely static/asset-only Worker with no `main` entry (as in this repository), use
-`cloudflare()` without the `viteEnvironment` option. If tests share this config, omit the
-plugin in Vitest's `test` mode: Vitest cannot attach servers to the extra Vite environments
-the plugin creates.
+For a purely static/asset-only Worker with no `main` entry (as in this repository), use `cloudflare()` without the `viteEnvironment` option. If tests share this config, omit the plugin in Vitest's `test` mode: Vitest cannot attach servers to the extra Vite environments the plugin creates.
 
 3. `wrangler.jsonc` (root):
 
@@ -42,7 +33,8 @@ the plugin creates.
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "my-app",
   "compatibility_date": "2026-10-27",
-  "assets": { "not_found_handling": "single-page-application" }
+  "assets": { "not_found_handling": "single-page-application" },
+  "previews": {}
 }
 ```
 
@@ -61,6 +53,14 @@ Do **not** set `assets.directory` — with the Vite plugin it is filled from the
 ```
 
 `deploy` builds and deploys in one step locally; Workers Builds runs its build command and deploy command as two separate steps instead.
+
+**Local preview vs. Cloudflare Worker Preview**
+
+- `pnpm preview` executes `vite preview`, serving the locally built application for inspection.
+- `pnpm exec wrangler preview` creates or updates a deployed Cloudflare Worker Preview for the current branch.
+- Cloudflare Workers Builds uses `npx wrangler preview` for non-production branches when preview builds are enabled.
+
+The Vite preview command does not create a Cloudflare Preview URL.
 
 5. pnpm build-script allowlist (`pnpm-workspace.yaml`) so CI installs don't fail with `ERR_PNPM_IGNORED_BUILDS` (pnpm 11+ enables `strictDepBuilds` by default, failing installs on unreviewed build scripts):
 
@@ -195,12 +195,13 @@ If you specifically need Pages: connect via "Continue to Pages", build `pnpm bui
 
 | Setting                        | Value                                                   |
 | ------------------------------ | ------------------------------------------------------- |
-| Project name                   | `yascg` (must match `wrangler.jsonc` → `name`)          |
+| Project name                   | `my-app` (must match `wrangler.jsonc` → `name`)         |
 | Build command                  | `pnpm run build`                                        |
 | Deploy command                 | `npx wrangler deploy`                                   |
 | Preview command                | `npx wrangler preview`                                  |
 | Production branch              | `main` (or your actual production branch)               |
 | Root directory                 | `/` (if the app is at the repository root)              |
+| Build watch paths (include)    | `*` (watch repository paths for changes)                |
 | Enable preview builds          | Enabled                                                 |
 | Protect with Cloudflare Access | Disabled for a public app                               |
 | API token                      | Leave the automatically generated/default configuration |
@@ -209,11 +210,106 @@ If you specifically need Pages: connect via "Continue to Pages", build `pnpm bui
 9. Check the build logs for successful installation, compilation and deployment.
 10. Open the generated `*.workers.dev` URL and verify that the application works, including client-side routes.
 
+### GitHub integration and CI/CD lifecycle
+
+Cloudflare Workers Builds provides built-in CI/CD through the Cloudflare GitHub App. GitHub Actions is not required for automatic deployment.
+
+The GitHub App is managed at https://github.com/settings/installations under **Cloudflare Workers and Pages**.
+
+The integration:
+- Detects commits pushed to connected repositories.
+- Triggers Cloudflare builds for eligible branches and paths.
+- Reports build and deployment statuses to GitHub as check runs.
+- Supports production and preview deployments.
+- Supports pull-request preview workflows.
+  - Posts build-status comments on GitHub pull requests.
+  - Includes Preview URLs in pull-request comments when preview builds use `wrangler preview`.
+  - Updates the branch Preview URL on subsequent pushes and provides a unique Deployment URL for each deployment.
+
+**Deployment lifecycle:**
+
+1. A developer pushes a commit to GitHub.
+2. Cloudflare detects the change through the GitHub integration.
+3. Cloudflare installs dependencies and executes the configured build command (`pnpm run build`).
+4. If the build succeeds, Cloudflare executes the appropriate deployment command:
+   - Production branch (`main`): `npx wrangler deploy`.
+   - Preview branches: `npx wrangler preview`, if preview builds are enabled.
+5. Cloudflare publishes the deployment and reports the outcome to GitHub.
+
+A failed build or deployment does not replace the existing successful production deployment.
+
+The connected GitHub repository, branch settings, build logs, and deployment status can be inspected in the Cloudflare dashboard.
+
 ### Subsequent deployments
 
-Push changes to the configured production branch on GitHub. Cloudflare automatically builds and deploys the updated application.
+**Production deployment (`main`):**
 
-Push changes to another branch to create a preview deployment, provided preview builds are enabled.
+Every eligible push to `main` triggers a production build and deployment. This includes commits introduced by merging a pull request.
+
+**Preview deployment (feature branches):**
+
+Pushing to a non-production branch triggers a preview build when preview builds are enabled and branch filters permit it. Preview deployments provide isolated URLs for testing without replacing the production Worker.
+
+**Pull-request workflow:**
+
+1. Create a feature branch (for example, `feature/login`).
+2. Push changes to GitHub.
+3. Cloudflare builds and deploys a preview, if enabled.
+4. Open a pull request targeting `main`.
+5. Review changes, build checks, and the preview deployment.
+6. Merge the pull request after validation.
+7. Cloudflare automatically deploys the resulting commit on `main` to production.
+
+**Recommended GitHub protection:**
+
+Configure GitHub branch protection or rulesets for `main`:
+- Require pull requests before merging.
+- Require successful CI checks before merging.
+- Optionally require code review approval.
+
+These protections must be configured in GitHub; connecting Cloudflare does not enable them automatically.
+
+### CI validation versus deployment
+
+Cloudflare Workers Builds automates builds and deployments, but it does not automatically execute unit tests, linting, or other validation steps unless explicitly configured.
+
+For example, the build command:
+
+```bash
+pnpm run build
+```
+
+executes only the `build` script defined in `package.json`.
+
+If the project defines `lint` and `test` scripts, the build command can be extended:
+
+```bash
+pnpm run lint && pnpm run test && pnpm run build
+```
+
+The deployment then proceeds only if all three commands succeed.
+
+Alternatively, GitHub Actions can execute linting, unit tests, type checks, and other quality gates independently of Cloudflare Builds.
+
+**Recommended separation:**
+- GitHub Actions (optional): CI validation and quality checks.
+- Cloudflare Workers Builds: build artifacts, preview deployments, and production deployment.
+- GitHub branch protection: prevent merging changes that fail required checks.
+
+Important: Successful builds do not necessarily indicate that automated tests have passed.
+
+**Important distinction:**
+
+GitHub Actions and Cloudflare Workers Builds operate independently unless explicitly coordinated.
+
+A failed GitHub Actions workflow does not automatically stop a Cloudflare production deployment triggered by a direct push to `main`.
+
+To prevent unvalidated code from reaching production:
+
+1. Protect the `main` branch against direct pushes.
+2. Require pull requests.
+3. Require the relevant GitHub Actions checks to pass before merging. 
+4. Let Cloudflare deploy the resulting commit after merging into `main`.
 
 ### Notes
 
@@ -223,6 +319,24 @@ Push changes to another branch to create a preview deployment, provided preview 
 - A manually created API token is normally unnecessary for Cloudflare-managed Git deployments. Build tokens authorize deployments and can be configured when custom access is needed.
 - Cloudflare Access is optional and should be enabled when the application must be restricted to authorized users.
 - Never put secrets into public `VITE_*` environment variables.
+
+### Preview environment safety
+
+Preview deployments must not be assumed to have fully isolated resources.
+
+Worker Previews requires Wrangler 4.135.0 or later. Ensure the project's local Wrangler dependency meets this requirement.
+
+Preview configuration uses separate variables, secrets, and bindings from production. Configure these under the Worker's Preview settings and the corresponding previews configuration in wrangler.jsonc where applicable.
+
+Before enabling preview builds, verify:
+- Environment variables and secrets required by previews.
+- Database, KV, R2, and other resource bindings.
+- External API credentials and endpoints.
+- Whether preview deployments could modify production data.
+
+Use separate preview resources and credentials where appropriate. Avoid exposing production secrets or connecting untrusted preview code to production databases.
+
+Preview URLs should not be treated as private merely because they are not the production URL.
 
 ### Official documentation
 

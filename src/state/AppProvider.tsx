@@ -24,14 +24,16 @@ import {
   reorderEntries,
   repairEntry,
   setEntryFitMode,
-  type DeckSnapshot,
 } from "@/db/active-deck.ts";
 import {
+  InvalidDeckStateError,
   SavedDeckConflictError,
-  deleteSavedDeck,
+  deleteSavedDeck as deleteSavedDeckRecord,
   listSavedDecks,
   loadSavedDeck,
-  overwriteSavedDeck,
+  newActiveDeck as newActiveDeckRecord,
+  renameActiveDeck as renameActiveDeckRecord,
+  saveAssociatedDeck,
   saveNewDeck,
 } from "@/db/saved-decks.ts";
 import {
@@ -69,10 +71,16 @@ import {
   type EntryResolution,
   type LanguageSwitchImpact,
 } from "@/services/data/resolution.ts";
-import type { ActiveDeckRecord, DeckEntry, SavedDeck } from "@/domain/deck";
-import { hasSpellEntry } from "@/domain/deck";
+import type { ActiveDeckRecord, DeckEntry, DeckStatus, SavedDeck } from "@/domain/deck";
+import { getDeckStatus, hasSpellEntry, isDeckDirty } from "@/domain/deck";
 import type { CardFitMode, Spell, SpellSource, SrdSpellOverride } from "@/domain/spells";
-import { message, toMessageDescriptor, type MessageDescriptor } from "@/locales/messages.ts";
+import { applyDeckImport, type DeckImportPlan } from "@/io/import-deck.ts";
+import {
+  AppError,
+  message,
+  toMessageDescriptor,
+  type MessageDescriptor,
+} from "@/locales/messages.ts";
 
 export type AddSpellResult = "added" | "duplicate" | "error";
 
@@ -103,6 +111,28 @@ export interface DeckConflictState {
   actualRevision: number;
 }
 
+export type SaveDeckOutcome =
+  | { status: "saved" }
+  | { status: "clean" }
+  | { status: "needs-save-as" }
+  | { status: "invalid"; message: MessageDescriptor }
+  | { status: "conflict"; message: MessageDescriptor }
+  | { status: "error"; message: MessageDescriptor };
+
+export type DeckActionOutcome =
+  | { status: "ok" }
+  | { status: "unchanged" }
+  | { status: "invalid"; message: MessageDescriptor }
+  | { status: "conflict"; message: MessageDescriptor }
+  | { status: "error"; message: MessageDescriptor };
+
+export type RenameDeckOutcome =
+  | { status: "ok" }
+  | { status: "unchanged" }
+  | { status: "stale" }
+  | { status: "invalid"; message: MessageDescriptor }
+  | { status: "error"; message: MessageDescriptor };
+
 export interface AppContextValue {
   manifest: BundledSpellLanguage[];
   language: string;
@@ -128,6 +158,8 @@ export interface AppContextValue {
   activeDeck: ActiveDeckRecord | null;
   savedDecks: SavedDeck[];
   dirty: boolean;
+  deckStatus: DeckStatus;
+  deckBusy: boolean;
   resolvedEntries: ResolvedDeckEntry[];
 
   deckError: MessageDescriptor | null;
@@ -143,18 +175,19 @@ export interface AppContextValue {
   moveDeckEntry: (entryId: string, delta: -1 | 1) => Promise<void>;
   reorderDeckEntries: (fromIndex: number, toIndex: number) => Promise<void>;
   setDeckEntryFitMode: (entryId: string, fitMode: CardFitMode) => Promise<void>;
-  renameDeck: (name: string) => Promise<void>;
+  renameActiveDeck: (name: string) => Promise<RenameDeckOutcome>;
   clearDeck: () => Promise<void>;
   repairDeckEntry: (
     entryId: string,
     target: { spellId: string; source: SpellSource; name: string },
   ) => Promise<RepairDeckEntryResult>;
-  replaceActiveDeck: (snapshot: DeckSnapshot) => Promise<void>;
 
-  saveDeckAs: (name: string) => Promise<SavedDeck | null>;
-  overwriteDeck: (targetId: string, expectedSavedRevision: number, name: string) => Promise<void>;
-  loadSaved: (savedId: string) => Promise<void>;
-  deleteSaved: (savedId: string) => Promise<void>;
+  saveActiveDeck: () => Promise<SaveDeckOutcome>;
+  saveDeckAs: (name: string) => Promise<DeckActionOutcome>;
+  openSavedDeck: (savedId: string) => Promise<DeckActionOutcome>;
+  deleteSavedDeck: (savedId: string, expectedRevision: number) => Promise<DeckActionOutcome>;
+  newActiveDeck: () => Promise<DeckActionOutcome>;
+  importDeck: (plan: DeckImportPlan) => Promise<DeckActionOutcome>;
 
   saveCustomSpell: (spell: Spell) => Promise<Spell | null>;
   duplicateSpell: (id: string) => Promise<void>;
@@ -352,26 +385,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, [activeDeck, languageById, englishById, customById]);
 
-  const dirty = useMemo(() => {
-    if (!activeDeck) return false;
-    const baseline = activeDeck.baseline;
-    if (baseline === null) {
-      return activeDeck.name.trim() !== "" || activeDeck.entries.length > 0;
-    }
-    if (activeDeck.name !== baseline.name) return true;
-    if (activeDeck.entries.length !== baseline.entries.length) return true;
-    return activeDeck.entries.some((entry, index) => {
-      const other = baseline.entries[index];
-      return (
-        !other ||
-        entry.entryId !== other.entryId ||
-        entry.spellId !== other.spellId ||
-        entry.fitMode !== other.fitMode ||
-        entry.reference.source !== other.reference.source ||
-        entry.reference.name !== other.reference.name
-      );
-    });
-  }, [activeDeck]);
+  const dirty = useMemo(() => (activeDeck ? isDeckDirty(activeDeck) : false), [activeDeck]);
+  const deckStatus = useMemo<DeckStatus>(
+    () => (activeDeck ? getDeckStatus(activeDeck) : "empty"),
+    [activeDeck],
+  );
 
   const runDeckMutation = useCallback(
     async (
@@ -400,6 +418,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [refreshAll],
   );
+
+  const [deckBusy, setDeckBusy] = useState(false);
+  const deckBusyRef = useRef(false);
+
+  const beginDeckAction = useCallback(() => {
+    if (deckBusyRef.current) return false;
+    deckBusyRef.current = true;
+    setDeckBusy(true);
+    return true;
+  }, []);
+
+  const endDeckAction = useCallback(() => {
+    deckBusyRef.current = false;
+    setDeckBusy(false);
+  }, []);
 
   const addSpellToDeck = useCallback(
     async (spell: Spell): Promise<AddSpellResult> => {
@@ -476,11 +509,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [runDeckMutation],
   );
 
-  const renameDeck = useCallback(
-    async (name: string) => {
-      await runDeckMutation((current) => ({ ...current, name }));
+  const renameActiveDeck = useCallback(
+    async (name: string): Promise<RenameDeckOutcome> => {
+      if (!beginDeckAction()) return { status: "error", message: message("error.generic") };
+      try {
+        const current = await getActiveDeck();
+        const result = await renameActiveDeckRecord(current.revision, name);
+        if (result.changed) {
+          publishChange("active-deck");
+          refreshAll();
+        }
+        setDeckError(null);
+        return { status: result.changed ? "ok" : "unchanged" };
+      } catch (error) {
+        if (error instanceof DeckConflictError) {
+          refreshAll();
+          return { status: "stale" };
+        }
+        if (error instanceof AppError) {
+          return { status: "invalid", message: toMessageDescriptor(error) };
+        }
+        const descriptor = toMessageDescriptor(error);
+        setDeckError(descriptor);
+        return { status: "error", message: descriptor };
+      } finally {
+        endDeckAction();
+      }
     },
-    [runDeckMutation],
+    [beginDeckAction, endDeckAction, refreshAll],
   );
 
   const clearDeck = useCallback(async () => {
@@ -514,28 +570,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [runDeckMutation],
   );
 
-  const replaceActiveDeck = useCallback(
-    async (snapshot: DeckSnapshot) => {
-      await runDeckMutation((current) => ({
-        ...current,
-        name: snapshot.name,
-        entries: snapshot.entries,
-        savedDeckId: snapshot.savedDeckId,
-        baseline: snapshot.baseline,
-      }));
-    },
-    [runDeckMutation],
-  );
+  const saveActiveDeck = useCallback(async (): Promise<SaveDeckOutcome> => {
+    if (!beginDeckAction()) return { status: "error", message: message("error.generic") };
+    try {
+      const current = await getActiveDeck();
+      if (!isDeckDirty(current)) return { status: "clean" };
+      if (getDeckStatus(current) === "invalid") {
+        return { status: "invalid", message: message("error.deckStateInvalid") };
+      }
+      if (current.savedDeckId === undefined || current.baseline === null) {
+        return { status: "needs-save-as" };
+      }
+      const result = await saveAssociatedDeck(current.revision);
+      if (!result.changed) return { status: "clean" };
+      publishChange("saved-decks");
+      publishChange("active-deck");
+      refreshAll();
+      setDeckError(null);
+      return { status: "saved" };
+    } catch (error) {
+      if (error instanceof SavedDeckConflictError) {
+        refreshAll();
+        return {
+          status: "conflict",
+          message:
+            error.actualRevision === -1
+              ? message("error.savedDeckUnavailable")
+              : toMessageDescriptor(error),
+        };
+      }
+      if (error instanceof InvalidDeckStateError || error instanceof AppError) {
+        return { status: "invalid", message: toMessageDescriptor(error) };
+      }
+      if (error instanceof DeckConflictError) {
+        setConflict({
+          message: toMessageDescriptor(error),
+          expectedRevision: error.expectedRevision,
+          actualRevision: error.actualRevision,
+        });
+        refreshAll();
+        return { status: "error", message: toMessageDescriptor(error) };
+      }
+      const descriptor = toMessageDescriptor(error);
+      setDeckError(descriptor);
+      return { status: "error", message: descriptor };
+    } finally {
+      endDeckAction();
+    }
+  }, [beginDeckAction, endDeckAction, refreshAll]);
 
   const saveDeckAs = useCallback(
-    async (name: string): Promise<SavedDeck | null> => {
-      const current = await getActiveDeck();
+    async (name: string): Promise<DeckActionOutcome> => {
+      if (!beginDeckAction()) return { status: "error", message: message("error.generic") };
       try {
-        const result = await saveNewDeck(current.revision, name, current.entries);
+        const current = await getActiveDeck();
+        await saveNewDeck(current.revision, name);
         publishChange("saved-decks");
         publishChange("active-deck");
+        refreshAll();
         setDeckError(null);
-        return result.savedDeck;
+        return { status: "ok" };
       } catch (error) {
         if (error instanceof DeckConflictError) {
           setConflict({
@@ -544,34 +638,70 @@ export function AppProvider({ children }: { children: ReactNode }) {
             actualRevision: error.actualRevision,
           });
           refreshAll();
-          return null;
+          return { status: "conflict", message: toMessageDescriptor(error) };
         }
-        setDeckError(toMessageDescriptor(error));
-        return null;
+        if (error instanceof AppError) {
+          return { status: "invalid", message: toMessageDescriptor(error) };
+        }
+        const descriptor = toMessageDescriptor(error);
+        setDeckError(descriptor);
+        return { status: "error", message: descriptor };
+      } finally {
+        endDeckAction();
       }
     },
-    [refreshAll],
+    [beginDeckAction, endDeckAction, refreshAll],
   );
 
-  const overwriteDeck = useCallback(
-    async (targetId: string, expectedSavedRevision: number, name: string) => {
-      const current = await getActiveDeck();
+  const openSavedDeck = useCallback(
+    async (savedId: string): Promise<DeckActionOutcome> => {
+      if (!beginDeckAction()) return { status: "error", message: message("error.generic") };
       try {
-        await overwriteSavedDeck({
-          activeExpectedRevision: current.revision,
-          targetSavedId: targetId,
-          expectedSavedRevision,
-          name,
-          entries: current.entries,
-        });
-        publishChange("saved-decks");
-        publishChange("active-deck");
+        const current = await getActiveDeck();
+        const result = await loadSavedDeck(current.revision, savedId);
+        if (result.changed) {
+          publishChange("active-deck");
+          refreshAll();
+        }
         setDeckError(null);
+        return { status: result.changed ? "ok" : "unchanged" };
+      } catch (error) {
+        if (error instanceof DeckConflictError) {
+          setConflict({
+            message: toMessageDescriptor(error),
+            expectedRevision: error.expectedRevision,
+            actualRevision: error.actualRevision,
+          });
+          refreshAll();
+          return { status: "conflict", message: toMessageDescriptor(error) };
+        }
+        const descriptor = toMessageDescriptor(error);
+        setDeckError(descriptor);
+        return { status: "error", message: descriptor };
+      } finally {
+        endDeckAction();
+      }
+    },
+    [beginDeckAction, endDeckAction, refreshAll],
+  );
+
+  const deleteSavedDeck = useCallback(
+    async (savedId: string, expectedRevision: number): Promise<DeckActionOutcome> => {
+      if (!beginDeckAction()) return { status: "error", message: message("error.generic") };
+      try {
+        const current = await getActiveDeck();
+        const result = await deleteSavedDeckRecord(current.revision, savedId, expectedRevision);
+        publishChange("saved-decks");
+        if (result.changed) publishChange("active-deck");
+        refreshAll();
+        setDeckError(null);
+        return { status: "ok" };
       } catch (error) {
         if (error instanceof SavedDeckConflictError) {
-          setDeckError(toMessageDescriptor(error));
           refreshAll();
-          return;
+          const descriptor = toMessageDescriptor(error);
+          setDeckError(descriptor);
+          return { status: "conflict", message: descriptor };
         }
         if (error instanceof DeckConflictError) {
           setConflict({
@@ -580,21 +710,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
             actualRevision: error.actualRevision,
           });
           refreshAll();
-          return;
+          return { status: "conflict", message: toMessageDescriptor(error) };
         }
-        setDeckError(toMessageDescriptor(error));
+        const descriptor = toMessageDescriptor(error);
+        setDeckError(descriptor);
+        return { status: "error", message: descriptor };
+      } finally {
+        endDeckAction();
       }
     },
-    [refreshAll],
+    [beginDeckAction, endDeckAction, refreshAll],
   );
 
-  const loadSaved = useCallback(
-    async (savedId: string) => {
+  const newActiveDeck = useCallback(async (): Promise<DeckActionOutcome> => {
+    if (!beginDeckAction()) return { status: "error", message: message("error.generic") };
+    try {
       const current = await getActiveDeck();
-      try {
-        await loadSavedDeck(current.revision, savedId);
+      const result = await newActiveDeckRecord(current.revision);
+      if (result.changed) {
         publishChange("active-deck");
+        refreshAll();
+      }
+      setDeckError(null);
+      return { status: result.changed ? "ok" : "unchanged" };
+    } catch (error) {
+      if (error instanceof DeckConflictError) {
+        setConflict({
+          message: toMessageDescriptor(error),
+          expectedRevision: error.expectedRevision,
+          actualRevision: error.actualRevision,
+        });
+        refreshAll();
+        return { status: "conflict", message: toMessageDescriptor(error) };
+      }
+      const descriptor = toMessageDescriptor(error);
+      setDeckError(descriptor);
+      return { status: "error", message: descriptor };
+    } finally {
+      endDeckAction();
+    }
+  }, [beginDeckAction, endDeckAction, refreshAll]);
+
+  const importDeck = useCallback(
+    async (plan: DeckImportPlan): Promise<DeckActionOutcome> => {
+      if (!beginDeckAction()) return { status: "error", message: message("error.generic") };
+      try {
+        const current = await getActiveDeck();
+        await applyDeckImport(plan, current.revision);
+        publishChange("active-deck");
+        refreshAll();
         setDeckError(null);
+        return { status: "ok" };
       } catch (error) {
         if (error instanceof DeckConflictError) {
           setConflict({
@@ -603,36 +769,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             actualRevision: error.actualRevision,
           });
           refreshAll();
-          return;
+          return { status: "conflict", message: toMessageDescriptor(error) };
         }
-        setDeckError(toMessageDescriptor(error));
+        const descriptor = toMessageDescriptor(error);
+        setDeckError(descriptor);
+        return { status: "error", message: descriptor };
+      } finally {
+        endDeckAction();
       }
     },
-    [refreshAll],
-  );
-
-  const deleteSaved = useCallback(
-    async (savedId: string) => {
-      const current = await getActiveDeck();
-      try {
-        await deleteSavedDeck(current.revision, savedId);
-        publishChange("saved-decks");
-        publishChange("active-deck");
-        setDeckError(null);
-      } catch (error) {
-        if (error instanceof DeckConflictError) {
-          setConflict({
-            message: toMessageDescriptor(error),
-            expectedRevision: error.expectedRevision,
-            actualRevision: error.actualRevision,
-          });
-          refreshAll();
-          return;
-        }
-        setDeckError(toMessageDescriptor(error));
-      }
-    },
-    [refreshAll],
+    [beginDeckAction, endDeckAction, refreshAll],
   );
 
   const saveCustomSpell = useCallback(
@@ -869,6 +1015,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       activeDeck: activeDeck ?? null,
       savedDecks: savedList,
       dirty,
+      deckStatus,
+      deckBusy,
       resolvedEntries,
       deckError,
       clearDeckError: () => setDeckError(null),
@@ -882,14 +1030,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       moveDeckEntry,
       reorderDeckEntries,
       setDeckEntryFitMode,
-      renameDeck,
+      renameActiveDeck,
       clearDeck,
       repairDeckEntry: repairDeckEntryFn,
-      replaceActiveDeck,
+      saveActiveDeck,
       saveDeckAs,
-      overwriteDeck,
-      loadSaved,
-      deleteSaved,
+      openSavedDeck,
+      deleteSavedDeck,
+      newActiveDeck,
+      importDeck,
       saveCustomSpell,
       duplicateSpell,
       deleteSpell,
@@ -924,6 +1073,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       activeDeck,
       savedList,
       dirty,
+      deckStatus,
+      deckBusy,
       resolvedEntries,
       deckError,
       conflict,
@@ -935,14 +1086,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       moveDeckEntry,
       reorderDeckEntries,
       setDeckEntryFitMode,
-      renameDeck,
+      renameActiveDeck,
       clearDeck,
       repairDeckEntryFn,
-      replaceActiveDeck,
+      saveActiveDeck,
       saveDeckAs,
-      overwriteDeck,
-      loadSaved,
-      deleteSaved,
+      openSavedDeck,
+      deleteSavedDeck,
+      newActiveDeck,
+      importDeck,
       saveCustomSpell,
       duplicateSpell,
       deleteSpell,

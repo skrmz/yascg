@@ -62,10 +62,31 @@ Deployment details, the Workers Builds settings, and the `compatibility_date` ru
 ## Usage
 
 Browse the library, open a spell for details, and add spells to the **Active Deck**. Create
-custom spells from the library and edit them from the details view. The Active Deck pane
-manages the single active deck, saved decks, and JSON import/export for custom spells and
-decks. Decks contain at most one entry per spell; **Append all** skips spells that are already
-present and reports how many were added and skipped.
+custom spells from the library and edit them from the details view. Decks contain at most one
+entry per spell; **Append all** skips spells that are already present and reports how many were
+added and skipped.
+
+The Active Deck is always persisted locally as you edit it; "unsaved" never means
+"unpersisted". Named snapshots are independent of the working deck:
+
+- Edit the active deck name inline. Enter or blur commits, Escape cancels.
+- **Save** updates the associated named snapshot. A deck without an associated snapshot opens
+  **Save As…** instead.
+- **Save As…** in the deck actions menu always creates a new named snapshot, including from a
+  blank workspace. Duplicate names are allowed.
+- **Open…** lists saved snapshots by name and update time; open one to replace the active deck,
+  or delete it from the same dialog. Opening while the active deck has unsaved changes asks
+  for confirmation.
+- **New deck** blanks the active workspace without deleting saved snapshots. **Clear entries**
+  removes only the active entries and keeps the name and snapshot association.
+- The status label distinguishes **Saved**, **Unsaved changes**, **Not saved as a deck**, and
+  **New deck**.
+
+**Import / export deck** in the deck actions menu exports the current active deck (JSON
+`1.0.0`) and replaces only the active deck on import. It adopts the imported name and does not
+create or modify named snapshots. **Custom spell import/export** (`1.1.0`, including SRD
+overrides) lives in the Library pane next to **Create custom spell**. A deck export is **not**
+a backup of custom spells or SRD overrides.
 
 ### Printing
 
@@ -110,9 +131,11 @@ Failures show **Offline setup incomplete — Retry**. Language switching after p
 performs no network requests.
 
 Spells, decks, and local SRD notes are stored in the browser's IndexedDB; the language
-preference is stored separately in `localStorage`. IndexedDB is not guaranteed permanent. If
-local storage is unavailable or quota is exceeded, the app shows an actionable banner —
-export custom spells and decks as JSON to keep a backup.
+preference is stored separately in `localStorage`. The active deck is written automatically;
+named snapshots change only through Save or Save As. IndexedDB is not guaranteed permanent. If
+local storage is unavailable or quota is exceeded, the app shows an actionable banner. Export
+custom spells/overrides from the Library and deck JSON from the deck actions menu to keep
+backups; the two exports cover different data.
 
 ## Limitations
 

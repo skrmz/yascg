@@ -1,75 +1,111 @@
-import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowDown,
   ArrowUp,
+  FolderOpen,
   GripVertical,
+  MoreHorizontal,
   Printer,
   Save,
   Trash2,
-  Upload,
-  Download,
   Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { resolveContentLanguage } from "@/content-language.ts";
-import type { DeckEntry } from "@/domain/deck";
+import { isValidDeckName, normalizeDeckName, type DeckEntry } from "@/domain/deck";
 import type { CardFitMode } from "@/domain/spells";
 import type { EntryResolution } from "@/services/data/resolution.ts";
+import { translateMessage } from "@/locales/messages.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Input, Label, NativeSelect } from "@/ui/Field.tsx";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/ui/DropdownMenu.tsx";
 import { cn } from "@/ui/cn.ts";
 import { PrintDialog } from "@/components/print/PrintDialog.tsx";
-import { ImportExportDialog } from "@/components/import-export/ImportExportDialog.tsx";
+import { DeckImportExportDialog } from "@/components/import-export/DeckImportExportDialog.tsx";
+import { OpenDeckDialog } from "./OpenDeckDialog.tsx";
+import { SaveAsDialog } from "./SaveAsDialog.tsx";
+
+interface FlushResult {
+  ok: boolean;
+  changed: boolean;
+}
 
 export function DeckPane() {
   const {
     activeDeck,
-    savedDecks,
     dirty,
+    deckStatus,
+    deckBusy,
     resolvedEntries,
     language,
-    renameDeck,
+    renameActiveDeck,
     removeFromDeck,
     moveDeckEntry,
     reorderDeckEntries,
     setDeckEntryFitMode,
     clearDeck,
     repairDeckEntry,
-    saveDeckAs,
-    overwriteDeck,
-    loadSaved,
-    deleteSaved,
+    saveActiveDeck,
+    newActiveDeck,
     canUndo,
     undoDelete,
     librarySpells,
     selectSpell,
   } = useApp();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   const [nameDraft, setNameDraft] = useState(activeDeck?.name ?? "");
-  const [loadTarget, setLoadTarget] = useState("");
-  const [overwriteTarget, setOverwriteTarget] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [openDialogOpen, setOpenDialogOpen] = useState(false);
+  const [saveConflictOpen, setSaveConflictOpen] = useState(false);
+  const [confirmNewDeck, setConfirmNewDeck] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [confirmLoad, setConfirmLoad] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [repairEntryId, setRepairEntryId] = useState<string | null>(null);
   const [repairSpellId, setRepairSpellId] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [printOpen, setPrintOpen] = useState(false);
   const [ioOpen, setIoOpen] = useState(false);
+  const [ioDirty, setIoDirty] = useState(false);
+
+  const editingRef = useRef(false);
+  const editSessionRef = useRef<{ revision: number; name: string } | null>(null);
+  const skipBlurRef = useRef(false);
+  const committingRef = useRef(false);
+  const flushRef = useRef<Promise<FlushResult> | null>(null);
 
   useEffect(() => {
-    setNameDraft(activeDeck?.name ?? "");
-  }, [activeDeck?.name]);
+    editingRef.current = editing;
+  }, [editing]);
 
-  const overwriteDeckInfo = useMemo(
-    () => savedDecks.find((deck) => deck.id === overwriteTarget) ?? null,
-    [savedDecks, overwriteTarget],
-  );
+  useEffect(() => {
+    if (!editing) setNameDraft(activeDeck?.name ?? "");
+  }, [activeDeck?.name, editing]);
+
+  // A revision change while editing means an Open/import/New/other-tab write
+  // replaced the deck; never commit the draft over that newer content.
+  useEffect(() => {
+    if (!editing || committingRef.current) return;
+    const session = editSessionRef.current;
+    if (!session || !activeDeck) return;
+    if (session.revision !== activeDeck.revision) {
+      editingRef.current = false;
+      setEditing(false);
+      setNameDraft(activeDeck.name);
+      setNameError(t("deck.nameStale"));
+    }
+  }, [activeDeck, editing, t]);
 
   const entries = activeDeck?.entries ?? [];
   const printable = resolvedEntries.filter(
@@ -81,6 +117,188 @@ export function DeckPane() {
   const unavailableCount = resolvedEntries.filter(
     ({ resolution }) => resolution.status === "translation-unavailable",
   ).length;
+
+  const statusCopy = {
+    saved: { label: t("deck.status.saved"), hint: t("deck.statusHint.saved") },
+    unsaved: { label: t("deck.status.unsaved"), hint: t("deck.statusHint.unsaved") },
+    "not-saved": { label: t("deck.status.notSaved"), hint: t("deck.statusHint.notSaved") },
+    empty: { label: t("deck.status.empty"), hint: t("deck.statusHint.empty") },
+    invalid: { label: t("deck.status.invalid"), hint: t("deck.statusHint.invalid") },
+  }[deckStatus];
+  const statusTone =
+    deckStatus === "saved"
+      ? "text-emerald-300"
+      : deckStatus === "invalid"
+        ? "text-red-300"
+        : "text-amber-300";
+
+  const draftChanged = !editing && normalizeDeckName(nameDraft) !== (activeDeck?.name ?? "");
+  const effectiveDirty = dirty || draftChanged;
+
+  const saveDisabled = !activeDeck || deckBusy || !dirty || deckStatus === "invalid";
+
+  const startEdit = () => {
+    if (editingRef.current || !activeDeck) return;
+    editSessionRef.current = { revision: activeDeck.revision, name: activeDeck.name };
+    editingRef.current = true;
+    setNameDraft(activeDeck.name);
+    setNameError(null);
+    setActionError(null);
+    setEditing(true);
+  };
+
+  const cancelEdit = () => {
+    skipBlurRef.current = true;
+    editingRef.current = false;
+    setEditing(false);
+    setNameDraft(activeDeck?.name ?? "");
+    setNameError(null);
+  };
+
+  const flushNameCommit = useCallback(async (): Promise<FlushResult> => {
+    if (flushRef.current) return flushRef.current;
+    if (!editingRef.current) return { ok: true, changed: false };
+
+    const run = async (): Promise<FlushResult> => {
+      if (!activeDeck) {
+        editingRef.current = false;
+        setEditing(false);
+        return { ok: false, changed: false };
+      }
+      const session = editSessionRef.current;
+      if (session && session.revision !== activeDeck.revision) {
+        editingRef.current = false;
+        setEditing(false);
+        setNameDraft(activeDeck.name);
+        setNameError(t("deck.nameStale"));
+        return { ok: false, changed: false };
+      }
+      const associated = activeDeck.savedDeckId !== undefined;
+      if (!isValidDeckName(nameDraft, { associated })) {
+        editingRef.current = false;
+        setEditing(false);
+        setNameDraft(activeDeck.name);
+        setNameError(t("deck.nameInvalid"));
+        return { ok: false, changed: false };
+      }
+      const normalized = normalizeDeckName(nameDraft);
+      if (normalized === activeDeck.name) {
+        editingRef.current = false;
+        setEditing(false);
+        setNameDraft(activeDeck.name);
+        setNameError(null);
+        return { ok: true, changed: false };
+      }
+      committingRef.current = true;
+      try {
+        const outcome = await renameActiveDeck(nameDraft);
+        editingRef.current = false;
+        setEditing(false);
+        if (outcome.status === "ok" || outcome.status === "unchanged") {
+          setNameDraft(normalized);
+          setNameError(null);
+          return { ok: true, changed: outcome.status === "ok" };
+        }
+        setNameDraft(activeDeck.name);
+        if (outcome.status === "stale") {
+          setNameError(t("deck.nameStale"));
+        } else if (outcome.status === "invalid") {
+          setNameError(translateMessage(t, outcome.message));
+        } else {
+          setNameError(t("error.generic"));
+        }
+        return { ok: false, changed: false };
+      } finally {
+        committingRef.current = false;
+      }
+    };
+
+    const promise = run();
+    flushRef.current = promise;
+    try {
+      return await promise;
+    } finally {
+      flushRef.current = null;
+    }
+  }, [activeDeck, nameDraft, renameActiveDeck, t]);
+
+  const onNameBlur = () => {
+    if (skipBlurRef.current) {
+      skipBlurRef.current = false;
+      return;
+    }
+    if (editingRef.current) void flushNameCommit();
+  };
+
+  const onSave = async () => {
+    setActionError(null);
+    const flushed = await flushNameCommit();
+    if (!flushed.ok) return;
+    const outcome = await saveActiveDeck();
+    if (outcome.status === "saved") {
+      toast.success(t("deck.saveSuccess"));
+      return;
+    }
+    if (outcome.status === "needs-save-as") {
+      setSaveAsOpen(true);
+      return;
+    }
+    if (outcome.status === "conflict") {
+      setSaveConflictOpen(true);
+      return;
+    }
+    if (outcome.status === "invalid" || outcome.status === "error") {
+      setActionError(translateMessage(t, outcome.message));
+    }
+  };
+
+  const requestSaveAs = async () => {
+    setActionError(null);
+    const flushed = await flushNameCommit();
+    if (!flushed.ok) return;
+    setSaveAsOpen(true);
+  };
+
+  const requestOpen = async () => {
+    setActionError(null);
+    const flushed = await flushNameCommit();
+    if (!flushed.ok) return;
+    setOpenDialogOpen(true);
+  };
+
+  const requestImportExport = async () => {
+    setActionError(null);
+    const flushed = await flushNameCommit();
+    if (!flushed.ok) return;
+    setIoDirty(dirty || flushed.changed);
+    setIoOpen(true);
+  };
+
+  const runNewDeck = async () => {
+    setConfirmNewDeck(false);
+    const outcome = await newActiveDeck();
+    if (outcome.status === "invalid" || outcome.status === "error") {
+      setActionError(translateMessage(t, outcome.message));
+    }
+  };
+
+  const requestNewDeck = async () => {
+    setActionError(null);
+    const flushed = await flushNameCommit();
+    if (!flushed.ok) return;
+    if (dirty || flushed.changed) {
+      setConfirmNewDeck(true);
+      return;
+    }
+    await runNewDeck();
+  };
+
+  const requestClear = async () => {
+    setActionError(null);
+    const flushed = await flushNameCommit();
+    if (!flushed.ok) return;
+    setConfirmClear(true);
+  };
 
   const onDragStart = (index: number) => setDragIndex(index);
   const onDrop = (index: number) => {
@@ -95,7 +313,14 @@ export function DeckPane() {
   return (
     <section id="deck-panel" className="flex h-full min-h-0 flex-col" aria-label={t("deck.title")}>
       <div id="deck-controls" className="space-y-2 border-b border-border p-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-foreground">{t("deck.title")}</h2>
+          <span className="text-xs text-muted-foreground">
+            {t("deck.entries", { count: entries.length })}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
           <Label htmlFor="deck-name" className="sr-only">
             {t("deck.nameLabel")}
           </Label>
@@ -103,163 +328,122 @@ export function DeckPane() {
             id="deck-name"
             value={nameDraft}
             placeholder={t("deck.namePlaceholder")}
-            onChange={(event) => setNameDraft(event.target.value)}
-            className="flex-1"
+            className="min-w-0 flex-1"
+            aria-invalid={nameError ? true : undefined}
+            aria-describedby={nameError ? "deck-name-error" : undefined}
+            onFocus={startEdit}
+            onChange={(event) => {
+              setNameDraft(event.target.value);
+              if (nameError) setNameError(null);
+              if (actionError) setActionError(null);
+            }}
+            onBlur={onNameBlur}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void flushNameCommit();
+              } else if (event.key === "Escape") {
+                event.preventDefault();
+                cancelEdit();
+              }
+            }}
           />
-          {dirty ? (
-            <span
-              className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[0.7rem] font-semibold text-amber-300"
-              title={t("deck.unsavedTitle")}
-            >
-              {t("deck.unsaved")}
-            </span>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => void saveDeckAs(nameDraft)}
-            disabled={nameDraft.trim() === ""}
+          <span
+            className={cn("shrink-0 text-xs font-semibold", statusTone)}
+            title={statusCopy.hint}
           >
-            <Save size={13} aria-hidden="true" />
-            {t("deck.saveAsNew")}
-          </Button>
+            {statusCopy.label}
+          </span>
+        </div>
+
+        {nameError ? (
+          <p id="deck-name-error" role="alert" className="text-xs text-red-300">
+            {nameError}
+          </p>
+        ) : null}
+        {actionError ? (
+          <p role="alert" className="text-xs text-red-300">
+            {actionError}
+          </p>
+        ) : null}
+        <p className="text-xs text-muted-foreground">{statusCopy.hint}</p>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div
+            className="inline-flex"
+            onPointerDownCapture={() => {
+              if (editingRef.current) void flushNameCommit();
+            }}
+          >
+            <Button
+              size="sm"
+              onClick={() => void onSave()}
+              disabled={saveDisabled}
+              title={t("deck.persistenceHint")}
+            >
+              <Save size={13} aria-hidden="true" />
+              {t("deck.save")}
+            </Button>
+          </div>
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {
-              if (activeDeck) void renameDeck(nameDraft);
-            }}
-            disabled={
-              !activeDeck || nameDraft.trim() === "" || nameDraft.trim() === activeDeck.name
-            }
-          >
-            {t("deck.rename")}
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setIoOpen(true)}>
-            <Upload size={13} aria-hidden="true" />
-            <Download size={13} aria-hidden="true" />
-            {t("deck.importExport")}
-          </Button>
-          <Button
-            size="sm"
-            variant="default"
             onClick={() => setPrintOpen(true)}
             disabled={printable === 0}
           >
             <Printer size={13} aria-hidden="true" />
             {t("deck.print")}
           </Button>
+          <Button size="sm" variant="outline" onClick={() => void requestOpen()}>
+            <FolderOpen size={13} aria-hidden="true" />
+            {t("deck.open")}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" aria-label={t("deck.actions")}>
+                <MoreHorizontal size={16} aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onSelect={() => void requestSaveAs()}>
+                {t("deck.saveAs")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void requestNewDeck()}>
+                {t("deck.newDeck")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void requestImportExport()}>
+                {t("deck.importExport")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-red-300"
+                disabled={entries.length === 0}
+                onSelect={() => void requestClear()}
+              >
+                <Trash2 size={14} aria-hidden="true" />
+                {t("deck.clearEntries")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {canUndo ? (
+            <Button size="sm" variant="secondary" onClick={() => void undoDelete()}>
+              {t("deck.undoDelete")}
+            </Button>
+          ) : null}
         </div>
+
         <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-          <span>{t("deck.entries", { count: entries.length })}</span>
-          <span aria-hidden="true">&middot;</span>
-          <span>{t("deck.printable", { count: printable })}</span>
+          {printable !== entries.length ? (
+            <span>{t("deck.printable", { count: printable })}</span>
+          ) : null}
           {unavailableCount > 0 ? (
-            <>
-              <span aria-hidden="true">&middot;</span>
-              <span className="text-amber-300">
-                {t("deck.notInLanguage", { count: unavailableCount, language })}
-              </span>
-            </>
+            <span className="text-amber-300">
+              {t("deck.notInLanguage", { count: unavailableCount, language })}
+            </span>
           ) : null}
           {missingCount > 0 ? (
-            <>
-              <span aria-hidden="true">&middot;</span>
-              <span className="text-red-300">{t("deck.missing", { count: missingCount })}</span>
-            </>
+            <span className="text-red-300">{t("deck.missing", { count: missingCount })}</span>
           ) : null}
-        </div>
-        <div className="space-y-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="load-target">{t("deck.loadSaved")}</Label>
-            <Select value={loadTarget} onValueChange={setLoadTarget}>
-              <SelectTrigger
-                id="load-target"
-                aria-label={t("deck.savedDeckToLoad")}
-                className="h-8 text-xs"
-              >
-                <SelectValue placeholder={t("deck.selectSaved")} />
-              </SelectTrigger>
-              <SelectContent>
-                {savedDecks.map((deck) => (
-                  <SelectItem key={deck.id} value={deck.id}>
-                    {deck.name} — {new Date(deck.updatedAt).toLocaleString(i18n.resolvedLanguage)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full"
-              disabled={!loadTarget}
-              onClick={() => {
-                if (dirty) setConfirmLoad(true);
-                else void loadSaved(loadTarget);
-              }}
-            >
-              {t("deck.load")}
-            </Button>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="overwrite-target">{t("deck.overwriteSaved")}</Label>
-            <Select value={overwriteTarget} onValueChange={setOverwriteTarget}>
-              <SelectTrigger
-                id="overwrite-target"
-                aria-label={t("deck.savedDeckToOverwrite")}
-                className="h-8 text-xs"
-              >
-                <SelectValue placeholder={t("deck.selectSaved")} />
-              </SelectTrigger>
-              <SelectContent>
-                {savedDecks.map((deck) => (
-                  <SelectItem key={deck.id} value={deck.id}>
-                    {deck.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full"
-              disabled={!overwriteDeckInfo}
-              onClick={() => {
-                if (overwriteDeckInfo && activeDeck) {
-                  void overwriteDeck(overwriteDeckInfo.id, overwriteDeckInfo.revision, nameDraft);
-                }
-              }}
-            >
-              {t("deck.overwrite")}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="w-full"
-              disabled={!overwriteDeckInfo}
-              onClick={() => setDeleteTarget(overwriteDeckInfo?.id ?? null)}
-            >
-              <Trash2 size={13} aria-hidden="true" />
-              {t("deck.deleteSavedDeck")}
-            </Button>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={entries.length === 0}
-              onClick={() => setConfirmClear(true)}
-            >
-              {t("common.clear")}
-            </Button>
-            {canUndo ? (
-              <Button size="sm" variant="secondary" onClick={() => void undoDelete()}>
-                {t("deck.undoDelete")}
-              </Button>
-            ) : null}
-          </div>
         </div>
       </div>
 
@@ -314,6 +498,67 @@ export function DeckPane() {
         </ol>
       </div>
 
+      <SaveAsDialog
+        open={saveAsOpen}
+        onOpenChange={setSaveAsOpen}
+        defaultName={nameDraft}
+        onSaved={() => toast.success(t("deck.saveSuccess"))}
+      />
+      <OpenDeckDialog
+        open={openDialogOpen}
+        onOpenChange={setOpenDialogOpen}
+        dirty={effectiveDirty}
+      />
+      <DeckImportExportDialog open={ioOpen} onOpenChange={setIoOpen} dirty={ioDirty || dirty} />
+
+      <Dialog open={saveConflictOpen} onOpenChange={setSaveConflictOpen}>
+        <DialogContent
+          title={t("deck.saveConflictTitle")}
+          description={t("deck.saveConflictDescription")}
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setSaveConflictOpen(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSaveConflictOpen(false);
+                  setOpenDialogOpen(true);
+                }}
+              >
+                {t("deck.open")}
+              </Button>
+              <Button
+                onClick={() => {
+                  setSaveConflictOpen(false);
+                  setSaveAsOpen(true);
+                }}
+              >
+                {t("deck.saveAs")}
+              </Button>
+            </>
+          }
+        />
+      </Dialog>
+
+      <Dialog open={confirmNewDeck} onOpenChange={setConfirmNewDeck}>
+        <DialogContent
+          title={t("deck.newDeckTitle")}
+          description={t("deck.newDeckDescription")}
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setConfirmNewDeck(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button variant="destructive" onClick={() => void runNewDeck()}>
+                {t("deck.newDeckConfirm")}
+              </Button>
+            </>
+          }
+        />
+      </Dialog>
+
       <Dialog open={confirmClear} onOpenChange={setConfirmClear}>
         <DialogContent
           title={t("deck.clearTitle")}
@@ -331,53 +576,6 @@ export function DeckPane() {
                 }}
               >
                 {t("deck.clearConfirm")}
-              </Button>
-            </>
-          }
-        />
-      </Dialog>
-
-      <Dialog open={confirmLoad} onOpenChange={setConfirmLoad}>
-        <DialogContent
-          title={t("deck.loadTitle")}
-          description={t("deck.loadDescription")}
-          footer={
-            <>
-              <Button variant="outline" onClick={() => setConfirmLoad(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  void loadSaved(loadTarget);
-                  setConfirmLoad(false);
-                }}
-              >
-                {t("deck.loadConfirm")}
-              </Button>
-            </>
-          }
-        />
-      </Dialog>
-
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent
-          title={t("deck.deleteTitle")}
-          description={t("deck.deleteDescription")}
-          footer={
-            <>
-              <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  if (deleteTarget) void deleteSaved(deleteTarget);
-                  setDeleteTarget(null);
-                  setOverwriteTarget("");
-                }}
-              >
-                {t("deck.deleteConfirm")}
               </Button>
             </>
           }
@@ -442,7 +640,6 @@ export function DeckPane() {
       </Dialog>
 
       <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
-      <ImportExportDialog open={ioOpen} onOpenChange={setIoOpen} />
     </section>
   );
 }

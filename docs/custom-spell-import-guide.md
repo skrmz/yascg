@@ -9,8 +9,8 @@ This guide shows how to define custom spells in JSON and import them into Yet An
 ## Quick start: importing a file
 
 1. Start the app and wait until the spell library has finished loading. The import button stays disabled until the SRD validation data is available.
-2. In the **Active Deck** pane, choose **Import / Export**.
-3. Under **Custom spells**, choose **Import custom spells…** and select a `.json` file (maximum **5 MiB**).
+2. In the **Library** pane, choose **Custom spell import/export** next to **Create custom spell**.
+3. Choose **Import custom spells…** and select a `.json` file (maximum **5 MiB**).
 4. Review the validation summary. Existing spells with the same `id` are reported as collisions — including a different-language version of the same spell, because custom spells have no language dimension. Choose **Skip**, **Keep both**, or **Overwrite existing**.
 5. Choose **Commit custom-spell import**. Imported spells appear in the library with the **Custom** source badge and can then be added to a deck.
 

@@ -47,7 +47,7 @@ test("renders a physical-size card preview", async ({ page }) => {
   expect(Math.abs(box.height - 336)).toBeLessThan(3);
 });
 
-test("saves a named deck", async ({ page }) => {
+test("saves a named deck and re-saves it through Open", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Search spells").fill("Fireball");
   await page
@@ -56,11 +56,87 @@ test("saves a named deck", async ({ page }) => {
     .click();
 
   const deck = page.getByRole("region", { name: "Active deck" });
-  await page.getByLabel("Active deck name").fill("Test Deck");
-  await deck.getByRole("button", { name: "Save as new" }).click();
+  const name = page.getByLabel("Active deck name");
+  await name.fill("Test Deck");
+  await name.press("Enter");
 
-  await page.getByLabel("Saved deck to load").click();
-  await expect(page.getByRole("option", { name: /Test Deck/ })).toBeVisible();
+  await deck.getByRole("button", { name: "Save" }).click();
+  const saveAs = page.getByRole("dialog", { name: "Save deck as" });
+  await expect(saveAs.getByLabel("Active deck name")).toHaveValue("Test Deck");
+  await saveAs.getByRole("button", { name: "Save" }).click();
+
+  await expect(deck.getByText("Saved", { exact: true })).toBeVisible();
+
+  await deck.getByRole("button", { name: "Open…" }).click();
+  const openDialog = page.getByRole("dialog", { name: "Open deck" });
+  await expect(openDialog.getByText("Test Deck")).toBeVisible();
+  await openDialog.getByRole("button", { name: "Close" }).first().click();
+
+  await page.getByLabel("Search spells").fill("Magic Missile");
+  await page
+    .getByRole("button", { name: /Add Magic Missile/ })
+    .first()
+    .click();
+
+  await expect(deck.getByText("Unsaved changes")).toBeVisible();
+  await deck.getByRole("button", { name: "Save" }).click();
+  await expect(deck.getByText("Saved", { exact: true })).toBeVisible();
+});
+
+test("New deck keeps saved snapshots and Clear entries preserves association", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Search spells").fill("Fireball");
+  await page
+    .getByRole("button", { name: /Add Fireball/ })
+    .first()
+    .click();
+
+  const deck = page.getByRole("region", { name: "Active deck" });
+  const name = page.getByLabel("Active deck name");
+  await name.fill("Kept Deck");
+  await name.press("Enter");
+
+  await deck.getByRole("button", { name: "Save" }).click();
+  await page
+    .getByRole("dialog", { name: "Save deck as" })
+    .getByRole("button", { name: "Save" })
+    .click();
+
+  await deck.getByRole("button", { name: "Deck actions" }).click();
+  await page.getByRole("menuitem", { name: "Clear entries" }).click();
+  await page
+    .getByRole("dialog", { name: "Clear all entries?" })
+    .getByRole("button", { name: "Clear entries" })
+    .click();
+
+  await expect(deck.getByText("Unsaved changes")).toBeVisible();
+  await expect(deck.getByText("0 entries")).toBeVisible();
+
+  await deck.getByRole("button", { name: "Save" }).click();
+  await expect(deck.getByText("Saved", { exact: true })).toBeVisible();
+
+  await deck.getByRole("button", { name: "Open…" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Open deck" }).getByText("Kept Deck"),
+  ).toBeVisible();
+  await page
+    .getByRole("dialog", { name: "Open deck" })
+    .getByRole("button", { name: "Close" })
+    .first()
+    .click();
+
+  await deck.getByRole("button", { name: "Deck actions" }).click();
+  await page.getByRole("menuitem", { name: "New deck" }).click();
+  const confirm = page.getByRole("dialog", { name: "Start a new deck?" });
+  if (await confirm.isVisible()) {
+    await confirm.getByRole("button", { name: "New deck" }).click();
+  }
+
+  await expect(deck.getByText("New deck", { exact: true })).toBeVisible();
+  await deck.getByRole("button", { name: "Open…" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Open deck" }).getByText("Kept Deck"),
+  ).toBeVisible();
 });
 
 test("opens spell details from the persistent header button", async ({ page }) => {

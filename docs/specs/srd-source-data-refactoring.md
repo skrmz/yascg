@@ -1,7 +1,7 @@
 # SRD Raw Source Data Refactoring
 
 Status: **implemented** — all MANDATORY items landed. The §18 open items were resolved as follows: the damage-type vocabulary lives in `src/domain/spells.ts` (`DAMAGE_TYPES`, with `DAMAGE_TYPE_KEYS` derived via `satisfies`); `scripts/srd/german.ts`, `GERMAN_CLASS_BY_NAME`, the `de` adapter branch, `scripts/convert-german-srd.ts`, `src/test/german-conversion.test.ts` and the `convert:german-srd` script were removed.
-The §3 evidence and §16 sequence below describe the pre-refactoring state and plan of record; current behavior is documented in `README.md` and `docs/srd-data-pipeline.md`.
+The §3 evidence and §16 sequence below describe the pre-refactoring state and plan of record; current behavior is documented in `docs/DEVELOPMENT.md`, `docs/srd-data-pipeline.md`, and the project overview in `README.md`.
 Scope: raw SRD source JSON simplification + lossless optional `subclasses` support.
 Out of scope: populating subclass assignments (separate later phase), subclass UI/filtering, and any change to normalized runtime behavior.
 
@@ -259,7 +259,7 @@ Remove (MANDATORY):
 - `data/srd/canonical-english.snapshot.json`.
 - `verifyOrCreateSnapshot` and its call in `scripts/normalize-srd.ts` (lines 59-89, 104).
 - `BuildOptions.snapshotPath` and `allowSnapshotCreation` (lines 30-33, 102-103).
-- Snapshot documentation (`README.md` "Canonical English snapshot"; `docs/srd-data-pipeline.md` §3.A; the "do not create `canonical-<lang>.snapshot.json`" note; `docs/specs/spell-card-generator-spec.md:27` snapshot requirement).
+- Snapshot documentation (`README.md` "Canonical English snapshot"; `docs/srd-data-pipeline.md` §3.A; the "do not create `canonical-<lang>.snapshot.json`" note; `docs/specs/MAIN-spec.md:27` snapshot requirement).
 
 Preserve/keep (MANDATORY):
 - Raw per-entry validation, duplicate detection, component/range checks (`scripts/srd/common.ts`).
@@ -428,7 +428,7 @@ The file contains the same 339 spells but: no `index`; HTML `<p>` descriptions; 
 
 - `README.md`: "Bundled data and normalization" (§ raw shape), "Source structure adapters" (update: string `school`/`classes`, shared adapter for `de`, remove the German `G`/name mapping claim), "Canonical English snapshot" (remove section), "Adding a translation" (new shape + reference-file convention), and the note about artifact regeneration.
 - `docs/srd-data-pipeline.md`: §2.B field table (`school.index`, `classes[]`, `damage.damage_type.index` → strings; add `subclasses`), §2.C adapter selection (new shape + legacy detection hint; clarify German uses the shared adapter), §2.D example, §2.E mechanics list (add subclasses), §3.A snapshot section (remove), §3.B/§5 as needed, §5 comparison table (raw vs custom shape).
-- `docs/specs/spell-card-generator-spec.md`: line 27 (remove snapshot requirement), and the §4 data-model snippet (add optional `subclasses`). Add a note about the reference file and the later subclass phase.
+- `docs/specs/MAIN-spec.md`: line 27 (remove snapshot requirement), and the §4 data-model snippet (add optional `subclasses`). Add a note about the reference file and the later subclass phase.
 - `docs/subclasses.md`: label as reference material for the later phase; note it covers classes beyond `CORE_CLASSES` and that German names include alternatives requiring reconciliation. Do not treat it as a restrictive enum.
 - `AGENTS.md`: no change required; optionally mention the `data/reference/` convention.
 

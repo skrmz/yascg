@@ -33,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/ui/Separator.tsx";
 import { cn } from "@/ui/cn.ts";
 import { CustomSpellForm } from "@/components/details/CustomSpellForm.tsx";
+import { CustomSpellImportExportDialog } from "@/components/import-export/CustomSpellImportExportDialog.tsx";
 import { LevelRangeSlider } from "./LevelRangeSlider.tsx";
 
 function toggle<T>(values: readonly T[], value: T): T[] {
@@ -81,6 +82,7 @@ export function LibraryPane() {
   const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [customIoOpen, setCustomIoOpen] = useState(false);
 
   const searched = useMemo(() => searchSpells(librarySpells, query), [librarySpells, query]);
   const results = useMemo(
@@ -372,10 +374,23 @@ export function LibraryPane() {
         </div>
       </div>
 
-      <div className="mt-2 px-3">
-        <Button variant="outline" size="sm" className="w-full" onClick={() => setCreating(true)}>
+      <div className="mt-2 flex items-stretch gap-2 px-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-auto flex-1 whitespace-normal py-1.5"
+          onClick={() => setCreating(true)}
+        >
           <Plus size={13} aria-hidden="true" />
           {t("library.createCustomSpell")}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-auto flex-1 whitespace-normal py-1.5"
+          onClick={() => setCustomIoOpen(true)}
+        >
+          {t("library.customImportExport")}
         </Button>
       </div>
 
@@ -440,6 +455,7 @@ export function LibraryPane() {
       </div>
 
       <CustomSpellForm open={creating} onOpenChange={setCreating} />
+      <CustomSpellImportExportDialog open={customIoOpen} onOpenChange={setCustomIoOpen} />
 
       <Dialog open={confirmReplace} onOpenChange={setConfirmReplace}>
         <DialogContent

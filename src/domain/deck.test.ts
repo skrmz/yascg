@@ -4,8 +4,11 @@ import {
   deckEntriesEqual,
   deckMatchesBaseline,
   dedupeDeckEntries,
+  getDeckStatus,
   hasSpellEntry,
   isDeckDirty,
+  isValidDeckName,
+  normalizeDeckName,
   type ActiveDeckRecord,
   type DeckEntry,
 } from "@/domain/deck";
@@ -84,5 +87,104 @@ describe("deck baseline and dirty rules", () => {
       deckEntriesEqual([base], [entry({ reference: { source: "Custom", name: "Fireball" } })]),
     ).toBe(false);
     expect(deckEntriesEqual([base], [entry({ entryId: "entry-2" })])).toBe(false);
+  });
+
+  it("ignores the saved revision token when computing dirty state", () => {
+    const entries = [entry()];
+    const deck: ActiveDeckRecord = {
+      ...createEmptyActiveDeck(),
+      name: "Deck",
+      savedDeckId: "saved-1",
+      entries,
+      baseline: { name: "Deck", entries, savedRevision: 7 },
+    };
+    expect(isDeckDirty(deck)).toBe(false);
+  });
+});
+
+describe("deck status matrix", () => {
+  it("reports a clean associated deck as saved", () => {
+    const entries = [entry()];
+    const deck: ActiveDeckRecord = {
+      ...createEmptyActiveDeck(),
+      name: "Deck",
+      savedDeckId: "saved-1",
+      entries,
+      baseline: { name: "Deck", entries, savedRevision: 1 },
+    };
+    expect(getDeckStatus(deck)).toBe("saved");
+  });
+
+  it("reports a modified associated deck as unsaved", () => {
+    const entries = [entry()];
+    const deck: ActiveDeckRecord = {
+      ...createEmptyActiveDeck(),
+      name: "Renamed",
+      savedDeckId: "saved-1",
+      entries,
+      baseline: { name: "Deck", entries, savedRevision: 1 },
+    };
+    expect(getDeckStatus(deck)).toBe("unsaved");
+  });
+
+  it("reports populated unassociated content as not saved", () => {
+    const named = { ...createEmptyActiveDeck(), name: "Working" };
+    expect(getDeckStatus(named)).toBe("not-saved");
+    const populated = { ...createEmptyActiveDeck(), entries: [entry()] };
+    expect(getDeckStatus(populated)).toBe("not-saved");
+  });
+
+  it("reports an empty unnamed unassociated deck as empty", () => {
+    expect(getDeckStatus(createEmptyActiveDeck())).toBe("empty");
+  });
+
+  it("reports inconsistent association and baseline combinations as invalid", () => {
+    const associatedWithoutBaseline: ActiveDeckRecord = {
+      ...createEmptyActiveDeck(),
+      name: "Deck",
+      savedDeckId: "saved-1",
+    };
+    expect(getDeckStatus(associatedWithoutBaseline)).toBe("invalid");
+
+    const entries = [entry()];
+    const associatedWithoutToken: ActiveDeckRecord = {
+      ...createEmptyActiveDeck(),
+      name: "Deck",
+      savedDeckId: "saved-1",
+      entries,
+      baseline: { name: "Deck", entries },
+    };
+    expect(getDeckStatus(associatedWithoutToken)).toBe("invalid");
+
+    const unassociatedWithBaseline: ActiveDeckRecord = {
+      ...createEmptyActiveDeck(),
+      name: "Deck",
+      entries,
+      baseline: { name: "Deck", entries },
+    };
+    expect(getDeckStatus(unassociatedWithBaseline)).toBe("invalid");
+  });
+});
+
+describe("deck name validation", () => {
+  it("trims names", () => {
+    expect(normalizeDeckName("  Deck  ")).toBe("Deck");
+  });
+
+  it("requires a nonempty name for associated decks", () => {
+    expect(isValidDeckName("", { associated: true })).toBe(false);
+    expect(isValidDeckName("   ", { associated: true })).toBe(false);
+    expect(isValidDeckName("Deck", { associated: true })).toBe(true);
+  });
+
+  it("allows the empty name for unassociated decks", () => {
+    expect(isValidDeckName("", { associated: false })).toBe(true);
+    expect(isValidDeckName("   ", { associated: false })).toBe(true);
+  });
+
+  it("rejects names longer than 120 characters after trimming", () => {
+    expect(isValidDeckName("x".repeat(120), { associated: false })).toBe(true);
+    expect(isValidDeckName("x".repeat(121), { associated: false })).toBe(false);
+    expect(isValidDeckName(`  ${"x".repeat(121)}  `, { associated: false })).toBe(false);
   });
 });

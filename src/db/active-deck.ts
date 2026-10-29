@@ -2,12 +2,14 @@ import { db } from "./database.ts";
 import { type Table } from "dexie";
 import {
   ACTIVE_DECK_ID,
+  DECK_NAME_MAX_LENGTH,
   activeDeckRecordSchema,
   createEmptyActiveDeck,
   dedupeDeckEntries,
   deckEntrySchema,
   hasSpellEntry,
   type ActiveDeckRecord,
+  type DeckBaseline,
   type DeckEntry,
 } from "@/domain/deck";
 import type { CardFitMode, SpellSource } from "@/domain/spells";
@@ -78,10 +80,14 @@ export async function mutateActiveDeck(
         draft.baseline !== null &&
         baseline.entries.length !== draft.baseline.entries.length);
     if (draft === current && !dedupeChangedDraft) return current;
+    const name = draft.name.trim();
+    if (name.length > DECK_NAME_MAX_LENGTH) {
+      throw new AppError(message("error.deckNameLength"), "Deck name must be 1-120 characters.");
+    }
     const next: ActiveDeckRecord = {
       ...draft,
       id: ACTIVE_DECK_ID,
-      name: draft.name.trim().slice(0, 120),
+      name,
       entries,
       baseline,
       revision: current.revision + 1,
@@ -163,6 +169,7 @@ export function setEntryFitMode(
 }
 
 export function clearEntries(current: ActiveDeckRecord): ActiveDeckRecord {
+  if (current.entries.length === 0) return current;
   return { ...current, entries: [] };
 }
 
@@ -199,7 +206,7 @@ export interface DeckSnapshot {
   name: string;
   entries: DeckEntry[];
   savedDeckId?: string;
-  baseline: { name: string; entries: DeckEntry[] } | null;
+  baseline: DeckBaseline | null;
 }
 
 export function replaceDeck(current: ActiveDeckRecord, snapshot: DeckSnapshot): ActiveDeckRecord {
@@ -216,6 +223,9 @@ export function replaceDeck(current: ActiveDeckRecord, snapshot: DeckSnapshot): 
             entries: dedupeDeckEntries(
               snapshot.baseline.entries.map((entry) => deckEntrySchema.parse(entry)),
             ),
+            ...(snapshot.baseline.savedRevision === undefined
+              ? {}
+              : { savedRevision: snapshot.baseline.savedRevision }),
           },
   };
   if (snapshot.savedDeckId === undefined) {
@@ -230,12 +240,14 @@ export function withBaseline(
   current: ActiveDeckRecord,
   name: string,
   entries: readonly DeckEntry[],
+  savedRevision?: number,
 ): ActiveDeckRecord {
   return {
     ...current,
     baseline: {
       name,
       entries: dedupeDeckEntries(cloneEntries(entries)),
+      ...(savedRevision === undefined ? {} : { savedRevision }),
     },
   };
 }

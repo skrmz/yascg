@@ -5,7 +5,7 @@
 **Custom-spell payload version:** `1.1.0` (supersedes `1.0.0`)
 **Deck payload version:** `1.0.0` (unchanged)
 **Date:** 2026-10-23
-**Related specs:** [`spell-card-generator-spec.md`](./spell-card-generator-spec.md), [`srd-source-data-refactoring.md`](./srd-source-data-refactoring.md), [`../srd-data-pipeline.md`](../srd-data-pipeline.md), [`../../README.md`](../../README.md)
+**Related specs:** [`MAIN-spec.md`](./MAIN-spec.md), [`srd-source-data-refactoring.md`](./srd-source-data-refactoring.md), [`../srd-data-pipeline.md`](../srd-data-pipeline.md), [`../../README.md`](../../README.md), [`DEVELOPMENT.md`](../DEVELOPMENT.md)
 
 ---
 
@@ -25,11 +25,11 @@ Bundled SRD datasets (`src/data/**`) and the normalization pipeline are **never*
 
 These must not be conflated in code, schema, or docs:
 
-| Version | Constant / location | Meaning | Change in this CR |
-| --- | --- | --- | --- |
-| **Application version** | app/package version | Shipped YASCG release. | Bumps to `1.1.0`. |
+| Version                          | Constant / location                                       | Meaning                                              | Change in this CR                                                         |
+| -------------------------------- | --------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Application version**          | app/package version                                       | Shipped YASCG release.                               | Bumps to `1.1.0`.                                                         |
 | **Custom-spell payload version** | `CUSTOM_SPELL_EXPORT_VERSION` in `src/domain/payloads.ts` | Version stamped on custom-spell export/import files. | New `1.1.0`; writer always stamps it. Reader accepts `1.0.0` and `1.1.0`. |
-| **Deck payload version** | `EXPORT_VERSION` in `src/domain/payloads.ts` | Version stamped on deck export/import files. | **Unchanged at `1.0.0`.** Deck behavior is untouched. |
+| **Deck payload version**         | `EXPORT_VERSION` in `src/domain/payloads.ts`              | Version stamped on deck export/import files.         | **Unchanged at `1.0.0`.** Deck behavior is untouched.                     |
 
 `EXPORT_VERSION` currently backs **both** payload families; this CR splits them so deck round-trips stay exactly as they are today.
 
@@ -74,7 +74,7 @@ Option A preserves id, source, deck references, offline behavior, and SRD identi
 - Authoring `componentsDisplayOverride` (stays data-only, honored verbatim by `componentSummary` in `src/cards/Card.tsx`).
 - Changing bundled datasets, `scripts/normalize-srd.ts`, or the drift test `src/test/srd-dataset.test.ts`.
 - Changing deck payload version or deck import/export behavior.
-- App chrome / library / deck-pane localization (still governed by the existing "out of scope" list in `README.md`).
+- App chrome / library / deck-pane localization (still governed by the existing localization exclusions in [`DEVELOPMENT.md`](../DEVELOPMENT.md)).
 
 ---
 
@@ -319,25 +319,25 @@ Reuse `CustomSpellForm` with an explicit SRD override mode and two distinct subm
 
 ## 6. Most relevant files
 
-| File | Change |
-| --- | --- |
-| `src/domain/spells.ts` | Add transient `overridden?` to `Spell`; add `SrdSpellOverride` type + Zod schema. Component fields already exist. |
-| `src/domain/payloads.ts` | Split `EXPORT_VERSION` (deck) from `CUSTOM_SPELL_EXPORT_VERSION` (custom spells); add version-aware custom-spell schemas + override export schema. |
-| `src/db/database.ts` | `version(2)` additive migration adding `srdSpellOverrides` (`"[spellId+locale], spellId, locale"`). |
-| `src/db/srd-overrides.ts` (new) | CRUD for overrides (per `[spellId+locale]`). |
-| `src/db/notifications.ts` | Extend `ChangeKind` with an SRD-override change type. |
-| `src/db/custom-spells.ts` | Localize `createCustomSpellDraft(language)` defaults (R4). |
-| `src/state/AppProvider.tsx` | `useLiveQuery(() => listSrdOverrides())`; read-time merge after parsing and before derived maps; English fallback uses `en` overrides; expose `saveSrdOverride` / `resetSrdOverride`; notification + refresh wiring. |
-| `src/markdown/parse.ts` | Extend `parseSpellBody` to append component-description blocks (verbal then somatic) — shared by all surfaces. |
-| `src/components/details/CustomSpellForm.tsx` | V/S description inputs, material advanced collapsible, placeholders, SRD override mode (read-only fields, captured locale, distinct submit path, reset action). |
-| `src/components/details/DetailsPane.tsx` | Allow Edit for SRD; render component text in the textual section and badge marker. |
-| `src/cards/Card.tsx` | Render component blocks via the shared parse pipeline; footer uses `sourceLabelText`; material-detail line included in the measured region. |
-| `src/cards/fit.tsx` | Component text flows through `blocks` (no separate fingerprint change); locale-driven regeneration invalidates fits. |
-| `src/components/print/PrintDialog.tsx`, `src/print/PrintSheet.tsx` | Ensure component text is present in `PrintCardData`/`CardView` output via the shared pipeline. |
-| `src/io/export.ts`, `src/io/import-custom.ts` | Serialize/read `srdSpellOverrides`; version-aware validation; override validation + one-transaction apply. |
-| `src/components/import-export/ImportExportDialog.tsx` | Read overrides for export; surface override counts/preview; lossy-unknown-version confirmation. |
-| `src/ui/Badge.tsx` | `SourceBadge` gains an `overridden` prop; render via `sourceLabelText`. |
-| `src/locales/en.ts`, `src/locales/de.ts`, `src/locales/labels.ts` | All new i18n keys/helpers. |
+| File                                                               | Change                                                                                                                                                                                                               |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/domain/spells.ts`                                             | Add transient `overridden?` to `Spell`; add `SrdSpellOverride` type + Zod schema. Component fields already exist.                                                                                                    |
+| `src/domain/payloads.ts`                                           | Split `EXPORT_VERSION` (deck) from `CUSTOM_SPELL_EXPORT_VERSION` (custom spells); add version-aware custom-spell schemas + override export schema.                                                                   |
+| `src/db/database.ts`                                               | `version(2)` additive migration adding `srdSpellOverrides` (`"[spellId+locale], spellId, locale"`).                                                                                                                  |
+| `src/db/srd-overrides.ts` (new)                                    | CRUD for overrides (per `[spellId+locale]`).                                                                                                                                                                         |
+| `src/db/notifications.ts`                                          | Extend `ChangeKind` with an SRD-override change type.                                                                                                                                                                |
+| `src/db/custom-spells.ts`                                          | Localize `createCustomSpellDraft(language)` defaults (R4).                                                                                                                                                           |
+| `src/state/AppProvider.tsx`                                        | `useLiveQuery(() => listSrdOverrides())`; read-time merge after parsing and before derived maps; English fallback uses `en` overrides; expose `saveSrdOverride` / `resetSrdOverride`; notification + refresh wiring. |
+| `src/markdown/parse.ts`                                            | Extend `parseSpellBody` to append component-description blocks (verbal then somatic) — shared by all surfaces.                                                                                                       |
+| `src/components/details/CustomSpellForm.tsx`                       | V/S description inputs, material advanced collapsible, placeholders, SRD override mode (read-only fields, captured locale, distinct submit path, reset action).                                                      |
+| `src/components/details/DetailsPane.tsx`                           | Allow Edit for SRD; render component text in the textual section and badge marker.                                                                                                                                   |
+| `src/cards/Card.tsx`                                               | Render component blocks via the shared parse pipeline; footer uses `sourceLabelText`; material-detail line included in the measured region.                                                                          |
+| `src/cards/fit.tsx`                                                | Component text flows through `blocks` (no separate fingerprint change); locale-driven regeneration invalidates fits.                                                                                                 |
+| `src/components/print/PrintDialog.tsx`, `src/print/PrintSheet.tsx` | Ensure component text is present in `PrintCardData`/`CardView` output via the shared pipeline.                                                                                                                       |
+| `src/io/export.ts`, `src/io/import-custom.ts`                      | Serialize/read `srdSpellOverrides`; version-aware validation; override validation + one-transaction apply.                                                                                                           |
+| `src/components/import-export/ImportExportDialog.tsx`              | Read overrides for export; surface override counts/preview; lossy-unknown-version confirmation.                                                                                                                      |
+| `src/ui/Badge.tsx`                                                 | `SourceBadge` gains an `overridden` prop; render via `sourceLabelText`.                                                                                                                                              |
+| `src/locales/en.ts`, `src/locales/de.ts`, `src/locales/labels.ts`  | All new i18n keys/helpers.                                                                                                                                                                                           |
 
 ---
 
@@ -379,7 +379,8 @@ Reuse `CustomSpellForm` with an explicit SRD override mode and two distinct subm
 
 ## 9. Documentation updates
 
-- `README.md` — export format (custom-spell payload `1.1.0` with SRD overrides; deck payload remains `1.0.0`) and Limitations (SRD component-text notes are local, language-scoped).
+- `README.md` — Limitations summary (SRD component-text notes are local, language-scoped).
+- `docs/DEVELOPMENT.md` — export format (custom-spell payload `1.1.0` with SRD overrides; deck payload remains `1.0.0`) and the technical details behind those limitations.
 - `docs/srd-data-pipeline.md` — note that `verbalDescription`/`somaticDescription`/`materialCost`/`materialConsumed` are now surfaced in the UI and, for SRD, stored as local overrides rather than in `src/data/**`.
 - This change request.
 

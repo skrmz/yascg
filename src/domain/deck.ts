@@ -23,13 +23,24 @@ export interface SavedDeck {
   entries: DeckEntry[];
 }
 
+export interface DeckBaseline {
+  name: string;
+  entries: DeckEntry[];
+  /** Saved-snapshot revision observed at the last Open/Save/Save As. */
+  savedRevision?: number;
+}
+
 export interface ActiveDeck {
   name: string;
   savedDeckId?: string;
   entries: DeckEntry[];
   revision: number;
-  baseline: { name: string; entries: DeckEntry[] } | null;
+  baseline: DeckBaseline | null;
 }
+
+export type DeckStatus = "saved" | "unsaved" | "not-saved" | "empty" | "invalid";
+
+export const DECK_NAME_MAX_LENGTH = 120;
 
 export interface ActiveDeckRecord extends ActiveDeck {
   id: typeof ACTIVE_DECK_ID;
@@ -55,12 +66,13 @@ export const uniqueDeckEntriesSchema = z
   });
 
 export const deckBaselineSchema = z.object({
-  name: z.string(),
+  name: z.string().max(DECK_NAME_MAX_LENGTH),
   entries: uniqueDeckEntriesSchema,
+  savedRevision: z.number().int().positive().optional(),
 });
 
 export const activeDeckSchema = z.object({
-  name: z.string().max(120),
+  name: z.string().max(DECK_NAME_MAX_LENGTH),
   savedDeckId: z.string().trim().min(1).optional(),
   entries: uniqueDeckEntriesSchema,
   revision: z.number().int().nonnegative(),
@@ -73,9 +85,9 @@ export const activeDeckRecordSchema = activeDeckSchema.extend({
 
 export const savedDeckSchema = z.object({
   id: z.string().trim().min(1),
-  name: z.string().trim().min(1).max(120),
+  name: z.string().trim().min(1).max(DECK_NAME_MAX_LENGTH),
   updatedAt: z.number().int().nonnegative(),
-  revision: z.number().int().nonnegative(),
+  revision: z.number().int().positive(),
   entries: uniqueDeckEntriesSchema,
 });
 
@@ -135,4 +147,31 @@ export function deckMatchesBaseline(
 
 export function isDeckDirty(active: Pick<ActiveDeck, "name" | "entries" | "baseline">): boolean {
   return !deckMatchesBaseline(active);
+}
+
+export function normalizeDeckName(raw: string): string {
+  return raw.trim();
+}
+
+/**
+ * Associated decks require a trimmed 1-120 character name. Unassociated decks may
+ * also commit the empty name as a working deck.
+ */
+export function isValidDeckName(raw: string, options: { associated: boolean }): boolean {
+  const length = normalizeDeckName(raw).length;
+  if (length === 0) return !options.associated;
+  return length <= DECK_NAME_MAX_LENGTH;
+}
+
+export function getDeckStatus(
+  active: Pick<ActiveDeck, "name" | "entries" | "baseline" | "savedDeckId">,
+): DeckStatus {
+  const associated = active.savedDeckId !== undefined;
+  if (associated) {
+    if (active.baseline === null || active.baseline.savedRevision === undefined) return "invalid";
+  } else if (active.baseline !== null) {
+    return "invalid";
+  }
+  if (!isDeckDirty(active)) return associated ? "saved" : "empty";
+  return associated ? "unsaved" : "not-saved";
 }

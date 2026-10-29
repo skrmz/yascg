@@ -3,9 +3,13 @@ import {
   ACTIVE_DECK_ID,
   createEmptyActiveDeck,
   dedupeDeckEntries,
+  deckMatchesBaseline,
+  deckEntriesEqual,
+  isValidDeckName,
+  normalizeDeckName,
   savedDeckSchema,
+  activeDeckRecordSchema,
   type ActiveDeckRecord,
-  type DeckEntry,
   type SavedDeck,
 } from "@/domain/deck";
 import { cloneEntries } from "./active-deck.ts";
@@ -31,6 +35,16 @@ export class SavedDeckConflictError extends AppError {
   }
 }
 
+export class InvalidDeckStateError extends AppError {
+  constructor() {
+    super(
+      message("error.deckStateInvalid"),
+      "The active deck association and baseline are inconsistent.",
+    );
+    this.name = "InvalidDeckStateError";
+  }
+}
+
 export async function listSavedDecks(): Promise<SavedDeck[]> {
   const decks = await db.savedDecks.toArray();
   return decks
@@ -41,6 +55,15 @@ export async function listSavedDecks(): Promise<SavedDeck[]> {
 export interface SavedDeckWriteResult {
   savedDeck: SavedDeck;
   active: ActiveDeckRecord;
+}
+
+export interface ActiveDeckWriteResult {
+  active: ActiveDeckRecord;
+  changed: boolean;
+}
+
+export interface SaveAssociatedResult extends ActiveDeckWriteResult {
+  savedDeck: SavedDeck | null;
 }
 
 function readActiveOrEmpty(): Promise<ActiveDeckRecord | undefined> {
@@ -58,94 +81,109 @@ function assertActiveRevision(
   return deck;
 }
 
-function withBaseline(
-  deck: ActiveDeckRecord,
-  name: string,
-  entries: readonly DeckEntry[],
-  savedDeckId: string,
-): ActiveDeckRecord {
-  return {
-    ...deck,
-    name,
-    entries: dedupeDeckEntries(cloneEntries(entries)),
-    savedDeckId,
-    baseline: { name, entries: dedupeDeckEntries(cloneEntries(entries)) },
-    revision: deck.revision + 1,
-  };
+function assertDeckName(raw: string, associated: boolean): string {
+  const name = normalizeDeckName(raw);
+  if (!isValidDeckName(name, { associated })) {
+    throw new AppError(message("error.deckNameLength"), "Deck name must be 1-120 characters.");
+  }
+  return name;
 }
 
-/** Save New / Save As: creates a brand-new saved snapshot and binds the active deck to it. */
+function persisted(active: ActiveDeckRecord): ActiveDeckRecord {
+  return activeDeckRecordSchema.parse(active);
+}
+
+/** Save As: creates a brand-new saved snapshot and binds the active deck to it. */
 export async function saveNewDeck(
   activeExpectedRevision: number,
   name: string,
-  entries: readonly DeckEntry[],
 ): Promise<SavedDeckWriteResult> {
-  const trimmed = name.trim();
-  if (trimmed.length === 0 || trimmed.length > 120) {
-    throw new AppError(message("error.deckNameLength"), "Deck name must be 1-120 characters.");
-  }
+  const trimmed = assertDeckName(name, true);
   const id = newUuid();
   const now = Date.now();
   return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
-    const savedDeck: SavedDeck = savedDeckSchema.parse({
+    const entries = dedupeDeckEntries(cloneEntries(current.entries));
+    const savedDeck = savedDeckSchema.parse({
       id,
       name: trimmed,
       updatedAt: now,
-      revision: 0,
+      revision: 1,
       entries: dedupeDeckEntries(cloneEntries(entries)),
     });
+    const active = persisted({
+      ...current,
+      name: trimmed,
+      entries,
+      savedDeckId: id,
+      baseline: {
+        name: trimmed,
+        entries: dedupeDeckEntries(cloneEntries(entries)),
+        savedRevision: savedDeck.revision,
+      },
+      revision: current.revision + 1,
+    });
     await db.savedDecks.put(savedDeck);
-    const active = withBaseline(current, trimmed, entries, id);
     await db.activeDeck.put(active);
     return { savedDeck, active };
   });
 }
 
-/** Overwrite Saved: replaces an existing snapshot after explicit target choice. */
-export async function overwriteSavedDeck(options: {
-  activeExpectedRevision: number;
-  targetSavedId: string;
-  expectedSavedRevision: number;
-  name: string;
-  entries: readonly DeckEntry[];
-}): Promise<SavedDeckWriteResult> {
-  const trimmed = options.name.trim();
-  if (trimmed.length === 0 || trimmed.length > 120) {
-    throw new AppError(message("error.deckNameLength"), "Deck name must be 1-120 characters.");
-  }
+/**
+ * Save: updates only the associated saved snapshot, using the expected saved
+ * revision captured in the active baseline as the saved-snapshot CAS token.
+ */
+export async function saveAssociatedDeck(
+  activeExpectedRevision: number,
+): Promise<SaveAssociatedResult> {
   return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
-    const existing = await db.savedDecks.get(options.targetSavedId);
+    const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
+    const savedDeckId = current.savedDeckId;
+    const baseline = current.baseline;
+    if (!savedDeckId || baseline === null || baseline.savedRevision === undefined) {
+      throw new InvalidDeckStateError();
+    }
+    if (deckMatchesBaseline(current)) {
+      return { active: current, savedDeck: null, changed: false };
+    }
+    const name = assertDeckName(current.name, true);
+    const existing = await db.savedDecks.get(savedDeckId);
     if (!existing) {
-      throw new SavedDeckConflictError(options.targetSavedId, options.expectedSavedRevision, -1);
+      throw new SavedDeckConflictError(savedDeckId, baseline.savedRevision, -1);
     }
-    if (existing.revision !== options.expectedSavedRevision) {
-      throw new SavedDeckConflictError(
-        options.targetSavedId,
-        options.expectedSavedRevision,
-        existing.revision,
-      );
+    if (existing.revision !== baseline.savedRevision) {
+      throw new SavedDeckConflictError(savedDeckId, baseline.savedRevision, existing.revision);
     }
-    const current = assertActiveRevision(await readActiveOrEmpty(), options.activeExpectedRevision);
-    const savedDeck: SavedDeck = {
+    const entries = dedupeDeckEntries(cloneEntries(current.entries));
+    const savedDeck = savedDeckSchema.parse({
       ...existing,
-      name: trimmed,
+      name,
       updatedAt: Date.now(),
       revision: existing.revision + 1,
-      entries: dedupeDeckEntries(cloneEntries(options.entries)),
-    };
+      entries: dedupeDeckEntries(cloneEntries(entries)),
+    });
+    const active = persisted({
+      ...current,
+      name,
+      entries,
+      baseline: {
+        name,
+        entries: dedupeDeckEntries(cloneEntries(entries)),
+        savedRevision: savedDeck.revision,
+      },
+      revision: current.revision + 1,
+    });
     await db.savedDecks.put(savedDeck);
-    const active = withBaseline(current, trimmed, options.entries, options.targetSavedId);
     await db.activeDeck.put(active);
-    return { savedDeck, active };
+    return { active, savedDeck, changed: true };
   });
 }
 
-/** Load Saved: replaces the active deck with a saved snapshot (never merges). */
+/** Open: replaces the active deck with a saved snapshot (never merges). */
 export async function loadSavedDeck(
   activeExpectedRevision: number,
   savedId: string,
-): Promise<ActiveDeckRecord> {
+): Promise<ActiveDeckWriteResult> {
   return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
     const saved = await db.savedDecks.get(savedId);
@@ -156,16 +194,31 @@ export async function loadSavedDeck(
       );
     }
     const entries = dedupeDeckEntries(cloneEntries(saved.entries));
-    const active: ActiveDeckRecord = {
+    const baselineMatches =
+      current.savedDeckId === saved.id &&
+      current.baseline !== null &&
+      current.baseline.savedRevision === saved.revision &&
+      current.baseline.name === saved.name &&
+      deckEntriesEqual(current.baseline.entries, entries);
+    const contentMatches =
+      current.name === saved.name && deckEntriesEqual(current.entries, entries);
+    if (baselineMatches && contentMatches) {
+      return { active: current, changed: false };
+    }
+    const active = persisted({
       ...current,
       name: saved.name,
       entries,
       savedDeckId: saved.id,
-      baseline: { name: saved.name, entries: dedupeDeckEntries(cloneEntries(entries)) },
+      baseline: {
+        name: saved.name,
+        entries: dedupeDeckEntries(cloneEntries(entries)),
+        savedRevision: saved.revision,
+      },
       revision: current.revision + 1,
-    };
+    });
     await db.activeDeck.put(active);
-    return active;
+    return { active, changed: true };
   });
 }
 
@@ -173,20 +226,72 @@ export async function loadSavedDeck(
 export async function deleteSavedDeck(
   activeExpectedRevision: number,
   savedId: string,
-): Promise<{ active: ActiveDeckRecord }> {
+  expectedSavedRevision: number,
+): Promise<ActiveDeckWriteResult> {
   return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
-    await db.savedDecks.delete(savedId);
-    let active = current;
-    if (current.savedDeckId === savedId) {
-      active = {
-        ...current,
-        baseline: null,
-        revision: current.revision + 1,
-      };
-      delete active.savedDeckId;
-      await db.activeDeck.put(active);
+    const existing = await db.savedDecks.get(savedId);
+    if (!existing) {
+      throw new SavedDeckConflictError(savedId, expectedSavedRevision, -1);
     }
-    return { active };
+    if (existing.revision !== expectedSavedRevision) {
+      throw new SavedDeckConflictError(savedId, expectedSavedRevision, existing.revision);
+    }
+    await db.savedDecks.delete(savedId);
+    if (current.savedDeckId !== savedId) {
+      return { active: current, changed: false };
+    }
+    const active: ActiveDeckRecord = {
+      ...current,
+      baseline: null,
+      revision: current.revision + 1,
+    };
+    delete active.savedDeckId;
+    const next = persisted(active);
+    await db.activeDeck.put(next);
+    return { active: next, changed: true };
+  });
+}
+
+/** New deck: blanks the active singleton without touching any saved snapshot. */
+export async function newActiveDeck(
+  activeExpectedRevision: number,
+): Promise<ActiveDeckWriteResult> {
+  return db.transaction("rw", db.activeDeck, async () => {
+    const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
+    if (
+      current.name === "" &&
+      current.entries.length === 0 &&
+      current.savedDeckId === undefined &&
+      current.baseline === null
+    ) {
+      return { active: current, changed: false };
+    }
+    const active = persisted({
+      id: ACTIVE_DECK_ID,
+      name: "",
+      entries: [],
+      baseline: null,
+      revision: current.revision + 1,
+    });
+    await db.activeDeck.put(active);
+    return { active, changed: true };
+  });
+}
+
+/** Rename only the committed active name; never touches the saved snapshot. */
+export async function renameActiveDeck(
+  activeExpectedRevision: number,
+  rawName: string,
+): Promise<ActiveDeckWriteResult> {
+  return db.transaction("rw", db.activeDeck, async () => {
+    const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
+    const name = assertDeckName(rawName, current.savedDeckId !== undefined);
+    if (name === current.name) {
+      return { active: current, changed: false };
+    }
+    const active = persisted({ ...current, name, revision: current.revision + 1 });
+    await db.activeDeck.put(active);
+    return { active, changed: true };
   });
 }

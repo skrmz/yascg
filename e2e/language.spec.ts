@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 async function switchLanguage(page: import("@playwright/test").Page, option: RegExp) {
-  await page.getByRole("button", { name: /Spell data language|Sprache der Zauberdaten/ }).click();
+  await page.getByRole("button", { name: /Spell data language|Sprache der Zauber/ }).click();
   await page
-    .getByRole("listbox", { name: /Spell data languages|Sprachen der Zauberdaten/ })
+    .getByRole("listbox", { name: /Spell data languages|Sprachen der Zauber/ })
     .getByRole("option", { name: option })
     .click();
 }
@@ -28,7 +28,8 @@ test("switching to the complete German dataset keeps deck spells available and p
 
   const deck = page.getByRole("region", { name: "Aktives Deck" });
   await expect(deck.getByText("Feuerball")).toBeVisible();
-  await expect(deck.getByText(/1 druckbar/)).toBeVisible();
+  await expect(deck.getByText("1 Eintrag")).toBeVisible();
+  await expect(deck.getByText(/1 druckbar/)).toHaveCount(0);
   await expect(deck.getByText(/Nicht in de/)).toHaveCount(0);
 });
 
@@ -55,8 +56,8 @@ test("a persisted German preference initializes the document and full chrome in 
 
   await expect(page.locator("html")).toHaveAttribute("lang", "de");
   await expect(page.getByRole("region", { name: "Zauberbibliothek" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Sprache der Zauberdaten/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Über und Quellenangaben" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Sprache der Zauber/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "App-Info und Quellenangaben" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Drucken" })).toBeVisible();
   await expect(page.getByText("339 Ergebnisse")).toBeVisible();
 });
@@ -66,7 +67,7 @@ test("German localizes about, import/export and print dialogs", async ({ page })
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Zauberbibliothek" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Über und Quellenangaben" }).click();
+  await page.getByRole("button", { name: "App-Info und Quellenangaben" }).click();
   const about = page.getByRole("dialog", { name: /Über YASCG/ });
   await expect(about.getByText(/Diese Anwendung steht in keiner Verbindung/)).toBeVisible();
   await about.getByRole("button", { name: "Schließen" }).click();
@@ -76,10 +77,21 @@ test("German localizes about, import/export and print dialogs", async ({ page })
     .getByRole("button", { name: /Feuerball zum aktiven Deck hinzufügen/ })
     .first()
     .click();
-  await page.getByRole("button", { name: "Importieren / Exportieren" }).click();
-  const importDialog = page.getByRole("dialog", { name: "JSON importieren / exportieren" });
-  await expect(importDialog.getByRole("heading", { name: "Eigene Zauber" })).toBeVisible();
-  await importDialog.getByRole("button", { name: "Schließen" }).click();
+
+  await page.getByRole("button", { name: "Deck-Aktionen" }).click();
+  await page.getByRole("menuitem", { name: "Deck importieren/exportieren" }).click();
+  const deckImportDialog = page.getByRole("dialog", {
+    name: "Deck importieren/exportieren",
+  });
+  await expect(deckImportDialog.getByText(/Deck-JSON ist keine Sicherung/)).toBeVisible();
+  await deckImportDialog.getByRole("button", { name: "Schließen" }).first().click();
+
+  await page.getByRole("button", { name: "Eigene Zauber importieren/exportieren" }).click();
+  const customImportDialog = page.getByRole("dialog", {
+    name: "Eigene Zauber importieren/exportieren",
+  });
+  await expect(customImportDialog.getByText(/Dieser Export sichert/)).toBeVisible();
+  await customImportDialog.getByRole("button", { name: "Schließen" }).first().click();
 
   await page.getByRole("button", { name: "Drucken" }).first().click();
   const printDialog = page.getByRole("dialog", { name: "Zauberkarten drucken" });

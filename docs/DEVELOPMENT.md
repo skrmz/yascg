@@ -86,10 +86,10 @@ publishes new hashed files and the PWA update flow prompts before reloading.
 
 Paths are relative to the repository root.
 
-- `src/domain/` — Zod schemas, types, limits, deck/baseline rules, ID rules.
-- `src/db/` — Dexie schema v3 (`customSpells`, `savedDecks`, singleton `activeDeck`,
-  `srdSpellOverrides`) with compare-and-swap revisions, deck-entry normalization, and
-  advisory `BroadcastChannel` notifications.
+- `src/domain/` — Zod schemas, types, limits, deck/baseline/status rules, ID rules.
+- `src/db/` — Dexie schema v4 (`customSpells`, `savedDecks`, singleton `activeDeck`,
+  `srdSpellOverrides`) with compare-and-swap revisions, saved-snapshot revision tokens,
+  deck-entry normalization, and advisory `BroadcastChannel` notifications.
 - `src/services/data/` — manifest/dataset loading, language preference, search and
   filters, and deck reference resolution.
 - `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), React
@@ -246,11 +246,63 @@ Individual add attempts for a spell already in the active deck show a bottom-rig
 notification and leave the deck unchanged. **Append all** adds only spells not already
 present and reports how many were added and skipped.
 
-Deck imports replace the active deck and deduplicate imported entries by spell ID, keeping
-the first occurrence and preserving the relative order of retained entries. The import
-summary reports how many duplicates were removed. Loading a saved deck and upgrading an
-existing database also normalize duplicate entries; no print-quantity or multiple-copy
-mechanism exists.
+### Association, status, and persistence
+
+The active deck is a Dexie singleton whose `revision` is the active CAS token. An associated
+deck stores `savedDeckId` and a non-null `baseline`; an unassociated deck omits the
+`savedDeckId` property entirely and stores `baseline: null`. Do not serialize
+`savedDeckId: undefined`. Each saved snapshot has its own `revision` (starting at `1`) and the
+active baseline records the observed `savedRevision`; `updatedAt` is display-only.
+
+`getDeckStatus` maps the four valid combinations to **Saved**, **Unsaved changes**, **Not
+saved as a deck**, and **New deck**. Associated decks with a null baseline or missing token,
+and unassociated decks with a non-null baseline, are **invalid** state errors rather than
+clean decks.
+
+- `mutateActiveDeck` (active-only edits) trims names and rejects overlong values; it never
+  silently slices.
+- `saveNewDeck` (Save As) creates a snapshot at revision `1` and binds name, entries,
+  association, and baseline in one transaction.
+- `saveAssociatedDeck` (Save) validates the expected active revision and
+  `baseline.savedRevision`, updates only the associated snapshot, and advances both revisions
+  atomically. A clean deck is a no-op; missing/stale snapshots raise
+  `SavedDeckConflictError`.
+- `loadSavedDeck` (Open) CAS-checks the active revision, no-ops on an identical clean
+  association, and otherwise replaces active content and baseline with the selected saved
+  revision.
+- `deleteSavedDeck` CAS-checks active and saved revisions; deleting the associated snapshot
+  clears the association/baseline and advances the active revision.
+- `newActiveDeck` blanks the singleton (saved snapshots untouched) and no-ops on an already
+  blank workspace. `renameActiveDeck` changes only the committed name and validates according
+  to association; stale inline edits return a non-destructive stale outcome.
+
+### UI and import/export routing
+
+`DeckPane` owns the inline name edit session (tied to the active revision) and flushes pending
+edits before Save/Save As/Open/New deck/import/Clear. Inline rename staleness must not open the
+global cross-tab conflict dialog. `SaveAsDialog` and `OpenDeckDialog` perform their own
+validation/confirmation through provider actions; the deck actions menu holds Save As, New
+deck, deck import/export, and Clear entries. A saved-snapshot Save conflict offers Save As or
+Open.
+
+Deck import/export is `DeckImportExportDialog`; custom-spell import/export is
+`CustomSpellImportExportDialog`, triggered from `LibraryPane` next to **Create custom spell**.
+They share presentation helpers in `components/import-export/shared.tsx` but keep separate
+analysis, validation, and commit paths. Deck exports are not backups of custom spells or SRD
+overrides. Imports adopt the payload name, clear the association/baseline, and never touch
+named snapshots.
+
+Deck imports and database upgrades deduplicate entries by spell ID, keeping the first
+occurrence and preserving the relative order of retained entries. The import summary reports
+how many duplicates were removed; no print-quantity or multiple-copy mechanism exists.
+
+### Dexie v4 migration
+
+`version(4)` normalizes saved-deck revisions below `1` to `1`. For associated active decks it
+sets `baseline.savedRevision` only when the stored baseline name and ordered deduplicated
+entries exactly match the associated saved snapshot. Unverifiable associations keep the token
+absent (no fabricated token, association preserved, no active revision bump); Save then blocks
+until the user opens the snapshot or uses Save As.
 
 ## Localization
 

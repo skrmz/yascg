@@ -3,12 +3,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { makeCustomSpell } from "@/test/fixtures/spells.ts";
-import { ImportExportDialog } from "./ImportExportDialog.tsx";
+import { CustomSpellImportExportDialog } from "./CustomSpellImportExportDialog.tsx";
 
 vi.mock("@/state/AppProvider.tsx", () => ({
   useApp: () => ({
     customSpells: [],
-    activeDeck: null,
     refreshAll: () => undefined,
     srdSpellOverrides: [],
     englishById: new Map([["srd-test-spell", { id: "srd-test-spell" }]]),
@@ -29,9 +28,9 @@ function Harness() {
   return (
     <>
       <button type="button" onClick={() => setOpen(true)}>
-        Open import/export
+        Open custom import/export
       </button>
-      <ImportExportDialog open={open} onOpenChange={setOpen} />
+      <CustomSpellImportExportDialog open={open} onOpenChange={setOpen} />
     </>
   );
 }
@@ -39,7 +38,7 @@ function Harness() {
 async function openAndAnalyzeCustomFile() {
   const user = userEvent.setup();
   render(<Harness />);
-  await user.click(screen.getByRole("button", { name: "Open import/export" }));
+  await user.click(screen.getByRole("button", { name: "Open custom import/export" }));
   const input = document.querySelector<HTMLInputElement>('input[type="file"]');
   if (!input) throw new Error("Custom import file input not found");
   await user.upload(
@@ -50,7 +49,7 @@ async function openAndAnalyzeCustomFile() {
   return user;
 }
 
-describe("ImportExportDialog pending import handling", () => {
+describe("CustomSpellImportExportDialog pending import handling", () => {
   it("asks before closing with an analyzed import and keeps it when canceled", async () => {
     const user = await openAndAnalyzeCustomFile();
 
@@ -61,7 +60,7 @@ describe("ImportExportDialog pending import handling", () => {
         "An import is ready but has not been applied. Closing the dialog now discards it.",
       ),
     ).not.toBeNull();
-    expect(screen.getByRole("dialog", { name: "Import / Export JSON" })).not.toBeNull();
+    expect(screen.getByRole("dialog", { name: "Import / export custom spells" })).not.toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Keep reviewing" }));
 
@@ -81,9 +80,6 @@ describe("ImportExportDialog pending import handling", () => {
         "An import is ready but has not been applied. Closing the dialog now discards it.",
       ),
     ).not.toBeNull();
-    expect(
-      screen.getByText("1 spell record will be applied. 0 override records will be applied."),
-    ).not.toBeNull();
   });
 
   it("discards the pending import when closing is confirmed", async () => {
@@ -92,14 +88,13 @@ describe("ImportExportDialog pending import handling", () => {
     await user.click(screen.getByRole("button", { name: "Close" }));
     await user.click(screen.getByRole("button", { name: "Discard import and close" }));
 
-    expect(screen.queryByRole("dialog", { name: "Import / Export JSON" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Import / export custom spells" })).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Open import/export" }));
+    await user.click(screen.getByRole("button", { name: "Open custom import/export" }));
 
     expect(
       screen.queryByText("1 spell record will be applied. 0 override records will be applied."),
     ).toBeNull();
-    expect(screen.queryByText(/validated/)).toBeNull();
   });
 
   it("resets the pending import from inside the dialog", async () => {
@@ -113,6 +108,6 @@ describe("ImportExportDialog pending import handling", () => {
 
     await user.click(screen.getByRole("button", { name: "Close" }));
 
-    expect(screen.queryByRole("dialog", { name: "Import / Export JSON" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Import / export custom spells" })).toBeNull();
   });
 });

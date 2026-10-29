@@ -35,6 +35,13 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     selectSpell: holder.selectSpell,
     selectedSpellId: holder.selectedSpellId,
     saveCustomSpell: holder.saveCustomSpell,
+    customSpells: [],
+    srdSpellOverrides: [],
+    englishById: new Map(),
+    manifest: [],
+    dataLoading: false,
+    dataError: null,
+    refreshAll: () => undefined,
   }),
 }));
 
@@ -191,6 +198,17 @@ describe("LibraryPane deck additions", () => {
     expect(toastMock.info).toHaveBeenCalledWith("No spells added", {
       description: "1 matching spell is already in the active deck.",
     });
+  });
+});
+
+describe("LibraryPane custom spell import/export", () => {
+  it("opens the focused custom-spell import/export dialog from the library", async () => {
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.click(screen.getByRole("button", { name: "Custom spell import/export" }));
+
+    expect(screen.getByRole("dialog", { name: "Import / export custom spells" })).not.toBeNull();
   });
 });
 

@@ -98,6 +98,7 @@ export const de = {
     appendAll: "Alle hinzufügen",
     replaceDeck: "Deck ersetzen",
     createCustomSpell: "Eigenen Zauber erstellen",
+    customImportExport: "Eigene Zauber importieren/exportieren",
     spellsHeading: "Zauber",
     resultsAria: "Ergebnisse",
     empty: "Keine Zauber entsprechen der aktuellen Suche und den Filtern.",
@@ -129,11 +130,12 @@ export const de = {
     title: "Aktives Deck",
     nameLabel: "Name des aktiven Decks",
     namePlaceholder: "Unbenanntes Deck",
-    unsavedTitle: "Das aktive Deck weicht von seinem gespeicherten Stand ab",
-    unsaved: "Nicht gespeichert",
-    saveAsNew: "Als neu speichern",
-    rename: "Umbenennen",
-    importExport: "Importieren / Exportieren",
+    save: "Speichern",
+    saveAs: "Speichern unter…",
+    open: "Öffnen…",
+    actions: "Deck-Aktionen",
+    newDeck: "Neues Deck",
+    importExport: "Deck importieren/exportieren",
     print: "Drucken",
     entries: "{{count}} Eintrag",
     entries_one: "{{count}} Eintrag",
@@ -147,25 +149,57 @@ export const de = {
     missing: "{{count}} fehlend",
     missing_one: "{{count}} fehlend",
     missing_other: "{{count}} fehlend",
-    loadSaved: "Gespeichertes Deck laden",
-    savedDeckToLoad: "Zu ladendes gespeichertes Deck",
-    selectSaved: "Gespeichertes Deck auswählen…",
-    load: "Laden",
-    overwriteSaved: "Gespeichertes Deck überschreiben",
-    savedDeckToOverwrite: "Zu überschreibendes gespeichertes Deck",
-    overwrite: "Überschreiben",
-    deleteSavedDeck: "Gespeichertes Deck löschen",
     undoDelete: "Löschen rückgängig machen",
     heading: "Zauber im Deck",
     empty: "Das aktive Deck ist leer. Füge Zauber aus der Bibliothek hinzu.",
-    clearTitle: "Das aktive Deck leeren?",
+    statusLabel: "Deck-Status",
+    status: {
+      saved: "Gespeichert",
+      unsaved: "Nicht gespeicherte Änderungen",
+      notSaved: "Nicht als Deck gespeichert",
+      empty: "Neues Deck",
+      invalid: "Fehlerhafter Deck-Zustand",
+    },
+    statusHint: {
+      saved: "Als benannter Stand gespeichert. Das aktive Deck wird zusätzlich lokal gespeichert.",
+      unsaved:
+        "Das aktive Deck weicht von seinem benannten Stand ab. Änderungen werden weiterhin lokal gespeichert.",
+      notSaved:
+        "Lokal gespeichert, aber nicht als benannter Stand. „Speichern unter…“ erstellt einen.",
+      empty: "Neues Deck. Änderungen werden laufend lokal gespeichert.",
+      invalid:
+        "Die gespeicherte Verknüpfung ist inkonsistent. Öffne ein gespeichertes Deck oder verwende „Speichern unter…“.",
+    },
+    persistenceHint:
+      "Das aktive Deck wird immer lokal gespeichert. Benannte Stände ändern sich nur durch Speichern oder Speichern unter.",
+    nameInvalid: "Gib einen Namen mit 1–120 Zeichen ein.",
+    nameStale: "Das Deck wurde während der Bearbeitung geändert. Der Name wurde nicht übernommen.",
+    saveSuccess: "Deck gespeichert.",
+    saveAsTitle: "Deck speichern unter",
+    saveAsDescription: "Erstellt einen neuen benannten Stand aus dem aktiven Deck.",
+    saveAsConfirm: "Speichern",
+    openTitle: "Deck öffnen",
+    openDescription: "Gespeicherte Stände sind nach letzter Aktualisierung sortiert.",
+    openEmpty: "Noch keine gespeicherten Decks.",
+    openAria: "{{name}} öffnen",
+    deleteAria: "{{name}} löschen",
+    duplicateId: "ID {{id}}",
+    openConfirmTitle: "Das aktive Deck ersetzen?",
+    openConfirmDescription:
+      "Das aktive Deck enthält nicht gespeicherte Änderungen. Beim Öffnen eines gespeicherten Decks werden sie ersetzt. Gespeicherte Decks werden nicht geändert.",
+    openConfirm: "Aktives Deck ersetzen",
+    saveConflictTitle: "Das Deck konnte nicht gespeichert werden",
+    saveConflictDescription:
+      "Der gespeicherte Stand wurde geändert oder entfernt. „Speichern unter…“ erstellt einen neuen Stand; „Öffnen…“ lädt die neueste gespeicherte Version.",
+    clearTitle: "Alle Einträge leeren?",
     clearDescription:
       "Dadurch werden alle Einträge aus dem aktiven Deck entfernt. Der Deck-Name, die Verknüpfung und gespeicherte Decks bleiben erhalten.",
-    clearConfirm: "Deck leeren",
-    loadTitle: "Das aktive Deck ersetzen?",
-    loadDescription:
-      "Das aktive Deck enthält nicht gespeicherte Änderungen. Beim Laden eines gespeicherten Decks werden sie ersetzt. Gespeicherte Decks werden nicht geändert.",
-    loadConfirm: "Aktives Deck ersetzen",
+    clearEntries: "Einträge leeren",
+    clearConfirm: "Einträge leeren",
+    newDeckTitle: "Ein neues Deck beginnen?",
+    newDeckDescription:
+      "Das aktive Deck enthält nicht gespeicherte Änderungen. Ein neues Deck ersetzt sie. Gespeicherte Decks werden nicht geändert.",
+    newDeckConfirm: "Neues Deck",
     deleteTitle: "Gespeichertes Deck löschen?",
     deleteDescription:
       "Dadurch wird der gespeicherte Stand dauerhaft gelöscht. Der Inhalt des aktiven Decks wird nicht geändert, es sei denn, er war mit diesem Stand verknüpft.",
@@ -224,15 +258,22 @@ export const de = {
     printCards_other: "{{count}} Karten drucken",
   },
   importExport: {
-    title: "JSON importieren / exportieren",
-    description:
-      "Eigene Zauber verwenden Version 1.1.0 (mit SRD-Überschreibungen); Deck-Daten bleiben Version 1.0.0. Der Export ist die empfohlene Sicherung lokaler Daten.",
+    deckTitle: "Deck importieren/exportieren",
+    deckDescription:
+      "Deck-JSON verwendet Version 1.0.0 und ersetzt das aktive Deck. Gespeicherte Decks werden nicht geändert.",
+    customTitle: "Eigene Zauber importieren/exportieren",
+    customDescription:
+      "Eigene Zauber verwenden JSON Version 1.1.0 inklusive SRD-Überschreibungen. Der Export ist die empfohlene Sicherung für eigene Zauber.",
+    deckBackupNotice:
+      "Deck-JSON ist keine Sicherung von eigenen Zaubern oder SRD-Überschreibungen.",
+    customBackupNotice:
+      "Dieser Export sichert Definitionen eigener Zauber und SRD-Überschreibungen.",
+    dirtyReplaceWarning:
+      "Das aktive Deck enthält nicht gespeicherte Änderungen. Der Import ersetzt sie; gespeicherte Decks werden nicht geändert.",
     discardNotice:
       "Ein Import ist vorbereitet, wurde aber noch nicht übernommen. Wenn du den Dialog jetzt schließt, wird er verworfen.",
     keepReviewing: "Weiter prüfen",
     discardClose: "Import verwerfen und schließen",
-    customSpells: "Eigene Zauber",
-    activeDeck: "Aktives Deck",
     exportCustom: "Eigene Zauber exportieren",
     importCustom: "Eigene Zauber importieren…",
     exportDeck: "Aktives Deck exportieren",
@@ -393,7 +434,11 @@ export const de = {
     savedDeckConflict:
       'Das gespeicherte Deck "{{id}}" wurde geändert (erwartete Revision {{expected}}, gefunden {{actual}}).',
     deckNameLength: "Der Deck-Name muss 1 bis 120 Zeichen lang sein.",
+    deckStateInvalid:
+      "Die gespeicherte Verknüpfung des aktiven Decks ist inkonsistent. Öffne ein gespeichertes Deck oder verwende „Speichern unter…“.",
     savedDeckMissing: 'Das gespeicherte Deck "{{id}}" wurde nicht gefunden.',
+    savedDeckUnavailable:
+      "Das verknüpfte gespeicherte Deck ist nicht mehr verfügbar. Verwende „Speichern unter…“ oder „Öffnen…“.",
     customSpellReservedId:
       'Eigene Zauber-IDs dürfen nicht das reservierte Präfix "srd-" verwenden.',
     customSpellNotFound: 'Der eigene Zauber "{{id}}" wurde nicht gefunden.',

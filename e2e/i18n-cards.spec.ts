@@ -1,9 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function switchLanguage(page: Page, option: RegExp) {
-  await page.getByRole("button", { name: /Spell data language|Sprache der Zauberdaten/ }).click();
+  await page.getByRole("button", { name: /Spell data language|Sprache der Zauber/ }).click();
   await page
-    .getByRole("listbox", { name: /Spell data languages|Sprachen der Zauberdaten/ })
+    .getByRole("listbox", { name: /Spell data languages|Sprachen der Zauber/ })
     .getByRole("option", { name: option })
     .click();
 }
