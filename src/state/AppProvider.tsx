@@ -74,6 +74,7 @@ import {
 import type { ActiveDeckRecord, DeckEntry, DeckStatus, SavedDeck } from "@/domain/deck";
 import { getDeckStatus, hasSpellEntry, isDeckDirty } from "@/domain/deck";
 import type { CardFitMode, Spell, SpellSource, SrdSpellOverride } from "@/domain/spells";
+import { DEFAULT_CARD_DESIGN, normalizeCardDesign, type CardDesign } from "@/cards/design.ts";
 import { applyDeckImport, type DeckImportPlan } from "@/io/import-deck.ts";
 import {
   AppError,
@@ -154,6 +155,9 @@ export interface AppContextValue {
   selectedSpellId: string | null;
   selectSpell: (id: string | null) => void;
   selectedSpell: Spell | null;
+
+  cardDesign: CardDesign;
+  setCardDesign: (design: CardDesign) => void;
 
   activeDeck: ActiveDeckRecord | null;
   savedDecks: SavedDeck[];
@@ -239,6 +243,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [retryToken, setRetryToken] = useState(0);
 
   const [selectedSpellId, setSelectedSpellId] = useState<string | null>(null);
+  const [cardDesign, setCardDesignState] = useState<CardDesign>(DEFAULT_CARD_DESIGN);
+
+  const setCardDesign = useCallback((design: CardDesign) => {
+    setCardDesignState(normalizeCardDesign(design));
+  }, []);
 
   const [deckError, setDeckError] = useState<MessageDescriptor | null>(null);
   const [conflict, setConflict] = useState<DeckConflictState | null>(null);
@@ -1012,6 +1021,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       selectedSpellId,
       selectSpell: setSelectedSpellId,
       selectedSpell,
+      cardDesign,
+      setCardDesign,
       activeDeck: activeDeck ?? null,
       savedDecks: savedList,
       dirty,
@@ -1070,6 +1081,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dataError,
       selectedSpellId,
       selectedSpell,
+      cardDesign,
+      setCardDesign,
       activeDeck,
       savedList,
       dirty,

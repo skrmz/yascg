@@ -25,6 +25,8 @@ const holder = vi.hoisted(() => ({
   repairDeckEntry: vi.fn(),
   undoDelete: vi.fn(),
   selectSpell: vi.fn(),
+  cardDesign: "classic" as "classic" | "compact",
+  setCardDesign: vi.fn(),
 }));
 
 const toastMock = vi.hoisted(() => ({
@@ -61,6 +63,8 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     repairDeckEntry: holder.repairDeckEntry,
     undoDelete: holder.undoDelete,
     selectSpell: holder.selectSpell,
+    cardDesign: holder.cardDesign,
+    setCardDesign: holder.setCardDesign,
   }),
 }));
 
@@ -94,6 +98,8 @@ beforeEach(() => {
   holder.deleteSavedDeck.mockReset().mockResolvedValue({ status: "ok" });
   holder.newActiveDeck.mockReset().mockResolvedValue({ status: "ok" });
   holder.importDeck.mockReset().mockResolvedValue({ status: "ok" });
+  holder.cardDesign = "classic";
+  holder.setCardDesign.mockReset();
   toastMock.success.mockReset();
   toastMock.info.mockReset();
   toastMock.error.mockReset();
@@ -344,5 +350,42 @@ describe("DeckPane actions", () => {
 
     expect(screen.getByRole("dialog", { name: "Replace the active deck?" })).not.toBeNull();
     expect(holder.openSavedDeck).not.toHaveBeenCalled();
+  });
+});
+
+describe("DeckPane card design selector", () => {
+  it("sits between deck controls and deck entries with both designs", () => {
+    const { container } = render(<DeckPane />);
+    const controls = container.querySelector("#deck-controls");
+    const design = container.querySelector("#deck-design");
+    const entries = container.querySelector("#deck-entries-container");
+    expect(controls).not.toBeNull();
+    expect(design).not.toBeNull();
+    expect(entries).not.toBeNull();
+    expect(controls!.nextElementSibling).toBe(design);
+    expect(design!.nextElementSibling).toBe(entries);
+
+    const select = within(design as HTMLElement).getByLabelText("Card design") as HTMLSelectElement;
+    expect(Array.from(select.options, (option) => option.textContent)).toEqual([
+      "Classic",
+      "Compact",
+    ]);
+    expect(select.value).toBe("classic");
+  });
+
+  it("calls setCardDesign when Compact is selected", async () => {
+    const user = userEvent.setup();
+    render(<DeckPane />);
+    await user.selectOptions(screen.getByLabelText("Card design"), "compact");
+    expect(holder.setCardDesign).toHaveBeenCalledWith("compact");
+  });
+
+  it("opens the localized legend dialog", async () => {
+    const user = userEvent.setup();
+    render(<DeckPane />);
+    await user.click(screen.getByRole("button", { name: "Legend" }));
+    const dialog = screen.getByRole("dialog", { name: "Card legend" });
+    expect(within(dialog).getByText("TRN")).not.toBeNull();
+    expect(within(dialog).getByText("WIZ")).not.toBeNull();
   });
 });

@@ -30,6 +30,7 @@ export function DetailsPane() {
     selectedSpell,
     activeDeck,
     language,
+    cardDesign,
     addSpellToDeck,
     duplicateSpell,
     deleteSpell,
@@ -49,6 +50,7 @@ export function DetailsPane() {
     spell: selectedSpell,
     fitMode,
     language,
+    design: cardDesign,
   });
 
   useEffect(() => {
@@ -137,7 +139,9 @@ export function DetailsPane() {
           ) : null}
           {fit.result?.overflow ? (
             <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
-              {t("details.overflow", { max: LIMITS.CONTINUATION_CARDS_MAX })}
+              {fit.result.overflowReason === "notes"
+                ? t("details.notesOverflow")
+                : t("details.overflow", { max: LIMITS.CONTINUATION_CARDS_MAX })}
             </p>
           ) : null}
           {fit.result && !fit.result.overflow ? (
@@ -163,6 +167,8 @@ export function DetailsPane() {
                     cardCount={fit.result!.pages.length}
                     fontPt={fit.result!.fontPt}
                     contentLanguage={contentLanguage}
+                    design={cardDesign}
+                    presentation={fit.presentation ?? undefined}
                     className="card-preview-page animate-reveal-subtle"
                   />
                 ))

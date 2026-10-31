@@ -92,6 +92,7 @@ test("New deck keeps saved snapshots and Clear entries preserves association", a
     .click();
 
   const deck = page.getByRole("region", { name: "Active deck" });
+  await expect(deck.getByText("Fireball")).toBeVisible();
   const name = page.getByLabel("Active deck name");
   await name.fill("Kept Deck");
   await name.press("Enter");

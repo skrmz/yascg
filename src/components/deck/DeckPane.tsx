@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { resolveContentLanguage } from "@/content-language.ts";
+import { CARD_DESIGN_LABEL_KEYS, CARD_DESIGNS, type CardDesign } from "@/cards/design.ts";
 import { isValidDeckName, normalizeDeckName, type DeckEntry } from "@/domain/deck";
 import type { CardFitMode } from "@/domain/spells";
 import type { EntryResolution } from "@/services/data/resolution.ts";
@@ -33,6 +34,7 @@ import { PrintDialog } from "@/components/print/PrintDialog.tsx";
 import { DeckImportExportDialog } from "@/components/import-export/DeckImportExportDialog.tsx";
 import { OpenDeckDialog } from "./OpenDeckDialog.tsx";
 import { SaveAsDialog } from "./SaveAsDialog.tsx";
+import { CardLegendDialog } from "./CardLegendDialog.tsx";
 
 interface FlushResult {
   ok: boolean;
@@ -60,6 +62,8 @@ export function DeckPane() {
     undoDelete,
     librarySpells,
     selectSpell,
+    cardDesign,
+    setCardDesign,
   } = useApp();
   const { t } = useTranslation();
 
@@ -78,6 +82,7 @@ export function DeckPane() {
   const [printOpen, setPrintOpen] = useState(false);
   const [ioOpen, setIoOpen] = useState(false);
   const [ioDirty, setIoDirty] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
 
   const editingRef = useRef(false);
   const editSessionRef = useRef<{ revision: number; name: string } | null>(null);
@@ -447,6 +452,30 @@ export function DeckPane() {
         </div>
       </div>
 
+      <div id="deck-design" className="space-y-1.5 border-b border-border p-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-0 flex-1">
+            <Label htmlFor="deck-design-select">{t("card.design.label")}</Label>
+            <NativeSelect
+              id="deck-design-select"
+              value={cardDesign}
+              className="mt-1 h-8"
+              onChange={(event) => setCardDesign(event.target.value as CardDesign)}
+            >
+              {CARD_DESIGNS.map((design) => (
+                <option key={design} value={design}>
+                  {t(CARD_DESIGN_LABEL_KEYS[design])}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setLegendOpen(true)}>
+            {t("card.design.legend")}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">{t("card.design.hint")}</p>
+      </div>
+
       <div id="deck-entries-container" className="mt-2 flex min-h-0 flex-1 flex-col">
         <h2
           id="deck-entries-heading"
@@ -640,6 +669,7 @@ export function DeckPane() {
       </Dialog>
 
       <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
+      <CardLegendDialog open={legendOpen} onOpenChange={setLegendOpen} />
     </section>
   );
 }

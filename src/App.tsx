@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AppProvider, useApp } from "./state/AppProvider.tsx";
 import { AppShell } from "./components/AppShell.tsx";
 import { Toaster } from "./ui/Sonner.tsx";
+import { TooltipProvider } from "./ui/Tooltip.tsx";
 import { db } from "./db/database.ts";
 import i18n, { applyDocumentLanguage } from "./i18n.ts";
 import { message, translateMessage, type MessageDescriptor } from "./locales/messages.ts";
@@ -55,10 +56,12 @@ function StorageNotice() {
 export function App() {
   return (
     <AppProvider>
-      <UiLocaleBridge />
-      <StorageNotice />
-      <AppShell />
-      <Toaster />
+      <TooltipProvider delayDuration={200}>
+        <UiLocaleBridge />
+        <StorageNotice />
+        <AppShell />
+        <Toaster />
+      </TooltipProvider>
     </AppProvider>
   );
 }

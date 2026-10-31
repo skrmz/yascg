@@ -9,36 +9,45 @@ export interface InlineNode {
 export type TextInline = Extract<InlineNode, { type: "text" } | { type: "code" }>;
 export type ContainerInline = Extract<InlineNode, { type: "strong" } | { type: "em" }>;
 
+export type BlockSection = "higherLevels";
+
 export interface ListBlock {
   type: "list";
   ordered: boolean;
   items: InlineNode[][];
+  section?: BlockSection;
+  role?: "notes";
 }
 
 export interface TableBlock {
   type: "table";
   header: InlineNode[][];
   rows: InlineNode[][][];
+  section?: BlockSection;
 }
 
 export interface HeadingBlock {
   type: "heading";
   depth: number;
   children: InlineNode[];
+  section?: BlockSection;
 }
 
 export interface ParagraphBlock {
   type: "paragraph";
   children: InlineNode[];
+  section?: BlockSection;
 }
 
 export interface CodeBlock {
   type: "code";
   value: string;
+  section?: BlockSection;
 }
 
 export interface RuleBlock {
   type: "hr";
+  section?: BlockSection;
 }
 
 export type BlockNode =
@@ -246,6 +255,10 @@ export function componentDescriptionBlocks(
   return blocks;
 }
 
+export interface ParseSpellBodyOptions {
+  markSections?: boolean;
+}
+
 export function parseSpellBody(
   spell: {
     description: readonly string[];
@@ -254,18 +267,25 @@ export function parseSpellBody(
   },
   higherLevelsHeading: string,
   markers: ComponentMarkers,
+  options: ParseSpellBodyOptions = {},
 ): BlockNode[] {
   const blocks: BlockNode[] = [];
   blocks.push(...parseMarkdown(spell.description.join("\n\n")));
   if (spell.higherLevels && spell.higherLevels.length > 0) {
     const higher = spell.higherLevels.filter((part) => part.trim() !== "");
     if (higher.length > 0) {
-      blocks.push({
-        type: "heading",
-        depth: HIGHER_LEVELS_HEADING.depth,
-        children: [{ type: "text", value: higherLevelsHeading }],
-      });
-      blocks.push(...parseMarkdown(higher.join("\n\n")));
+      const higherBlocks: BlockNode[] = [
+        {
+          type: "heading",
+          depth: HIGHER_LEVELS_HEADING.depth,
+          children: [{ type: "text", value: higherLevelsHeading }],
+        },
+        ...parseMarkdown(higher.join("\n\n")),
+      ];
+      if (options.markSections) {
+        for (const block of higherBlocks) block.section = "higherLevels";
+      }
+      blocks.push(...higherBlocks);
     }
   }
   blocks.push(...componentDescriptionBlocks(spell, markers));

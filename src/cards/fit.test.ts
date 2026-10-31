@@ -250,6 +250,33 @@ describe("multi-card pagination", () => {
     expect(fit.overflow).toBe(true);
     expect(fit.truncated).toBe(false);
   });
+
+  it("reserves the pagination line when a first page becomes a continuation", () => {
+    const calls: Array<{ continuation: boolean; cardCount: number | undefined }> = [];
+    const measure: MeasureFit = (page, _fontPt, continuation, cardCount) => {
+      calls.push({ continuation, cardCount });
+      const budget = cardCount === 2 && !continuation ? 40 : 70;
+      return allText(page).length <= budget;
+    };
+    const text = "word ".repeat(20).trim();
+    const fit = computeFit([paragraph(text)], measure, "multi-card");
+
+    expect(fit.pages.length).toBeGreaterThan(1);
+    expect(allText(fit.pages.flat())).toBe(text);
+    expect(calls.some((call) => call.continuation === false && call.cardCount === 2)).toBe(true);
+  });
+
+  it("does not reserve pagination space for a single multi-card page", () => {
+    const calls: Array<{ continuation: boolean; cardCount: number | undefined }> = [];
+    const measure: MeasureFit = (_page, _fontPt, continuation, cardCount) => {
+      calls.push({ continuation, cardCount });
+      return true;
+    };
+    const fit = computeFit([paragraph("short")], measure, "multi-card");
+
+    expect(fit.pages).toHaveLength(1);
+    expect(calls.every((call) => call.continuation === false && call.cardCount === 1)).toBe(true);
+  });
 });
 
 describe("fit mode selection", () => {
@@ -266,5 +293,114 @@ describe("fit mode selection", () => {
     expect(multi.pages.length).toBeGreaterThan(1);
     expect(multi.truncated).toBe(false);
     expect(allText(multi.pages.flat())).toBe(allText(source));
+  });
+});
+
+function notesBlock(items: readonly string[]): BlockNode {
+  return {
+    type: "list",
+    ordered: false,
+    role: "notes",
+    items: items.map((value): InlineNode[] => [{ type: "text", value }]),
+  };
+}
+
+describe("protected notes fitting", () => {
+  it("never splits or ellipsizes the notes block in multi-card mode", () => {
+    const notes = notesBlock(["a casting-time qualifier"]);
+    const source: BlockNode[] = [notes, paragraph("word ".repeat(60).trim())];
+    const fit = computeFit(source, charBudget(90), "multi-card");
+
+    expect(fit.pages.length).toBeGreaterThan(1);
+    expect(fit.truncated).toBe(false);
+    expect(fit.pages[0]?.[0]).toMatchObject({ type: "list", role: "notes" });
+    const notesPages = fit.pages.flat().filter((block) => block.type === "list");
+    expect(notesPages).toHaveLength(1);
+    expect(allText(fit.pages.flat())).toContain("a casting-time qualifier");
+    expect(allText(fit.pages[0] ?? [])).not.toContain("\u2026");
+  });
+
+  it("truncates body text while keeping notes intact", () => {
+    const source: BlockNode[] = [notesBlock(["note"]), paragraph("word ".repeat(80).trim())];
+    const fit = computeFit(source, charBudget(40), "auto-shrink");
+
+    expect(fit.truncated).toBe(true);
+    expect(fit.overflow).toBe(false);
+    const page = fit.pages[0] ?? [];
+    expect(page[0]).toMatchObject({ type: "list", role: "notes" });
+    expect(allText([page[0] as BlockNode])).toBe("note");
+    expect(allText(page)).toContain("note");
+    expect(allText(page).endsWith("\u2026")).toBe(true);
+  });
+
+  it("reports a notes overflow instead of truncating the notes block", () => {
+    const notes = notesBlock(["a very long protected note that cannot fit"]);
+    const fit = computeFit(
+      [notes, paragraph("body")],
+      (blocks) => allText(blocks).length <= 5,
+      "auto-shrink",
+    );
+
+    expect(fit.pages).toHaveLength(1);
+    expect(fit.pages[0]).toEqual([notes]);
+    expect(fit.truncated).toBe(false);
+    expect(fit.overflow).toBe(true);
+    expect(fit.overflowReason).toBe("notes");
+  });
+
+  it("keeps notes alone and blocks print when notes plus the ellipsis cannot fit", () => {
+    const notes = notesBlock(["note"]);
+    const fit = computeFit(
+      [notes, paragraph("body")],
+      (blocks) => allText(blocks).length <= 4,
+      "auto-shrink",
+    );
+
+    expect(fit.pages[0]).toEqual([notes]);
+    expect(fit.truncated).toBe(true);
+    expect(fit.overflow).toBe(true);
+    expect(fit.overflowReason).toBe("notes");
+  });
+
+  it("keeps notes on page one only in multi-card fitting", () => {
+    const notes = notesBlock(["note"]);
+    const fit = computeFit(
+      [notes, paragraph("word ".repeat(50).trim())],
+      charBudget(50),
+      "multi-card",
+    );
+
+    expect(fit.pages[0]).toContainEqual(notes);
+    for (const page of fit.pages.slice(1)) {
+      expect(page.some((block) => block.type === "list" && block.role === "notes")).toBe(false);
+    }
+  });
+
+  it("distinguishes a continuation-limit overflow from a notes overflow", () => {
+    const notes = notesBlock(["note"]);
+    const fit = computeFit(
+      [notes, paragraph("word ".repeat(40).trim())],
+      charBudget(30),
+      "multi-card",
+      2,
+    );
+    expect(fit.overflow).toBe(true);
+    expect(fit.overflowReason).toBe("continuation-limit");
+  });
+});
+
+describe("higher-level sections survive pagination", () => {
+  it("keeps the section marker on every split block", () => {
+    const text = "Higher level text with enough words to split across cards. ".repeat(8);
+    const source: BlockNode[] = [
+      { ...heading("Higher Levels"), section: "higherLevels" },
+      { ...paragraph(text), section: "higherLevels" },
+    ];
+    const fit = computeFit(source, charBudget(80), "multi-card");
+
+    expect(fit.pages.length).toBeGreaterThan(1);
+    const blocks = fit.pages.flat();
+    expect(blocks.length).toBeGreaterThan(2);
+    expect(blocks.every((block) => block.section === "higherLevels")).toBe(true);
   });
 });

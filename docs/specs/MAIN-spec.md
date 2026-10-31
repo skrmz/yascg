@@ -588,8 +588,37 @@ These rules are scoped to `.spell-card`; application-shell typography is unchang
 typography must never override the application `--font-sans`, `--font-display`, or
 `--font-mono` tokens.
 
-- **Header:** name, level, school, ritual/concentration indicators. Continuation cards add a
-  localized continuation label (`contd.` / `fortgesetzt`) aligned to the top-right.
+**Card designs:** Classic is the unchanged original layout and the default for every session and
+for any absent or invalid selection. Compact is an additive selectable layout. The **Card
+design** selector sits in the Active Deck pane after `#deck-controls` and before the deck entries,
+offers exactly Classic and Compact in the active UI language, is not persisted, and resets to
+Classic on reload. A Legend button opens a localized glossary dialog. Neither the selector, its
+hint, the Legend trigger, the Legend dialog, nor any tooltip is printed. The selected design is
+part of the fit cache key and is used identically by the preview, hidden measurement card,
+pagination, and print output; switching designs re-measures without changing stored spell or deck
+data.
+
+Compact keeps the same 2.5 × 3.5 in card, safe Markdown pipeline, truncation, continuation, and
+print rules. Its first card shows a single-outline level circle with the numeric level only, a
+wrapping title, ritual `R` in the title row, casting-time glyph/quantity, `Target` plus the actual
+range, `Hourglass` plus the verbatim duration, connected `V`/`S`/`M` boxes (localized catalog
+shorts, or the full component override), a standalone `C` beside the component group when
+concentration applies, and italic wrapping material detail. Casting-time and duration use fixed
+glyphs or catalog unit shorts with catalog `.full` accessible labels; a retained casting-time or
+duration caret becomes a numbered note. Notes are built before fitting as one atomic leading
+block, are rendered on the first card only, are never split or ellipsized, and block printing with
+a notes-specific message if they cannot fit even at the minimum size. Higher-level blocks are
+opted into a separated `(+)` section only when `higherLevels` is non-empty; the wrapper survives
+continuation pagination and is absent for inline higher-level prose. The Compact footer is exactly
+Source | School | Classes, using the actual `sourceLabelText` (including `*`), the school catalog
+short or full localized label, and per-class catalog shorts with full names for homebrew entries;
+empty classes render `—`. Continuation cards keep title, level, continuation label, body,
+page number, and footer, and omit metadata, material, notes, and tooltips. The school remains in
+the three-part footer rather than repeating in the continuation header.
+
+- **Header (first card):** name, level, school, ritual/concentration indicators. Continuation cards
+  add a localized continuation label (`contd.` / `fortgesetzt`) aligned to the right of the header
+  and omit the school from the header.
 - **Metadata:** casting time, range, components, duration. Rendered on the first card only;
   continuation cards omit this section.
 - **Body:** description, Higher Levels, classes.
@@ -610,8 +639,12 @@ in force.
 
 **Measurement:** use a hidden, fixed-size card matching print styles to measure actual rendered
 heights after explicitly loading and checking the required card fonts (not only
-`document.fonts.ready`). Recompute on spell edits, fit-mode changes, and relevant style/font
-changes; cache per content and mode. Never perform measurement for every scroll event.
+`document.fonts.ready`). Recompute on spell edits, fit-mode changes, card-design changes, and
+relevant style/font changes; cache per content, design, language, and mode. Cache keys include the
+design, the content fingerprint (including the override marker), and the actual fitted block
+fingerprint. A missing measured body element is a hard measurement error, not a silent fit
+success; the preview and print dialog show a fit error and printing stays blocked. Never perform
+measurement for every scroll event.
 
 **Auto-shrink (default):** always produces exactly one physical card. Body font starts at 8.5 pt
 and decreases in 0.5 pt steps to 6 pt; choose the largest size that fits. If the complete body
@@ -631,7 +664,7 @@ warning.
 **Multi-card:** body font 8 pt; use 6 pt only when an individual block cannot fit at 8 pt.
 Split description/Higher Levels at paragraph boundaries, then sentence/word boundaries as
 needed; preserve words, punctuation, and reading order. The first card keeps the full header,
-metadata, body, and footer. Continuation cards keep the compact header (name, level, school, and
+metadata, body, and footer. Continuation cards keep the compact header (name, level, and
 a localized `contd.` / `fortgesetzt` label) but omit the metadata section and material line,
 using the reclaimed space for body content. Pagination measures the actual first-card and
 continuation-card layouts separately. Continuations show `Continued from Card N` and
@@ -661,7 +694,10 @@ Tailwind/shadcn, but print sheets, grid geometry, card containers, typography si
 margins use physical units (`pt`, `in`, `mm`) plus page-size-specific `@page` rules so correctly
 configured output can meet the ±1 mm physical tolerance. Support **US Letter** (8.5in × 11in)
 and **ISO A4** (210 × 297 mm). A 3 × 3 card grid occupies 7.5in × 10.5in; print up to nine
-physical cards per sheet, leaving unused cells blank on the last sheet.
+physical cards per sheet, leaving unused cells blank on the last sheet. The selected Classic or
+Compact design is printed as measured. Tooltip and dialog portals (including Radix popper
+wrappers) are screen-only and must not print; card-local rules notes are part of the card DOM and
+must print.
 
 - The user selects Letter or A4 and toggles cutting borders.
 - Before programmatic printing, explicitly load and verify the Vollkorn and Alegreya Sans faces,

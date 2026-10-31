@@ -2,7 +2,10 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vite-plus/test";
 import { PrintSheets, type PrintCardData } from "@/print/PrintSheet.tsx";
 import { parseSpellBody } from "@/markdown/parse.ts";
+import { buildCompactPresentation } from "@/cards/compact.ts";
 import { makeSpell } from "@/test/fixtures/spells.ts";
+import i18n from "@/i18n.ts";
+import { TooltipProvider } from "@/ui/Tooltip.tsx";
 
 const markers = { verbal: "ⓥ", somatic: "ⓢ" };
 
@@ -71,5 +74,87 @@ describe("PrintSheets component rendering", () => {
     expect(screen.getAllByText("A ruby")).toHaveLength(1);
     expect(screen.getByText("contd.")).not.toBeNull();
     expect(screen.getByText("2/2")).not.toBeNull();
+  });
+});
+
+describe("PrintSheets compact design", () => {
+  it("prints compact cards with rule notes and without tooltip/dialog chrome", () => {
+    const spell = makeSpell({
+      name: "Glyph of Warding",
+      castingTime: "1 hour",
+      duration: "Until dispelled ^",
+      description: ["You inscribe a glyph.", "^ or glyph triggered"],
+      components: { verbal: true, somatic: true, material: false },
+    });
+    const blocks = parseSpellBody(spell, i18n.t("spell.higherLevels"), markers, {
+      markSections: true,
+    });
+    const presentation = buildCompactPresentation(spell, blocks, i18n.t);
+    const cards: PrintCardData[] = [
+      {
+        key: "e1-0",
+        spell,
+        pageBlocks: presentation.blocks,
+        fontPt: 8,
+        cardIndex: 1,
+        cardCount: 1,
+        truncated: false,
+        presentation,
+      },
+    ];
+    const { container } = render(
+      <TooltipProvider>
+        <PrintSheets cards={cards} paperSize="letter" cuttingBorders={false} design="compact" />
+      </TooltipProvider>,
+    );
+
+    expect(container.querySelector(".spell-card-compact")).not.toBeNull();
+    expect(screen.getByText("or glyph triggered")).not.toBeNull();
+    expect(container.querySelector(".compact-notes")).not.toBeNull();
+    expect(container.querySelector("[data-radix-popper-content-wrapper]")).toBeNull();
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it("omits compact metadata and notes on continuation cards", () => {
+    const spell = makeSpell({
+      name: "Glyph of Warding",
+      duration: "Until dispelled ^",
+      description: ["You inscribe a glyph.", "^ or glyph triggered"],
+    });
+    const blocks = parseSpellBody(spell, i18n.t("spell.higherLevels"), markers, {
+      markSections: true,
+    });
+    const presentation = buildCompactPresentation(spell, blocks, i18n.t);
+    const cards: PrintCardData[] = [
+      {
+        key: "e1-0",
+        spell,
+        pageBlocks: presentation.blocks,
+        fontPt: 8,
+        cardIndex: 1,
+        cardCount: 2,
+        truncated: false,
+        presentation,
+      },
+      {
+        key: "e1-1",
+        spell,
+        pageBlocks: presentation.blocks,
+        fontPt: 8,
+        cardIndex: 2,
+        cardCount: 2,
+        truncated: false,
+        presentation,
+      },
+    ];
+    const { container } = render(
+      <TooltipProvider>
+        <PrintSheets cards={cards} paperSize="letter" cuttingBorders={false} design="compact" />
+      </TooltipProvider>,
+    );
+    expect(container.querySelectorAll(".compact-metadata")).toHaveLength(1);
+    expect(container.querySelectorAll(".compact-notes")).toHaveLength(1);
+    expect(container.querySelectorAll(".spell-card-compact")).toHaveLength(2);
+    expect(screen.getByText("contd.")).not.toBeNull();
   });
 });

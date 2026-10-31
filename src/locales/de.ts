@@ -252,6 +252,9 @@ export const de = {
     omitConfirm: "Diese Karten auslassen und fortfahren",
     preparing: "Kartenlayout wird vorbereitet…",
     emptyDeck: "Das aktive Deck ist leer.",
+    notesOverflow:
+      "Mindestens ein Eintrag enthält Notizen, die nicht auf eine Karte passen, und kann nicht gedruckt werden.",
+    fitError: "Das Kartenlayout konnte nicht gemessen werden. Drucken ist nicht verfügbar.",
     printAction: "Drucken",
     printCards: "{{count}} Karte drucken",
     printCards_one: "{{count}} Karte drucken",
@@ -404,6 +407,8 @@ export const de = {
     cardCount_one: "{{count}} physische Karte bei {{font}} pt.",
     cardCount_other: "{{count}} physische Karten bei {{font}} pt.",
     measuring: "Kartenlayout wird gemessen…",
+    notesOverflow:
+      "Die Notizen dieser Karte passen auch bei kleinster Schrift nicht auf eine Karte. Kürze die Notizen oder wähle ein anderes Kartendesign.",
   },
   error: {
     generic: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
@@ -596,6 +601,23 @@ export const de = {
     continued: "fortgesetzt",
     truncated: "Inhalt gekürzt",
     pageNumber: "{{index}}/{{count}}",
+    notes: "Notizen",
+    noteReference: "Notiz {{number}}",
+    design: {
+      label: "Kartendesign",
+      classic: "Klassisch",
+      compact: "Kompakt",
+      hint: "Gilt für Vorschau und Druck.",
+      legend: "Legende",
+      legendTitle: "Kartenlegende",
+      legendDescription: "Bedeutungen der Abkürzungen und Symbole auf Kompaktkarten.",
+      legendCastingTime: "Zeitaufwand",
+      legendProperties: "Eigenschaften",
+      legendComponents: "Komponenten",
+      legendRangeDuration: "Reichweite und Wirkungsdauer",
+      legendSchools: "Schulen",
+      legendClasses: "Klassen",
+    },
   },
   form: {
     title: {

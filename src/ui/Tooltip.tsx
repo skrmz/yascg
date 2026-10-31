@@ -20,7 +20,7 @@ export function Tooltip({
         <TooltipPrimitive.Content
           sideOffset={6}
           className={cn(
-            "pointer-events-none z-50 rounded bg-primary px-2 py-1 text-xs text-primary-foreground shadow",
+            "app-no-print pointer-events-none z-50 rounded bg-primary px-2 py-1 text-xs text-primary-foreground shadow",
             contentClassName,
           )}
         >

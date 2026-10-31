@@ -14,6 +14,9 @@ paper. All data stays in your browser unless you export it as JSON.
 - Keep one active deck and save or load named decks locally.
 - Preview spell cards, open full details, render safe Markdown, and print with auto-shrink or
   multi-card continuation.
+- Choose the **Classic** card layout (the default) or a denser **Compact** layout, with a Legend
+  for Compact abbreviations and icons. The selection applies to preview and print and is not
+  stored across reloads.
 - Work offline after the app shell and bundled data are cached. The interface is localized in
   English and German and follows the selected spell-data language; a language without a UI
   catalog keeps its spell data and uses the English interface.
@@ -63,6 +66,14 @@ Named snapshots are independent of the working deck:
 - The status label distinguishes **Saved**, **Unsaved changes**, **Not saved as a deck**, and
   **New deck**.
 
+The **Card design** selector below the deck controls chooses **Classic** (the default) or
+**Compact**. Compact replaces the metadata table with compact casting-time, range, and duration
+items, connected component boxes, a standalone concentration indicator, numbered rules notes,
+optional higher-level sections, and a three-part Source | School | Classes footer. Its
+**Legend** button explains the abbreviations and icons. The design choice affects the preview,
+measurement, pagination, and print output; it is kept for the session and resets to Classic after
+a reload.
+
 **Import / export deck** in the deck actions menu exports the current active deck as unversioned
 JSON: its name, ordered spell references, and display settings. Spell bodies and SRD edits are
 not included; import replaces only the active deck and does not create or modify named snapshots
@@ -76,7 +87,8 @@ deck. The exact deck and import edge-case rules are in the
 ## Printing
 
 Open **Print** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per sheet on a centered
-7.5in x 10.5in grid. In **Multi-Card** mode, the first card keeps the full header and metadata
+7.5in x 10.5in grid. The selected Classic or Compact card design is used consistently in preview,
+measurement, and print. In **Multi-Card** mode, the first card keeps the full header and metadata
 block; continuation cards use a compact header with a localized `contd.`/`fortgesetzt` label and
 omit repeated metadata so more description fits.
 

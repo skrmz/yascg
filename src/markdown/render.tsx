@@ -28,7 +28,7 @@ export function Block({ block, keyPrefix }: { block: BlockNode; keyPrefix: strin
     case "heading": {
       const content = renderInline(block.children, `${keyPrefix}-h`);
       if (block.depth <= 2) return <h3 className="card-h">{content}</h3>;
-      return <h4 className="card-h card-h-sub">{content}</h4>;
+      return <div className="card-h card-h-sub">{content}</div>;
     }
     case "paragraph":
       return <p className="card-p">{renderInline(block.children, `${keyPrefix}-p`)}</p>;

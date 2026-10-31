@@ -59,9 +59,11 @@ Paths are relative to the repository root.
   deck reference resolution.
 - `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), React
   renderer, and deterministic AST splitting/pagination.
-- `src/cards/` — card chrome plus hidden-card measurement, `document.fonts` gating, single-card
-  auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor, and multi-card
-  pagination with heading-orphan prevention.
+- `src/cards/` — Classic and Compact card chrome plus hidden-card measurement, `document.fonts`
+  gating, single-card auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor,
+  and multi-card pagination with heading-orphan prevention. `design.ts` owns the design enum and
+  normalization, `compact.ts` builds the pre-fit Compact presentation and notes, and
+  `CompactCard.tsx` renders the Compact design.
 - `src/components/details/` — card-preview-first details pane, on-demand spell details dialog,
   and card actions menus backed by the edit flow.
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
@@ -184,12 +186,28 @@ the [product specification](specs/MAIN-spec.md#9-card-layout-and-text-fitting); 
 settings are in the [README](../README.md#printing). Implementation details:
 
 - `src/cards/fit.tsx` measures actual rendered heights in a hidden fixed-size card, caches by
-  content/language/fit mode, and implements auto-shrink and multi-card pagination. Measurement
-  runs only on content/style changes, never on every scroll event.
+  content/language/fit mode/design, and implements auto-shrink and multi-card pagination.
+  Measurement runs only on content/style changes, never on every scroll event. A missing measured
+  body element throws so preview and print surface a fit error instead of a false fit. Compact
+  multi-card fitting repaginates once with the pagination line reserved when the first pass produces
+  multiple cards, so the measured first card matches preview/print above the footer.
+- `src/cards/design.ts` owns `CardDesign` and `DEFAULT_CARD_DESIGN`. `AppProvider` exposes
+  in-memory `cardDesign`/`setCardDesign`; the Deck pane selector is the only writer, and nothing
+  is persisted.
+- `src/cards/compact.ts` runs `buildCompactPresentation` before fitting. It parses casting-time
+  bases/qualifiers and duration carets, attaches notes only for the conservative
+  one-field/one-paragraph caret case or an absent inline qualifier, numbers notes in metadata
+  order, and prepends one atomic notes block. Compact fit blocks are both the measured and printed
+  blocks. `src/cards/fingerprint.ts` keys the cache with design, content fingerprint (including
+  overrides), and that block fingerprint.
+- `src/locales/abbreviations.ts` maps schools, core classes, and V/S/M components to catalog
+  semantic IDs; `.short` is display text and `.full` is the accessible/tooltip/legend text.
+  `docs/abbreviations.md` remains the parity source for the existing test, never a runtime
+  parser.
 - `src/cards/fonts.ts` explicitly requests and checks every card face/weight before measurement
   and `window.print()`; `src/print/print.css` self-hosts the card families as WOFF2 assets.
 - `src/print/PrintSheet.tsx` builds the 3x3 sheets and `src/print/print.css` owns the physical
-  `@page`, grid, and card CSS.
+  `@page`, grid, Classic, and Compact card CSS. Tooltip and dialog portals are excluded in print.
 - `src/pwa/register.ts` verifies that the shell, manifest, every bundled dataset, and at least
   one local font are present in Cache Storage before the UI claims offline readiness. It uses a
   `prompt` update flow and never infers readiness from service-worker registration alone.

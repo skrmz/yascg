@@ -1,16 +1,15 @@
 import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
-import type { CharacterClass, Spell } from "@/domain/spells";
+import type { Spell } from "@/domain/spells";
 import type { BlockNode } from "@/markdown/parse.ts";
 import { BlockList } from "@/markdown/render.tsx";
-import {
-  classKey,
-  componentKey,
-  levelLabelKey,
-  schoolKey,
-  sourceLabelText,
-} from "@/locales/labels.ts";
+import { levelLabelKey, schoolKey, sourceLabelText } from "@/locales/labels.ts";
+import { classSummary, materialDetailText, metadataRows } from "./format.ts";
+import type { CardDesign } from "./design.ts";
+import type { CompactPresentation } from "./compact.ts";
+import { CompactCardView, type CompactCardViewProps } from "./CompactCard.tsx";
+
+export { classSummary, componentSummary, materialDetailText, metadataRows } from "./format.ts";
 
 export interface CardViewProps {
   spell: Spell;
@@ -23,56 +22,11 @@ export interface CardViewProps {
   bodyRef?: Ref<HTMLDivElement>;
   continuation?: boolean;
   contentLanguage?: string;
+  design?: CardDesign;
+  presentation?: CompactPresentation;
 }
 
-export function componentSummary(spell: Spell, t: TFunction): string {
-  const override = spell.components.componentsDisplayOverride?.trim();
-  if (override) return override;
-  const letters: string[] = [];
-  if (spell.components.verbal) letters.push(t(componentKey("verbal")));
-  if (spell.components.somatic) letters.push(t(componentKey("somatic")));
-  if (spell.components.material) letters.push(t(componentKey("material")));
-  return letters.length > 0 ? letters.join(", ") : "\u2014";
-}
-
-export function classSummary(classes: readonly CharacterClass[], t: TFunction): string {
-  return classes
-    .map((name) => {
-      const key = classKey(name);
-      return key ? t(key) : name;
-    })
-    .join(", ");
-}
-
-/**
- * Composes the material-detail line from description, cost, and an optional
- * consumed qualifier. Returns `null` when the material component is disabled or
- * no detail text exists, so no empty parentheses or stray separators render.
- */
-export function materialDetailText(spell: Spell, t: TFunction): string | null {
-  const components = spell.components;
-  if (!components.material) return null;
-  const description = components.materialDescription?.trim() ?? "";
-  const details: string[] = [];
-  const cost = components.materialCost?.trim();
-  if (cost) details.push(cost);
-  if (components.materialConsumed) details.push(t("spell.metadata.materialConsumed"));
-  if (description === "" && details.length === 0) return null;
-  if (description === "") return details.join(", ");
-  if (details.length === 0) return description;
-  return `${description} (${details.join(", ")})`;
-}
-
-export function metadataRows(spell: Spell, t: TFunction): Array<{ label: string; value: string }> {
-  return [
-    { label: t("spell.metadata.castingTime"), value: spell.castingTime },
-    { label: t("spell.metadata.range"), value: spell.range },
-    { label: t("spell.metadata.components"), value: componentSummary(spell, t) },
-    { label: t("spell.metadata.duration"), value: spell.duration },
-  ];
-}
-
-export function CardView({
+export function ClassicCardView({
   spell,
   blocks,
   cardIndex,
@@ -161,4 +115,17 @@ export function CardView({
       ) : null}
     </article>
   );
+}
+
+/** Dispatches to Classic (default) or the additive Compact design. */
+export function CardView(props: CardViewProps) {
+  if (props.design === "compact") {
+    if (!props.presentation) {
+      throw new Error("Compact card design requires a compact presentation.");
+    }
+    const { design: _design, presentation: _presentation, ...rest } = props;
+    const compactProps: CompactCardViewProps = { ...rest, presentation: props.presentation };
+    return <CompactCardView {...compactProps} />;
+  }
+  return <ClassicCardView {...props} />;
 }

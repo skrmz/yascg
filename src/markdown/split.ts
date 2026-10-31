@@ -209,6 +209,7 @@ export function splitBlockToFit(
       return null;
     }
     case "list": {
+      if (block.role === "notes") return null;
       if (block.items.length > 1) {
         for (let count = block.items.length - 1; count >= 1; count -= 1) {
           const head: BlockNode = { ...block, items: block.items.slice(0, count) };
@@ -249,6 +250,7 @@ export function appendEllipsis(blocks: readonly BlockNode[]): BlockNode[] {
   const clone = blocks.map(cloneBlock);
   const last = clone[clone.length - 1];
   if (!last) return clone;
+  if (last.type === "list" && last.role === "notes") return clone;
   switch (last.type) {
     case "paragraph":
     case "heading":

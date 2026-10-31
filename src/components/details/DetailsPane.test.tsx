@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import i18n from "@/i18n.ts";
 import type { Spell } from "@/domain/spells";
 import { makeSpell } from "@/test/fixtures/spells.ts";
+import { TooltipProvider } from "@/ui/Tooltip.tsx";
 import { DetailsPane } from "./DetailsPane.tsx";
 
 interface FitResultStub {
@@ -11,6 +12,7 @@ interface FitResultStub {
   fontPt: number;
   truncated: boolean;
   overflow: boolean;
+  overflowReason?: "continuation-limit" | "notes";
 }
 
 const holder = vi.hoisted(() => ({
@@ -19,6 +21,8 @@ const holder = vi.hoisted(() => ({
   canUndo: false,
   undoDelete: vi.fn(),
   fit: null as FitResultStub | null,
+  presentation: null as unknown,
+  cardDesign: "classic" as "classic" | "compact",
 }));
 
 const toastMock = vi.hoisted(() => ({
@@ -32,6 +36,7 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     selectedSpell: holder.spell,
     activeDeck: null,
     language: "en",
+    cardDesign: holder.cardDesign,
     manifest: [],
     englishById: new Map(),
     srdSpellOverrides: [],
@@ -48,7 +53,12 @@ vi.mock("@/state/AppProvider.tsx", () => ({
 }));
 
 vi.mock("@/cards/fit.tsx", () => ({
-  useCardFit: () => ({ result: holder.fit, error: null, measureLayer: null }),
+  useCardFit: () => ({
+    result: holder.fit,
+    presentation: holder.presentation,
+    error: null,
+    measureLayer: null,
+  }),
   AUTO_SHRINK_MIN_PT: 5,
 }));
 
@@ -58,6 +68,8 @@ beforeEach(() => {
   holder.canUndo = false;
   holder.undoDelete.mockReset().mockResolvedValue(true);
   holder.fit = null;
+  holder.presentation = null;
+  holder.cardDesign = "classic";
   toastMock.info.mockReset();
 });
 
@@ -338,6 +350,40 @@ describe("DetailsPane fit notices", () => {
     };
     render(<DetailsPane />);
     expect(screen.getByText(/cannot be printed/)).not.toBeNull();
+  });
+
+  it("shows the notes-specific overflow warning", () => {
+    holder.fit = {
+      pages: [[]],
+      fontPt: 6,
+      truncated: false,
+      overflow: true,
+      overflowReason: "notes",
+    };
+    render(<DetailsPane />);
+    expect(screen.getByText(/card notes cannot fit at the minimum size/)).not.toBeNull();
+  });
+
+  it("renders the preview with the selected compact design", () => {
+    holder.cardDesign = "compact";
+    holder.presentation = {
+      displayCastingTime: "A",
+      displayDuration: "Instantaneous",
+      notes: [],
+      blocks: [],
+    };
+    holder.fit = {
+      pages: [[]],
+      fontPt: 8.5,
+      truncated: false,
+      overflow: false,
+    };
+    const { container } = render(
+      <TooltipProvider>
+        <DetailsPane />
+      </TooltipProvider>,
+    );
+    expect(container.querySelector(".spell-card-compact")).not.toBeNull();
   });
 });
 

@@ -35,11 +35,11 @@ export function DialogContent({
   const { t } = useTranslation();
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50" />
+      <DialogPrimitive.Overlay className="app-no-print fixed inset-0 z-50 bg-black/50" />
       <DialogPrimitive.Content
         lang={lang}
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-[min(92vw,34rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-card text-card-foreground p-5 shadow-xl max-h-[85vh] overflow-auto",
+          "app-no-print fixed left-1/2 top-1/2 z-50 w-[min(92vw,34rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-card text-card-foreground p-5 shadow-xl max-h-[85vh] overflow-auto",
           className,
         )}
       >

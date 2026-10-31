@@ -19,7 +19,7 @@ export function PrintDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { resolvedEntries, language, activeDeck } = useApp();
+  const { resolvedEntries, language, activeDeck, cardDesign } = useApp();
   const { t } = useTranslation();
   const [paperSize, setPaperSize] = useState<PaperSize>("letter");
   const [cuttingBorders, setCuttingBorders] = useState(false);
@@ -50,34 +50,39 @@ export function PrintDialog({
     [resolvedSpells],
   );
 
-  const fits = useDeckCardFits(fitItems, language, open);
+  const fits = useDeckCardFits(fitItems, language, open, cardDesign);
 
   const overflowEntries = resolvedSpells.filter(
-    (item) => fits.results.get(item.entry.entryId)?.overflow,
+    (item) => fits.results.get(item.entry.entryId)?.fit.overflow,
+  );
+  const notesOverflow = overflowEntries.some(
+    (item) => fits.results.get(item.entry.entryId)?.fit.overflowReason === "notes",
   );
   const blocked = overflowEntries.length > 0;
 
   const printCards = useMemo<PrintCardData[]>(() => {
     const cards: PrintCardData[] = [];
     for (const item of resolvedSpells) {
-      const fit = fits.results.get(item.entry.entryId);
-      if (!fit || fit.overflow) continue;
-      fit.pages.forEach((pageBlocks, index) => {
+      const entry = fits.results.get(item.entry.entryId);
+      if (!entry || entry.fit.overflow) continue;
+      entry.fit.pages.forEach((pageBlocks, index) => {
         cards.push({
           key: `${item.entry.entryId}-${index}`,
           spell: item.spell,
           pageBlocks,
-          fontPt: fit.fontPt,
+          fontPt: entry.fit.fontPt,
           cardIndex: index + 1,
-          cardCount: fit.pages.length,
-          truncated: fit.truncated,
+          cardCount: entry.fit.pages.length,
+          truncated: entry.fit.truncated,
+          presentation: entry.presentation ?? undefined,
         });
       });
     }
     return cards;
   }, [resolvedSpells, fits.results]);
 
-  const canPrint = printCards.length > 0 && !blocked && fits.ready && (!omissionTotal || confirmed);
+  const canPrint =
+    printCards.length > 0 && !blocked && !fits.error && fits.ready && (!omissionTotal || confirmed);
 
   useEffect(() => {
     if (!job) return;
@@ -151,12 +156,20 @@ export function PrintDialog({
               </ul>
             </div>
 
+            {fits.error ? (
+              <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
+                {t("print.fitError")}
+              </p>
+            ) : null}
+
             {blocked ? (
               <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
-                {t("print.overflow", {
-                  count: overflowEntries.length,
-                  max: LIMITS.CONTINUATION_CARDS_MAX,
-                })}
+                {notesOverflow
+                  ? t("print.notesOverflow")
+                  : t("print.overflow", {
+                      count: overflowEntries.length,
+                      max: LIMITS.CONTINUATION_CARDS_MAX,
+                    })}
               </p>
             ) : null}
 
@@ -195,6 +208,7 @@ export function PrintDialog({
               paperSize={paperSize}
               cuttingBorders={cuttingBorders}
               datasetLanguage={language}
+              design={cardDesign}
             />,
             document.body,
           )

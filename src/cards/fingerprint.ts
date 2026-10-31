@@ -1,7 +1,8 @@
 import type { CardFitMode, Spell } from "@/domain/spells";
 import type { BlockNode } from "@/markdown/parse.ts";
+import type { CardDesign } from "./design.ts";
 
-/** Bump whenever card print styles or fit semantics change so cached measurements invalidate. */
+/** Bump whenever shared card print styles or fit semantics change so cached measurements invalidate. */
 export const CARD_STYLE_VERSION = "3";
 
 export function contentFingerprint(spell: Spell): string {
@@ -21,6 +22,7 @@ export function contentFingerprint(spell: Spell): string {
     higherLevels: spell.higherLevels,
     source: spell.source,
     sourceLabel: spell.sourceLabel,
+    overridden: spell.overridden ?? false,
   });
 }
 
@@ -32,13 +34,17 @@ export function fitCacheKey(options: {
   spellId: string;
   language: string;
   fitMode: CardFitMode;
-  fingerprint: string;
+  design: CardDesign;
+  contentFingerprint: string;
+  blocksFingerprint: string;
 }): string {
   return [
     options.spellId,
     options.language,
     options.fitMode,
+    options.design,
     CARD_STYLE_VERSION,
-    options.fingerprint,
+    options.contentFingerprint,
+    options.blocksFingerprint,
   ].join("\u0000");
 }

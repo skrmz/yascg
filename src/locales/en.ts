@@ -248,6 +248,9 @@ export const en = {
     omitConfirm: "Omit these cards and continue",
     preparing: "Preparing card layout…",
     emptyDeck: "The active deck is empty.",
+    notesOverflow:
+      "One or more entries have notes that cannot fit on a card and cannot be printed.",
+    fitError: "Card layout could not be measured. Printing is unavailable.",
     printAction: "Print",
     printCards: "Print {{count}} card",
     printCards_one: "Print {{count}} card",
@@ -395,6 +398,8 @@ export const en = {
     cardCount_one: "{{count}} physical card at {{font}}pt.",
     cardCount_other: "{{count}} physical cards at {{font}}pt.",
     measuring: "Measuring card layout…",
+    notesOverflow:
+      "The card notes cannot fit at the minimum size. Shorten the notes or switch to another card design.",
   },
   error: {
     generic: "Something went wrong. Please try again.",
@@ -583,6 +588,23 @@ export const en = {
     continued: "contd.",
     truncated: "Content truncated",
     pageNumber: "{{index}}/{{count}}",
+    notes: "Notes",
+    noteReference: "Note {{number}}",
+    design: {
+      label: "Card design",
+      classic: "Classic",
+      compact: "Compact",
+      hint: "Applies to preview and print.",
+      legend: "Legend",
+      legendTitle: "Card legend",
+      legendDescription: "Meanings of the abbreviations and icons used on Compact cards.",
+      legendCastingTime: "Casting time",
+      legendProperties: "Properties",
+      legendComponents: "Components",
+      legendRangeDuration: "Range and duration",
+      legendSchools: "Schools",
+      legendClasses: "Classes",
+    },
   },
   form: {
     title: {
