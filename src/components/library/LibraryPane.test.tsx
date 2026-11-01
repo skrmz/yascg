@@ -10,6 +10,7 @@ const holder = vi.hoisted(() => ({
   spells: [] as unknown[],
   activeDeck: null as unknown,
   selectedSpellId: null as string | null,
+  language: "en",
   addSpellToDeck: vi.fn(),
   addSpellsToDeck: vi.fn(),
   selectSpell: vi.fn(),
@@ -27,7 +28,7 @@ vi.mock("@/state/AppProvider.tsx", () => ({
   useApp: () => ({
     librarySpells: holder.spells,
     languageSpells: holder.spells,
-    language: "en",
+    language: holder.language,
     activeDeck: holder.activeDeck,
     addSpellToDeck: holder.addSpellToDeck,
     addSpellsToDeck: holder.addSpellsToDeck,
@@ -49,6 +50,7 @@ beforeEach(async () => {
   holder.spells = [];
   holder.activeDeck = null;
   holder.selectedSpellId = null;
+  holder.language = "en";
   holder.addSpellToDeck.mockReset().mockResolvedValue("added");
   holder.addSpellsToDeck.mockReset().mockResolvedValue({ added: 0, skipped: 0, ok: true });
   holder.selectSpell.mockReset();
@@ -152,6 +154,110 @@ describe("LibraryPane advanced filters", () => {
 
     expect(screen.getByText("Touch Spell")).not.toBeNull();
     expect(screen.queryByText("Self Spell")).toBeNull();
+  });
+});
+
+describe("LibraryPane subclass filter", () => {
+  const war = makeSpell({
+    id: "srd-war",
+    name: "War Spell",
+    classes: ["Cleric"],
+    subclasses: ["Cleric: War Domain"],
+  });
+  const life = makeSpell({
+    id: "srd-life",
+    name: "Life Spell",
+    classes: ["Cleric"],
+    subclasses: ["Cleric: Life Domain"],
+  });
+  const evoker = makeCustomSpell({
+    id: "custom-evoker",
+    name: "Evoker Copy",
+    subclasses: ["Wizard: Evoker"],
+  });
+  const arcana = makeCustomSpell({
+    id: "custom-arcana",
+    name: "Arcana Copy",
+    subclasses: ["Cleric: Arcana"],
+  });
+
+  it("groups unique subclass options by parent class and ORs selections", async () => {
+    holder.spells = [
+      war,
+      { ...war, id: "srd-war-2", name: "Second War Spell" },
+      life,
+      evoker,
+      arcana,
+    ];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.click(screen.getByRole("button", { name: /Advanced Filters/ }));
+    await user.click(screen.getByRole("button", { name: "Subclass" }));
+
+    const popover = screen.getByRole("dialog");
+    const clericGroup = within(popover).getByRole("group", { name: "Cleric" });
+    expect(within(clericGroup).getAllByRole("checkbox", { name: "War Domain" })).toHaveLength(1);
+    expect(within(clericGroup).getByRole("checkbox", { name: "Life Domain" })).not.toBeNull();
+    expect(within(clericGroup).getByRole("checkbox", { name: "Arcana" })).not.toBeNull();
+
+    const wizardGroup = within(popover).getByRole("group", { name: "Wizard" });
+    expect(within(wizardGroup).getByRole("checkbox", { name: "Evoker" })).not.toBeNull();
+
+    await user.click(within(clericGroup).getByRole("checkbox", { name: "War Domain" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("checkbox", { name: "Evoker" }));
+    await user.keyboard("{Escape}");
+
+    expect(screen.getByText("War Spell")).not.toBeNull();
+    expect(screen.getByText("Second War Spell")).not.toBeNull();
+    expect(screen.getByText("Evoker Copy")).not.toBeNull();
+    expect(screen.queryByText("Life Spell")).toBeNull();
+    expect(screen.queryByText("Arcana Copy")).toBeNull();
+  });
+
+  it("localizes catalog labels and falls back for reference-only subclasses", async () => {
+    holder.spells = [war, arcana];
+    await i18n.changeLanguage("de");
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.click(screen.getByRole("button", { name: /Erweiterte Filter/ }));
+    await user.click(screen.getByRole("button", { name: "Unterklasse" }));
+
+    const popover = screen.getByRole("dialog");
+    const clericGroup = within(popover).getByRole("group", { name: "Kleriker" });
+    expect(
+      within(clericGroup).getByRole("checkbox", { name: "Domäne des Krieges" }),
+    ).not.toBeNull();
+    expect(within(clericGroup).getByRole("checkbox", { name: "Arcana" })).not.toBeNull();
+    expect(within(clericGroup).queryByRole("checkbox", { name: "War Domain" })).toBeNull();
+  });
+
+  it("preserves canonical subclass selections across language changes", async () => {
+    holder.spells = [war, life];
+    const user = userEvent.setup();
+    const { rerender } = render(<LibraryPane />);
+
+    await user.click(screen.getByRole("button", { name: /Advanced Filters/ }));
+    await user.click(screen.getByRole("button", { name: "Subclass" }));
+    await user.click(screen.getByRole("checkbox", { name: "War Domain" }));
+    await user.keyboard("{Escape}");
+
+    expect(screen.getByText("War Spell")).not.toBeNull();
+    expect(screen.queryByText("Life Spell")).toBeNull();
+
+    holder.language = "de";
+    await i18n.changeLanguage("de");
+    rerender(<LibraryPane />);
+
+    expect(screen.getByText("War Spell")).not.toBeNull();
+    expect(screen.queryByText("Life Spell")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Unterklasse" }));
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Domäne des Krieges",
+    }) as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
   });
 });
 

@@ -230,7 +230,8 @@ drift protection. Day-to-day integration points:
   committed datasets read from the Git object store, so a local build cannot mask drift.
 - Code entry points are `scripts/normalize-srd.ts`, `scripts/srd/`, and the runtime loaders in
   `src/services/data/load.ts`. Do not add language-specific adapters or weaken the raw schema;
-  unsupported source structures fail the build with a filename and index.
+  unsupported source structures fail the build with a filename and, when available, the
+  offending spell index.
 
 ## Local verification
 

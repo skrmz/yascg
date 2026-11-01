@@ -41,7 +41,7 @@ async function expectContinuationLayout(cards: Locator, count: number) {
     const card = cards.nth(index);
     await expect(card.locator(".card-name")).toHaveText("Wunsch");
     await expect(card.locator(".card-level-school")).toContainText("Grad 9");
-    await expect(card.locator(".card-continuation-label")).toHaveText("fortgesetzt");
+    await expect(card.locator(".card-continuation-label")).toHaveText("Forts.");
     await expect(card.locator(".card-metadata")).toHaveCount(0);
     await expect(card.locator(".card-material")).toHaveCount(0);
     await expect(card.locator(".card-continuation")).toHaveText(`${index + 1}/${count}`);

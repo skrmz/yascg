@@ -2,6 +2,8 @@
 
 Based on D&D 5e terminology (German SRD 5.2.1 / 2024 rules). The terms follow the rules; **abbreviations are a mix of conventional D&D shorthand and proposed, app-specific shorthand**. They are not all official identifiers. Abbreviations are case-sensitive.
 
+Compact cards use fixed action/indicator badges with the catalog `.full` meaning in tooltips and the legend, while footer/component abbreviations display the catalog `.short` value. The 121-entry catalog below remains the single runtime source; the parity test reads only the `- full = short (full = short)` lines.
+
 ## Common D&D abbreviations
 
 -   armor class = AC (Rüstungsklasse = RK)

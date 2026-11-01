@@ -4,7 +4,13 @@ import { ChevronDown, Plus, RotateCcw, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { resolveContentLanguage } from "@/content-language.ts";
-import { classKey, componentLabelKey, levelLabelKey, schoolKey } from "@/locales/labels.ts";
+import {
+  classKey,
+  componentLabelKey,
+  levelLabelKey,
+  schoolKey,
+  subclassLabel,
+} from "@/locales/labels.ts";
 import {
   CORE_CLASSES,
   SPELL_COMPONENT_KEYS,
@@ -12,12 +18,15 @@ import {
   type Spell,
   type SpellSource,
 } from "@/domain/spells";
+import { subclassParentClass } from "@/domain/subclasses";
 import {
   DEFAULT_FILTERS,
+  collatorFor,
   countActiveAdvancedFilters,
   deriveCastingTimeOptions,
   deriveDurationOptions,
   deriveRangeOptions,
+  deriveSubclassOptions,
   filterSpells,
   searchSpells,
   sortSpells,
@@ -96,6 +105,25 @@ export function LibraryPane() {
   const castingOptions = useMemo(() => deriveCastingTimeOptions(languageSpells), [languageSpells]);
   const rangeOptions = useMemo(() => deriveRangeOptions(languageSpells), [languageSpells]);
   const durationOptions = useMemo(() => deriveDurationOptions(languageSpells), [languageSpells]);
+  // Subclass identifiers are canonical and language-independent, so options come from the
+  // whole library (selected-language SRD plus custom spells) and selections survive language
+  // changes. Reference-only identifiers fall back to their English label.
+  const subclassOptions = useMemo(() => {
+    const classOrder = new Map<string, number>(
+      CORE_CLASSES.map((cls, index): [string, number] => [cls, index]),
+    );
+    const collator = collatorFor(language);
+    return deriveSubclassOptions(librarySpells).sort((left, right) => {
+      const leftClass = subclassParentClass(left);
+      const rightClass = subclassParentClass(right);
+      const byClass =
+        (classOrder.get(leftClass) ?? CORE_CLASSES.length) -
+        (classOrder.get(rightClass) ?? CORE_CLASSES.length);
+      if (byClass !== 0) return byClass;
+      if (leftClass !== rightClass) return collator.compare(leftClass, rightClass);
+      return collator.compare(subclassLabel(left, t), subclassLabel(right, t));
+    });
+  }, [librarySpells, language, t]);
   const advancedCount = countActiveAdvancedFilters(filters);
 
   const patch = (partial: Partial<LibraryFilters>) =>
@@ -202,6 +230,24 @@ export function LibraryPane() {
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2">
+            <div className="space-y-1">
+              <MultiSelect
+                label={t("library.subclassFilter")}
+                aria-label={t("library.subclassFilter")}
+                allLabel={t("library.allSubclasses")}
+                searchable
+                searchPlaceholder={t("library.searchSubclasses")}
+                options={subclassOptions}
+                selected={filters.subclasses}
+                onChange={(subclasses) => patch({ subclasses })}
+                getLabel={(id) => subclassLabel(id, t)}
+                groupBy={subclassParentClass}
+                getGroupLabel={(parent) => {
+                  const key = classKey(parent);
+                  return key ? t(key) : parent;
+                }}
+              />
+            </div>
             <div className="space-y-1">
               <MultiSelect
                 label={t("library.school")}

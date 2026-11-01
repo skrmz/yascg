@@ -10,15 +10,15 @@ This document is the normative product contract. It describes expected user/syst
 invariants, and acceptance criteria. It does not describe the implementation plan, package
 scripts, data-migration commands, or deployment procedures.
 
-| Document | Responsibility |
-| --- | --- |
-| [README](../../README.md) | Product overview, user help, printing setup, backup guidance, attribution, documentation index |
-| **This specification** | Current behavioral contract and verification matrix |
-| [DEVELOPMENT](../DEVELOPMENT.md) | Contributor setup, module map, implementation details, debugging, tests |
-| [SRD data pipeline](../srd-data-pipeline.md) | Raw source shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection |
-| [Cloudflare deployment guide](../cloudflare-deployment-guide.md) | Workers Static Assets configuration, Workers Builds, deployment operations, `compatibility_date` maintenance |
-| [Custom spell import guide](../custom-spell-import-guide.md) | Custom-spell JSON format, examples, collision handling, SRD override import/export |
-| [Official subclass catalog](../subclasses.md) | Canonical official 2024 subclass list |
+| Document                                                         | Responsibility                                                                                                            |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| [README](../../README.md)                                        | Product overview, user help, printing setup, backup guidance, attribution, documentation index                            |
+| **This specification**                                           | Current behavioral contract and verification matrix                                                                       |
+| [DEVELOPMENT](../DEVELOPMENT.md)                                 | Contributor setup, module map, implementation details, debugging, tests                                                   |
+| [SRD data pipeline](../srd-data-pipeline.md)                     | Raw source shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection |
+| [Cloudflare deployment guide](../cloudflare-deployment-guide.md) | Workers Static Assets configuration, Workers Builds, deployment operations, `compatibility_date` maintenance              |
+| [Custom spell import guide](../custom-spell-import-guide.md)     | Custom-spell JSON format, examples, collision handling, SRD override import/export                                        |
+| [Official subclass catalog](../subclasses.md)                    | Canonical official 2024 subclass list                                                                                     |
 
 ---
 
@@ -309,7 +309,7 @@ another language.
 Search name, classes, and description (case/accent insensitive); for SRD spells use their
 selected-language textual values where the normalized schema supports them, while canonical
 class identifiers remain filterable. Rank with Fuse.js and use name then ID as deterministic
-tie-breakers. Filters: level, school, class, casting time, range, duration, components,
+tie-breakers. Filters: level, school, class, subclass, casting time, range, duration, components,
 concentration, ritual, source. Multiple choices within a group are OR except components, where
 every selected component (verbal, somatic, material) must be present; groups combine with AND.
 Empty groups impose no restriction. Casting-time, range, and duration filter values are
@@ -318,6 +318,14 @@ lists are derived from the selected language's SRD dataset only, because custom 
 author-written values across language switches and would otherwise mix languages in one list; a
 language change clears the selected casting-time, range, and duration values. Empty results show
 a clear message. Changing filters never changes the deck.
+
+**Subclass filter:** match spells by their canonical `"<Class>: <Subclass>"` identifiers so the
+same selection applies to SRD and custom spells. Options combine the selected language's SRD
+dataset with custom spells, are de-duplicated by identifier, and are grouped by parent class.
+Labels use the localized subclass catalog with the English subclass name as fallback for
+reference-only identifiers; group headings use the localized class name with a raw-name fallback.
+Subclass selections are canonical and language-independent, so valid selections survive language
+changes. Do not translate or rewrite stored identifiers.
 
 **Add all filtered results:** present **Append all** (adds only matching spells not already in
 the active deck, retains existing entries, and reports added/skipped counts in one
@@ -617,7 +625,7 @@ page number, and footer, and omit metadata, material, notes, and tooltips. The s
 the three-part footer rather than repeating in the continuation header.
 
 - **Header (first card):** name, level, school, ritual/concentration indicators. Continuation cards
-  add a localized continuation label (`contd.` / `fortgesetzt`) aligned to the right of the header
+  add a localized continuation label (`contd.` / `Forts.`) aligned to the right of the header
   and omit the school from the header.
 - **Metadata:** casting time, range, components, duration. Rendered on the first card only;
   continuation cards omit this section.
@@ -665,7 +673,7 @@ warning.
 Split description/Higher Levels at paragraph boundaries, then sentence/word boundaries as
 needed; preserve words, punctuation, and reading order. The first card keeps the full header,
 metadata, body, and footer. Continuation cards keep the compact header (name, level, and
-a localized `contd.` / `fortgesetzt` label) but omit the metadata section and material line,
+a localized `contd.` / `Forts.` label) but omit the metadata section and material line,
 using the reclaimed space for body content. Pagination measures the actual first-card and
 continuation-card layouts separately. Continuations show `Continued from Card N` and
 `Card X of N` in the footer. Keep a spell's physical cards consecutive. If a single unbreakable
@@ -787,72 +795,72 @@ This is the single acceptance matrix. Each row names the authoritative requireme
 distinctive expected outcome; tests may live in unit, integration, or Playwright suites. Do not
 duplicate these outcomes as a second invariants list.
 
-| ID | Area | Scenario | Expected outcome | Requirement |
-| --- | --- | --- | --- | --- |
-| B1 | Build | Strict TypeScript build | Build succeeds; no runtime external requests during normal use after first load | §3, §11 |
-| B2 | Build | SRD input missing, malformed, incomplete, or duplicate-ID | Build fails with a readable indexed error; no partial English dataset; bundled spells remain SRD-only with attribution | §2 |
-| B3 | Build | New valid language file | Discovered without an allowlist; manifest and dataset generated; English remains selectable | §2, §11 |
-| B4 | Build | Translation changes `index`, duplicates an index, uses an unknown ID, or conflicts on mechanics | Build fails; no fallback parsing and no invalid dataset shipped | §2, §4 |
-| B5 | Build | Translation omits some spells | Incomplete but valid dataset passes; untranslated IDs remain valid deck references | §2, §4 |
-| S1 | Search | Search/filter matching, OR/AND, components, and ordering | Rules in §5 hold; empty groups impose no restriction; filters never change the deck | §5 |
-| S2 | Search | Language change | A fully covered deck switches immediately; incomplete coverage requires confirmation; Fuse index, results, counts, sorting, details, preview, and print reflect the selected language; custom spells unchanged | §5, §7 |
-| S3 | Search | Selected spell absent in target language | Show unavailable message; never silently display English under another language tag | §5, §7 |
-| S4 | Search | Active deck changes in another tab during a switch dialog | Re-read the latest revision and require a new confirmation for the new state | §7 |
-| S5 | Search | Missing translations; cancel or confirm switch | Exact affected entry and distinct-spell counts; cancel changes nothing; confirm preserves active/saved entries, ordering, dirty state, baseline, and revisions while showing placeholders | §7 |
-| S6 | Search | Translation-unavailable spell already in deck | Single entry preserved as an unavailable placeholder; switching back restores its text | §7 |
-| S7 | Search | Custom spell and true broken reference in a translated deck | Custom spell unchanged; broken reference remains repairable and is not categorized as untranslated | §7, §8.2 |
-| C1 | Custom spells | Create/edit/duplicate | UUID/timestamps/validation/defaults follow §6; saved snapshots are not rewritten | §6 |
-| C2 | Custom spells | Delete | Confirmation; spell and matching active entry removed atomically; saved decks unchanged | §6 |
-| C2a | Custom spells | Cancel custom deletion | Spell and active deck unchanged | §6 |
-| C3 | Custom spells | Undo immediately after deletion | Original spell and entry ID/position restored; dirty state recalculated | §6 |
-| C4 | Custom spells | Undo after intervening edit or cross-tab write | Undo refused with explanation; newer work preserved | §6 |
-| D1 | Decks | Reload / ordinary edits | Active deck survives reload; every successful mutation is persisted | §7 |
-| D2 | Decks | Duplicate add and bulk append | Individual duplicate rejected with bottom-right notification; Append all skips and reports added/skipped counts | §5, §7 |
-| D3 | Decks | Status and Save enablement | Four statuses remain correct across reload, deletion, Undo, Save As, and unassociated name-only content; Save is enabled only when dirty with a valid association; disabled Save writes nothing | §7 |
-| D4 | Decks | Save clean/disabled deck | No write, revision increment, or success message | §7 |
-| D5 | Decks | Save associated dirty deck | Only the associated snapshot changes; saved revision increments; baseline token and active revision advance atomically | §7 |
-| D6 | Decks | Save As from associated or blank deck | New saved ID at revision 1; original snapshot unchanged; name applied to both records; association/baseline updated | §7 |
-| D7 | Decks | Open while dirty | **Replace active deck** confirmation, including the associated snapshot; cancel leaves persisted state unchanged | §7 |
-| D8 | Decks | Open clean identical/changed snapshot | Identical clean reopen is a no-op; changed saved revision is a real refresh | §7 |
-| D9 | Decks | Inline rename invalid, unchanged, Escape, or stale | No write; committed name reverts; Save is blocked until resolved | §7 |
-| D10 | Decks | New deck clean or twice while blank | Blank replacement without confirmation; second attempt is a no-op with no revision change | §7 |
-| D11 | Decks | Clear entries with empty/nonempty deck | Empty clear is disabled with no write; nonempty clear keeps name/association/baseline and offers no Undo | §7 |
-| D12 | Decks | Delete associated saved snapshot | Snapshot removed; association omitted; baseline null; active revision advanced; status becomes **Not saved as a deck** | §7 |
-| D13 | Decks | Delete non-associated saved snapshot | Snapshot removed; active content, association, and revision unchanged | §7 |
-| D14 | Decks | Repair missing spell in active deck | Only the active reference changes; saved snapshot unchanged; no rebind to a spell already in the deck | §7 |
-| D15 | Decks | Re-import deleted spell with original ID/source | Existing missing references resolve automatically | §7, §8.2 |
-| D16 | Decks | Legacy association matching/mismatching baseline | Dexie v4 sets the token only when verifiable; mismatches stay tokenless and block Save with Open/Save As recovery | §7 |
-| D17 | Decks | Two tabs mutate the same active revision or custom-spell revision | Exactly one succeeds; the other receives a conflict with no silent overwrite; stale custom-spell revisions abort | §7, §11 |
-| D18 | Decks | Two tabs save the same associated snapshot | Both expected revisions are checked; exactly one succeeds; the other receives Save As/Open conflict | §7 |
-| D19 | Decks | IndexedDB quota or transaction failure | No success message and no partial linked operation | §7, §11 |
-| I1 | Import/export | Valid custom-spell payload | Strict validation; collision/remap/override review applied; atomic commit | §8.1 |
-| I2 | Import/export | Custom import duplicate IDs, unknown top-level field, missing required field, or SRD-sourced record | Whole batch rejected with a readable error; no fallback parsing; SRD records never relabeled Custom | §8.1 |
-| I3 | Import/export | Custom import reserved `srd-` ID | Unique UUID remap with old/new mapping; bundled SRD unchanged | §8.1 |
-| I4 | Import/export | Custom import collisions | Batch-wide Skip/Keep Both/Overwrite Existing; counts and names shown; commit rechecks collisions | §8.1 |
-| I5 | Import/export | SRD override import | Known ID/locale/enabled component/length enforced; invalid record aborts atomically; omitted field leaves overrides unchanged | §8.1 |
-| I6 | Import/export | Valid deck payload | Strict validation; export contains references without spell bodies; active deck replaced only after confirmation; order retained; duplicates removed with reported count | §8.2 |
-| I7 | Import/export | Deck import while dirty | One explicit replacement confirmation; cancel/invalid/stale commit leaves active data intact | §7, §8.2 |
-| I8 | Import/export | Deck limits and unknown/version-like fields | 5 MiB/2,000-entry rejection; unknown top-level fields and legacy/version shapes rejected atomically | §8.2 |
-| I9 | Import/export | Deck import same name as saved deck | Active deck replaced; no saved snapshot modified; imported deck is **Not saved as a deck** | §7, §8.2 |
-| I10 | Import/export | Custom vs deck formats | Separate dialogs and files; deck export states it does not back up custom spells or SRD overrides; no combined package required | §8 |
-| I11 | Import/export | Export and reimport a partially translated deck | Canonical IDs and all entries preserved; no language-specific payload rewriting | §8.2 |
-| P1 | Cards/print | Auto-shrink on long Markdown | Exactly one card; 8.5–6 pt steps; safe visible ellipsis measured into the card; preview-only warning; print unchanged | §9 |
-| P2 | Cards/print | Multi-card on long Unicode/Markdown content | No dropped text, invalid markup, or split grapheme; continuation order retained; complete text preserved | §9 |
-| P3 | Cards/print | More than 100 continuation cards | Visible blocking error for that entry; no silent omission | §9, §10 |
-| P4 | Cards/print | Long spell title and fixed fields | Title wraps within the header without clipping; fixed fields truncate visibly; level/icons remain visible | §9 |
-| P5 | Cards/print | Card typography and font readiness | Vollkorn 700 title, Alegreya Sans 500 body with fallbacks; required faces verified before measurement and `print()`; app chrome fonts unchanged | §9, §10 |
-| P6 | Cards/print | Letter/A4 nine-card sheet | Up to nine 2.5in × 3.5in cards on a centered grid; no clipping, unwanted scaling, or extra blank sheet at correct settings | §10 |
-| P7 | Cards/print | Unresolved or untranslated entries at print | Separate counts; confirmation; omitted without deleting entries; print disabled if none resolved | §10 |
-| P8 | Cards/print | Cross-browser verification | Chromium geometry verified; Chrome/Firefox/Safari remain the target for current and future validation | §10 |
-| P9 | Cards/print | Offline card preview and print | Self-hosted card fonts load from precache; typography and measurement work without network | §9, §11 |
-| U1 | Details UI | Preview-only default pane | No duplicated metadata/description pane by default; details open from header, dropdown, and right-click; dialog closes on spell change; print unchanged | §5 |
-| H1 | Hosting | Static production build | Static assets plus SPA fallback deploy to Workers; no API/backend/secrets; PWA and client routes intact | §3, §11 |
-| O1 | Offline/quality | First-load precache and retry | Accurate **Setting up offline access**, **Offline ready**, or **Offline setup incomplete — Retry** states; no premature readiness claim; runtime asset errors show an actionable retry/fallback | §11 |
-| O2 | Offline/quality | Offline language switch after readiness | No runtime network request; only manifest-listed assets are selectable | §11 |
-| O3 | Offline/quality | Persisted language removed or invalid | Visible English fallback; saved/active decks unchanged; preference cleared or updated | §11 |
-| O4 | Offline/quality | Untrusted Markdown/JSON | Raw HTML/scripts cannot execute; links are non-clickable; validation precedes storage/rendering | §3, §11 |
-| O5 | Offline/quality | Accessibility and performance targets | Keyboard/labels/focus/modals hold; WCAG 2.2 AA core workflows; search/edit performance targets met or measured | §11 |
-| O6 | Offline/quality | Cache update | Versioned cache update prompt and clean reload; IndexedDB is not erased during app updates | §11 |
+| ID  | Area            | Scenario                                                                                            | Expected outcome                                                                                                                                                                                               | Requirement |
+| --- | --------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| B1  | Build           | Strict TypeScript build                                                                             | Build succeeds; no runtime external requests during normal use after first load                                                                                                                                | §3, §11     |
+| B2  | Build           | SRD input missing, malformed, incomplete, or duplicate-ID                                           | Build fails with a readable indexed error; no partial English dataset; bundled spells remain SRD-only with attribution                                                                                         | §2          |
+| B3  | Build           | New valid language file                                                                             | Discovered without an allowlist; manifest and dataset generated; English remains selectable                                                                                                                    | §2, §11     |
+| B4  | Build           | Translation changes `index`, duplicates an index, uses an unknown ID, or conflicts on mechanics     | Build fails; no fallback parsing and no invalid dataset shipped                                                                                                                                                | §2, §4      |
+| B5  | Build           | Translation omits some spells                                                                       | Incomplete but valid dataset passes; untranslated IDs remain valid deck references                                                                                                                             | §2, §4      |
+| S1  | Search          | Search/filter matching, OR/AND, components, and ordering                                            | Rules in §5 hold; empty groups impose no restriction; filters never change the deck                                                                                                                            | §5          |
+| S2  | Search          | Language change                                                                                     | A fully covered deck switches immediately; incomplete coverage requires confirmation; Fuse index, results, counts, sorting, details, preview, and print reflect the selected language; custom spells unchanged | §5, §7      |
+| S3  | Search          | Selected spell absent in target language                                                            | Show unavailable message; never silently display English under another language tag                                                                                                                            | §5, §7      |
+| S4  | Search          | Active deck changes in another tab during a switch dialog                                           | Re-read the latest revision and require a new confirmation for the new state                                                                                                                                   | §7          |
+| S5  | Search          | Missing translations; cancel or confirm switch                                                      | Exact affected entry and distinct-spell counts; cancel changes nothing; confirm preserves active/saved entries, ordering, dirty state, baseline, and revisions while showing placeholders                      | §7          |
+| S6  | Search          | Translation-unavailable spell already in deck                                                       | Single entry preserved as an unavailable placeholder; switching back restores its text                                                                                                                         | §7          |
+| S7  | Search          | Custom spell and true broken reference in a translated deck                                         | Custom spell unchanged; broken reference remains repairable and is not categorized as untranslated                                                                                                             | §7, §8.2    |
+| C1  | Custom spells   | Create/edit/duplicate                                                                               | UUID/timestamps/validation/defaults follow §6; saved snapshots are not rewritten                                                                                                                               | §6          |
+| C2  | Custom spells   | Delete                                                                                              | Confirmation; spell and matching active entry removed atomically; saved decks unchanged                                                                                                                        | §6          |
+| C2a | Custom spells   | Cancel custom deletion                                                                              | Spell and active deck unchanged                                                                                                                                                                                | §6          |
+| C3  | Custom spells   | Undo immediately after deletion                                                                     | Original spell and entry ID/position restored; dirty state recalculated                                                                                                                                        | §6          |
+| C4  | Custom spells   | Undo after intervening edit or cross-tab write                                                      | Undo refused with explanation; newer work preserved                                                                                                                                                            | §6          |
+| D1  | Decks           | Reload / ordinary edits                                                                             | Active deck survives reload; every successful mutation is persisted                                                                                                                                            | §7          |
+| D2  | Decks           | Duplicate add and bulk append                                                                       | Individual duplicate rejected with bottom-right notification; Append all skips and reports added/skipped counts                                                                                                | §5, §7      |
+| D3  | Decks           | Status and Save enablement                                                                          | Four statuses remain correct across reload, deletion, Undo, Save As, and unassociated name-only content; Save is enabled only when dirty with a valid association; disabled Save writes nothing                | §7          |
+| D4  | Decks           | Save clean/disabled deck                                                                            | No write, revision increment, or success message                                                                                                                                                               | §7          |
+| D5  | Decks           | Save associated dirty deck                                                                          | Only the associated snapshot changes; saved revision increments; baseline token and active revision advance atomically                                                                                         | §7          |
+| D6  | Decks           | Save As from associated or blank deck                                                               | New saved ID at revision 1; original snapshot unchanged; name applied to both records; association/baseline updated                                                                                            | §7          |
+| D7  | Decks           | Open while dirty                                                                                    | **Replace active deck** confirmation, including the associated snapshot; cancel leaves persisted state unchanged                                                                                               | §7          |
+| D8  | Decks           | Open clean identical/changed snapshot                                                               | Identical clean reopen is a no-op; changed saved revision is a real refresh                                                                                                                                    | §7          |
+| D9  | Decks           | Inline rename invalid, unchanged, Escape, or stale                                                  | No write; committed name reverts; Save is blocked until resolved                                                                                                                                               | §7          |
+| D10 | Decks           | New deck clean or twice while blank                                                                 | Blank replacement without confirmation; second attempt is a no-op with no revision change                                                                                                                      | §7          |
+| D11 | Decks           | Clear entries with empty/nonempty deck                                                              | Empty clear is disabled with no write; nonempty clear keeps name/association/baseline and offers no Undo                                                                                                       | §7          |
+| D12 | Decks           | Delete associated saved snapshot                                                                    | Snapshot removed; association omitted; baseline null; active revision advanced; status becomes **Not saved as a deck**                                                                                         | §7          |
+| D13 | Decks           | Delete non-associated saved snapshot                                                                | Snapshot removed; active content, association, and revision unchanged                                                                                                                                          | §7          |
+| D14 | Decks           | Repair missing spell in active deck                                                                 | Only the active reference changes; saved snapshot unchanged; no rebind to a spell already in the deck                                                                                                          | §7          |
+| D15 | Decks           | Re-import deleted spell with original ID/source                                                     | Existing missing references resolve automatically                                                                                                                                                              | §7, §8.2    |
+| D16 | Decks           | Legacy association matching/mismatching baseline                                                    | Dexie v4 sets the token only when verifiable; mismatches stay tokenless and block Save with Open/Save As recovery                                                                                              | §7          |
+| D17 | Decks           | Two tabs mutate the same active revision or custom-spell revision                                   | Exactly one succeeds; the other receives a conflict with no silent overwrite; stale custom-spell revisions abort                                                                                               | §7, §11     |
+| D18 | Decks           | Two tabs save the same associated snapshot                                                          | Both expected revisions are checked; exactly one succeeds; the other receives Save As/Open conflict                                                                                                            | §7          |
+| D19 | Decks           | IndexedDB quota or transaction failure                                                              | No success message and no partial linked operation                                                                                                                                                             | §7, §11     |
+| I1  | Import/export   | Valid custom-spell payload                                                                          | Strict validation; collision/remap/override review applied; atomic commit                                                                                                                                      | §8.1        |
+| I2  | Import/export   | Custom import duplicate IDs, unknown top-level field, missing required field, or SRD-sourced record | Whole batch rejected with a readable error; no fallback parsing; SRD records never relabeled Custom                                                                                                            | §8.1        |
+| I3  | Import/export   | Custom import reserved `srd-` ID                                                                    | Unique UUID remap with old/new mapping; bundled SRD unchanged                                                                                                                                                  | §8.1        |
+| I4  | Import/export   | Custom import collisions                                                                            | Batch-wide Skip/Keep Both/Overwrite Existing; counts and names shown; commit rechecks collisions                                                                                                               | §8.1        |
+| I5  | Import/export   | SRD override import                                                                                 | Known ID/locale/enabled component/length enforced; invalid record aborts atomically; omitted field leaves overrides unchanged                                                                                  | §8.1        |
+| I6  | Import/export   | Valid deck payload                                                                                  | Strict validation; export contains references without spell bodies; active deck replaced only after confirmation; order retained; duplicates removed with reported count                                       | §8.2        |
+| I7  | Import/export   | Deck import while dirty                                                                             | One explicit replacement confirmation; cancel/invalid/stale commit leaves active data intact                                                                                                                   | §7, §8.2    |
+| I8  | Import/export   | Deck limits and unknown/version-like fields                                                         | 5 MiB/2,000-entry rejection; unknown top-level fields and legacy/version shapes rejected atomically                                                                                                            | §8.2        |
+| I9  | Import/export   | Deck import same name as saved deck                                                                 | Active deck replaced; no saved snapshot modified; imported deck is **Not saved as a deck**                                                                                                                     | §7, §8.2    |
+| I10 | Import/export   | Custom vs deck formats                                                                              | Separate dialogs and files; deck export states it does not back up custom spells or SRD overrides; no combined package required                                                                                | §8          |
+| I11 | Import/export   | Export and reimport a partially translated deck                                                     | Canonical IDs and all entries preserved; no language-specific payload rewriting                                                                                                                                | §8.2        |
+| P1  | Cards/print     | Auto-shrink on long Markdown                                                                        | Exactly one card; 8.5–6 pt steps; safe visible ellipsis measured into the card; preview-only warning; print unchanged                                                                                          | §9          |
+| P2  | Cards/print     | Multi-card on long Unicode/Markdown content                                                         | No dropped text, invalid markup, or split grapheme; continuation order retained; complete text preserved                                                                                                       | §9          |
+| P3  | Cards/print     | More than 100 continuation cards                                                                    | Visible blocking error for that entry; no silent omission                                                                                                                                                      | §9, §10     |
+| P4  | Cards/print     | Long spell title and fixed fields                                                                   | Title wraps within the header without clipping; fixed fields truncate visibly; level/icons remain visible                                                                                                      | §9          |
+| P5  | Cards/print     | Card typography and font readiness                                                                  | Vollkorn 700 title, Alegreya Sans 500 body with fallbacks; required faces verified before measurement and `print()`; app chrome fonts unchanged                                                                | §9, §10     |
+| P6  | Cards/print     | Letter/A4 nine-card sheet                                                                           | Up to nine 2.5in × 3.5in cards on a centered grid; no clipping, unwanted scaling, or extra blank sheet at correct settings                                                                                     | §10         |
+| P7  | Cards/print     | Unresolved or untranslated entries at print                                                         | Separate counts; confirmation; omitted without deleting entries; print disabled if none resolved                                                                                                               | §10         |
+| P8  | Cards/print     | Cross-browser verification                                                                          | Chromium geometry verified; Chrome/Firefox/Safari remain the target for current and future validation                                                                                                          | §10         |
+| P9  | Cards/print     | Offline card preview and print                                                                      | Self-hosted card fonts load from precache; typography and measurement work without network                                                                                                                     | §9, §11     |
+| U1  | Details UI      | Preview-only default pane                                                                           | No duplicated metadata/description pane by default; details open from header, dropdown, and right-click; dialog closes on spell change; print unchanged                                                        | §5          |
+| H1  | Hosting         | Static production build                                                                             | Static assets plus SPA fallback deploy to Workers; no API/backend/secrets; PWA and client routes intact                                                                                                        | §3, §11     |
+| O1  | Offline/quality | First-load precache and retry                                                                       | Accurate **Setting up offline access**, **Offline ready**, or **Offline setup incomplete — Retry** states; no premature readiness claim; runtime asset errors show an actionable retry/fallback                | §11         |
+| O2  | Offline/quality | Offline language switch after readiness                                                             | No runtime network request; only manifest-listed assets are selectable                                                                                                                                         | §11         |
+| O3  | Offline/quality | Persisted language removed or invalid                                                               | Visible English fallback; saved/active decks unchanged; preference cleared or updated                                                                                                                          | §11         |
+| O4  | Offline/quality | Untrusted Markdown/JSON                                                                             | Raw HTML/scripts cannot execute; links are non-clickable; validation precedes storage/rendering                                                                                                                | §3, §11     |
+| O5  | Offline/quality | Accessibility and performance targets                                                               | Keyboard/labels/focus/modals hold; WCAG 2.2 AA core workflows; search/edit performance targets met or measured                                                                                                 | §11         |
+| O6  | Offline/quality | Cache update                                                                                        | Versioned cache update prompt and clean reload; IndexedDB is not erased during app updates                                                                                                                     | §11         |
 
 **Storage implementation note:** the `activeDeck` singleton and `savedDecks` records use
 explicit Dexie keys. Explicit Dexie schema versions govern future evolution; migrations must

@@ -12,6 +12,7 @@ export interface LibraryFilters {
   levels: LevelRange;
   schools: readonly SpellSchool[];
   classes: readonly string[];
+  subclasses: readonly string[];
   castingTimes: readonly string[];
   ranges: readonly string[];
   durations: readonly string[];
@@ -25,6 +26,7 @@ export const DEFAULT_FILTERS: LibraryFilters = {
   levels: { min: LEVEL_MIN, max: LEVEL_MAX },
   schools: [],
   classes: [],
+  subclasses: [],
   castingTimes: [],
   ranges: [],
   durations: [],
@@ -37,6 +39,7 @@ export const DEFAULT_FILTERS: LibraryFilters = {
 /** Counts the filters hidden inside the Advanced Filters section. */
 export function countActiveAdvancedFilters(filters: LibraryFilters): number {
   let count = 0;
+  if (filters.subclasses.length > 0) count += 1;
   if (filters.castingTimes.length > 0) count += 1;
   if (filters.ranges.length > 0) count += 1;
   if (filters.durations.length > 0) count += 1;
@@ -85,6 +88,10 @@ export function matchesFilters(spell: Spell, filters: LibraryFilters): boolean {
   if (!matchesAnyGroup(filters.sources, spell.source)) return false;
   if (filters.classes.length > 0) {
     const owns = filters.classes.some((cls) => spell.classes.includes(cls));
+    if (!owns) return false;
+  }
+  if (filters.subclasses.length > 0) {
+    const owns = filters.subclasses.some((id) => spell.subclasses?.includes(id));
     if (!owns) return false;
   }
   if (!matchesSelectedText(filters.castingTimes, spell.castingTime)) return false;
@@ -144,4 +151,13 @@ export function deriveRangeOptions(spells: readonly Spell[]): string[] {
 
 export function deriveDurationOptions(spells: readonly Spell[]): string[] {
   return deriveTextOptions(spells, (spell) => spell.duration);
+}
+
+/** Unique canonical subclass identifiers present in the supplied spells. */
+export function deriveSubclassOptions(spells: readonly Spell[]): string[] {
+  const ids = new Set<string>();
+  for (const spell of spells) {
+    for (const id of spell.subclasses ?? []) ids.add(id);
+  }
+  return [...ids];
 }

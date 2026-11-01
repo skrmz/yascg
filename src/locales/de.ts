@@ -77,6 +77,9 @@ export const de = {
     classFilter: "Klasse",
     allClasses: "Alle Klassen",
     searchClasses: "Klassen durchsuchen…",
+    subclassFilter: "Unterklasse",
+    allSubclasses: "Alle Unterklassen",
+    searchSubclasses: "Unterklassen durchsuchen…",
     advancedFilters: "Erweiterte Filter",
     activeFilters: "{{count}} aktiv",
     activeFilters_one: "{{count}} aktiv",
@@ -598,7 +601,7 @@ export const de = {
     },
   },
   card: {
-    continued: "fortgesetzt",
+    continued: "Forts.",
     truncated: "Inhalt gekürzt",
     pageNumber: "{{index}}/{{count}}",
     notes: "Notizen",

@@ -16,6 +16,8 @@ export interface MultiSelectProps<T extends string> {
   searchPlaceholder?: string;
   allLabel?: string;
   getLabel?: (option: T) => string;
+  groupBy?: (option: T) => string;
+  getGroupLabel?: (group: string) => string;
   "aria-label"?: string;
   className?: string;
 }
@@ -29,6 +31,8 @@ export function MultiSelect<T extends string>({
   searchPlaceholder,
   allLabel,
   getLabel,
+  groupBy,
+  getGroupLabel,
   className,
   "aria-label": ariaLabel,
 }: MultiSelectProps<T>) {
@@ -46,6 +50,20 @@ export function MultiSelect<T extends string>({
     return options.filter((option) => label(option).toLocaleLowerCase().includes(needle));
   }, [options, search, searchable, getLabel]);
 
+  const grouped = useMemo(() => {
+    if (!groupBy) return null;
+    const groups = new Map<string, T[]>();
+    for (const option of filtered) {
+      const group = groupBy(option);
+      const bucket = groups.get(group);
+      if (bucket) bucket.push(option);
+      else groups.set(group, [option]);
+    }
+    return [...groups.entries()];
+  }, [filtered, groupBy]);
+
+  const groupLabel = (group: string): string => (getGroupLabel ? getGroupLabel(group) : group);
+
   const summary =
     selected.length === 0
       ? (allLabel ?? t("common.all"))
@@ -58,6 +76,17 @@ export function MultiSelect<T extends string>({
       selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value],
     );
   };
+
+  const optionItem = (option: T) => (
+    <li key={option}>
+      <Checkbox
+        label={labelFor(option)}
+        checked={selected.includes(option)}
+        onChange={() => toggle(option)}
+      />
+    </li>
+  );
+
   return (
     <Popover
       open={open}
@@ -101,18 +130,19 @@ export function MultiSelect<T extends string>({
         <div className="max-h-64 overflow-auto p-2">
           {filtered.length === 0 ? (
             <p className="px-1 py-2 text-xs text-muted-foreground">{t("common.noOptions")}</p>
-          ) : (
-            <ul className="space-y-0.5">
-              {filtered.map((option) => (
-                <li key={option}>
-                  <Checkbox
-                    label={labelFor(option)}
-                    checked={selected.includes(option)}
-                    onChange={() => toggle(option)}
-                  />
-                </li>
+          ) : grouped ? (
+            <div className="space-y-2">
+              {grouped.map(([group, groupOptions]) => (
+                <div key={group} role="group" aria-label={groupLabel(group)}>
+                  <p className="px-1 py-1 text-xs font-semibold text-muted-foreground">
+                    {groupLabel(group)}
+                  </p>
+                  <ul className="space-y-0.5">{groupOptions.map(optionItem)}</ul>
+                </div>
               ))}
-            </ul>
+            </div>
+          ) : (
+            <ul className="space-y-0.5">{filtered.map(optionItem)}</ul>
           )}
         </div>
         <div className="flex items-center justify-between gap-2 border-t border-border p-2 text-xs text-muted-foreground">

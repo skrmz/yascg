@@ -186,7 +186,7 @@ test("Compact German multi-card keeps continuation chrome aligned", async ({ pag
     expect(entry.pagination!.bottom).toBeLessThanOrEqual(entry.footer!.top + 1);
   }
   for (const continuation of layout.slice(1)) {
-    expect(continuation.continuationText).toBe("fortgesetzt");
+    expect(continuation.continuationText).toBe("Forts.");
     expect(continuation.hasSchool).toBe(false);
     expect(Math.abs(continuation.continuation!.right - continuation.measured!.right)).toBeLessThan(
       1,

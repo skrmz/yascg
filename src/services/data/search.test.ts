@@ -7,13 +7,14 @@ import {
   deriveCastingTimeOptions,
   deriveDurationOptions,
   deriveRangeOptions,
+  deriveSubclassOptions,
   filterSpells,
   hasActiveAdvancedFilters,
   normalizeText,
   searchSpells,
   sortSpells,
 } from "@/services/data/search.ts";
-import { makeSpell } from "@/test/fixtures/spells.ts";
+import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
 
 const fireball = makeSpell({ id: "srd-fireball", name: "Fireball", level: 3, school: "Evocation" });
 const cure = makeSpell({
@@ -195,6 +196,25 @@ describe("filters", () => {
     expect(deriveDurationOptions(spells)).toEqual(["1 minute", "Instantaneous"]);
   });
 
+  it("derives unique subclass options from SRD and custom spells", () => {
+    const war = makeSpell({
+      id: "srd-war",
+      name: "War",
+      subclasses: ["Cleric: War Domain"],
+    });
+    const custom = makeCustomSpell({
+      id: "custom-1",
+      name: "Homebrew",
+      subclasses: ["Cleric: War Domain", "Artificer: Alchemist"],
+    });
+    const plain = makeSpell({ id: "srd-plain", name: "Plain" });
+
+    expect(deriveSubclassOptions([war, custom, plain])).toEqual([
+      "Cleric: War Domain",
+      "Artificer: Alchemist",
+    ]);
+  });
+
   it("filters by source and class", () => {
     const custom = makeSpell({ id: "custom-1", name: "Homebrew", source: "Custom" });
     expect(
@@ -204,6 +224,55 @@ describe("filters", () => {
     ).toEqual(["custom-1"]);
     expect(filterSpells([fireball], { ...DEFAULT_FILTERS, classes: ["Bard"] })).toHaveLength(0);
     expect(filterSpells([fireball], { ...DEFAULT_FILTERS, classes: ["Wizard"] })).toHaveLength(1);
+  });
+
+  it("filters subclasses with OR within the group and AND across groups", () => {
+    const war = makeSpell({
+      id: "srd-war",
+      name: "War",
+      classes: ["Cleric"],
+      subclasses: ["Cleric: War Domain"],
+    });
+    const life = makeSpell({
+      id: "srd-life",
+      name: "Life",
+      classes: ["Cleric"],
+      subclasses: ["Cleric: Life Domain"],
+    });
+    const evoker = makeSpell({
+      id: "srd-evoker",
+      name: "Evoker",
+      classes: ["Wizard"],
+      subclasses: ["Wizard: Evoker"],
+    });
+    const noSubclass = makeSpell({ id: "srd-plain", name: "Plain", classes: ["Wizard"] });
+    const spells = [war, life, evoker, noSubclass];
+
+    expect(
+      filterSpells(spells, {
+        ...DEFAULT_FILTERS,
+        subclasses: ["Cleric: War Domain", "Wizard: Evoker"],
+      }).map((spell) => spell.id),
+    ).toEqual(["srd-war", "srd-evoker"]);
+
+    expect(
+      filterSpells(spells, {
+        ...DEFAULT_FILTERS,
+        classes: ["Cleric"],
+        subclasses: ["Cleric: War Domain", "Wizard: Evoker"],
+      }).map((spell) => spell.id),
+    ).toEqual(["srd-war"]);
+
+    expect(filterSpells(spells, { ...DEFAULT_FILTERS, subclasses: [] })).toHaveLength(4);
+  });
+
+  it("counts an active subclass selection as an advanced filter", () => {
+    expect(
+      countActiveAdvancedFilters({
+        ...DEFAULT_FILTERS,
+        subclasses: ["Cleric: War Domain"],
+      }),
+    ).toBe(1);
   });
 });
 

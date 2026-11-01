@@ -135,7 +135,7 @@ describe("CardView continuation layout", () => {
   it("localizes the continuation label in German", async () => {
     await setLocale("de");
     render(<CardView spell={fireball} blocks={[]} cardIndex={2} cardCount={2} fontPt={8} />);
-    expect(screen.getByText("fortgesetzt")).not.toBeNull();
+    expect(screen.getByText("Forts.")).not.toBeNull();
     expect(screen.queryByText("contd.")).toBeNull();
   });
 

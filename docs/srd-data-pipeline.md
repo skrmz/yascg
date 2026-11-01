@@ -38,12 +38,14 @@ The runtime data pipeline is managed by services in `src/services/data/`:
    - The app fetches the dataset for the selected language (e.g., `/spells.srd.json` or `/spells.srd.de.json`).
    - The JSON data is parsed and validated against the runtime `Spell` Zod schema to ensure shape safety.
    - Validated datasets are cached in memory so switching views or re-rendering doesn't re-trigger fetches.
-3. **Merging with Custom Spells & Indexing:**
-   - The loaded SRD spells are combined in-memory with any user-authored spells loaded from IndexedDB (`Dexie` `customSpells` table).
-   - The merged library is indexed with **Fuse.js** for fast, case- and accent-insensitive searching and filtering.
+3. **Overrides, Custom Spells & Search:**
+   - Per-locale SRD component overrides (`srdSpellOverrides`) are applied to the loaded dataset at read time (`applySrdOverrides`); the cached dataset itself is never mutated.
+   - The resulting selected-language spells are combined in-memory with user-authored spells loaded from IndexedDB (`Dexie` `customSpells` table) to form `librarySpells`.
+   - Library search is a case- and accent-insensitive **substring match on spell names only** (`searchSpells`). Filters run separately (`filterSpells`), and results are sorted by localized name with the spell ID as tie-breaker using `Intl.Collator` (`sortSpells`). There is no fuzzy matching and no prebuilt search index.
 4. **Deck Resolution & Missing/Unavailable Detection:**
    - Active deck entries store spell IDs. When loading a deck, the app matches each entry against the currently loaded language dataset.
    - If a spell exists in English/canonical SRD but is absent in a partial translation, the app marks it as *translation-unavailable* (omitting it from print preview without deleting it from the deck), rather than crashing or showing English text under a non-English tag.
+   - A custom reference with no matching record, or an SRD ID absent from both the selected and English datasets, resolves as *missing* so it can be repaired.
 
 ---
 
@@ -84,7 +86,7 @@ Every raw file is a **JSON array of spell entries** (never a wrapper object such
 | `higher_level` / `higher_levels` | string \| string[] | optional                                            | `higherLevels`                                              |
 | `damage.damage_type`             | string             | optional; canonical lowercase slug (e.g. `acid`)    | `damageTypes: [<slug>]`                                     |
 
-`url` must not appear in a raw source: it was removed by the one-time migration. `damage.damage_at_slot_level` (89 entries) and `attack_type` (21 entries) are retained **verbatim** in the raw sources as source metadata; they are intentionally ignored by normalization and are not part of the normalized `Spell` schema. Any other unread property is ignored rather than rejected.
+`url` is not read by normalization and was removed from the committed raw sources by the one-time migration. `damage.damage_at_slot_level` (89 entries) and `attack_type` (21 entries) are retained **verbatim** in the raw sources as source metadata; they are intentionally ignored by normalization and are not part of the normalized `Spell` schema. Any other unread property is ignored rather than rejected.
 
 Note: raw inputs do **not** supply `savingThrow`. It is never read from SRD sources, so a translation can only be cross-checked on `savingThrow` when it (unusually) declares one.
 
@@ -135,7 +137,7 @@ Translation files may localize free text (`name`, `description`, `casting_time`,
 
 `index`, `school`, `classes`, `subclasses`, and `damageType` identifiers are always mapped to canonical values, so both languages resolve to the same `srd-<index>` identity.
 
-Canonical identifiers — including `damageType` (stored lowercased, e.g. `"fire"`) — are never translated in the data pipeline. Localized display labels (school names, class names, component letters, and damage-type names) are applied only at render time by the `src/locales/` catalogs, with English used as the fallback for any value absent from the catalog.
+Canonical identifiers — including `damageType` (stored lowercased, e.g. `"fire"`) — are never translated in the data pipeline. Localized display labels (school names, class names, subclass names, component letters, and damage-type names) are applied only at render time by the `src/locales/` catalogs, with English used as the fallback for any value absent from the catalog; reference-only subclass identifiers fall back to their English subclass name.
 
 #### F. Legacy source migration (one-time utility)
 
@@ -182,7 +184,7 @@ The term **canonical** operates across multiple layers as the bedrock for data i
 - **Pinned inputs:** Pin canonical English and every translation input to reviewed commits or checked-in snapshots. Runtime language discovery never uses network APIs; a dataset, manifest, and precache release are built together.
 - **Enforcing Rules Across Languages:** The English dataset is the canonical baseline for all game rules and mechanics. 
 - **Mechanics Cross-Validation:** While translated files (`srd-spells-2024_<LANG>.json`) supply localized display text (spell names, descriptions, material descriptions), the normalization pipeline validates all gameplay mechanics (spell level, school, concentration, ritual, verbal/somatic/material component flags, saving throws, core classes, damage types, subclasses) against the canonical English spell, inheriting English `subclasses` when a translation omits them.
-- **Fail-Fast Policy:** If a translation file introduces conflicting mechanics or unknown properties, normalization fails the build rather than silently accepting incorrect rules.
+- **Fail-Fast Policy:** If a translation file introduces conflicting mechanics, an unknown canonical spell ID, or malformed/unrecognized required fields, normalization fails the build rather than silently accepting incorrect rules. Unread optional properties are ignored (see §2.B).
 
 #### C. Canonical Stable IDs (`id: "srd-<index>"`)
 - Spells are assigned deterministic, canonical IDs derived from the upstream English slug (e.g., `index: "acid-splash"` becomes `id: "srd-acid-splash"`).
