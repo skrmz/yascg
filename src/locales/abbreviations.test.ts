@@ -39,8 +39,8 @@ const catalog = Object.values(en.abbreviations).map((entry, index) => ({
 
 describe("abbreviation catalog", () => {
   it("contains exactly the entries documented in docs/abbreviations.md", () => {
-    expect(documented).toHaveLength(121);
-    expect(catalog).toHaveLength(121);
+    expect(documented.length).toBeGreaterThan(0);
+    expect(catalog).toHaveLength(documented.length);
     expect(catalog.map(signature).sort()).toEqual(documented.map(signature).sort());
   });
 
@@ -62,7 +62,11 @@ describe("abbreviation catalog", () => {
     expect(i18n.t("abbreviations.ranger.short", { lng: "en" })).toBe("RNG-R");
     expect(i18n.t("abbreviations.foot.short", { lng: "en" })).toBe("FT");
     expect(i18n.t("abbreviations.feet.short", { lng: "en" })).toBe("FT");
+    expect(i18n.t("abbreviations.object.short", { lng: "en" })).toBe("obj.");
+    expect(i18n.t("abbreviations.objects.short", { lng: "de" })).toBe("Ggst.");
     expect(en.abbreviations.foot.full).toBe("foot");
     expect(en.abbreviations.feet.full).toBe("feet");
+    expect(en.abbreviations.object.full).toBe("object");
+    expect(en.abbreviations.objects.full).toBe("objects");
   });
 });

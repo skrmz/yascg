@@ -111,8 +111,8 @@ Optional component detail fields:
 
 - Use separate entries for separate paragraphs.
 - Use `[""]` for a spell with no rules text; an empty array is invalid.
-- Standard Markdown (emphasis, lists, headings, tables, etc., as supported by the app) is rendered safely. Raw HTML is dropped, and links are rendered as plain text.
-- The same content is used when printing; long descriptions paginate automatically.
+- Standard Markdown (emphasis, headings, blockquotes, nested ordered/unordered lists, tables, etc., as supported by the app) is rendered safely. Raw HTML is dropped, and links are rendered as plain text.
+- The same content is used when printing; long descriptions paginate automatically. A Markdown table that is too large for a card blocks printing for that spell with an actionable warning instead of being clipped.
 
 ## Complete example
 
