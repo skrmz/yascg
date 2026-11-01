@@ -257,6 +257,8 @@ export const de = {
     emptyDeck: "Das aktive Deck ist leer.",
     notesOverflow:
       "Mindestens ein Eintrag enthält Notizen, die nicht auf eine Karte passen, und kann nicht gedruckt werden.",
+    tableOverflow:
+      "Mindestens ein Eintrag enthält eine Markdown-Tabelle, die zu groß für eine Karte ist und nicht gedruckt werden kann. Kürze die Tabelle oder reduziere ihre Spalten.",
     fitError: "Das Kartenlayout konnte nicht gemessen werden. Drucken ist nicht verfügbar.",
     printAction: "Drucken",
     printCards: "{{count}} Karte drucken",
@@ -412,6 +414,8 @@ export const de = {
     measuring: "Kartenlayout wird gemessen…",
     notesOverflow:
       "Die Notizen dieser Karte passen auch bei kleinster Schrift nicht auf eine Karte. Kürze die Notizen oder wähle ein anderes Kartendesign.",
+    tableOverflow:
+      "Eine Markdown-Tabelle ist zu groß für die Karte und kann nicht gedruckt werden. Kürze die Tabelle oder reduziere ihre Spalten.",
   },
   error: {
     generic: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",

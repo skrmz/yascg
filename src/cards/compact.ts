@@ -180,7 +180,11 @@ function blockText(block: BlockNode): string {
     case "paragraph":
       return textOf(block.children);
     case "list":
-      return block.items.map(textOf).join(" ");
+      return [...block.items.map(textOf), ...(block.sublists?.flat().map(blockText) ?? [])].join(
+        " ",
+      );
+    case "blockquote":
+      return block.children.map(blockText).join(" ");
     case "table":
       return [...block.header, ...block.rows.flat()].map(textOf).join(" ");
     case "code":

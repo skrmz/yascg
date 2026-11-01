@@ -139,9 +139,11 @@ export function DetailsPane() {
           ) : null}
           {fit.result?.overflow ? (
             <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
-              {fit.result.overflowReason === "notes"
-                ? t("details.notesOverflow")
-                : t("details.overflow", { max: LIMITS.CONTINUATION_CARDS_MAX })}
+              {fit.result.overflowReason === "table"
+                ? t("details.tableOverflow")
+                : fit.result.overflowReason === "notes"
+                  ? t("details.notesOverflow")
+                  : t("details.overflow", { max: LIMITS.CONTINUATION_CARDS_MAX })}
             </p>
           ) : null}
           {fit.result && !fit.result.overflow ? (

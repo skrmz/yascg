@@ -404,3 +404,28 @@ describe("higher-level sections survive pagination", () => {
     expect(blocks.every((block) => block.section === "higherLevels")).toBe(true);
   });
 });
+
+describe("oversized Markdown tables", () => {
+  const table: BlockNode = {
+    type: "table",
+    header: [[{ type: "text", value: "A" }], [{ type: "text", value: "B" }]],
+    rows: [[[{ type: "text", value: "1" }], [{ type: "text", value: "2" }]]],
+  };
+
+  it("blocks auto-shrink printing with a table-specific overflow reason", () => {
+    const measure: MeasureFit = () => ({ fits: false, tableOverflow: true });
+    const fit = computeFit([table], measure, "auto-shrink");
+
+    expect(fit.overflow).toBe(true);
+    expect(fit.overflowReason).toBe("table");
+    expect(fit.truncated).toBe(false);
+  });
+
+  it("blocks multi-card printing when a table cannot fit", () => {
+    const measure: MeasureFit = () => ({ fits: false, tableOverflow: true });
+    const fit = computeFit([table], measure, "multi-card");
+
+    expect(fit.overflow).toBe(true);
+    expect(fit.overflowReason).toBe("table");
+  });
+});

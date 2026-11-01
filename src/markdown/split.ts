@@ -1,4 +1,4 @@
-import type { BlockNode, InlineNode } from "./parse.ts";
+import type { BlockNode, InlineNode, ListBlock } from "./parse.ts";
 
 export interface InlineFragment {
   text: string;
@@ -192,6 +192,22 @@ export function isHeading(block: BlockNode): boolean {
   return block.type === "heading";
 }
 
+function listStartAfter(block: ListBlock, count: number): number | undefined {
+  if (!block.ordered) return undefined;
+  return (block.start ?? 1) + count;
+}
+
+function sliceListItems(block: ListBlock, start: number, end?: number): ListBlock {
+  const items = block.items.slice(start, end);
+  const sublists = block.sublists?.slice(start, end);
+  return {
+    ...block,
+    ...(block.ordered ? { start: listStartAfter(block, start) } : {}),
+    items,
+    ...(sublists ? { sublists } : {}),
+  };
+}
+
 export function splitBlockToFit(
   block: BlockNode,
   fits: (candidate: BlockNode) => boolean,
@@ -224,22 +240,58 @@ export function splitBlockToFit(
       if (block.role === "notes") return null;
       if (block.items.length > 1) {
         for (let count = block.items.length - 1; count >= 1; count -= 1) {
-          const head: BlockNode = { ...block, items: block.items.slice(0, count) };
+          const head = sliceListItems(block, 0, count);
           if (fits(head)) {
-            return [head, { ...block, items: block.items.slice(count) }];
+            return [head, sliceListItems(block, count)];
           }
         }
       }
       const firstItem = block.items[0];
       if (!firstItem) return null;
       const fragments = flattenInline(firstItem);
+      const firstSublists = block.sublists?.[0] ?? [];
       const split = splitFragmentsToFit(fragments, (prefix) =>
-        fits({ ...block, items: [groupFragments(prefix)] }),
+        fits({
+          ...block,
+          items: [groupFragments(prefix)],
+          ...(block.sublists ? { sublists: [[]] } : {}),
+        }),
+      );
+      if (!split) return null;
+      const restItems = block.items.slice(1);
+      const restSublists = block.sublists?.slice(1);
+      return [
+        {
+          ...block,
+          items: [groupFragments(split.prefix)],
+          ...(block.sublists ? { sublists: [[]] } : {}),
+        },
+        {
+          ...block,
+          items: [groupFragments(split.rest), ...restItems],
+          ...(block.sublists ? { sublists: [firstSublists, ...(restSublists ?? [])] } : {}),
+        },
+      ];
+    }
+    case "blockquote": {
+      const children = block.children;
+      if (children.length > 1) {
+        for (let count = children.length - 1; count >= 1; count -= 1) {
+          const head: BlockNode = { ...block, children: children.slice(0, count) };
+          if (fits(head)) {
+            return [head, { ...block, children: children.slice(count) }];
+          }
+        }
+      }
+      const first = children[0];
+      if (!first) return null;
+      const split = splitBlockToFit(first, (candidate) =>
+        fits({ ...block, children: [candidate] }),
       );
       if (!split) return null;
       return [
-        { ...block, items: [groupFragments(split.prefix)] },
-        { ...block, items: [groupFragments(split.rest)] },
+        { ...block, children: [split[0]] },
+        { ...block, children: [split[1], ...children.slice(1)] },
       ];
     }
     case "table": {
@@ -273,6 +325,10 @@ export function appendEllipsis(blocks: readonly BlockNode[]): BlockNode[] {
       if (lastItem) lastItem.push({ type: "text", value: "\u2026" });
       break;
     }
+    case "blockquote": {
+      last.children = appendEllipsis(last.children);
+      break;
+    }
     case "table": {
       const lastRow = last.rows[last.rows.length - 1];
       const lastCell = lastRow?.[lastRow.length - 1];
@@ -298,7 +354,16 @@ export function cloneBlock(block: BlockNode): BlockNode {
       return {
         ...block,
         items: block.items.map((item) => item.map((node) => ({ ...node }))),
+        ...(block.sublists
+          ? {
+              sublists: block.sublists.map((sublist) =>
+                sublist.map((entry) => cloneBlock(entry) as ListBlock),
+              ),
+            }
+          : {}),
       };
+    case "blockquote":
+      return { ...block, children: block.children.map(cloneBlock) };
     case "table":
       return {
         ...block,

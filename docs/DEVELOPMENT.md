@@ -58,11 +58,12 @@ Paths are relative to the repository root.
 - `src/services/data/` — manifest/dataset loading, language preference, search and filters, and
   deck reference resolution.
 - `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), the shared
-  `BlockNode` renderer including structured component-description markers, and deterministic AST
-  splitting/pagination.
+  `BlockNode` renderer including structured component-description markers, headings,
+  blockquotes, and nested lists, and deterministic AST splitting/pagination.
 - `src/cards/` — Classic and Compact card chrome plus hidden-card measurement, `document.fonts`
   gating, single-card auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor,
-  and multi-card pagination with heading-orphan prevention. `design.ts` owns the design enum and
+  and multi-card pagination with heading-orphan prevention. Oversized Markdown tables are
+  detected during hidden-card measurement and reported as blocking overflow. `design.ts` owns the design enum and
   normalization, `compact.ts` builds the pre-fit Compact presentation and notes, and
   `CompactCard.tsx` renders the Compact design.
 - `src/components/details/` — card-preview-first details pane, on-demand spell details dialog,

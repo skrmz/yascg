@@ -3,7 +3,7 @@ import type { BlockNode } from "@/markdown/parse.ts";
 import type { CardDesign } from "./design.ts";
 
 /** Bump whenever shared card print styles or fit semantics change so cached measurements invalidate. */
-export const CARD_STYLE_VERSION = "4";
+export const CARD_STYLE_VERSION = "5";
 
 export function contentFingerprint(spell: Spell): string {
   return JSON.stringify({

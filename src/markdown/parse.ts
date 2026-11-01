@@ -23,9 +23,19 @@ export type BlockSection = "higherLevels";
 export interface ListBlock {
   type: "list";
   ordered: boolean;
+  /** First visible marker number for ordered lists. */
+  start?: number;
   items: InlineNode[][];
+  /** Nested lists aligned by item index. */
+  sublists?: ListBlock[][];
   section?: BlockSection;
   role?: "notes";
+}
+
+export interface BlockQuoteBlock {
+  type: "blockquote";
+  children: BlockNode[];
+  section?: BlockSection;
 }
 
 export interface TableBlock {
@@ -65,6 +75,7 @@ export type BlockNode =
   | ListBlock
   | TableBlock
   | CodeBlock
+  | BlockQuoteBlock
   | RuleBlock;
 
 function tokenChildren(token: Token): Token[] {
@@ -161,7 +172,7 @@ function parseBlocks(tokens: readonly Token[]): BlockNode[] {
         blocks.push({ type: "hr" });
         break;
       case "blockquote":
-        blocks.push(...parseBlocks(tokenChildren(token)));
+        blocks.push({ type: "blockquote", children: parseBlocks(tokenChildren(token)) });
         break;
       case "list":
         blocks.push(parseList(token));
@@ -180,18 +191,18 @@ function parseBlocks(tokens: readonly Token[]): BlockNode[] {
 }
 
 function parseList(token: Token): ListBlock {
-  const listToken = token as { ordered?: boolean; items?: Token[] };
+  const listToken = token as { ordered?: boolean; start?: number; items?: Token[] };
   const items = Array.isArray(listToken.items) ? listToken.items : [];
   const parsed: InlineNode[][] = [];
+  const sublists: ListBlock[][] = [];
+  let hasSublists = false;
   for (const item of items) {
     const itemTokens = tokenChildren(item);
     const inline: InlineNode[] = [];
+    const itemSublists: ListBlock[] = [];
     for (const inner of itemTokens) {
       if (inner.type === "list") {
-        const nested = parseList(inner);
-        for (const nestedItem of nested.items) {
-          inline.push({ type: "text", value: "\n" }, ...nestedItem);
-        }
+        itemSublists.push(parseList(inner));
         continue;
       }
       if (inner.type === "paragraph" || inner.type === "text") {
@@ -200,10 +211,20 @@ function parseList(token: Token): ListBlock {
         inline.push({ type: "code", value: (inner as { text?: string }).text ?? "" });
       }
     }
-    if (inline.length === 0) inline.push({ type: "text", value: plainText(item) });
+    if (inline.length === 0 && itemSublists.length === 0) {
+      inline.push({ type: "text", value: plainText(item) });
+    }
+    if (itemSublists.length > 0) hasSublists = true;
     parsed.push(inline);
+    sublists.push(itemSublists);
   }
-  return { type: "list", ordered: Boolean(listToken.ordered), items: parsed };
+  return {
+    type: "list",
+    ordered: Boolean(listToken.ordered),
+    ...(typeof listToken.start === "number" ? { start: listToken.start } : {}),
+    items: parsed,
+    ...(hasSublists ? { sublists } : {}),
+  };
 }
 
 function parseTable(token: Token): TableBlock {

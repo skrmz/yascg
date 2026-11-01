@@ -253,6 +253,8 @@ export const en = {
     emptyDeck: "The active deck is empty.",
     notesOverflow:
       "One or more entries have notes that cannot fit on a card and cannot be printed.",
+    tableOverflow:
+      "One or more entries contain a Markdown table that is too large for a card and cannot be printed. Shorten the table or reduce its columns.",
     fitError: "Card layout could not be measured. Printing is unavailable.",
     printAction: "Print",
     printCards: "Print {{count}} card",
@@ -403,6 +405,8 @@ export const en = {
     measuring: "Measuring card layout…",
     notesOverflow:
       "The card notes cannot fit at the minimum size. Shorten the notes or switch to another card design.",
+    tableOverflow:
+      "A Markdown table is too large for the card and cannot be printed. Shorten the table or reduce its columns.",
   },
   error: {
     generic: "Something went wrong. Please try again.",

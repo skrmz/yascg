@@ -58,6 +58,9 @@ export function PrintDialog({
   const notesOverflow = overflowEntries.some(
     (item) => fits.results.get(item.entry.entryId)?.fit.overflowReason === "notes",
   );
+  const tableOverflow = overflowEntries.some(
+    (item) => fits.results.get(item.entry.entryId)?.fit.overflowReason === "table",
+  );
   const blocked = overflowEntries.length > 0;
 
   const printCards = useMemo<PrintCardData[]>(() => {
@@ -164,12 +167,14 @@ export function PrintDialog({
 
             {blocked ? (
               <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
-                {notesOverflow
-                  ? t("print.notesOverflow")
-                  : t("print.overflow", {
-                      count: overflowEntries.length,
-                      max: LIMITS.CONTINUATION_CARDS_MAX,
-                    })}
+                {tableOverflow
+                  ? t("print.tableOverflow")
+                  : notesOverflow
+                    ? t("print.notesOverflow")
+                    : t("print.overflow", {
+                        count: overflowEntries.length,
+                        max: LIMITS.CONTINUATION_CARDS_MAX,
+                      })}
               </p>
             ) : null}
 

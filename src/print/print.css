@@ -225,15 +225,89 @@
 }
 
 .card-body .card-h {
-  margin: 0.03in 0 0.02in;
-  font-size: calc(var(--body-font-pt, 8.5pt) + 0.5pt);
+  margin: 0;
+  font-family: var(--font-card-body);
+  line-height: 1.2;
+  break-after: avoid;
+}
+
+.card-body .card-h-level-1 {
+  margin-block: 0.09in 0.045in;
+  font-size: calc(var(--body-font-pt, 8.5pt) + 2pt);
   font-weight: 700;
+}
+
+.card-body .card-h-level-2 {
+  margin-block: 0.075in 0.03in;
+  font-size: calc(var(--body-font-pt, 8.5pt) + 1.25pt);
+  font-weight: 700;
+}
+
+.card-body .card-h-level-3 {
+  margin-block: 0.055in 0.02in;
+  font-size: calc(var(--body-font-pt, 8.5pt) + 0.5pt);
+  font-weight: 600;
+}
+
+.card-body .card-blockquote,
+.compact-body .card-blockquote {
+  margin: 0 0 0.035in;
+  padding: 0.01in 0 0.01in 0.07in;
+  border-left: 0.75pt solid #b9b2a6;
+  color: #333;
+}
+
+.card-body .card-blockquote > :last-child,
+.compact-body .card-blockquote > :last-child {
+  margin-bottom: 0;
 }
 
 .card-body .card-ol,
 .card-body .card-ul {
   margin: 0 0 0.035in;
   padding-left: 0.16in;
+  list-style-position: outside;
+}
+
+.card-body .card-ul {
+  list-style-type: disc;
+}
+
+.card-body .card-ul .card-ul {
+  list-style-type: circle;
+}
+
+.card-body .card-ul .card-ul .card-ul {
+  list-style-type: square;
+}
+
+.card-body .card-ol {
+  list-style-type: decimal;
+}
+
+.card-body .card-ol .card-ol {
+  list-style-type: lower-alpha;
+}
+
+.card-body .card-ol .card-ol .card-ol {
+  list-style-type: lower-roman;
+}
+
+.card-body .card-ol .card-ol,
+.card-body .card-ul .card-ul,
+.card-body .card-ol .card-ul,
+.card-body .card-ul .card-ol {
+  margin: 0.01in 0 0;
+  padding-left: 0.14in;
+}
+
+.card-body li {
+  margin: 0;
+  padding: 0;
+}
+
+.card-body li + li {
+  margin-top: 0.01in;
 }
 
 .card-body .card-table {
@@ -248,6 +322,7 @@
   border: 0.5pt solid #b9b2a6;
   padding: 0 0.02in;
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .card-body .card-pre {
@@ -580,13 +655,66 @@
 }
 
 .compact-body .card-h {
-  font-weight: 500;
+  font-family: var(--font-card-body);
+  font-size: calc(var(--body-font-pt, 8.5pt) + 0.5pt);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.compact-body .card-h-level-1 {
+  font-size: calc(var(--body-font-pt, 8.5pt) + 1.5pt);
+}
+
+.compact-body .card-h-level-2 {
+  font-size: calc(var(--body-font-pt, 8.5pt) + 1pt);
 }
 
 .compact-body .card-ol,
 .compact-body .card-ul {
   margin: 0 0 0.035in;
   padding-left: 0.16in;
+  list-style-position: outside;
+}
+
+.compact-body .card-ul {
+  list-style-type: disc;
+}
+
+.compact-body .card-ul .card-ul {
+  list-style-type: circle;
+}
+
+.compact-body .card-ul .card-ul .card-ul {
+  list-style-type: square;
+}
+
+.compact-body .card-ol {
+  list-style-type: decimal;
+}
+
+.compact-body .card-ol .card-ol {
+  list-style-type: lower-alpha;
+}
+
+.compact-body .card-ol .card-ol .card-ol {
+  list-style-type: lower-roman;
+}
+
+.compact-body .card-ol .card-ol,
+.compact-body .card-ul .card-ul,
+.compact-body .card-ol .card-ul,
+.compact-body .card-ul .card-ol {
+  margin: 0.01in 0 0;
+  padding-left: 0.14in;
+}
+
+.compact-body li {
+  margin: 0;
+  padding: 0;
+}
+
+.compact-body li + li {
+  margin-top: 0.01in;
 }
 
 .compact-body .card-table {
@@ -770,22 +898,66 @@
   line-height: 1.25;
 }
 
+.spell-details-content .card-h-level-1 {
+  font-size: 1.1rem;
+}
+
+.spell-details-content .card-h-level-2 {
+  font-size: 1rem;
+}
+
 .spell-details-content .card-h-sub {
   font-size: 0.875rem;
+}
+
+.spell-details-content .card-blockquote {
+  margin: 0 0 0.65rem;
+  padding: 0.2rem 0 0.2rem 0.75rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted-foreground);
+}
+
+.spell-details-content .card-blockquote > :last-child {
+  margin-bottom: 0;
 }
 
 .spell-details-content .card-ol,
 .spell-details-content .card-ul {
   margin: 0 0 0.65rem;
   padding-left: 1.25rem;
+  list-style-position: outside;
 }
 
 .spell-details-content .card-ul {
-  list-style: disc;
+  list-style-type: disc;
+}
+
+.spell-details-content .card-ul .card-ul {
+  list-style-type: circle;
+}
+
+.spell-details-content .card-ul .card-ul .card-ul {
+  list-style-type: square;
 }
 
 .spell-details-content .card-ol {
-  list-style: decimal;
+  list-style-type: decimal;
+}
+
+.spell-details-content .card-ol .card-ol {
+  list-style-type: lower-alpha;
+}
+
+.spell-details-content .card-ol .card-ol .card-ol {
+  list-style-type: lower-roman;
+}
+
+.spell-details-content .card-ol .card-ol,
+.spell-details-content .card-ul .card-ul,
+.spell-details-content .card-ol .card-ul,
+.spell-details-content .card-ul .card-ol {
+  margin: 0.1rem 0 0;
+  padding-left: 1rem;
 }
 
 .spell-details-content .card-table {

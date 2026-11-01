@@ -12,7 +12,7 @@ interface FitResultStub {
   fontPt: number;
   truncated: boolean;
   overflow: boolean;
-  overflowReason?: "continuation-limit" | "notes";
+  overflowReason?: "continuation-limit" | "notes" | "table";
 }
 
 const holder = vi.hoisted(() => ({
@@ -364,6 +364,18 @@ describe("DetailsPane fit notices", () => {
     };
     render(<DetailsPane />);
     expect(screen.getByText(/card notes cannot fit at the minimum size/)).not.toBeNull();
+  });
+
+  it("shows a table-specific overflow warning", () => {
+    holder.fit = {
+      pages: [[]],
+      fontPt: 6,
+      truncated: false,
+      overflow: true,
+      overflowReason: "table",
+    };
+    render(<DetailsPane />);
+    expect(screen.getByText(/Markdown table is too large/)).not.toBeNull();
   });
 
   it("renders the preview with the selected compact design", () => {

@@ -23,20 +23,41 @@ export const AUTO_SHRINK_MIN_PT = 6;
 export const MULTI_CARD_FONT_PT = 8;
 export const MULTI_CARD_MIN_FONT_PT = 6;
 
+export interface MeasureOutcome {
+  fits: boolean;
+  /** True when a Markdown table exceeds the available card dimensions. */
+  tableOverflow?: boolean;
+}
+
 export type MeasureFit = (
   blocks: readonly BlockNode[],
   fontPt: number,
   continuation: boolean,
   cardCount?: number,
-) => boolean;
+) => boolean | MeasureOutcome;
 
 export interface FitResult {
   pages: BlockNode[][];
   fontPt: number;
   truncated: boolean;
   overflow: boolean;
-  overflowReason?: "continuation-limit" | "notes";
+  overflowReason?: "continuation-limit" | "notes" | "table";
 }
+
+function readMeasurement(value: boolean | MeasureOutcome): {
+  fits: boolean;
+  tableOverflow: boolean;
+} {
+  if (typeof value === "boolean") return { fits: value, tableOverflow: false };
+  return { fits: value.fits, tableOverflow: value.tableOverflow === true };
+}
+
+type BooleanMeasureFit = (
+  blocks: readonly BlockNode[],
+  fontPt: number,
+  continuation: boolean,
+  cardCount?: number,
+) => boolean;
 
 function isNotesBlock(block: BlockNode): boolean {
   return block.type === "list" && block.role === "notes";
@@ -74,7 +95,7 @@ const ELLIPSIS_BLOCK: BlockNode = {
  */
 function truncateSingleCard(
   source: readonly BlockNode[],
-  measure: MeasureFit,
+  measure: BooleanMeasureFit,
 ): { blocks: BlockNode[]; truncated: boolean; overflow: boolean; overflowReason?: "notes" } {
   const notes = leadingNotes(source);
   const remainder = source.slice(notes.length);
@@ -116,11 +137,14 @@ function truncateSingleCard(
 
 function fitMultiCard(
   source: readonly BlockNode[],
-  measure: MeasureFit,
+  measure: BooleanMeasureFit,
   maxCards: number,
+  tableOverflowed: () => boolean,
+  resetTableOverflow: () => void,
 ): FitResult {
   let fontPt: number = MULTI_CARD_FONT_PT;
   const runPagination = () => {
+    resetTableOverflow();
     // A first page whose spell spans multiple cards also renders the compact
     // pagination line. The final page count is not known until pagination
     // finishes, so paginate without it first and re-measure when it will appear.
@@ -137,6 +161,15 @@ function fitMultiCard(
   if (result.overflow && fontPt > MULTI_CARD_MIN_FONT_PT) {
     fontPt = MULTI_CARD_MIN_FONT_PT;
     result = runPagination();
+  }
+  if (result.overflow && tableOverflowed()) {
+    return {
+      pages: result.pages,
+      fontPt,
+      truncated: false,
+      overflow: true,
+      overflowReason: "table",
+    };
   }
   const notes = leadingNotes(source);
   const overflowReason =
@@ -158,16 +191,35 @@ function fitMultiCard(
 
 export function computeFit(
   blocks: readonly BlockNode[],
-  measure: MeasureFit,
+  rawMeasure: MeasureFit,
   fitMode: CardFitMode,
   maxCards: number = LIMITS.CONTINUATION_CARDS_MAX,
 ): FitResult {
   const source = blocks.map(cloneBlock);
+  let tableOverflow = false;
+  const measure: BooleanMeasureFit = (...args) => {
+    const result = readMeasurement(rawMeasure(...args));
+    if (result.tableOverflow) tableOverflow = true;
+    return result.fits;
+  };
+
   if (fitMode === "auto-shrink") {
+    let lastTableOverflow = false;
     for (const fontPt of AUTO_SHRINK_STEPS) {
+      tableOverflow = false;
       if (measure(source, fontPt, false)) {
         return { pages: [source], fontPt, truncated: false, overflow: false };
       }
+      lastTableOverflow = tableOverflow;
+    }
+    if (lastTableOverflow) {
+      return {
+        pages: [source],
+        fontPt: AUTO_SHRINK_MIN_PT,
+        truncated: false,
+        overflow: true,
+        overflowReason: "table",
+      };
     }
     const notes = leadingNotes(source);
     if (notes.length > 0 && !measure(notes, AUTO_SHRINK_MIN_PT, false)) {
@@ -188,7 +240,15 @@ export function computeFit(
       ...(truncated.overflowReason ? { overflowReason: truncated.overflowReason } : {}),
     };
   }
-  return fitMultiCard(source, measure, maxCards);
+  return fitMultiCard(
+    source,
+    measure,
+    maxCards,
+    () => tableOverflow,
+    () => {
+      tableOverflow = false;
+    },
+  );
 }
 
 const fitCache = new Map<string, FitResult>();
@@ -216,8 +276,18 @@ interface Measurer {
     fontPt: number,
     continuation: boolean,
     cardCount?: number,
-  ) => boolean;
+  ) => MeasureOutcome;
   layer: ReactNode;
+}
+
+function hasOversizedTable(element: HTMLElement): boolean {
+  const availableWidth = element.clientWidth;
+  const availableHeight = element.clientHeight;
+  for (const table of element.querySelectorAll<HTMLElement>(".card-table")) {
+    const rect = table.getBoundingClientRect();
+    if (rect.width > availableWidth + 1 || rect.height > availableHeight + 1) return true;
+  }
+  return false;
 }
 
 /** Shared hidden-card measurer. Await card fonts before first use. */
@@ -252,7 +322,10 @@ function useMeasurer(): Measurer {
           "Card measurement failed: the measured body element is not mounted in the hidden measurer.",
         );
       }
-      return element.scrollHeight <= element.clientHeight + 1;
+      return {
+        fits: element.scrollHeight <= element.clientHeight + 1,
+        tableOverflow: hasOversizedTable(element),
+      };
     },
     [],
   );

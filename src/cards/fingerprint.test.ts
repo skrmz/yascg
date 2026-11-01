@@ -29,7 +29,7 @@ describe("fit cache keys", () => {
   });
 
   it("keeps the shared card style version stable for this change", () => {
-    expect(CARD_STYLE_VERSION).toBe("4");
+    expect(CARD_STYLE_VERSION).toBe("5");
   });
 
   it("invalidates content layout when an SRD override is present", () => {

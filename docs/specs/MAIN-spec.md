@@ -693,6 +693,15 @@ when the next body block could instead move with it. Preserve punctuation and al
 visible body text in multi-card mode. Use grapheme-aware splitting (`Intl.Segmenter` or
 equivalent) for emoji/combining marks.
 
+Markdown rendering must preserve the authored structure in the preview, details dialog,
+measurement card, and printed output. Headings use a depth-based type hierarchy, blockquotes
+use a distinct indented rule, and unordered, ordered, and nested lists keep their visible
+markers, numbering, and indentation. Bold, italic, code, and table rendering remain supported.
+Tables are never rewritten automatically: a table that exceeds the available card width or
+height is reported as a table-specific overflow, the on-screen preview warns that it is too
+large, and printing is blocked for that entry until the table is shortened or reduced in
+columns.
+
 Preview warnings and controls are never printed. Use deterministic fixture tests for empty
 text, long strings, Markdown, headings/lists/emphasis, multi-card pagination, auto-shrink
 truncation with a measured ellipsis (including split paragraphs and list items), extremely long

@@ -50,6 +50,51 @@ describe("parseMarkdown safety", () => {
     }
   });
 
+  it("keeps nested lists as children of their parent item", () => {
+    const blocks = parseMarkdown("- one\n  - nested\n  - nested two\n- two");
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].type).toBe("list");
+    if (blocks[0].type !== "list") return;
+    expect(blocks[0].sublists?.[0]?.[0]).toMatchObject({
+      type: "list",
+      ordered: false,
+      items: [[{ type: "text", value: "nested" }], [{ type: "text", value: "nested two" }]],
+    });
+    expect(blocks[0].sublists?.[1]).toEqual([]);
+  });
+
+  it("keeps ordered list starts and renders visible list structure", () => {
+    const blocks = parseMarkdown("3. third\n4. fourth\n\n- bullet");
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain('<ol class="card-ol" start="3">');
+    expect(markup).toContain('<ul class="card-ul">');
+    expect(markup).toContain("<li>third</li>");
+    expect(markup).toContain("<li>bullet</li>");
+  });
+
+  it("renders nested list containers inside the parent item", () => {
+    const blocks = parseMarkdown("- parent\n  - child");
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain('<li>parent<ul class="card-ul"><li>child</li></ul></li>');
+  });
+
+  it("renders headings with depth classes", () => {
+    const blocks = parseMarkdown("# First\n\n## Second\n\n### Third");
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain('<h3 class="card-h card-h-level-1">First</h3>');
+    expect(markup).toContain('<h3 class="card-h card-h-level-2">Second</h3>');
+    expect(markup).toContain('<div class="card-h card-h-sub card-h-level-3">Third</div>');
+  });
+
+  it("renders blockquotes as a distinct container", () => {
+    const blocks = parseMarkdown("> Quoted text\n>\n> - quoted item");
+    expect(blocks[0]).toMatchObject({ type: "blockquote" });
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain('<blockquote class="card-blockquote">');
+    expect(markup).toContain("Quoted text");
+    expect(markup).toContain("quoted item");
+  });
+
   it("parses tables", () => {
     const blocks = parseMarkdown("| A | B |\n| --- | --- |\n| 1 | 2 |");
     expect(blocks[0].type).toBe("table");
