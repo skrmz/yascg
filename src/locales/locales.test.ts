@@ -80,11 +80,11 @@ describe("locale catalogs", () => {
   });
 
   it("resolves localized component markers", () => {
-    expect(i18n.t(componentMarkerKey("verbal"), { lng: "en" })).toBe("ⓥ");
-    expect(i18n.t(componentMarkerKey("somatic"), { lng: "en" })).toBe("ⓢ");
-    expect(i18n.t(componentMarkerKey("somatic"), { lng: "de" })).toBe("ⓖ");
-    expect(componentMarkers("en")).toEqual({ verbal: "ⓥ", somatic: "ⓢ" });
-    expect(componentMarkers("de")).toEqual({ verbal: "ⓥ", somatic: "ⓖ" });
+    expect(i18n.t(componentMarkerKey("verbal"), { lng: "en" })).toBe("V");
+    expect(i18n.t(componentMarkerKey("somatic"), { lng: "en" })).toBe("S");
+    expect(i18n.t(componentMarkerKey("somatic"), { lng: "de" })).toBe("G");
+    expect(componentMarkers("en")).toEqual({ verbal: "V", somatic: "S" });
+    expect(componentMarkers("de")).toEqual({ verbal: "V", somatic: "G" });
   });
 
   it("appends an asterisk for overridden spells", async () => {

@@ -57,8 +57,9 @@ Paths are relative to the repository root.
   deck-entry normalization, and advisory `BroadcastChannel` notifications.
 - `src/services/data/` — manifest/dataset loading, language preference, search and filters, and
   deck reference resolution.
-- `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), React
-  renderer, and deterministic AST splitting/pagination.
+- `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), the shared
+  `BlockNode` renderer including structured component-description markers, and deterministic AST
+  splitting/pagination.
 - `src/cards/` — Classic and Compact card chrome plus hidden-card measurement, `document.fonts`
   gating, single-card auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor,
   and multi-card pagination with heading-orphan prevention. `design.ts` owns the design enum and

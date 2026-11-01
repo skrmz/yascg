@@ -11,7 +11,7 @@ import {
   paginateToPages,
   truncateBlocksToFit,
 } from "@/markdown/split.ts";
-import { componentMarkerKey } from "@/locales/labels.ts";
+import { componentKey } from "@/locales/labels.ts";
 import { CardView } from "./Card.tsx";
 import { buildCompactPresentation, type CompactPresentation } from "./compact.ts";
 import { DEFAULT_CARD_DESIGN, type CardDesign } from "./design.ts";
@@ -312,8 +312,8 @@ export function useCardFit({
 
   const markers = useMemo(
     () => ({
-      verbal: t(componentMarkerKey("verbal")),
-      somatic: t(componentMarkerKey("somatic")),
+      verbal: t(componentKey("verbal")),
+      somatic: t(componentKey("somatic")),
     }),
     [t],
   );
@@ -440,8 +440,8 @@ export function useDeckCardFits(
 
   const markers = useMemo(
     () => ({
-      verbal: t(componentMarkerKey("verbal")),
-      somatic: t(componentMarkerKey("somatic")),
+      verbal: t(componentKey("verbal")),
+      somatic: t(componentKey("somatic")),
     }),
     [t],
   );

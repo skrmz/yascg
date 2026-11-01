@@ -1,10 +1,19 @@
 import { marked, type Token } from "marked";
 import type { SpellComponents } from "@/domain/spells";
 
-export interface InlineNode {
+export interface MarkdownInline {
   type: "text" | "strong" | "em" | "code";
   value: string;
 }
+
+/** Structured indicator for a component description; `value` is the localized letter. */
+export interface ComponentInline {
+  type: "component";
+  component: "verbal" | "somatic";
+  value: string;
+}
+
+export type InlineNode = MarkdownInline | ComponentInline;
 
 export type TextInline = Extract<InlineNode, { type: "text" } | { type: "code" }>;
 export type ContainerInline = Extract<InlineNode, { type: "strong" } | { type: "em" }>;
@@ -242,14 +251,20 @@ export function componentDescriptionBlocks(
   if (components.verbal && verbal) {
     blocks.push({
       type: "paragraph",
-      children: [{ type: "text", value: `${markers.verbal} ${verbal}` }],
+      children: [
+        { type: "component", component: "verbal", value: markers.verbal },
+        { type: "text", value: ` ${verbal}` },
+      ],
     });
   }
   const somatic = components.somaticDescription?.trim();
   if (components.somatic && somatic) {
     blocks.push({
       type: "paragraph",
-      children: [{ type: "text", value: `${markers.somatic} ${somatic}` }],
+      children: [
+        { type: "component", component: "somatic", value: markers.somatic },
+        { type: "text", value: ` ${somatic}` },
+      ],
     });
   }
   return blocks;

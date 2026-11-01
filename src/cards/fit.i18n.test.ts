@@ -12,7 +12,7 @@ const spell = {
   higherLevels: ["Scales with a higher slot."],
 };
 
-const markers = { verbal: "ⓥ", somatic: "ⓢ" };
+const markers = { verbal: "V", somatic: "S" };
 
 const richSpell = {
   description: ["Base spell text."],
@@ -155,10 +155,14 @@ describe("component blocks through the fit pipeline", () => {
     const fit = computeFit(blocks, measureByBlockCount(blocks.length), "auto-shrink");
     expect(fit.pages).toHaveLength(1);
     const text = JSON.stringify(fit.pages);
-    expect(countOccurrences(text, "ⓥ ")).toBe(1);
-    expect(countOccurrences(text, "ⓢ ")).toBe(1);
-    expect(text.indexOf("Scales with a higher slot.")).toBeLessThan(text.indexOf("ⓥ "));
-    expect(text.indexOf("ⓥ ")).toBeLessThan(text.indexOf("ⓢ "));
+    expect(countOccurrences(text, '"component":"verbal"')).toBe(1);
+    expect(countOccurrences(text, '"component":"somatic"')).toBe(1);
+    expect(text.indexOf("Scales with a higher slot.")).toBeLessThan(
+      text.indexOf('"component":"verbal"'),
+    );
+    expect(text.indexOf('"component":"verbal"')).toBeLessThan(
+      text.indexOf('"component":"somatic"'),
+    );
   });
 
   it("emits each component block exactly once across continuation cards", () => {
@@ -166,9 +170,11 @@ describe("component blocks through the fit pipeline", () => {
     const fit = computeFit(blocks, measureByBlockCount(2), "multi-card");
     expect(fit.pages.length).toBeGreaterThan(1);
     const text = JSON.stringify(fit.pages);
-    expect(countOccurrences(text, "ⓥ ")).toBe(1);
-    expect(countOccurrences(text, "ⓢ ")).toBe(1);
-    expect(text.indexOf("ⓥ ")).toBeLessThan(text.indexOf("ⓢ "));
+    expect(countOccurrences(text, '"component":"verbal"')).toBe(1);
+    expect(countOccurrences(text, '"component":"somatic"')).toBe(1);
+    expect(text.indexOf('"component":"verbal"')).toBeLessThan(
+      text.indexOf('"component":"somatic"'),
+    );
     const total = fit.pages.reduce((sum, page) => sum + page.length, 0);
     expect(total).toBe(blocks.length);
   });

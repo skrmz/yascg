@@ -1,5 +1,31 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { componentLabelKey } from "@/locales/labels.ts";
 import type { BlockNode, InlineNode } from "./parse.ts";
+
+function ComponentMarker({
+  component,
+  letter,
+}: {
+  component: "verbal" | "somatic";
+  letter: string;
+}) {
+  const { t } = useTranslation();
+  const label = t(componentLabelKey(component));
+  return (
+    <span
+      className="component-marker"
+      role="img"
+      aria-label={label}
+      title={label}
+      data-component={component}
+    >
+      <span className="component-marker-glyph" aria-hidden="true">
+        {letter}
+      </span>
+    </span>
+  );
+}
 
 function renderInline(nodes: readonly InlineNode[], keyPrefix: string): ReactNode[] {
   return nodes.map((node, index) => {
@@ -13,6 +39,8 @@ function renderInline(nodes: readonly InlineNode[], keyPrefix: string): ReactNod
         return <em key={key}>{node.value}</em>;
       case "code":
         return <code key={key}>{node.value}</code>;
+      case "component":
+        return <ComponentMarker key={key} component={node.component} letter={node.value} />;
       default:
         return null;
     }

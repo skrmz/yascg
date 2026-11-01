@@ -152,8 +152,8 @@ export function componentLabelKey(component: SpellComponentKey): ComponentLabelT
 }
 
 export const COMPONENT_MARKER_KEYS = {
-  verbal: "component.marker.verbal",
-  somatic: "component.marker.somatic",
+  verbal: "component.verbal",
+  somatic: "component.somatic",
 } as const;
 
 export type ComponentMarkerKind = keyof typeof COMPONENT_MARKER_KEYS;
@@ -171,7 +171,7 @@ export interface ComponentMarkers {
 
 export function componentMarkers(language: string): ComponentMarkers {
   const source = language === "de" ? de : en;
-  return { ...source.component.marker };
+  return { verbal: source.component.verbal, somatic: source.component.somatic };
 }
 
 export const SOURCE_KEYS = {

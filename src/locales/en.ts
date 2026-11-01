@@ -464,10 +464,6 @@ export const en = {
       somatic: "Somatic",
       material: "Material",
     },
-    marker: {
-      verbal: "ⓥ",
-      somatic: "ⓢ",
-    },
   },
   source: {
     srd: "SRD 5.2.1",

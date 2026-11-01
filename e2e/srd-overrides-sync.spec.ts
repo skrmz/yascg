@@ -37,7 +37,10 @@ test("SRD override save and reset propagate across tabs without a refresh", asyn
   // Tab A updates locally; tab B updates only via the cross-tab notification.
   await expect(shell(tabA).getByText("SRD 5.2.1 *").first()).toBeVisible();
   await expect(shell(tabB).getByText("SRD 5.2.1 *").first()).toBeVisible();
-  await expect(shell(tabB).getByText("ⓥ Flamme der Zauberkraft").first()).toBeVisible();
+  const tabBMarker = shell(tabB).locator(".card-preview-page .component-marker").first();
+  await expect(tabBMarker).toBeVisible();
+  await expect(tabBMarker).toHaveAttribute("aria-label", "Verbal");
+  await expect(tabBMarker).toContainText("V");
   await expect(
     tabB
       .locator(".card-preview-page")
@@ -51,5 +54,5 @@ test("SRD override save and reset propagate across tabs without a refresh", asyn
 
   await expect(shell(tabA).getByText("SRD 5.2.1 *")).toHaveCount(0);
   await expect(shell(tabB).getByText("SRD 5.2.1 *")).toHaveCount(0);
-  await expect(shell(tabB).getByText("ⓥ Flamme der Zauberkraft")).toHaveCount(0);
+  await expect(shell(tabB).locator(".card-preview-page .component-marker")).toHaveCount(0);
 });

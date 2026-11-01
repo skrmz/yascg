@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { classSummary, componentSummary, materialDetailText } from "@/cards/Card.tsx";
 import { resolveContentLanguage } from "@/content-language.ts";
 import type { Spell } from "@/domain/spells";
-import { componentMarkerKey, damageTypeKey, subclassLabel } from "@/locales/labels.ts";
+import { componentKey, damageTypeKey, subclassLabel } from "@/locales/labels.ts";
 import { parseSpellBody } from "@/markdown/parse.ts";
 import { BlockList } from "@/markdown/render.tsx";
 import { Badge, SourceBadge } from "@/ui/Badge.tsx";
@@ -19,8 +19,8 @@ export function SpellDetailsContent({
     ? resolveContentLanguage(spell, datasetLanguage)
     : undefined;
   const blocks = parseSpellBody(spell, t("spell.higherLevels"), {
-    verbal: t(componentMarkerKey("verbal")),
-    somatic: t(componentMarkerKey("somatic")),
+    verbal: t(componentKey("verbal")),
+    somatic: t(componentKey("somatic")),
   });
   const material = materialDetailText(spell, t);
   const subclasses =

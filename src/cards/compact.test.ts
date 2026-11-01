@@ -10,7 +10,7 @@ import {
 import { parseSpellBody } from "@/markdown/parse.ts";
 import { makeSpell } from "@/test/fixtures/spells.ts";
 
-const markers = { verbal: "ⓥ", somatic: "ⓢ" };
+const markers = { verbal: "V", somatic: "S" };
 
 function body(spell: ReturnType<typeof makeSpell>, markSections = true) {
   return parseSpellBody(spell, i18n.t("spell.higherLevels"), markers, { markSections });

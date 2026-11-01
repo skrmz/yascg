@@ -13,7 +13,7 @@
 
 This change request adds three related capabilities to YASCG:
 
-- **Component-text authoring.** Users can author free-text descriptions for the **Verbal** (`V`) and **Somatic** (`S`/`G`) components. These render on the card, in the details pane, and on the printed sheet, each prefixed with a localized circle-glyph marker (`ⓥ` / `ⓢ` / `ⓖ`).
+- **Component-text authoring.** Users can author free-text descriptions for the **Verbal** (`V`) and **Somatic** (`S`/`G`) components. These render on the card, in the details pane, and on the printed sheet, each prefixed with a structured, outlined component marker (`V`, `S`/`G`) shared with the Compact component boxes.
 - **Material details for custom spells.** `materialCost` and `materialConsumed` (already present in the domain schema but unused) become authorable for custom spells behind a collapsed "Advanced / Optional" section, and are displayed on the form, details pane, and card.
 - **SRD component-text overrides.** Every SRD spell becomes editable in a restricted override mode, but **only** for `verbalDescription` and `somaticDescription`, which are not part of the SRD structure and must be authored by the user. Overrides are stored in a separate, locale-scoped store (per spell **and** locale), merged at read time, flagged with a `*` on the source badge, and can be reset to the vanilla SRD spell.
 
@@ -163,9 +163,9 @@ Option A preserves id, source, deck references, offline behavior, and SRD identi
 
 - **They are modeled as `BlockNode`s, not separate JSX.** Extend `parseSpellBody` (`src/markdown/parse.ts`) — or its shared parsing pipeline — to append component-description blocks after description and higher-level content.
   - Append verbal first, then somatic.
-  - Each nonempty description becomes its own block (a `paragraph` whose text is `${marker} ${description}`).
+  - Each nonempty description becomes its own block (a `paragraph` whose children begin with a structured `component` inline node carrying the localized letter, followed by the description text).
   - A block is generated **only** when the corresponding component boolean is enabled **and** the description is nonempty after trimming.
-  - The marker is the localized `ⓥ` (verbal) or `ⓢ`/`ⓖ` (somatic) value.
+  - The marker letter is the localized `V` (verbal) or `S`/`G` (somatic) value from `component.verbal` / `component.somatic`; the renderer exposes the full localized label (`Verbal`, `Somatic`/`Gestisch`) through `aria-label` and `title`.
 - Because the component text is ordinary blocks, it automatically participates in existing body measurement, `computeFit`, pagination (`paginateToPages` / `truncateBlocksToFit`), and the `fitCacheKey` fingerprint (which already fingerprints `JSON.stringify(blocks)`). **No separate `fitCacheKey` addition is required.**
 - Pagination must preserve block order and render each component-description block **exactly once**, including across continuation cards. No unconditional JSX may be appended inside `CardView` for component text.
 - A **locale change** must regenerate the localized blocks and invalidate the relevant fit results (the locale is already part of `fitCacheKey`).
@@ -308,11 +308,12 @@ Reuse `CustomSpellForm` with an explicit SRD override mode and two distinct subm
 - `form.description` (existing) and `form.descriptionSrd` (SRD read-only notice)
 - `form.default.castingTime` / `form.default.range` / `form.default.duration`
 - `form.placeholder.castingTime` / `form.placeholder.range` / `form.placeholder.duration`
-- `component.marker.verbal` (`ⓥ`), `component.marker.somatic` (`ⓢ` / `ⓖ`)
+- `component.verbal` (`V`) / `component.somatic` (`S` / `G`) provide both component summaries and description-marker letters
 - `spell.metadata.materialConsumed` (localized "consumed" qualifier)
 - `source.srd` (`SRD 5.2.1`), `source.custom` (`Custom` / `Eigen`)
 - Helpers in `src/locales/labels.ts`:
-  - `componentMarkerKey(kind)` alongside `componentKey()` — returns `component.marker.verbal` / `component.marker.somatic`.
+  - `componentMarkerKey(kind)` alongside `componentKey()` — returns the localized component letter used by description markers.
+  - `componentMarkers(language)` — returns the localized description-marker letters without i18next.
   - `sourceLabelText(spell, t)` — canonical label (`spell.sourceLabel ?? t(sourceKey(spell.source))`) plus ` *` when `spell.overridden`.
 
 ---
@@ -365,7 +366,7 @@ Reuse `CustomSpellForm` with an explicit SRD override mode and two distinct subm
   - i18n: `de` key parity (`src/locales/locales.test.ts`).
   - Cross-tab override reactivity (notification kind + `useLiveQuery`).
 - **Component / rendering** (`src/cards/Card.i18n.test.tsx`, `src/cards/fit.i18n.test.ts`, `src/components/details/DetailsPane.test.tsx`)
-  - Card + details + print render `ⓥ`/`ⓢ`/`ⓖ` text only when the component flag is true.
+  - Card + details + print render structured `V`/`S`/`G` markers only when the component flag is true.
   - Keep-but-hide: text retained but hidden when the flag is off.
   - Multi-card pagination shows each component-description block exactly once (no duplication across continuation cards).
   - DetailsPane textual section and card preview are consistent in ordering/markers/gating.
@@ -400,7 +401,7 @@ Reuse `CustomSpellForm` with an explicit SRD override mode and two distinct subm
 ## 11. Acceptance criteria
 
 - Users can author `verbalDescription`/`somaticDescription` for custom spells and for **any** SRD spell (SRD: only these two fields editable; save/reset never create a custom spell or change canonical identity).
-- Component text renders on card, details pane (textual section **and** card preview), and print sheet at the end of the body with the localized `ⓥ`/`ⓢ`/`ⓖ` markers, gated by the component flags, as body blocks that participate in fit/pagination and appear exactly once across continuation cards.
+- Component text renders on card, details pane (textual section **and** card preview), and print sheet at the end of the body with the shared outlined `V`/`S`/`G` markers, gated by the component flags, as body blocks that participate in fit/pagination and appear exactly once across continuation cards.
 - `materialCost`/`materialConsumed` are authorable for custom spells behind a collapsed Advanced/Optional section, defaulting to `undefined`/`false`, are gated by `M`, and render consistently on form, details, and card with no empty separators.
 - SRD overrides persist per locale, survive reload, are exported/imported without silent data loss, mark the source as `SRD 5.2.1 *`, and can be reset (current spell/locale only) to the original.
 - German locale shows German defaults (`1 Aktion`, `Selbst`, `Unmittelbar`) and German placeholders; switching locale never overwrites an open draft.

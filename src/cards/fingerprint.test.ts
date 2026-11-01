@@ -8,7 +8,7 @@ import {
 import { parseSpellBody } from "@/markdown/parse.ts";
 import { makeSpell } from "@/test/fixtures/spells.ts";
 
-const markers = { verbal: "ⓥ", somatic: "ⓢ" };
+const markers = { verbal: "V", somatic: "S" };
 
 describe("fit cache keys", () => {
   it("namespaces Classic and Compact layouts", () => {
@@ -29,7 +29,7 @@ describe("fit cache keys", () => {
   });
 
   it("keeps the shared card style version stable for this change", () => {
-    expect(CARD_STYLE_VERSION).toBe("3");
+    expect(CARD_STYLE_VERSION).toBe("4");
   });
 
   it("invalidates content layout when an SRD override is present", () => {

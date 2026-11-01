@@ -629,7 +629,10 @@ the three-part footer rather than repeating in the continuation header.
   and omit the school from the header.
 - **Metadata:** casting time, range, components, duration. Rendered on the first card only;
   continuation cards omit this section.
-- **Body:** description, Higher Levels, classes.
+- **Body:** description, Higher Levels, classes, then any enabled verbal and somatic descriptions.
+  Component descriptions use the same outlined `V`/`S`/`G` marker as the Compact component boxes
+  in Classic and Compact cards, the details pane, and print, with localized `Verbal` and
+  `Somatic`/`Gestisch` accessible labels.
 - **Footer:** source and `Card X of N` for continuations.
 - Components use V/S/M indicators; absent components display `—`. Material details may use one
   line with ellipsis on the first card; full details remain available in the Show details dialog.

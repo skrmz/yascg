@@ -5,6 +5,7 @@ export interface InlineFragment {
   strong: boolean;
   em: boolean;
   code: boolean;
+  component?: "verbal" | "somatic";
 }
 
 // ---------------------------------------------------------------------------
@@ -66,13 +67,22 @@ export function flattenInline(nodes: readonly InlineNode[]): InlineFragment[] {
       case "code":
         fragments.push({ text: node.value, strong: false, em: false, code: true });
         break;
+      case "component":
+        fragments.push({
+          text: node.value,
+          strong: false,
+          em: false,
+          code: false,
+          component: node.component,
+        });
+        break;
     }
   }
   return mergeAdjacent(fragments);
 }
 
 function sameMarks(a: InlineFragment, b: InlineFragment): boolean {
-  return a.strong === b.strong && a.em === b.em && a.code === b.code;
+  return a.strong === b.strong && a.em === b.em && a.code === b.code && a.component === b.component;
 }
 
 function mergeAdjacent(fragments: readonly InlineFragment[]): InlineFragment[] {
@@ -92,7 +102,9 @@ export function groupFragments(fragments: readonly InlineFragment[]): InlineNode
   const nodes: InlineNode[] = [];
   for (const fragment of mergeAdjacent(fragments)) {
     if (fragment.text === "") continue;
-    if (fragment.code) nodes.push({ type: "code", value: fragment.text });
+    if (fragment.component) {
+      nodes.push({ type: "component", component: fragment.component, value: fragment.text });
+    } else if (fragment.code) nodes.push({ type: "code", value: fragment.text });
     else if (fragment.strong) nodes.push({ type: "strong", value: fragment.text });
     else if (fragment.em) nodes.push({ type: "em", value: fragment.text });
     else nodes.push({ type: "text", value: fragment.text });

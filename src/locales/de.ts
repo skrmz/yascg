@@ -474,12 +474,8 @@ export const de = {
     material: "M",
     label: {
       verbal: "Verbal",
-      somatic: "Gesten",
+      somatic: "Gestisch",
       material: "Material",
-    },
-    marker: {
-      verbal: "ⓥ",
-      somatic: "ⓖ",
     },
   },
   source: {

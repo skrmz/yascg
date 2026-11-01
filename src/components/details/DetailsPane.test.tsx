@@ -274,8 +274,10 @@ describe("DetailsPane dialog content", () => {
 
     await user.click(screen.getByRole("button", { name: "Show details" }));
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText("ⓥ Speak the word")).not.toBeNull();
-    expect(within(dialog).getByText("ⓢ Trace a sigil")).not.toBeNull();
+    expect(within(dialog).getByText("Speak the word")).not.toBeNull();
+    expect(within(dialog).getByText("Trace a sigil")).not.toBeNull();
+    expect(within(dialog).getByLabelText("Verbal").textContent).toBe("V");
+    expect(within(dialog).getByLabelText("Somatic").textContent).toBe("S");
   });
 
   it("renders the material detail line from description, cost and consumed", async () => {

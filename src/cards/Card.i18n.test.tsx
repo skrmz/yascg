@@ -6,7 +6,7 @@ import { CardView } from "@/cards/Card.tsx";
 import { parseSpellBody } from "@/markdown/parse.ts";
 import type { Spell } from "@/domain/spells";
 
-const markers = { verbal: "ⓥ", somatic: "ⓢ" };
+const markers = { verbal: "V", somatic: "S" };
 
 const fireball: Spell = {
   id: "srd-fireball",
@@ -148,7 +148,7 @@ describe("CardView continuation layout", () => {
 });
 
 describe("CardView component and material rendering", () => {
-  it("renders component-description blocks with localized markers", () => {
+  it("renders component-description blocks with structured localized markers", () => {
     const spell: Spell = {
       ...fireball,
       components: {
@@ -159,7 +159,7 @@ describe("CardView component and material rendering", () => {
         material: false,
       },
     };
-    render(
+    const { container } = render(
       <CardView
         spell={spell}
         blocks={parseSpellBody(spell, "Higher Levels", markers)}
@@ -168,8 +168,44 @@ describe("CardView component and material rendering", () => {
         fontPt={8}
       />,
     );
-    expect(screen.getByText("ⓥ Speak the word")).not.toBeNull();
-    expect(screen.getByText("ⓢ Trace a sigil")).not.toBeNull();
+    expect(screen.getByText("Speak the word")).not.toBeNull();
+    expect(screen.getByText("Trace a sigil")).not.toBeNull();
+    const componentMarkers = Array.from(container.querySelectorAll(".component-marker"));
+    expect(componentMarkers.map((marker) => marker.textContent)).toEqual(["V", "S"]);
+    expect(componentMarkers.map((marker) => marker.getAttribute("aria-label"))).toEqual([
+      "Verbal",
+      "Somatic",
+    ]);
+    expect(container.querySelector(".compact-component-box")).toBeNull();
+  });
+
+  it("renders German somatic marker letters and labels in descriptions", async () => {
+    await setLocale("de");
+    const spell: Spell = {
+      ...fireball,
+      components: {
+        verbal: true,
+        verbalDescription: "Sprich das Wort",
+        somatic: true,
+        somaticDescription: "Zeichne ein Siegel",
+        material: false,
+      },
+    };
+    const { container } = render(
+      <CardView
+        spell={spell}
+        blocks={parseSpellBody(spell, "Höhere Grade", { verbal: "V", somatic: "G" })}
+        cardIndex={1}
+        cardCount={1}
+        fontPt={8}
+      />,
+    );
+    const componentMarkers = Array.from(container.querySelectorAll(".component-marker"));
+    expect(componentMarkers.map((marker) => marker.textContent)).toEqual(["V", "G"]);
+    expect(componentMarkers.map((marker) => marker.getAttribute("aria-label"))).toEqual([
+      "Verbal",
+      "Gestisch",
+    ]);
   });
 
   it("renders the material line only when the material component is enabled", () => {

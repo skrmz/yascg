@@ -382,15 +382,17 @@
 
 .compact-name {
   flex: 0 1 auto;
+  position: relative;
+  top: 0.015in;
   min-width: 0;
   margin: 0;
+  line-height: 1.08;
+  white-space: nowrap;
+  overflow: hidden;
   color: #111;
   font-family: var(--font-card-title);
   font-size: 11.5pt;
   font-weight: 700;
-  line-height: 1.08;
-  white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -477,23 +479,46 @@
   flex: 0 0 auto;
 }
 
-.compact-component-box {
+.compact-component-box,
+.component-marker {
   display: inline-flex;
   box-sizing: border-box;
   align-items: center;
   justify-content: center;
   width: 0.15in;
   height: 0.15in;
-  margin-left: -0.6pt;
-  border: 0.6pt solid var(--compact-accent);
+  border: 0.6pt solid var(--compact-accent, #6b5b3e);
   color: #111;
   font-size: 6.8pt;
   font-weight: 700;
   line-height: 1;
 }
 
+.compact-component-box {
+  margin-left: -0.6pt;
+}
+
 .compact-component-box:first-child {
   margin-left: 0;
+}
+
+.component-marker {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+
+  width: 0.12in;
+  height: 0.12in;
+  margin-right: 0.035in;
+
+  vertical-align: text-bottom;
+
+  border: 0.6pt solid #727272;
+  color: #111;
+  font-size: 6pt;
+  font-weight: 700;
+  line-height: 1;
 }
 
 /*
@@ -501,7 +526,8 @@
  * badge glyphs have no descender, so they render about 0.11em above the
  * optical center of the square/circle. Nudge the glyph itself, not the badge.
  */
-.compact-glyph {
+.compact-glyph,
+.component-marker-glyph {
   display: block;
   line-height: 1;
   transform: translateY(0.11em);
@@ -725,6 +751,15 @@
 
 .spell-details-content .card-p {
   margin: 0 0 0.65rem;
+}
+
+.spell-details-content .component-marker {
+  width: 1.2em;
+  height: 1.2em;
+  margin-right: 0.35em;
+  border-width: 1px;
+  font-size: 0.72em;
+  vertical-align: -0.18em;
 }
 
 .spell-details-content .card-h {

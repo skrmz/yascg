@@ -6,9 +6,8 @@ import { CompactCardView } from "@/cards/CompactCard.tsx";
 import { parseSpellBody } from "@/markdown/parse.ts";
 import type { Spell } from "@/domain/spells";
 import { makeSpell } from "@/test/fixtures/spells.ts";
+import { componentMarkers } from "@/locales/labels.ts";
 import { TooltipProvider } from "@/ui/Tooltip.tsx";
-
-const markers = { verbal: "ⓥ", somatic: "ⓢ" };
 
 async function setLocale(code: string) {
   await act(async () => {
@@ -21,9 +20,12 @@ afterEach(async () => {
 });
 
 function presentationFor(spell: Spell) {
-  const blocks = parseSpellBody(spell, i18n.t("spell.higherLevels"), markers, {
-    markSections: true,
-  });
+  const blocks = parseSpellBody(
+    spell,
+    i18n.t("spell.higherLevels"),
+    componentMarkers(i18n.resolvedLanguage ?? "en"),
+    { markSections: true },
+  );
   return buildCompactPresentation(spell, blocks, i18n.t);
 }
 
@@ -239,5 +241,26 @@ describe("CompactCardView components and footer fallbacks", () => {
     const spell = makeSpell({ overridden: true });
     const { container } = renderCompact(spell);
     expect(container.querySelector(".compact-footer-source")?.textContent).toBe("SRD 5.2.1 *");
+  });
+
+  it("uses the shared structured component markers in the compact body", async () => {
+    const spell = makeSpell({
+      components: {
+        verbal: true,
+        verbalDescription: "Speak the word",
+        somatic: true,
+        somaticDescription: "Zeichne ein Siegel",
+        material: false,
+      },
+    });
+    await setLocale("de");
+    const { container } = renderCompact(spell);
+    const markers = Array.from(container.querySelectorAll(".compact-body .component-marker"));
+    expect(markers.map((marker) => marker.textContent)).toEqual(["V", "G"]);
+    expect(markers.map((marker) => marker.getAttribute("aria-label"))).toEqual([
+      "Verbal",
+      "Gestisch",
+    ]);
+    expect(container.querySelectorAll(".compact-component-box.component-marker")).toHaveLength(0);
   });
 });

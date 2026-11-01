@@ -3,6 +3,7 @@ import type { BlockNode, InlineNode } from "@/markdown/parse.ts";
 import {
   appendEllipsis,
   flattenInline,
+  groupFragments,
   paginateBlocks,
   segmentGraphemes,
   splitFragmentsAt,
@@ -132,5 +133,22 @@ describe("truncateBlocksToFit", () => {
     const last = withEllipsis[withEllipsis.length - 1];
     const lastValue = last.type === "paragraph" ? last.children.map((n) => n.value).join("") : "";
     expect(lastValue.endsWith("\u2026")).toBe(true);
+  });
+});
+
+describe("structured component markers", () => {
+  it("survives inline flattening, splitting, and regrouping", () => {
+    const children: InlineNode[] = [
+      { type: "component", component: "verbal", value: "V" },
+      { type: "text", value: " Speak clearly now" },
+    ];
+    expect(groupFragments(flattenInline(children))).toEqual(children);
+
+    const split = splitFragmentsAt(flattenInline(children), 6);
+    const prefix = groupFragments(split.prefix);
+    const rest = groupFragments(split.rest);
+    expect(prefix[0]).toEqual({ type: "component", component: "verbal", value: "V" });
+    expect(prefix.map((node) => node.value).join("")).toBe("V Spea");
+    expect(rest.map((node) => node.value).join("")).toBe("k clearly now");
   });
 });

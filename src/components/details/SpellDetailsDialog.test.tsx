@@ -110,8 +110,10 @@ describe("SpellDetailsDialog description", () => {
     expect(within(dialog).getByRole("table")).not.toBeNull();
     expect(within(dialog).getByText("Higher Levels")).not.toBeNull();
     expect(within(dialog).getByText("At higher levels it grows stronger.")).not.toBeNull();
-    expect(within(dialog).getByText("ⓥ Speak the word")).not.toBeNull();
-    expect(within(dialog).getByText("ⓢ Trace a sigil")).not.toBeNull();
+    expect(within(dialog).getByText("Speak the word")).not.toBeNull();
+    expect(within(dialog).getByText("Trace a sigil")).not.toBeNull();
+    expect(within(dialog).getByLabelText("Verbal").textContent).toBe("V");
+    expect(within(dialog).getByLabelText("Somatic").textContent).toBe("S");
   });
 
   it("keeps an exceptionally long description complete without card fitting", () => {

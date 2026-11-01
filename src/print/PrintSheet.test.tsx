@@ -7,7 +7,7 @@ import { makeSpell } from "@/test/fixtures/spells.ts";
 import i18n from "@/i18n.ts";
 import { TooltipProvider } from "@/ui/Tooltip.tsx";
 
-const markers = { verbal: "ⓥ", somatic: "ⓢ" };
+const markers = { verbal: "V", somatic: "S" };
 
 describe("PrintSheets component rendering", () => {
   it("includes component markers and material details in printed output", () => {
@@ -35,8 +35,10 @@ describe("PrintSheets component rendering", () => {
       },
     ];
     render(<PrintSheets cards={cards} paperSize="letter" cuttingBorders={false} />);
-    expect(screen.getByText("ⓥ Speak the word")).not.toBeNull();
-    expect(screen.getByText("ⓢ Trace a sigil")).not.toBeNull();
+    expect(screen.getByText("Speak the word")).not.toBeNull();
+    expect(screen.getByText("Trace a sigil")).not.toBeNull();
+    expect(screen.getByLabelText("Verbal").textContent).toBe("V");
+    expect(screen.getByLabelText("Somatic").textContent).toBe("S");
     expect(screen.getByText("A ruby (100 gp, consumed)")).not.toBeNull();
   });
 

@@ -8,7 +8,7 @@ import {
 import { BlockList } from "@/markdown/render.tsx";
 import { renderToStaticMarkup } from "react-dom/server";
 
-const markers = { verbal: "ⓥ", somatic: "ⓢ" };
+const markers = { verbal: "V", somatic: "S" };
 
 function textOf(blocks: readonly BlockNode[]): string {
   return JSON.stringify(blocks);
@@ -100,8 +100,9 @@ describe("component description blocks", () => {
     const joined = textOf(blocks);
     expect(joined.indexOf("Scales up")).toBeLessThan(joined.indexOf("Speak the word"));
     expect(joined.indexOf("Speak the word")).toBeLessThan(joined.indexOf("Trace a sigil"));
-    expect(joined).toContain("ⓥ Speak the word");
-    expect(joined).toContain("ⓢ Trace a sigil");
+    expect(joined).toContain('"type":"component"');
+    expect(joined).toContain('"component":"verbal","value":"V"');
+    expect(joined).toContain('"component":"somatic","value":"S"');
   });
 
   it("omits blocks for disabled or empty components", () => {
@@ -137,6 +138,30 @@ describe("component description blocks", () => {
       markers,
     );
     expect(blocks).toHaveLength(1);
-    expect(blocks[0].children).toEqual([{ type: "text", value: "ⓥ **bold** stays literal" }]);
+    expect(blocks[0].children).toEqual([
+      { type: "component", component: "verbal", value: "V" },
+      { type: "text", value: " **bold** stays literal" },
+    ]);
+  });
+
+  it("renders component markers with localized accessible labels", () => {
+    const blocks = componentDescriptionBlocks(
+      {
+        components: {
+          verbal: true,
+          verbalDescription: "Speak",
+          somatic: true,
+          somaticDescription: "Trace",
+          material: false,
+        },
+      },
+      markers,
+    );
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain('class="component-marker"');
+    expect(markup).toContain('aria-label="Verbal"');
+    expect(markup).toContain('aria-label="Somatic"');
+    expect(markup).toContain(">V</span>");
+    expect(markup).toContain(">S</span>");
   });
 });
