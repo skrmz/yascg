@@ -138,6 +138,14 @@
   button.bg-secondary:not(:disabled):hover {
     background-color: color-mix(in oklch, var(--secondary), white 16%) !important;
   }
+
+  .header-app-title {
+    font-family: "Vollkorn";
+    font-variant-caps: small-caps;
+    font-weight: 600;
+    color: var(--color-foreground);
+    font-size: 1.1rem;
+  }
 }
 
 html,

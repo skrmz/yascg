@@ -312,8 +312,8 @@ export const de = {
     appliedOverrides: "{{count}} Überschreibungsdatensatz wird angewendet.",
     appliedOverrides_one: "{{count}} Überschreibungsdatensatz wird angewendet.",
     appliedOverrides_other: "{{count}} Überschreibungsdatensätze werden angewendet.",
-    commitCustom: "Import eigener Zauber übernehmen",
-    resetCustom: "Import eigener Zauber zurücksetzen",
+    commitCustom: "Import übernehmen",
+    resetCustom: "Import zurücksetzen",
     deckPlan:
       "{{count}} Eintrag{{name}}. Der Import ersetzt das aktive Deck und lässt gespeicherte Decks unberührt.",
     deckPlan_one:
@@ -358,6 +358,20 @@ export const de = {
     deckImportedDescription_other:
       "{{count}} doppelte Einträge aus dem importierten Deck entfernt.",
     deckImportedDefault: "Das aktive Deck wurde ersetzt.",
+    customImportSuccessTitle: "{{count}} Zauber importiert.",
+    customImportSuccessTitle_one: "{{count}} Zauber importiert.",
+    customImportSuccessTitle_other: "{{count}} Zauber importiert.",
+    customImportPartialTitle: "{{applied}} von {{count}} Zaubern importiert.",
+    customImportPartialTitle_one: "{{applied}} von {{count}} Zauber importiert.",
+    customImportPartialTitle_other: "{{applied}} von {{count}} Zaubern importiert.",
+    customOverrideSuccessTitle: "{{count}} SRD-Überschreibung importiert.",
+    customOverrideSuccessTitle_one: "{{count}} SRD-Überschreibung importiert.",
+    customOverrideSuccessTitle_other: "{{count}} SRD-Überschreibungen importiert.",
+    customImportNothingTitle: "Keine Zauber importiert.",
+    customImportSkippedDescription: "{{count}} vorhandener Zauber übersprungen.",
+    customImportSkippedDescription_one: "{{count}} vorhandener Zauber übersprungen.",
+    customImportSkippedDescription_other: "{{count}} vorhandene Zauber übersprungen.",
+    customImportFailedTitle: "Import eigener Zauber fehlgeschlagen",
     error: {
       fileTooLargeCustom: "Die Datei überschreitet das Importlimit von 5 MiB für eigene Zauber.",
       fileTooLargeDeck: "Die Datei überschreitet das Deck-Importlimit von 5 MiB.",

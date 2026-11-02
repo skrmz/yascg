@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { buildCustomSpellsPayload, customSpellsExportFilename, downloadJson } from "@/io/export.ts";
 import {
@@ -8,7 +9,12 @@ import {
   type CollisionStrategy,
   type CustomImportPlan,
 } from "@/io/import-custom.ts";
-import { message, toMessageDescriptor, type MessageDescriptor } from "@/locales/messages.ts";
+import {
+  message,
+  toMessageDescriptor,
+  translateMessage,
+  type MessageDescriptor,
+} from "@/locales/messages.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { NativeSelect } from "@/ui/Field.tsx";
@@ -156,9 +162,49 @@ export function CustomSpellImportExportDialog({
       setNotice({ tone: "ok", texts });
       setPlan(null);
       refreshAll();
+
+      const appliedSpells = counts.imported + counts.overwritten + counts.copied;
+      const totalSpells = plan.entries.length;
+      const hasDetails =
+        counts.overwritten > 0 ||
+        counts.copied > 0 ||
+        counts.skipped > 0 ||
+        counts.overrides > 0 ||
+        counts.remapped > 0;
+      const description = hasDetails
+        ? texts.map((text) => translateMessage(t, text)).join(" ")
+        : undefined;
+      if (appliedSpells > 0) {
+        toast.success(
+          appliedSpells < totalSpells
+            ? t("importExport.customImportPartialTitle", {
+                applied: appliedSpells,
+                count: totalSpells,
+              })
+            : t("importExport.customImportSuccessTitle", { count: appliedSpells }),
+          description ? { description } : undefined,
+        );
+      } else if (totalSpells === 0 && counts.overrides > 0) {
+        toast.success(t("importExport.customOverrideSuccessTitle", { count: counts.overrides }));
+      } else {
+        const details: string[] = [];
+        if (counts.skipped > 0) {
+          details.push(t("importExport.customImportSkippedDescription", { count: counts.skipped }));
+        }
+        if (counts.overrides > 0) {
+          details.push(t("importExport.customOverrideSuccessTitle", { count: counts.overrides }));
+        }
+        toast.info(t("importExport.customImportNothingTitle"), {
+          description: details.length > 0 ? details.join(" ") : undefined,
+        });
+      }
     } catch (error) {
       console.error("Failed to apply custom-spell import:", error);
-      setNotice({ tone: "error", texts: [toMessageDescriptor(error)] });
+      const descriptor = toMessageDescriptor(error);
+      toast.error(t("importExport.customImportFailedTitle"), {
+        description: translateMessage(t, descriptor),
+      });
+      setNotice({ tone: "error", texts: [descriptor] });
     }
   };
 
