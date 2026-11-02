@@ -6,6 +6,15 @@ export interface MarkdownInline {
   value: string;
 }
 
+/** Link, emitted only when anchor rendering is explicitly enabled. */
+export interface LinkInline {
+  type: "link";
+  href: string;
+  value: string;
+  /** Set when the Markdown link title is `download`, requesting a file download. */
+  download?: boolean;
+}
+
 /** Structured indicator for a component description; `value` is the localized letter. */
 export interface ComponentInline {
   type: "component";
@@ -13,7 +22,35 @@ export interface ComponentInline {
   value: string;
 }
 
-export type InlineNode = MarkdownInline | ComponentInline;
+export type InlineNode = MarkdownInline | LinkInline | ComponentInline;
+
+export interface ParseMarkdownOptions {
+  /** `"text"` renders links as plain text; `"anchor"` allows safe external links. */
+  links?: "text" | "anchor";
+}
+
+const SAFE_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
+const SAME_ORIGIN_BASE = "https://same-origin.invalid";
+
+function safeHref(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const href = value.trim();
+  if (href === "") return null;
+  if (href.startsWith("/")) {
+    try {
+      const url = new URL(href, SAME_ORIGIN_BASE);
+      return url.origin === SAME_ORIGIN_BASE ? href : null;
+    } catch {
+      return null;
+    }
+  }
+  try {
+    const url = new URL(href);
+    return SAFE_LINK_PROTOCOLS.has(url.protocol) ? href : null;
+  } catch {
+    return null;
+  }
+}
 
 export type TextInline = Extract<InlineNode, { type: "text" } | { type: "code" }>;
 export type ContainerInline = Extract<InlineNode, { type: "strong" } | { type: "em" }>;
@@ -93,23 +130,43 @@ function plainText(token: Token): string {
 }
 
 /** Converts inline markdown tokens into a safe, allowlisted inline AST. */
-export function parseInline(tokens: readonly Token[] | undefined): InlineNode[] {
+export function parseInline(
+  tokens: readonly Token[] | undefined,
+  options: ParseMarkdownOptions = {},
+): InlineNode[] {
   if (!tokens) return [];
   const nodes: InlineNode[] = [];
   for (const token of tokens) {
     switch (token.type) {
       case "strong":
-        nodes.push(...wrapInlines("strong", parseInline(tokenChildren(token))));
+        nodes.push(...wrapInlines("strong", parseInline(tokenChildren(token), options)));
         break;
       case "em":
-        nodes.push(...wrapInlines("em", parseInline(tokenChildren(token))));
+        nodes.push(...wrapInlines("em", parseInline(tokenChildren(token), options)));
         break;
       case "codespan":
         nodes.push({ type: "code", value: plainText(token) });
         break;
+      case "link": {
+        const href =
+          options.links === "anchor" ? safeHref((token as { href?: unknown }).href) : null;
+        if (href) {
+          const title = (token as { title?: unknown }).title;
+          nodes.push({
+            type: "link",
+            href,
+            value: plainText(token),
+            ...(typeof title === "string" && title.toLowerCase() === "download"
+              ? { download: true }
+              : {}),
+          });
+        } else {
+          nodes.push(...parseInline(tokenChildren(token), options));
+        }
+        break;
+      }
       case "del":
-      case "link":
-        nodes.push(...parseInline(tokenChildren(token)));
+        nodes.push(...parseInline(tokenChildren(token), options));
         break;
       case "image":
         nodes.push({ type: "text", value: plainText(token) });
@@ -123,11 +180,11 @@ export function parseInline(tokens: readonly Token[] | undefined): InlineNode[] 
       case "autolink":
       case "html":
         if (token.type === "html") break;
-        nodes.push(...inlineFromTextToken(token));
+        nodes.push(...inlineFromTextToken(token, options));
         break;
       default:
         if (tokenChildren(token).length > 0) {
-          nodes.push(...parseInline(tokenChildren(token)));
+          nodes.push(...parseInline(tokenChildren(token), options));
         } else {
           nodes.push({ type: "text", value: plainText(token) });
         }
@@ -136,9 +193,9 @@ export function parseInline(tokens: readonly Token[] | undefined): InlineNode[] 
   return nodes;
 }
 
-function inlineFromTextToken(token: Token): InlineNode[] {
+function inlineFromTextToken(token: Token, options: ParseMarkdownOptions): InlineNode[] {
   const children = tokenChildren(token);
-  if (children.length > 0) return parseInline(children);
+  if (children.length > 0) return parseInline(children, options);
   return [{ type: "text", value: plainText(token) }];
 }
 
@@ -146,7 +203,7 @@ function wrapInlines(kind: "strong" | "em", nodes: readonly InlineNode[]): Inlin
   return nodes.map((node) => ({ type: kind, value: node.value }));
 }
 
-function parseBlocks(tokens: readonly Token[]): BlockNode[] {
+function parseBlocks(tokens: readonly Token[], options: ParseMarkdownOptions): BlockNode[] {
   const blocks: BlockNode[] = [];
   for (const token of tokens) {
     switch (token.type) {
@@ -156,14 +213,14 @@ function parseBlocks(tokens: readonly Token[]): BlockNode[] {
         blocks.push({
           type: "heading",
           depth: (token as { depth?: number }).depth ?? 1,
-          children: parseInline(tokenChildren(token)),
+          children: parseInline(tokenChildren(token), options),
         });
         break;
       case "paragraph":
-        blocks.push({ type: "paragraph", children: parseInline(tokenChildren(token)) });
+        blocks.push({ type: "paragraph", children: parseInline(tokenChildren(token), options) });
         break;
       case "text":
-        blocks.push({ type: "paragraph", children: parseInline(tokenChildren(token)) });
+        blocks.push({ type: "paragraph", children: parseInline(tokenChildren(token), options) });
         break;
       case "code":
         blocks.push({ type: "code", value: (token as { text?: string }).text ?? "" });
@@ -172,17 +229,17 @@ function parseBlocks(tokens: readonly Token[]): BlockNode[] {
         blocks.push({ type: "hr" });
         break;
       case "blockquote":
-        blocks.push({ type: "blockquote", children: parseBlocks(tokenChildren(token)) });
+        blocks.push({ type: "blockquote", children: parseBlocks(tokenChildren(token), options) });
         break;
       case "list":
-        blocks.push(parseList(token));
+        blocks.push(parseList(token, options));
         break;
       case "table":
-        blocks.push(parseTable(token));
+        blocks.push(parseTable(token, options));
         break;
       default:
         if (tokenChildren(token).length > 0) {
-          blocks.push(...parseBlocks(tokenChildren(token)));
+          blocks.push(...parseBlocks(tokenChildren(token), options));
         }
         break;
     }
@@ -190,7 +247,7 @@ function parseBlocks(tokens: readonly Token[]): BlockNode[] {
   return blocks;
 }
 
-function parseList(token: Token): ListBlock {
+function parseList(token: Token, options: ParseMarkdownOptions): ListBlock {
   const listToken = token as { ordered?: boolean; start?: number; items?: Token[] };
   const items = Array.isArray(listToken.items) ? listToken.items : [];
   const parsed: InlineNode[][] = [];
@@ -202,11 +259,11 @@ function parseList(token: Token): ListBlock {
     const itemSublists: ListBlock[] = [];
     for (const inner of itemTokens) {
       if (inner.type === "list") {
-        itemSublists.push(parseList(inner));
+        itemSublists.push(parseList(inner, options));
         continue;
       }
       if (inner.type === "paragraph" || inner.type === "text") {
-        inline.push(...parseInline(tokenChildren(inner)));
+        inline.push(...parseInline(tokenChildren(inner), options));
       } else if (inner.type === "code") {
         inline.push({ type: "code", value: (inner as { text?: string }).text ?? "" });
       }
@@ -227,21 +284,23 @@ function parseList(token: Token): ListBlock {
   };
 }
 
-function parseTable(token: Token): TableBlock {
+function parseTable(token: Token, options: ParseMarkdownOptions): TableBlock {
   const tableToken = token as {
     header?: Array<{ tokens?: Token[] }>;
     rows?: Array<Array<{ tokens?: Token[] }>>;
   };
-  const header = (tableToken.header ?? []).map((cell) => parseInline(cell.tokens));
-  const rows = (tableToken.rows ?? []).map((row) => row.map((cell) => parseInline(cell.tokens)));
+  const header = (tableToken.header ?? []).map((cell) => parseInline(cell.tokens, options));
+  const rows = (tableToken.rows ?? []).map((row) =>
+    row.map((cell) => parseInline(cell.tokens, options)),
+  );
   return { type: "table", header, rows };
 }
 
-/** Parses untrusted Markdown into a safe AST. Raw HTML is dropped and links are text. */
-export function parseMarkdown(markdown: string): BlockNode[] {
+/** Parses untrusted Markdown into a safe AST. Raw HTML is dropped and links are text by default. */
+export function parseMarkdown(markdown: string, options: ParseMarkdownOptions = {}): BlockNode[] {
   if (markdown.trim() === "") return [];
   const tokens = marked.lexer(markdown, { gfm: true });
-  return parseBlocks(tokens);
+  return parseBlocks(tokens, options);
 }
 
 export const HIGHER_LEVELS_HEADING: HeadingBlock = {

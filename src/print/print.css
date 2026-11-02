@@ -596,6 +596,12 @@
   line-height: 1;
 }
 
+[role="dialog"] .component-marker {
+  top: -0.04in;
+  position: relative;
+  color: var(--compact-accent);
+}
+
 /*
  * Alegreya Sans centers its line box on ascender/descender metrics. Uppercase
  * badge glyphs have no descender, so they render about 0.11em above the
@@ -1002,6 +1008,34 @@
   border: 0;
   border-top: 1px solid var(--border);
   margin: 0.75rem 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Custom-spells guide dialog                                         */
+/* ------------------------------------------------------------------ */
+
+.guide-markdown {
+  color: var(--muted-foreground);
+}
+
+.guide-markdown .card-h {
+  color: var(--foreground);
+}
+
+.guide-markdown .card-h-level-1 {
+  font-size: 1.3rem;
+  color: var(--primary);
+}
+
+.guide-markdown .card-h-level-2 {
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.guide-markdown .card-h-sub,
+.guide-markdown .card-h-level-3 {
+  font-size: 1rem;
+  color: var(--primary);
 }
 
 /* ------------------------------------------------------------------ */

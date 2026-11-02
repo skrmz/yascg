@@ -1,0 +1,245 @@
+{
+  "type": "object",
+  "description": "Complete custom-spells import file.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Import file type discriminator.",
+      "enum": [
+        "custom-spells"
+      ]
+    },
+    "spells": {
+      "type": "array",
+      "description": "Array of custom spell records; generate one spell unless asked otherwise.",
+      "items": {
+        "type": "object",
+        "description": "Custom spell record.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier; do not start with srd-."
+          },
+          "name": {
+            "type": "string",
+            "description": "Spell name."
+          },
+          "level": {
+            "type": "integer",
+            "description": "Spell level, 0 for cantrip.",
+            "minimum": 0,
+            "maximum": 9
+          },
+          "school": {
+            "type": "string",
+            "description": "Canonical spell school.",
+            "enum": [
+              "Abjuration",
+              "Conjuration",
+              "Divination",
+              "Enchantment",
+              "Evocation",
+              "Illusion",
+              "Necromancy",
+              "Transmutation"
+            ]
+          },
+          "castingTime": {
+            "type": "string",
+            "description": "Casting time as a readable string, e.g. 1 Action."
+          },
+          "range": {
+            "type": "string",
+            "description": "Range as a readable string, e.g. 60 feet."
+          },
+          "components": {
+            "type": "object",
+            "description": "Spell components. Include optional details only when relevant.",
+            "properties": {
+              "verbal": {
+                "type": "boolean",
+                "description": "Whether verbal components are required."
+              },
+              "somatic": {
+                "type": "boolean",
+                "description": "Whether somatic components are required."
+              },
+              "material": {
+                "type": "boolean",
+                "description": "Whether material components are required."
+              },
+              "verbalDescription": {
+                "type": "string",
+                "description": "Optional human-readable verbal component details."
+              },
+              "somaticDescription": {
+                "type": "string",
+                "description": "Optional human-readable somatic component details."
+              },
+              "materialDescription": {
+                "type": "string",
+                "description": "Optional material component description."
+              },
+              "materialCost": {
+                "type": "string",
+                "description": "Optional material cost, written as text."
+              },
+              "materialConsumed": {
+                "type": "boolean",
+                "description": "Whether the material is consumed."
+              },
+              "componentsDisplayOverride": {
+                "type": "string",
+                "description": "Optional display text overriding the generated component label."
+              }
+            },
+            "required": [
+              "verbal",
+              "somatic",
+              "material"
+            ]
+          },
+          "duration": {
+            "type": "string",
+            "description": "Duration as a readable string, e.g. Up to 1 minute."
+          },
+          "concentration": {
+            "type": "boolean",
+            "description": "Whether concentration is required."
+          },
+          "ritual": {
+            "type": "boolean",
+            "description": "Whether the spell is a ritual."
+          },
+          "classes": {
+            "type": "array",
+            "description": "Classes that can use the spell.",
+            "items": {
+              "type": "string",
+              "description": "Canonical class name.",
+              "enum": [
+                "Barbarian",
+                "Bard",
+                "Cleric",
+                "Druid",
+                "Fighter",
+                "Monk",
+                "Paladin",
+                "Ranger",
+                "Rogue",
+                "Sorcerer",
+                "Warlock",
+                "Wizard"
+              ]
+            }
+          },
+          "description": {
+            "type": "array",
+            "description": "Nonempty array of spell description paragraphs.",
+            "items": {
+              "type": "string",
+              "description": "One paragraph of spell rules text."
+            },
+            "minItems": 1
+          },
+          "source": {
+            "type": "string",
+            "description": "Required fixed source for user-created spells.",
+            "enum": [
+              "Custom"
+            ]
+          },
+          "subclasses": {
+            "type": "array",
+            "description": "Optional subclass labels.",
+            "items": {
+              "type": "string",
+              "description": "Subclass label, using app conventions."
+            }
+          },
+          "savingThrow": {
+            "type": "string",
+            "description": "Optional ability score used for saving throws.",
+            "enum": [
+              "STR",
+              "DEX",
+              "CON",
+              "INT",
+              "WIS",
+              "CHA"
+            ]
+          },
+          "damageTypes": {
+            "type": "array",
+            "description": "Optional damage types.",
+            "items": {
+              "type": "string",
+              "description": "Canonical lowercase damage type.",
+              "enum": [
+                "acid",
+                "bludgeoning",
+                "cold",
+                "fire",
+                "force",
+                "lightning",
+                "necrotic",
+                "piercing",
+                "poison",
+                "psychic",
+                "radiant",
+                "slashing",
+                "thunder"
+              ]
+            }
+          },
+          "higherLevels": {
+            "type": "array",
+            "description": "Optional higher-level casting paragraphs.",
+            "items": {
+              "type": "string",
+              "description": "One higher-level casting paragraph."
+            }
+          },
+          "sourceLabel": {
+            "type": "string",
+            "description": "Optional human-readable source label."
+          },
+          "updatedAt": {
+            "type": "integer",
+            "description": "Optional last-updated Unix timestamp in milliseconds."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "level",
+          "school",
+          "castingTime",
+          "range",
+          "components",
+          "duration",
+          "concentration",
+          "ritual",
+          "classes",
+          "description",
+          "source"
+        ]
+      },
+      "minItems": 1
+    },
+    "srdSpellOverrides": {
+      "type": "array",
+      "description": "Optional SRD override array. For generated custom spells, always emit an empty array.",
+      "items": {
+        "type": "string",
+        "description": "No entries are permitted; this array must remain empty."
+      },
+      "maxItems": 0
+    }
+  },
+  "required": [
+    "type",
+    "spells",
+    "srdSpellOverrides"
+  ]
+}

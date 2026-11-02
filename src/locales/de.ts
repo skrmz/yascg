@@ -55,6 +55,17 @@ export const de = {
     duplicate: "Duplizieren",
     delete: "Löschen",
   },
+  menu: {
+    triggerAria: "Menü öffnen",
+    aboutApp: "Über die App",
+    customSpellsGuide: "Leitfaden für eigene Zauber",
+  },
+  guide: {
+    title: "Leitfaden für eigene Zauber",
+    copyCode: "Code kopieren",
+    copied: "Kopiert",
+    copyFailed: "Kopieren fehlgeschlagen. Markiere den Text und kopiere ihn manuell.",
+  },
   language: {
     pickerTrigger: "Sprache der Zauber: {{language}}",
     pickerList: "Sprachen der Zauber",
@@ -371,8 +382,6 @@ export const de = {
     },
   },
   about: {
-    trigger: "Über die App",
-    triggerAria: "App-Info und Quellenangaben",
     title: "Über YASCG - Yet Another Spell Card Generator",
     description:
       "Ein offline-fähiger Generator für Zauberkarten für Dungeons & Dragons 5.5e (2024). Mitgelieferte Zauber beschränken sich auf das SRD 5.2.1. Eigene Zauber sind als Eigen gekennzeichnet; mitgelieferte Zauber als SRD 5.2.1.",

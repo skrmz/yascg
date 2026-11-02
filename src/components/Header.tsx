@@ -1,4 +1,4 @@
-import { AboutDialog } from "./AboutDialog.tsx";
+import { HeaderMenu } from "./HeaderMenu.tsx";
 import { LanguagePicker } from "./LanguagePicker.tsx";
 import { OfflineStatus } from "./OfflineStatus.tsx";
 
@@ -13,7 +13,7 @@ export function Header() {
       <div className="flex flex-wrap items-center gap-3">
         <OfflineStatus />
         <LanguagePicker />
-        <AboutDialog />
+        <HeaderMenu />
       </div>
     </header>
   );

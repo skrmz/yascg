@@ -33,6 +33,52 @@ describe("parseMarkdown safety", () => {
     expect(markup).not.toContain("example.com");
   });
 
+  it("renders safe external links when anchor mode is enabled", () => {
+    const blocks = parseMarkdown("[Click me](https://example.com/path)", { links: "anchor" });
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain('<a href="https://example.com/path"');
+    expect(markup).toContain('target="_blank"');
+    expect(markup).toContain('rel="noopener noreferrer"');
+    expect(markup).toContain("Click me");
+  });
+
+  it("keeps unsafe and cross-origin relative links as text in anchor mode", () => {
+    for (const target of ["javascript:alert(1)", "data:text/html,hello", "//evil.test"]) {
+      const blocks = parseMarkdown(`[Click me](${target})`, { links: "anchor" });
+      const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+      expect(markup).toContain("Click me");
+      expect(markup).not.toContain("href");
+      expect(markup).not.toContain("<a");
+    }
+  });
+
+  it("renders same-origin root-relative links in anchor mode", () => {
+    const blocks = parseMarkdown("[Click me](/asset.json)", { links: "anchor" });
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain('<a href="/asset.json"');
+    expect(markup).toContain("Click me");
+  });
+
+  it("requests a download when the link title is download", () => {
+    const blocks = parseMarkdown('[JSON Schema](/schema.json "download")', { links: "anchor" });
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain('<a href="/schema.json"');
+    expect(markup).toContain('download=""');
+    expect(markup).not.toContain('target="_blank"');
+  });
+
+  it("keeps spell description links as plain text after parsing", () => {
+    const blocks = parseSpellBody(
+      { description: ["Read [the source](https://example.com) for details."] },
+      "Higher Levels",
+      markers,
+    );
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain("Read the source for details.");
+    expect(markup).not.toContain("href");
+    expect(markup).not.toContain("<a");
+  });
+
   it("renders images as alt text without remote assets", () => {
     const blocks = parseMarkdown("![alt text](https://example.com/x.png)");
     const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);

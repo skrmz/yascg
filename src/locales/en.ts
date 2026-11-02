@@ -54,6 +54,17 @@ export const en = {
     duplicate: "Duplicate",
     delete: "Delete",
   },
+  menu: {
+    triggerAria: "Open menu",
+    aboutApp: "About App",
+    customSpellsGuide: "Custom Spells Guide",
+  },
+  guide: {
+    title: "Custom Spells Guide",
+    copyCode: "Copy code",
+    copied: "Copied",
+    copyFailed: "Copy failed. Select the text and copy it manually.",
+  },
   language: {
     pickerTrigger: "Spell data language: {{language}}",
     pickerList: "Spell data languages",
@@ -363,8 +374,6 @@ export const en = {
     },
   },
   about: {
-    trigger: "About",
-    triggerAria: "About and attribution",
     title: "About YASCG - Yet Another Spell Card Generator",
     description:
       "An offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards. Bundled spells are limited to the SRD 5.2.1. Custom spells are labeled Custom; bundled spells are labeled SRD 5.2.1.",

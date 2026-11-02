@@ -57,7 +57,7 @@ test("a persisted German preference initializes the document and full chrome in 
   await expect(page.locator("html")).toHaveAttribute("lang", "de");
   await expect(page.getByRole("region", { name: "Zauberbibliothek" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Sprache der Zauber/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: "App-Info und Quellenangaben" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Menü öffnen" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Drucken" })).toBeVisible();
   await expect(page.getByText("339 Ergebnisse")).toBeVisible();
 });
@@ -67,10 +67,21 @@ test("German localizes about, import/export and print dialogs", async ({ page })
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Zauberbibliothek" })).toBeVisible();
 
-  await page.getByRole("button", { name: "App-Info und Quellenangaben" }).click();
+  await page.getByRole("button", { name: "Menü öffnen" }).click();
+  await page.getByRole("menuitem", { name: "Über die App" }).click();
   const about = page.getByRole("dialog", { name: /Über YASCG/ });
   await expect(about.getByText(/Diese Anwendung steht in keiner Verbindung/)).toBeVisible();
   await about.getByRole("button", { name: "Schließen" }).click();
+
+  await page.getByRole("button", { name: "Menü öffnen" }).click();
+  await page.getByRole("menuitem", { name: "Leitfaden für eigene Zauber" }).click();
+  const guide = page.getByRole("dialog", { name: "Leitfaden für eigene Zauber" });
+  await expect(
+    guide.getByRole("heading", { name: "Leitfaden für eigene Zauber", level: 3 }),
+  ).toBeVisible();
+  await expect(guide.getByRole("button", { name: "Code kopieren" }).first()).toBeVisible();
+  await expect(guide.locator("pre").filter({ hasText: '"type": "custom-spells"' })).toBeVisible();
+  await guide.getByRole("button", { name: "Schließen" }).click();
 
   await page.getByLabel("Zauber suchen").fill("Feuerball");
   await page

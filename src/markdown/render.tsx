@@ -39,6 +39,19 @@ function renderInline(nodes: readonly InlineNode[], keyPrefix: string): ReactNod
         return <em key={key}>{node.value}</em>;
       case "code":
         return <code key={key}>{node.value}</code>;
+      case "link":
+        return (
+          <a
+            key={key}
+            href={node.href}
+            target={node.download ? undefined : "_blank"}
+            rel="noopener noreferrer"
+            download={node.download ? "" : undefined}
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            {node.value}
+          </a>
+        );
       case "component":
         return <ComponentMarker key={key} component={node.component} letter={node.value} />;
       default:
@@ -51,7 +64,11 @@ export function Inline({ nodes }: { nodes: readonly InlineNode[] }) {
   return <>{renderInline(nodes, "i")}</>;
 }
 
-function renderList(block: ListBlock, keyPrefix: string): ReactNode {
+function renderList(
+  block: ListBlock,
+  keyPrefix: string,
+  renderCode?: (value: string, key: string) => ReactNode,
+): ReactNode {
   const items = block.items.map((item, index) => {
     const nested = block.sublists?.[index] ?? [];
     return (
@@ -62,6 +79,7 @@ function renderList(block: ListBlock, keyPrefix: string): ReactNode {
             key={`${keyPrefix}-nested-${index}-${childIndex}`}
             block={child}
             keyPrefix={`${keyPrefix}-nested-${index}-${childIndex}`}
+            renderCode={renderCode}
           />
         ))}
       </li>
@@ -77,7 +95,15 @@ function renderList(block: ListBlock, keyPrefix: string): ReactNode {
   );
 }
 
-export function Block({ block, keyPrefix }: { block: BlockNode; keyPrefix: string }) {
+export function Block({
+  block,
+  keyPrefix,
+  renderCode,
+}: {
+  block: BlockNode;
+  keyPrefix: string;
+  renderCode?: (value: string, key: string) => ReactNode;
+}) {
   switch (block.type) {
     case "heading": {
       const content = renderInline(block.children, `${keyPrefix}-h`);
@@ -90,7 +116,7 @@ export function Block({ block, keyPrefix }: { block: BlockNode; keyPrefix: strin
     case "paragraph":
       return <p className="card-p">{renderInline(block.children, `${keyPrefix}-p`)}</p>;
     case "list":
-      return renderList(block, keyPrefix);
+      return renderList(block, keyPrefix, renderCode);
     case "blockquote":
       return (
         <blockquote className="card-blockquote">
@@ -99,6 +125,7 @@ export function Block({ block, keyPrefix }: { block: BlockNode; keyPrefix: strin
               key={`${keyPrefix}-quote-${index}`}
               block={child}
               keyPrefix={`${keyPrefix}-quote-${index}`}
+              renderCode={renderCode}
             />
           ))}
         </blockquote>
@@ -129,7 +156,11 @@ export function Block({ block, keyPrefix }: { block: BlockNode; keyPrefix: strin
         </table>
       );
     case "code":
-      return <pre className="card-pre">{block.value}</pre>;
+      return renderCode ? (
+        renderCode(block.value, `${keyPrefix}-code`)
+      ) : (
+        <pre className="card-pre">{block.value}</pre>
+      );
     case "hr":
       return <hr className="card-hr" />;
     default:
@@ -137,11 +168,17 @@ export function Block({ block, keyPrefix }: { block: BlockNode; keyPrefix: strin
   }
 }
 
-export function BlockList({ blocks }: { blocks: readonly BlockNode[] }) {
+export function BlockList({
+  blocks,
+  renderCode,
+}: {
+  blocks: readonly BlockNode[];
+  renderCode?: (value: string, key: string) => ReactNode;
+}) {
   return (
     <>
       {blocks.map((block, index) => (
-        <Block key={`b-${index}`} block={block} keyPrefix={`b-${index}`} />
+        <Block key={`b-${index}`} block={block} keyPrefix={`b-${index}`} renderCode={renderCode} />
       ))}
     </>
   );
