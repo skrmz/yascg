@@ -12,7 +12,7 @@ This guide shows how to define custom spells in JSON and import them into Yet An
 2. In the **Library** pane, choose **Custom spell import/export** next to **Create custom spell**.
 3. Choose **Import custom spells…** and select a `.json` file (maximum **5 MiB**).
 4. Review the validation summary. Existing spells with the same `id` are reported as collisions — including a different-language version of the same spell, because custom spells have no language dimension. Choose **Skip**, **Keep both**, or **Overwrite existing**.
-5. Choose **Commit custom-spell import**. Imported spells appear in the library with the **Custom** source badge and can then be added to a deck.
+5. Choose **Commit import**. Imported spells appear in the library with the **Custom** source badge and can then be added to a deck.
 
 Importing only adds spells to the library. It does not modify or fill the active deck. The import is atomic: if any record is invalid, nothing is written.
 

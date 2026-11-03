@@ -6,16 +6,16 @@ and printing settings, see the [README](../README.md).
 
 ## Documentation map
 
-| Document | Owns |
-| --- | --- |
-| [README](../README.md) | Product overview, quick start, user help, printing settings, backup guidance, attribution |
-| [Product specification](specs/MAIN-spec.md) | Current behavioral contract and verification matrix |
-| **This guide** | Contributor setup, commands, module map, implementation details, debugging, tests |
-| [SRD data pipeline](srd-data-pipeline.md) | Raw source shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection |
-| [Cloudflare deployment guide](cloudflare-deployment-guide.md) | Workers Static Assets configuration, Workers Builds, deployment operations, `compatibility_date` |
-| [Custom spell import guide](custom-spell-import-guide.md) | Custom-spell JSON format, examples, collisions, SRD override import/export |
-| [Official subclass catalog](subclasses.md) | Canonical official 2024 subclass list |
-| [AGENTS.md](../AGENTS.md) | Agent/contributor workflow, tests to run, review checklist, documentation ownership |
+| Document                                                      | Owns                                                                                                                      |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| [README](../README.md)                                        | Product overview, quick start, user help, printing settings, backup guidance, attribution                                 |
+| [Product specification](specs/MAIN-spec.md)                   | Current behavioral contract and verification matrix                                                                       |
+| **This guide**                                                | Contributor setup, commands, module map, implementation details, debugging, tests                                         |
+| [SRD data pipeline](srd-data-pipeline.md)                     | Raw source shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection |
+| [Cloudflare deployment guide](cloudflare-deployment-guide.md) | Workers Static Assets configuration, Workers Builds, deployment operations, `compatibility_date`                          |
+| [Custom spell import guide](custom-spell-import-guide.md)     | Custom-spell JSON format, examples, collisions, SRD override import/export                                                |
+| [Official subclass catalog](subclasses.md)                    | Canonical official 2024 subclass list                                                                                     |
+| [AGENTS.md](../AGENTS.md)                                     | Agent/contributor workflow, tests to run, review checklist, documentation ownership                                       |
 
 ## Toolchain and commands
 
@@ -25,23 +25,93 @@ developed on Node.js 26 LTS. `vp <name>` runs a built-in command, while `vp run 
 `package.json` script or a `vite.config.ts` task; scripts cannot overwrite built-ins. Check
 `package.json` and `vite.config.ts` before adding or invoking a command.
 
-| Command | Purpose |
-| ------------------------------------------------------------ | ------------------------------------------------- |
-| `pnpm install` (or `vp install`) | Install dependencies. |
-| `pnpm run normalize:srd` | Normalize `data/srd/` into the committed `src/data/` artifacts. |
-| `pnpm run dev` (`vp dev`) | Start the development server in the local Workers runtime. |
-| `pnpm run check` (`vp check`) | Format, lint, and type-check. |
-| `pnpm run test` (`vp test`) | Run unit and integration tests. |
-| `pnpm run build` | Run `normalize:srd`, then `vp build`. |
-| `pnpm run preview` (`vp preview`) | Preview the production build in the local Workers runtime. |
-| `pnpm run deploy` | Build, then `wrangler deploy` to Cloudflare Workers. |
-| `pnpm exec wrangler deploy --dry-run` | Validate the Wrangler configuration and build output without uploading. |
-| `pnpm exec playwright install chromium` | Install the Chromium browser for E2E tests. |
-| `pnpm run test:e2e` | Run the Playwright end-to-end tests. |
+| Command                                 | Purpose                                                                 |
+| --------------------------------------- | ----------------------------------------------------------------------- |
+| `pnpm install` (or `vp install`)        | Install dependencies.                                                   |
+| `pnpm run normalize:srd`                | Normalize `data/srd/` into the committed `src/data/` artifacts.         |
+| `pnpm run dev` (`vp dev`)               | Start the development server in the local Workers runtime.              |
+| `pnpm run check` (`vp check`)           | Format, lint, and type-check.                                           |
+| `pnpm run test` (`vp test`)             | Run unit and integration tests.                                         |
+| `pnpm run build`                        | Run `normalize:srd`, then `vp build`.                                   |
+| `pnpm run preview` (`vp preview`)       | Preview the production build in the local Workers runtime.              |
+| `pnpm run deploy`                       | Build, then `wrangler deploy` to Cloudflare Workers.                    |
+| `pnpm exec wrangler deploy --dry-run`   | Validate the Wrangler configuration and build output without uploading. |
+| `pnpm exec playwright install chromium` | Install the Chromium browser for E2E tests.                             |
+| `pnpm run test:e2e`                     | Run the Playwright end-to-end tests.                                    |
 
 Run `vp check` and `vp test` after relevant changes. Changing data processing or application
 behavior also requires normalization and the affected E2E tests. The complete review checklist
 is maintained in [AGENTS.md](../AGENTS.md).
+
+### Version and build metadata
+
+`package.json` is the sole application version source. Follow SemVer and use matching `vX.Y.Z`
+annotated Git tags and GitHub Releases for explicit releases. `vite.config.ts` injects
+`__APP_VERSION__` (the `package.json` version) and `__APP_COMMIT__` (the build commit) at build
+time; `AboutDialog` displays both. The values are not runtime-editable or localized.
+
+The commit is resolved in this priority order, using the first available value and truncating it
+to seven characters: Workers Builds (`WORKERS_CI_COMMIT_SHA`), Pages (`CF_PAGES_COMMIT_SHA`),
+GitHub Actions (`GITHUB_SHA`), other CI (`CI_COMMIT_SHA`), local Git (`git rev-parse HEAD`), then
+`unknown`. Missing metadata never fails a build.
+
+A normal commit or push does not bump the application version, so multiple deployments can
+legitimately show the same SemVer version with different commits. The deployment trigger is a
+push to the configured Cloudflare **production branch**. A pushed tag does not automatically deploy that tagged commit.
+
+`pnpm version ... --no-git-tag-version` changes the version without automatically creating a Git
+commit or tag. pnpm 12.11.2 is the project's version; Do not
+set a permanent `gitTagVersion: false` unless explicitly desired.
+
+**Release workflow (example: bump from `1.1.0` to `1.2.0`):**
+
+1. From a clean, up-to-date release branch, run the appropriate SemVer bump:
+
+   ```bash
+   pnpm version minor --no-git-tag-version
+   ```
+
+   Use `patch` or `major` instead when appropriate. Replace `1.2.0` in subsequent commands with
+   the actual version.
+
+2. Validate the resulting release candidate:
+
+   ```bash
+   pnpm run check
+   pnpm run test
+   pnpm run build
+   ```
+
+3. Commit the version change, including the lockfile **if modified**:
+
+   ```bash
+   git add package.json
+   git add pnpm-lock.yaml # only if it was modified
+   git commit -m "chore(release): v1.2.0"
+   ```
+
+4. Create an **annotated** tag on the release commit and push both the production branch and the
+   tag:
+
+   ```bash
+   git tag -a v1.2.0 -m "Release v1.2.0"
+   git push origin main
+   git push origin v1.2.0
+   ```
+
+   These explicit push commands work for the tag created above. `git push --follow-tags` is an
+   optional alternative for pushing annotated tags reachable from the pushed commits, but it does
+   not push lightweight tags; do not substitute a lightweight `git tag v1.2.0` with
+   `--follow-tags`.
+
+5. Verify that Cloudflare Workers Builds successfully deployed the **release commit** from the
+   production-branch push. Then create/publish the GitHub Release for `v1.2.0` with release
+   notes. The tag serves as a release reference; it is not a separate Cloudflare deployment
+   trigger.
+
+**Note:** If the repository uses a protected production branch and pull requests, apply the
+release bump through the normal merge process, then create the annotated tag on the actual merged
+commit that Cloudflare deployed. Do not tag a pre-merge commit if the merge changes its SHA.
 
 Generated datasets under `src/data/` are committed build artifacts. Vite serves `src/data/` as
 its `publicDir`; do not hand-edit generated SRD datasets or bypass normalization validation.

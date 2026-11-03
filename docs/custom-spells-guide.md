@@ -16,7 +16,7 @@ The in-app form does not expose `subclasses`, `savingThrow`, `damageTypes`, or `
 2. Choose **Import custom spells…** and select a `.json` file no larger than 5 MiB.
 3. Wait until the spell library and SRD validation data have finished loading.
 4. Review the validation summary. If an imported `id` already exists, choose **Skip**, **Keep both**, or **Overwrite existing**.
-5. Choose **Commit custom-spell import**.
+5. Choose **Commit import**.
 
 Import is atomic: one invalid record rejects the whole file, so nothing is written. Import never changes the active deck.
 

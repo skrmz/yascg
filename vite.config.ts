@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite-plus";
 import react from "@vitejs/plugin-react";
@@ -5,7 +7,44 @@ import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { VitePWA } from "vite-plugin-pwa";
 
+interface PackageJson {
+  version: string;
+}
+
+const packageJson = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
+) as PackageJson;
+
+function commitFromEnvironment(): string | undefined {
+  for (const name of [
+    "WORKERS_CI_COMMIT_SHA",
+    "CF_PAGES_COMMIT_SHA",
+    "GITHUB_SHA",
+    "CI_COMMIT_SHA",
+  ]) {
+    const value = process.env[name]?.trim();
+    if (value) return value.slice(0, 7);
+  }
+  return undefined;
+}
+
+function commitFromRepository(): string | undefined {
+  try {
+    const value = execFileSync("git", ["rev-parse", "HEAD"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    return value ? value.slice(0, 7) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export default defineConfig(({ mode }) => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+    __APP_COMMIT__: JSON.stringify(commitFromEnvironment() ?? commitFromRepository() ?? "unknown"),
+  },
   staged: {
     "*": "vp check --fix",
   },

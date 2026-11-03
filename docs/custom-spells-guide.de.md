@@ -16,7 +16,7 @@ Das Formular bietet keine Felder für `subclasses`, `savingThrow`, `damageTypes`
 2. Wähle **Eigene Zauber importieren…** und eine `.json`-Datei mit höchstens 5 MiB.
 3. Warte, bis die Zauberbibliothek und die SRD-Validierungsdaten fertig geladen sind.
 4. Prüfe die Validierungszusammenfassung. Wenn eine importierte `id` bereits existiert, wähle **Überspringen**, **Beide behalten** oder **Vorhandenes überschreiben**.
-5. Wähle **Import eigener Zauber übernehmen**.
+5. Wähle **Import übernehmen**.
 
 Der Import ist atomar: Ein ungültiger Datensatz verwirft die gesamte Datei, sodass nichts geschrieben wird. Der Import verändert niemals das aktive Deck.
 
