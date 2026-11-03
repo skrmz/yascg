@@ -10,6 +10,8 @@
     "preview": "vp preview",
     "deploy": "pnpm run build && wrangler deploy",
     "test": "vp test",
+    "test:quiet": "vp test --reporter=dot --silent=passed-only",
+    "test:agent": "vp test --reporter=agent --silent=passed-only",
     "check": "vp check",
     "test:e2e": "playwright test"
   },

@@ -11,6 +11,7 @@ interface GuideCase {
   locale: "en" | "de";
   file: string;
   name: string;
+  level: number;
   castingTime: string;
   range: string;
   duration: string;
@@ -23,21 +24,23 @@ const GUIDES: GuideCase[] = [
     locale: "en",
     file: "docs/custom-spells-guide.md",
     name: "The Funniest Joke in the World",
+    level: 6,
     castingTime: "1 Action",
     range: "60 feet",
-    duration: "Up to 1 minute",
-    sourceLabel: "Custom (Playtest)",
-    descriptionSnippet: "You tell a joke so absurd",
+    duration: "up to 1 minute",
+    sourceLabel: "Custom",
+    descriptionSnippet: "You tell a joke so devastatingly absurd",
   },
   {
     locale: "de",
     file: "docs/custom-spells-guide.de.md",
     name: "Der tödlichste Witz der Welt",
+    level: 6,
     castingTime: "1 Aktion",
     range: "18 Meter",
-    duration: "Bis zu 1 Minute",
-    sourceLabel: "Eigen (Playtest)",
-    descriptionSnippet: "Du erzählst einen so absurden Witz",
+    duration: "bis zu 1 Minute",
+    sourceLabel: "Eigen",
+    descriptionSnippet: "Du erzählst einen so unfassbar absurden Witz",
   },
 ];
 
@@ -83,7 +86,7 @@ describe("custom-spells guide examples", () => {
       const record = entry.record;
       expect(record).toMatchObject({
         name: guide.name,
-        level: 3,
+        level: guide.level,
         school: "Enchantment",
         castingTime: guide.castingTime,
         range: guide.range,
@@ -91,7 +94,7 @@ describe("custom-spells guide examples", () => {
         concentration: true,
         ritual: true,
         classes: ["Bard", "Sorcerer", "Warlock"],
-        subclasses: ["Bard: College of Lore", "Sorcerer: Draconic Sorcery"],
+        subclasses: ["Bard: College of Lore"],
         savingThrow: "WIS",
         damageTypes: ["psychic"],
         source: "Custom",

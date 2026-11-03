@@ -131,7 +131,7 @@ describe("CustomSpellImportExportDialog pending import handling", () => {
   it("resets the pending import from inside the dialog", async () => {
     const user = await openAndAnalyzeCustomFile();
 
-    await user.click(screen.getByRole("button", { name: "Reset custom import" }));
+    await user.click(screen.getByRole("button", { name: "Reset import" }));
 
     expect(
       screen.queryByText("1 spell record will be applied. 0 override records will be applied."),
@@ -144,7 +144,7 @@ describe("CustomSpellImportExportDialog pending import handling", () => {
 });
 
 describe("CustomSpellImportExportDialog commit feedback", () => {
-  const commit = () => screen.getByRole("button", { name: "Commit custom-spell import" });
+  const commit = () => screen.getByRole("button", { name: "Commit import" });
 
   it("shows a success toast with the number of imported spells", async () => {
     importCustomMock.applyCustomImport.mockResolvedValue({
