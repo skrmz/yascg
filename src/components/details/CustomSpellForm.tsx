@@ -15,6 +15,12 @@ import {
   type SpellSchool,
 } from "@/domain/spells";
 import { classKey, schoolKey } from "@/locales/labels.ts";
+import { abbreviationCatalog } from "@/locales/abbreviations.ts";
+import {
+  transformAbbreviationText,
+  type AbbreviationTextMode,
+  type SkippedAbbreviation,
+} from "@/locales/abbreviation-transform.ts";
 import { message, translateMessage, type MessageDescriptor } from "@/locales/messages.ts";
 import { classSummary } from "@/cards/Card.tsx";
 import { Button } from "@/ui/Button.tsx";
@@ -54,6 +60,40 @@ interface DraftState {
   description: string;
   higherLevels: string;
 }
+
+type AbbreviationField =
+  | "description"
+  | "higherLevels"
+  | "castingTime"
+  | "range"
+  | "duration"
+  | "verbalDescription"
+  | "somaticDescription"
+  | "materialDescription"
+  | "materialCost";
+
+const ABBREVIATION_FIELDS: ReadonlyArray<{
+  key: AbbreviationField;
+  mode: AbbreviationTextMode;
+}> = [
+  { key: "description", mode: "markdown" },
+  { key: "higherLevels", mode: "markdown" },
+  { key: "castingTime", mode: "plain" },
+  { key: "range", mode: "plain" },
+  { key: "duration", mode: "plain" },
+  { key: "verbalDescription", mode: "plain" },
+  { key: "somaticDescription", mode: "plain" },
+  { key: "materialDescription", mode: "plain" },
+  { key: "materialCost", mode: "plain" },
+];
+
+type AbbreviationStatus =
+  | { kind: "success"; count: number }
+  | { kind: "noMatches" }
+  | { kind: "unavailable" }
+  | { kind: "undone" };
+
+type UndoSnapshot = Partial<DraftState>;
 
 function toDraft(spell: Spell): DraftState {
   return {
@@ -154,10 +194,14 @@ export function CustomSpellForm({
   );
   const [draft, setDraft] = useState<DraftState>(() => toDraft(base));
   const [errors, setErrors] = useState<Record<string, MessageDescriptor>>({});
+  const [undoStack, setUndoStack] = useState<UndoSnapshot[]>([]);
+  const [abbreviationStatus, setAbbreviationStatus] = useState<AbbreviationStatus | null>(null);
   const errorText = (field: string): string | undefined =>
     errors[field] ? translateMessage(t, errors[field]) : undefined;
 
   useEffect(() => {
+    setUndoStack([]);
+    setAbbreviationStatus(null);
     if (!open) return;
     const nextLanguage = languageRef.current;
     setSession({ language: nextLanguage, spellId: spell?.id });
@@ -168,6 +212,57 @@ export function CustomSpellForm({
   const update = <K extends keyof DraftState>(key: K, value: DraftState[K]) => {
     setDraft((previous) => ({ ...previous, [key]: value }));
   };
+
+  const onAbbreviate = () => {
+    const locale = session.language;
+    if (!abbreviationCatalog(locale)) {
+      setAbbreviationStatus({ kind: "unavailable" });
+      return;
+    }
+
+    const changedValues: Partial<DraftState> = {};
+    const snapshot: UndoSnapshot = {};
+    const skipped: SkippedAbbreviation[] = [];
+    let changedFields = 0;
+    let appliedCount = 0;
+
+    for (const { key, mode } of ABBREVIATION_FIELDS) {
+      const result = transformAbbreviationText(draft[key], { locale, mode });
+      skipped.push(...result.skipped);
+      if (!result.changed) continue;
+      changedValues[key] = result.text;
+      snapshot[key] = draft[key];
+      changedFields += 1;
+      appliedCount += result.applied.reduce((total, entry) => total + entry.count, 0);
+    }
+
+    if (changedFields === 0) {
+      setAbbreviationStatus({ kind: "noMatches" });
+      return;
+    }
+
+    setDraft((previous) => ({ ...previous, ...changedValues }));
+    setUndoStack((previous) => [...previous, snapshot]);
+    setAbbreviationStatus({ kind: "success", count: appliedCount });
+    if (import.meta.env.DEV && skipped.length > 0) {
+      console.debug("[abbreviation]", { skipped });
+    }
+  };
+
+  const onUndoAbbreviation = () => {
+    const snapshot = undoStack[undoStack.length - 1];
+    if (!snapshot) return;
+    setDraft((previous) => ({ ...previous, ...snapshot }));
+    setUndoStack((previous) => previous.slice(0, -1));
+    setAbbreviationStatus({ kind: "undone" });
+  };
+
+  const abbreviationStatusText =
+    abbreviationStatus === null
+      ? null
+      : abbreviationStatus.kind === "success"
+        ? t("form.abbreviate.success", { count: abbreviationStatus.count })
+        : t(`form.abbreviate.${abbreviationStatus.kind}`);
 
   const onSubmitSrd = async () => {
     if (!spell) return;
@@ -287,6 +382,30 @@ export function CustomSpellForm({
           </>
         }
       >
+        {!isSrd ? (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" onClick={onAbbreviate}>
+              {t("form.abbreviate.action")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={undoStack.length === 0}
+              aria-describedby="cs-abbreviation-undo-hint"
+              onClick={onUndoAbbreviation}
+            >
+              {t("form.abbreviate.undo")}
+            </Button>
+            <span id="cs-abbreviation-undo-hint" className="text-xs text-muted-foreground">
+              {t("form.abbreviate.undoHint")}
+            </span>
+            {abbreviationStatusText ? (
+              <p role="status" aria-live="polite" className="basis-full text-sm">
+                {abbreviationStatusText}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
             <Label htmlFor="cs-name">{t("form.name")}</Label>

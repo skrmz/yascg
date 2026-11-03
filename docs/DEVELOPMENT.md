@@ -143,6 +143,9 @@ Paths are relative to the repository root.
 - `src/io/` — unversioned JSON export/import with collision review and atomic commits.
 - `src/pwa/` — service-worker registration and Cache Storage verification.
 - `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE catalogs.
+  `abbreviations.ts` owns catalog access, eligibility, and per-locale exclusion sets;
+  `abbreviation-transform.ts` owns the user-triggered prose matcher and Markdown protected-range
+  scanner.
 - `src/state/`, `src/components/`, `src/ui/` — application state and UI.
 
 ## Cloudflare Vite plugin integration
@@ -259,6 +262,15 @@ Product-level switching and confirmation behavior is owned by
   `resolveContentLanguage`; custom spells, imported content, and SRD overrides can mix author
   languages and therefore omit a content `lang`. Card fitting re-measures on locale change, so
   switching languages never leaves stale measurements.
+- Custom-spell abbreviation is user-triggered in `CustomSpellForm`. `session.language` captures the
+  matching locale when the editor opens; `abbreviationCatalog` returns only `en`/`de` and prose
+  never falls back to English. `transformAbbreviationText` applies the per-locale eligible matcher
+  (longest match, locale-aware case folding, Unicode boundaries, single pass) and a source-range
+  Markdown scanner that protects code, HTML, URLs/emails, reference definitions, images, link
+  destinations/identifiers, escapes, and delimiters. The form transforms only its exposed draft
+  fields, snapshots only changed values into a session LIFO undo stack, exposes a polite status
+  region, and logs skipped excluded matches only in development. Plain URLs are protected in
+  metadata and component-description fields.
 
 Intentional exclusions: the YASCG product name, exact SRD legal attribution (rendered with
 `lang="en"`), manifest language endonyms, dataset-authored spell names and content, user-entered
@@ -283,13 +295,16 @@ settings are in the [README](../README.md#printing). Implementation details:
 - `src/cards/compact.ts` runs `buildCompactPresentation` before fitting. It parses casting-time
   bases/qualifiers and duration carets, attaches notes only for the conservative
   one-field/one-paragraph caret case or an absent inline qualifier, numbers notes in metadata
-  order, and prepends one atomic notes block. Compact fit blocks are both the measured and printed
-  blocks. `src/cards/fingerprint.ts` keys the cache with design, content fingerprint (including
-  overrides), and that block fingerprint.
+  order, and prepends one atomic notes block. Its casting-time parser accepts full forms and the
+  authored short forms `A`, `BA`/`B`, `R`, `MIN`/`HR`, `min`, and `Std.` (with a Unicode boundary
+  after the unit token); rendering never invokes the abbreviation transformer. Compact fit blocks
+  are both the measured and printed blocks. `src/cards/fingerprint.ts` keys the cache with design,
+  content fingerprint (including overrides), and that block fingerprint.
 - `src/locales/abbreviations.ts` maps schools, core classes, and V/S/M components to catalog
-  semantic IDs; `.short` is display text and `.full` is the accessible/tooltip/legend text.
-  `docs/abbreviations.md` remains the parity source for the existing test, never a runtime
-  parser.
+  semantic IDs; `.short` is display text and `.full` is the accessible/tooltip/legend text. It
+  also exposes `abbreviationCatalog`, `isAbbreviationEligible`, and the per-locale exclusion sets
+  used by the manual prose transformer. `docs/abbreviations.md` remains the parity source for the
+  existing test, never a runtime parser.
 - `src/cards/fonts.ts` explicitly requests and checks every card face/weight before measurement
   and `window.print()`; `src/print/print.css` self-hosts the card families as WOFF2 assets.
 - `src/print/PrintSheet.tsx` builds the 3x3 sheets and `src/print/print.css` owns the physical

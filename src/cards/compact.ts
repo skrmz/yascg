@@ -48,9 +48,14 @@ const ACTION_PATTERNS: ReadonlyArray<{
   { pattern: /^(?:1\s+)?reaktion\b/i, kind: "reaction" },
   { pattern: /^(?:1\s+)?action\b/i, kind: "action" },
   { pattern: /^(?:1\s+)?aktion\b/i, kind: "action" },
+  { pattern: /^(?:1\s+)?BA\b/i, kind: "bonus" },
+  { pattern: /^(?:1\s+)?B\b/i, kind: "bonus" },
+  { pattern: /^(?:1\s+)?A\b/i, kind: "action" },
+  { pattern: /^(?:1\s+)?R\b/i, kind: "reaction" },
 ];
 
-const QUANTITY_PATTERN = /^(\d+)\s+(minutes?|minuten?|hours?|stunden?)\b(.*)$/is;
+const QUANTITY_PATTERN =
+  /^(\d+)\s+(minutes|minuten|stunden|minute|stunde|hours|mins|hour|std\.?|hrs|min|hr)(?![\p{L}\p{N}\p{M}])(.*)$/isu;
 
 function splitQualifier(remainder: string): { qualifier: string | null } | { invalid: true } {
   const trimmed = remainder.trim();

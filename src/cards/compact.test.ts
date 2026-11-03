@@ -21,6 +21,15 @@ function displayCasting(raw: string): string {
   return parsed.kind === "base" ? castingBaseDisplay(parsed.base, i18n.t) : parsed.raw;
 }
 
+function presentation(
+  castingTime: string,
+  duration = "Instantaneous",
+  description = ["Body text."],
+) {
+  const spell = makeSpell({ name: "Test", castingTime, duration, description });
+  return buildCompactPresentation(spell, body(spell), i18n.t);
+}
+
 afterEach(async () => {
   await i18n.changeLanguage("en");
 });
@@ -36,6 +45,35 @@ describe("compact casting-time parsing", () => {
     expect(displayCasting("Reaktion")).toBe("R");
   });
 
+  it("recognizes abbreviated action bases after the full forms", () => {
+    expect(displayCasting("A")).toBe("A");
+    expect(displayCasting("1 A")).toBe("A");
+    expect(displayCasting("BA")).toBe("B");
+    expect(displayCasting("1 BA")).toBe("B");
+    expect(displayCasting("B")).toBe("B");
+    expect(displayCasting("1 B")).toBe("B");
+    expect(displayCasting("R")).toBe("R");
+    expect(displayCasting("1 R")).toBe("R");
+  });
+
+  it("classifies abbreviated action bases with qualifiers and carets", () => {
+    expect(parseCastingTime("R, which you take when hit")).toMatchObject({
+      kind: "base",
+      base: { kind: "reaction" },
+      qualifier: "which you take when hit",
+    });
+    expect(parseCastingTime("BA ^")).toMatchObject({
+      kind: "base",
+      base: { kind: "bonus" },
+      caret: true,
+      raw: "BA ^",
+    });
+    expect(parseCastingTime("R, which you take when hit ^")).toMatchObject({
+      kind: "fallback",
+      raw: "R, which you take when hit ^",
+    });
+  });
+
   it("formats minute and hour quantities with localized catalog shorts", async () => {
     expect(displayCasting("1 minute")).toBe("1 MIN");
     expect(displayCasting("10 minutes")).toBe("10 MIN");
@@ -44,6 +82,28 @@ describe("compact casting-time parsing", () => {
     expect(displayCasting("1 Minute")).toBe("1 min");
     expect(displayCasting("10 Minuten")).toBe("10 min");
     expect(displayCasting("1 Stunde")).toBe("1 Std.");
+  });
+
+  it("recognizes abbreviated quantity units", async () => {
+    expect(displayCasting("1 MIN")).toBe("1 MIN");
+    expect(displayCasting("10 MIN")).toBe("10 MIN");
+    expect(displayCasting("1 min")).toBe("1 MIN");
+    expect(displayCasting("1 mins")).toBe("1 MIN");
+    expect(displayCasting("1 HR")).toBe("1 HR");
+    expect(displayCasting("2 hrs")).toBe("2 HR");
+    await i18n.changeLanguage("de");
+    expect(displayCasting("1 min")).toBe("1 min");
+    expect(displayCasting("10 Minuten")).toBe("10 min");
+    expect(displayCasting("1 Std.")).toBe("1 Std.");
+    expect(displayCasting("2 Std")).toBe("2 Std.");
+    expect(displayCasting("2 Stunden")).toBe("2 Std.");
+  });
+
+  it("requires a Unicode word boundary after abbreviated unit tokens", () => {
+    expect(parseCastingTime("1 Std.bonus")).toMatchObject({ kind: "fallback" });
+    expect(parseCastingTime("1 mini")).toMatchObject({ kind: "fallback" });
+    expect(parseCastingTime("1 hoursomething")).toMatchObject({ kind: "fallback" });
+    expect(parseCastingTime("1 minimal")).toMatchObject({ kind: "fallback" });
   });
 
   it("keeps unusual casting times lossless", () => {
@@ -86,6 +146,44 @@ describe("compact casting-time parsing", () => {
       value: "Until dispelled ^",
       caret: true,
     });
+  });
+});
+
+describe("compact abbreviated-casting equivalence", () => {
+  it("matches full and abbreviated action and quantity presentations", () => {
+    const pairs: ReadonlyArray<readonly [string, string]> = [
+      ["Action", "A"],
+      ["1 Action", "1 A"],
+      ["Bonus Action", "BA"],
+      ["1 Bonus Action", "1 BA"],
+      ["Bonus Action", "B"],
+      ["Reaction", "R"],
+      ["1 minute", "1 MIN"],
+      ["10 minutes", "10 MIN"],
+      ["1 hour", "1 HR"],
+      ["2 hours", "2 HR"],
+    ];
+    for (const [full, abbreviated] of pairs) {
+      expect(presentation(abbreviated)).toEqual(presentation(full));
+    }
+  });
+
+  it("matches qualifier and caret note behavior", () => {
+    expect(presentation("R, which you take when hit")).toEqual(
+      presentation("Reaction, which you take when hit"),
+    );
+    const caretDescription = ["Body text.", "^ which you take when hit"];
+    expect(presentation("R ^", "Instantaneous", caretDescription)).toEqual(
+      presentation("Reaction ^", "Instantaneous", caretDescription),
+    );
+  });
+
+  it("matches German full and abbreviated quantity presentations", async () => {
+    await i18n.changeLanguage("de");
+    expect(presentation("1 min")).toEqual(presentation("1 Minute"));
+    expect(presentation("10 min")).toEqual(presentation("10 Minuten"));
+    expect(presentation("1 Std.")).toEqual(presentation("1 Stunde"));
+    expect(presentation("2 Std.")).toEqual(presentation("2 Stunden"));
   });
 });
 

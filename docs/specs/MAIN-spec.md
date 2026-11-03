@@ -374,6 +374,29 @@ results. This bulk operation is optional UI convenience, not a separate deck mod
     `componentsDisplayOverride` and other unexposed component data survive.
   - Copies are ordinary custom spells for import, export, backup, saved-deck resolution, and
     deletion. No new format or persistence model is required.
+- **Abbreviate custom prose:** every non-SRD draft (new custom spell, ordinary custom edit, and
+  editable copy) offers **Abbreviate** and **Undo abbreviation** in the custom-spell editor. The
+  restricted SRD override editor does not offer them.
+  - The action transforms only user-authored draft values: `description` and `higherLevels` as
+    Markdown visible prose, and `castingTime`, `range`, `duration`, `verbalDescription`,
+    `somaticDescription`, `materialDescription`, and `materialCost` as plain text. It never
+    changes `name`, structured or canonical fields, unexposed fields, or UI labels. Hidden
+    component descriptions are transformed because they remain part of the draft.
+  - Markdown code, HTML tags and attributes, autolinks, URLs, email addresses, reference
+    definitions, images, link destinations/titles/reference identifiers, backslash escapes, and
+    structural delimiters are preserved byte-for-byte. Bold, italic, heading, blockquote, list,
+    table-cell, and inline/full-reference link-label prose is eligible.
+  - Matching uses the language captured when the editor opened, not the live UI language. Only
+    exact `en` and `de` catalogs exist; another language is a no-op with an explanatory status and
+    never falls back to English prose. Catalog display remains case-sensitive while prose matching
+    is locale-aware case-insensitive. Longest phrases win, whitespace is not collapsed, and only
+    explicit catalog entries match; plurals such as `minutes`, `hours`, and `meters` are explicit.
+  - **Undo abbreviation** is session-scoped and last-in-first-out. Each action snapshots only the
+    fields it changes; Undo restores exactly those fields, overwriting later manual edits to them
+    and leaving unrelated fields untouched. The stack and status clear when the editor closes,
+    reopens, or a different spell opens. Saving stores the abbreviated text; no reversible backup,
+    diff, conflict detection, or post-save restore exists. UI labels such as **Casting Time**,
+    **Range**, and **Duration** (and their German equivalents) are never abbreviated.
 - **Delete:** show a confirmation explaining that deleting a custom spell also removes *its
   entry from the active deck*. Confirm or cancel. Delete the spell and matching active entry
   atomically, checking the active-deck revision and incrementing it. **Never** silently rewrite
@@ -660,6 +683,12 @@ empty classes render `—`. Continuation cards keep title, level, continuation l
 page number, and footer, and omit metadata, material, notes, and tooltips. The school remains in
 the three-part footer rather than repeating in the continuation header.
 
+Compact casting-time parsing accepts authored abbreviated values (`A`, `BA`, the Compact glyph
+alias `B`, `R`, and localized `min`/`MIN`, `Std.`, `hr`/`HR` forms) as the same semantic base as
+their full-text equivalents, preserving qualifiers, caret notes, full accessible labels, fitting,
+and print behavior. Rendering, fitting, and printing never run the abbreviation transformer and
+never rewrite stored spell text.
+
 - **Header (first card):** name, level, school, ritual/concentration indicators. Continuation cards
   add a localized continuation label (`contd.` / `Forts.`) aligned to the right of the header
   and omit the school from the header.
@@ -863,6 +892,7 @@ duplicate these outcomes as a second invariants list.
 | C2a | Custom spells   | Cancel custom deletion                                                                              | Spell and active deck unchanged                                                                                                                                                                                | §6          |
 | C3  | Custom spells   | Undo immediately after deletion                                                                     | Original spell and entry ID/position restored; dirty state recalculated                                                                                                                                        | §6          |
 | C4  | Custom spells   | Undo after intervening edit or cross-tab write                                                      | Undo refused with explanation; newer work preserved                                                                                                                                                            | §6          |
+| C5  | Custom spells   | Abbreviate and Undo abbreviation in non-SRD drafts                                                  | Action absent from the SRD override editor; only scoped draft fields change; Markdown code/links/URLs/IDs and UI labels unchanged; captured-language matching; unsupported language is a no-op; session LIFO undo restores only changed fields; save persists normally and cancel writes nothing | §6, §9      |
 | D1  | Decks           | Reload / ordinary edits                                                                             | Active deck survives reload; every successful mutation is persisted                                                                                                                                            | §7          |
 | D2  | Decks           | Duplicate add and bulk append                                                                       | Individual duplicate rejected with bottom-right notification; Append all skips and reports added/skipped counts                                                                                                | §5, §7      |
 | D3  | Decks           | Status and Save enablement                                                                          | Four statuses remain correct across reload, deletion, Undo, Save As, and unassociated name-only content; Save is enabled only when dirty with a valid association; disabled Save writes nothing                | §7          |
@@ -902,6 +932,7 @@ duplicate these outcomes as a second invariants list.
 | P7  | Cards/print     | Unresolved or untranslated entries at print                                                         | Separate counts; confirmation; omitted without deleting entries; print disabled if none resolved                                                                                                               | §10         |
 | P8  | Cards/print     | Cross-browser verification                                                                          | Chromium geometry verified; Chrome/Firefox/Safari remain the target for current and future validation                                                                                                          | §10         |
 | P9  | Cards/print     | Offline card preview and print                                                                      | Self-hosted card fonts load from precache; typography and measurement work without network                                                                                                                     | §9, §11     |
+| P10 | Cards/print     | Compact abbreviated casting-time parsing                                                            | `A`, `BA`/`B`, `R`, and localized `MIN`/`HR`/`min`/`Std.` values parse to the same base, glyph, accessible label, qualifier, caret, notes, fit, and print behavior as full text; stored text is never transformed at render | §9          |
 | U1  | Details UI      | Preview-only default pane                                                                           | No duplicated metadata/description pane by default; details open from header, dropdown, and right-click; dialog closes on spell change; print unchanged                                                        | §5          |
 | H1  | Hosting         | Static production build                                                                             | Static assets plus SPA fallback deploy to Workers; no API/backend/secrets; PWA and client routes intact                                                                                                        | §3, §11     |
 | O1  | Offline/quality | First-load precache and retry                                                                       | Accurate **Setting up offline access**, **Offline ready**, or **Offline setup incomplete — Retry** states; no premature readiness claim; runtime asset errors show an actionable retry/fallback                | §11         |

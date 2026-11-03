@@ -2,6 +2,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import i18n from "@/i18n.ts";
+import {
+  EXCLUDED_ABBREVIATION_IDS,
+  abbreviationCatalog,
+  isAbbreviationEligible,
+  type AbbreviationLocale,
+} from "./abbreviations.ts";
 import { de } from "./de.ts";
 import { en } from "./en.ts";
 
@@ -69,4 +75,80 @@ describe("abbreviation catalog", () => {
     expect(en.abbreviations.object.full).toBe("object");
     expect(en.abbreviations.objects.full).toBe("objects");
   });
+
+  it("returns catalogs only for exact en and de locale codes", () => {
+    expect(abbreviationCatalog("en")).not.toBeNull();
+    expect(abbreviationCatalog("de")).not.toBeNull();
+    expect(abbreviationCatalog("fr")).toBeNull();
+    expect(abbreviationCatalog("EN")).toBeNull();
+    expect(abbreviationCatalog("en-US")).toBeNull();
+  });
+
+  it("keeps every exclusion ID present in both catalogs", () => {
+    const catalogIds: Record<AbbreviationLocale, Set<string>> = {
+      en: new Set(abbreviationCatalog("en")!.map((entry) => entry.id)),
+      de: new Set(abbreviationCatalog("de")!.map((entry) => entry.id)),
+    };
+    for (const locale of ["en", "de"] as const) {
+      for (const id of EXCLUDED_ABBREVIATION_IDS[locale]) {
+        expect(catalogIds.en.has(id)).toBe(true);
+        expect(catalogIds.de.has(id)).toBe(true);
+      }
+    }
+  });
+
+  it("never gives two eligible entries the same normalized full form with different shorts", () => {
+    for (const locale of ["en", "de"] as const) {
+      const shortsByFull = new Map<string, string>();
+      for (const entry of eligibleEntries(locale)) {
+        const key = normalizedFull(entry, locale);
+        const short = entry.short.trim();
+        const existing = shortsByFull.get(key);
+        if (existing !== undefined) expect(existing).toBe(short);
+        else shortsByFull.set(key, short);
+      }
+    }
+  });
+
+  it("treats no-op entries as ineligible", () => {
+    for (const [locale, id] of [
+      ["en", "spell"],
+      ["en", "self"],
+      ["en", "touch"],
+      ["en", "sight"],
+      ["en", "day"],
+      ["de", "self"],
+      ["de", "sight"],
+      ["de", "day"],
+    ] as const) {
+      expect(isAbbreviationEligible(entryById(locale, id), locale)).toBe(false);
+    }
+  });
+
+  it("exposes explicit plural unit entries", () => {
+    expect(entryById("en", "minutes")).toMatchObject({ full: "minutes", short: "MIN" });
+    expect(entryById("en", "hours")).toMatchObject({ full: "hours", short: "HR" });
+    expect(entryById("en", "meters")).toMatchObject({ full: "meters", short: "MTR" });
+    expect(entryById("de", "minutes")).toMatchObject({ full: "Minuten", short: "min" });
+    expect(entryById("de", "hours")).toMatchObject({ full: "Stunden", short: "Std." });
+    expect(entryById("de", "meters")).toMatchObject({ full: "Meter", short: "m" });
+  });
+
+  it("uses the approved lowercase English damage short", () => {
+    expect(entryById("en", "damage").short).toBe("dmg");
+  });
 });
+
+function entryById(locale: AbbreviationLocale, id: string) {
+  const entry = abbreviationCatalog(locale)!.find((candidate) => candidate.id === id);
+  if (!entry) throw new Error(`Missing ${locale} abbreviation entry: ${id}`);
+  return entry;
+}
+
+function eligibleEntries(locale: AbbreviationLocale) {
+  return abbreviationCatalog(locale)!.filter((entry) => isAbbreviationEligible(entry, locale));
+}
+
+function normalizedFull(entry: { full: string }, locale: AbbreviationLocale): string {
+  return entry.full.trim().normalize("NFC").toLocaleLowerCase(locale);
+}

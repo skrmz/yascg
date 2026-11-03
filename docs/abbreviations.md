@@ -11,6 +11,25 @@ Compact cards use fixed action/indicator badges with the catalog `.full` meaning
 
 The parity test reads only lines matching the `- full = short (full = short)` format. Catalog entry counts should be derived automatically rather than maintained manually.
 
+## Manual abbreviation of custom spell prose
+
+The custom spell editor offers **Abbreviate** for non-SRD drafts. The action transforms only the user-authored draft values (`description`, higher levels, casting time, range, duration, and component descriptions); it never changes UI labels or structured fields. Nothing is persisted until the spell is saved, and **Undo abbreviation** restores the fields changed by the latest action until the editor closes. See the [custom spells guide](custom-spells-guide.md) for the user workflow.
+
+Matching uses the language captured when the editor opened. Only exact `en` and `de` codes have catalogs; other languages are a no-op with an explanatory status, never an English fallback. Catalog identity and display remain case-sensitive: `m` (meter) and `M` (material component) are distinct. Manual prose matching is locale-aware case-insensitive, so `Bonus Action`, `BONUS ACTION`, and `bonus action` share the `BA` short.
+
+Only catalog `full` terms are eligible, and longer phrases win. Whitespace is not collapsed and plurals are matched only through explicit catalog entries such as `minutes`, `hours`, and `meters`. The German word `Meter` is both singular and plural, so the `meter` and `meters` rows intentionally share the same German signature. No-op entries whose short is not shorter than their full form (`spell`, `self`, `touch`, `sight`, `day`, `Selbst`, `Sicht`, `Tag`) are never eligible.
+
+The following exclusions are policy, not algorithm. Removing an entry from this list is a product decision; it does not require a matcher change.
+
+- English exclusions: `round`, `turn`, `line`, `speed`, `advantage`, `disadvantage`, `target`, `object`, `objects`, `bonus`, `minimum`, `maximum`, `example`, `presumably`, `compare`, `possibly`, `in part`, `or`, `between`.
+- German exclusions: `Runde`, `Zug`, `Linie`, `Vorteil`, `Nachteil`, `Ziel`, `Gegenstand`, `Gegenstände`, `Bonus`, `Minimum`, `Maximum`, `vermutlich`, `vergleiche`, `oder`, `zwischen`, `Durchmesser`, `Würfel`.
+
+English and German therefore differ deliberately: `Bewegungsrate` remains eligible in German, while the English `speed` is excluded. `action`, `reaction`, and `damage` (and `Aktion`, `Reaktion`, `Schaden`) are eligible as approved standalone game terms; longer phrases such as `bonus action` and `damage resistance` still win.
+
+Manual matching transforms only visible prose. Fenced and inline code, HTML comments/tags and attributes, autolinks, bare URLs and email addresses, reference definitions, images, link destinations/titles/reference identifiers, backslash escapes, and structural Markdown delimiters are protected and copied byte-for-byte. Bold and italic text, headings, blockquotes, list items, table cells, and inline/full-reference link labels remain transformable. Source formatting is never serialized or regenerated.
+
+**Undo abbreviation** is session-only and restores the fields changed by the latest action until the editor closes. Saving stores the abbreviated text; no reversible backup or automatic de-abbreviation is persisted.
+
 ## Common D&D abbreviations
 
 - armor class = AC (Rüstungsklasse = RK)
@@ -30,7 +49,7 @@ The parity test reads only lines matching the `- full = short (full = short)` fo
 - advantage = ADV (Vorteil = VT)
 - disadvantage = DIS (Nachteil = NT)
 - attack roll = ATK (Angriffswurf = AW)
-- damage = DMG (Schaden = SCH)
+- damage = dmg (Schaden = SCH)
 - damage resistance = RES (Schadensresistenz = RES)
 - damage immunity = IMM (Schadensimmunität = IMM)
 - vulnerability = VUL (Schadensanfälligkeit = ANF)
@@ -77,10 +96,8 @@ The parity test reads only lines matching the `- full = short (full = short)` fo
 - touch = TOUCH (Berührung = BER)
 - sight = SIGHT (Sicht = SICHT)
 - target = TGT (Ziel = Z)
-- creature = CRE (Kreatur = KRE)
 - object = obj. (Gegenstand = Ggst.)
 - objects = obj. (Gegenstände = Ggst.)
-- willing creature = WILL (Bereitwillige Kreatur = BKR)
 - point within range = PWR (Punkt in Reichweite = PIR)
 - radius = RAD (Radius = RAD)
 - diameter = DIA (Durchmesser = DM)
@@ -93,8 +110,11 @@ The parity test reads only lines matching the `- full = short (full = short)` fo
 - foot = FT (Fuß = FT)
 - feet = FT (Fuß = FT)
 - meter = MTR (Meter = m)
+- meters = MTR (Meter = m)
 - minute = MIN (Minute = min)
+- minutes = MIN (Minuten = min)
 - hour = HR (Stunde = Std.)
+- hours = HR (Stunden = Std.)
 - day = DAY (Tag = Tg.)
 - bonus = BON (Bonus = BON)
 - modifier = MOD (Modifikator = MOD)

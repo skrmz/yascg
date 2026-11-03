@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n.ts";
-import { CORE_CLASSES, type Spell } from "@/domain/spells";
+import { CORE_CLASSES, spellSchema, type Spell } from "@/domain/spells";
 import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
 import { CustomSpellForm } from "./CustomSpellForm.tsx";
 
@@ -291,5 +291,302 @@ describe("CustomSpellForm SRD override mode", () => {
   it("hides reset for a vanilla SRD spell", () => {
     renderForm(makeSpell({ id: "srd-fireball" }));
     expect(screen.queryByRole("button", { name: "Reset to original" })).toBeNull();
+  });
+});
+
+describe("CustomSpellForm abbreviation", () => {
+  const abbreviateButton = () => screen.getByRole("button", { name: "Abbreviate" });
+  const undoButton = () => screen.getByRole("button", { name: "Undo abbreviation" });
+  const descriptionInput = () => screen.getByLabelText("Description (Markdown)");
+  const castingTimeInput = () => screen.getByLabelText("Casting Time");
+  const rangeInput = () => screen.getByLabelText("Range");
+  const durationInput = () => screen.getByLabelText("Duration");
+
+  it("offers abbreviation for new, custom-edit, and editable-copy drafts but not SRD overrides", () => {
+    const fresh = renderForm();
+    expect(abbreviateButton()).not.toBeNull();
+    fresh.unmount();
+
+    const custom = renderForm(makeCustomSpell());
+    expect(abbreviateButton()).not.toBeNull();
+    custom.unmount();
+
+    const copy = render(
+      <CustomSpellForm open onOpenChange={() => {}} spell={makeCustomSpell()} editableCopy />,
+    );
+    expect(abbreviateButton()).not.toBeNull();
+    copy.unmount();
+
+    renderForm(makeSpell());
+    expect(screen.queryByRole("button", { name: "Abbreviate" })).toBeNull();
+  });
+
+  it("transforms only the scoped draft fields and preserves unexposed data", async () => {
+    const user = userEvent.setup();
+    const existing = makeCustomSpell({
+      name: "Scoped Spell",
+      castingTime: "bonus action",
+      range: "willing creature",
+      duration: "until dispelled",
+      description: ["A **bonus action** and damage resistance."],
+      higherLevels: ["At higher levels, a bonus action."],
+      subclasses: ["Wizard: Evocation"],
+      savingThrow: "DEX",
+      damageTypes: ["Fire"],
+      components: {
+        verbal: false,
+        verbalDescription: "whisper a bonus action",
+        somatic: false,
+        somaticDescription: "trace a bonus action",
+        material: false,
+        materialDescription: "a bonus action",
+        materialCost: "bonus action",
+        componentsDisplayOverride: "V, S, M (a bonus action)",
+      },
+    });
+    mocks.saveCustomSpell.mockResolvedValue(existing);
+
+    renderForm(existing);
+    await user.click(abbreviateButton());
+
+    expect((castingTimeInput() as HTMLInputElement).value).toBe("BA");
+    expect((rangeInput() as HTMLInputElement).value).toBe("WILL");
+    expect((durationInput() as HTMLInputElement).value).toBe("DISP");
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("A **BA** and RES.");
+    expect(
+      (screen.getByLabelText("Higher levels (Markdown, optional)") as HTMLTextAreaElement).value,
+    ).toBe("At higher levels, a BA.");
+    expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Scoped Spell");
+
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+    const saved = mocks.saveCustomSpell.mock.calls[0][0] as Spell;
+    expect(saved.components.verbalDescription).toBe("whisper a BA");
+    expect(saved.components.somaticDescription).toBe("trace a BA");
+    expect(saved.components.componentsDisplayOverride).toBe("V, S, M (a bonus action)");
+    expect(saved.subclasses).toEqual(["Wizard: Evocation"]);
+    expect(saved.savingThrow).toBe("DEX");
+    expect(saved.damageTypes).toEqual(["Fire"]);
+    expect(saved.name).toBe("Scoped Spell");
+  });
+
+  it("does not transform automatically on open, save, or live language change", async () => {
+    const user = userEvent.setup();
+    const existing = makeCustomSpell({
+      castingTime: "bonus action",
+      description: ["bonus action"],
+    });
+    mocks.saveCustomSpell.mockResolvedValue(existing);
+
+    renderForm(existing);
+    expect((castingTimeInput() as HTMLInputElement).value).toBe("bonus action");
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("bonus action");
+
+    await i18n.changeLanguage("de");
+    expect((screen.getByLabelText("Zeitaufwand") as HTMLInputElement).value).toBe("bonus action");
+    expect((screen.getByLabelText("Beschreibung (Markdown)") as HTMLTextAreaElement).value).toBe(
+      "bonus action",
+    );
+    await i18n.changeLanguage("en");
+
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+    const saved = mocks.saveCustomSpell.mock.calls[0][0] as Spell;
+    expect(saved.castingTime).toBe("bonus action");
+    expect(saved.description).toEqual(["bonus action"]);
+  });
+
+  it("reports a no-match status without pushing an undo entry", async () => {
+    const user = userEvent.setup();
+    renderForm(
+      makeCustomSpell({
+        castingTime: "Special",
+        range: "—",
+        duration: "—",
+        description: ["xyz"],
+        higherLevels: [],
+      }),
+    );
+
+    await user.click(abbreviateButton());
+
+    expect(screen.getByRole("status").textContent).toBe("No abbreviations were applied.");
+    expect((undoButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("reports unavailable localized abbreviations for unsupported languages without changing the draft", async () => {
+    const user = userEvent.setup();
+    mocks.language.value = "fr";
+
+    renderForm();
+    await user.click(abbreviateButton());
+
+    expect(screen.getByRole("status").textContent).toBe(
+      "No localized abbreviations are available for this language.",
+    );
+    expect((castingTimeInput() as HTMLInputElement).value).toBe("1 Action");
+  });
+
+  it("restores changed fields on undo and leaves unrelated later edits intact", async () => {
+    const user = userEvent.setup();
+    renderForm(
+      makeCustomSpell({
+        castingTime: "bonus action",
+        range: "Self",
+        duration: "Special",
+        description: ["bonus action"],
+      }),
+    );
+
+    await user.click(abbreviateButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("BA");
+    expect((castingTimeInput() as HTMLInputElement).value).toBe("BA");
+
+    await user.clear(descriptionInput());
+    await user.type(descriptionInput(), "manual edit");
+    await user.clear(rangeInput());
+    await user.type(rangeInput(), "10 feet");
+
+    await user.click(undoButton());
+
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("bonus action");
+    expect((castingTimeInput() as HTMLInputElement).value).toBe("bonus action");
+    expect((rangeInput() as HTMLInputElement).value).toBe("10 feet");
+    expect(screen.getByRole("status").textContent).toBe("Abbreviation undone.");
+  });
+
+  it("undoes repeated actions in last-in-first-out order", async () => {
+    const user = userEvent.setup();
+    renderForm(
+      makeCustomSpell({
+        castingTime: "Special",
+        range: "—",
+        duration: "—",
+        description: ["bonus action"],
+      }),
+    );
+
+    await user.click(abbreviateButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("BA");
+
+    await user.clear(descriptionInput());
+    await user.type(descriptionInput(), "bonus action again");
+    await user.click(abbreviateButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("BA again");
+
+    await user.click(undoButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("bonus action again");
+    await user.click(undoButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("bonus action");
+    expect((undoButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("clears the undo stack when the dialog closes and reopens", async () => {
+    const user = userEvent.setup();
+    const spell = makeCustomSpell({
+      castingTime: "Special",
+      range: "—",
+      duration: "—",
+      description: ["bonus action"],
+    });
+    const { rerender } = render(<CustomSpellForm open onOpenChange={() => {}} spell={spell} />);
+
+    await user.click(abbreviateButton());
+    expect((undoButton() as HTMLButtonElement).disabled).toBe(false);
+
+    rerender(<CustomSpellForm open={false} onOpenChange={() => {}} spell={spell} />);
+    rerender(<CustomSpellForm open onOpenChange={() => {}} spell={spell} />);
+
+    expect((undoButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("clears the undo stack when a different spell opens", async () => {
+    const user = userEvent.setup();
+    const first = makeCustomSpell({
+      id: "custom-1",
+      castingTime: "Special",
+      range: "—",
+      duration: "—",
+      description: ["bonus action"],
+    });
+    const second = makeCustomSpell({
+      id: "custom-2",
+      castingTime: "Special",
+      range: "—",
+      duration: "—",
+      description: ["bonus action"],
+    });
+    const { rerender } = render(<CustomSpellForm open onOpenChange={() => {}} spell={first} />);
+
+    await user.click(abbreviateButton());
+    expect((undoButton() as HTMLButtonElement).disabled).toBe(false);
+
+    rerender(<CustomSpellForm open onOpenChange={() => {}} spell={second} />);
+
+    expect((undoButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("saves a transformed draft through validation and preserves identity", async () => {
+    const user = userEvent.setup();
+    const existing = makeCustomSpell({
+      castingTime: "1 Action",
+      description: ["bonus action"],
+    });
+    mocks.saveCustomSpell.mockResolvedValue(existing);
+
+    renderForm(existing);
+    await user.click(abbreviateButton());
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+
+    expect(mocks.saveCustomSpell).toHaveBeenCalledTimes(1);
+    const saved = mocks.saveCustomSpell.mock.calls[0][0] as Spell;
+    expect(saved.id).toBe(existing.id);
+    expect(saved.source).toBe("Custom");
+    expect(saved.castingTime).toBe("1 A");
+    expect(saved.description).toEqual(["BA"]);
+    expect(spellSchema.safeParse(saved).success).toBe(true);
+  });
+
+  it("persists nothing when the dialog is cancelled after abbreviating", async () => {
+    const user = userEvent.setup();
+    renderForm(makeCustomSpell({ description: ["bonus action"] }));
+
+    await user.click(abbreviateButton());
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(mocks.saveCustomSpell).not.toHaveBeenCalled();
+  });
+
+  it("keeps English UI labels unchanged after abbreviating", async () => {
+    const user = userEvent.setup();
+    renderForm(makeCustomSpell({ description: ["bonus action"] }));
+
+    await user.click(abbreviateButton());
+
+    expect(screen.getByLabelText("Casting Time")).not.toBeNull();
+    expect(screen.getByLabelText("Range")).not.toBeNull();
+    expect(screen.getByLabelText("Duration")).not.toBeNull();
+  });
+
+  it("keeps German UI labels unchanged and matches with the captured German language", async () => {
+    const user = userEvent.setup();
+    mocks.language.value = "de";
+    await i18n.changeLanguage("de");
+    renderForm(
+      makeCustomSpell({
+        castingTime: "1 Aktion",
+        range: "Selbst",
+        duration: "Unmittelbar",
+        description: ["Eine Bonusaktion."],
+      }),
+    );
+
+    await i18n.changeLanguage("en");
+    await user.click(abbreviateButton());
+
+    expect((castingTimeInput() as HTMLInputElement).value).toBe("1 A");
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("Eine BA.");
+    expect((durationInput() as HTMLInputElement).value).toBe("UNM");
+    expect(screen.getByLabelText("Casting Time")).not.toBeNull();
+    expect(screen.getByLabelText("Range")).not.toBeNull();
+    expect(screen.getByLabelText("Duration")).not.toBeNull();
   });
 });

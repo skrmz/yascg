@@ -10,6 +10,16 @@ Eigene Zauber bringen deine eigene Magie in Yet Another Spell Card Generator. Si
 
 Das Formular bietet keine Felder für `subclasses`, `savingThrow`, `damageTypes`, oder `sourceLabel`. Verwende für diese Felder den JSON-Import. Formular und Importschema akzeptieren für Zeitaufwand, Reichweite und Wirkungsdauer jeweils bis zu 500 Zeichen.
 
+### Zaubertext abkürzen
+
+Der Editor für eigene Zauber bietet **Abkürzen** und **Abkürzung rückgängig machen** für neue Zauber, normale Bearbeitungen eigener Zauber und bearbeitbare Kopien. Im eingeschränkten SRD-Override-Editor sind diese Aktionen nicht verfügbar.
+
+- Abgekürzt werden nur deine Zauberdaten: Beschreibung, höhere Grade, Zeitaufwand, Reichweite, Wirkungsdauer sowie Komponentenbeschreibungen und Materialkosten. Oberflächenbeschriftungen wie **Zeitaufwand**, **Reichweite** und **Wirkungsdauer** werden nie abgekürzt.
+- Die Zuordnung verwendet die Sprache, die beim Öffnen des Editors erfasst wurde. Es gibt nur englische und deutsche Textkataloge; andere Sprachen zeigen einen erklärenden Status, statt auf Englisch auszuweichen.
+- In Markdown-Texten wird gewöhnlicher Fließtext abgekürzt; Code, HTML-Attribute, URLs, Linkziele/-titel/-referenzen, Bilder, Escapes und Struktursyntax bleiben erhalten.
+- **Abkürzung rückgängig machen** stellt die vom letzten Vorgang geänderten Felder wieder her, solange der Editor geöffnet ist. Spätere manuelle Änderungen an diesen Feldern werden dabei überschrieben; andere Felder bleiben unberührt.
+- Beim Speichern wird der abgekürzte Text gespeichert. Es gibt keine gespeicherte Sicherung und keine automatische Rückabkürzung; bewahre den ursprünglichen Wortlaut bei Bedarf separat auf.
+
 ## Eigene Zauber importieren
 
 1. Öffne die **Bibliothek** und wähle **Eigene Zauber importieren/exportieren**.

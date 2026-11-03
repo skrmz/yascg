@@ -61,11 +61,18 @@ dialog explains the outcome and offers **Retry** where retrying is safe; a diffe
 requires cancelling and restarting the flow. The original SRD spell and saved decks are never
 modified.
 
+The custom-spell editor offers **Abbreviate** for non-SRD drafts. It shortens eligible spell-data
+text only, including the description, higher levels, casting time, range, duration, and component
+notes; UI labels such as **Casting Time**, **Range**, and **Duration** remain spelled out.
+Matching uses the language captured when the editor opened, and only English and German prose
+catalogs are available (other languages show an explanatory status instead of falling back to
+English). **Undo abbreviation** restores the fields changed by the latest action until the editor
+closes. Saving stores the abbreviated text, so there is no automatic way to reverse it afterwards.
+
 The active deck is always stored locally as you edit it; "unsaved" never means "unpersisted".
 Named snapshots are independent of the working deck:
 
-- Edit the active deck name inline. Enter or blur commits, Escape cancels.
-- **Save** updates the associated named snapshot. A deck without an association opens
+- Edit the active deck name inline. Enter or blur commits, Escape cancels.- **Save** updates the associated named snapshot. A deck without an association opens
   **Save As…** instead.
 - **Save As…** in the deck actions menu always creates a new named snapshot, including from a
   blank workspace. Duplicate names are allowed.
