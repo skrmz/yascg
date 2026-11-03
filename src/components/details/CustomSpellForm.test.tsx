@@ -350,8 +350,8 @@ describe("CustomSpellForm abbreviation", () => {
     await user.click(abbreviateButton());
 
     expect((castingTimeInput() as HTMLInputElement).value).toBe("BA");
-    expect((rangeInput() as HTMLInputElement).value).toBe("WILL");
-    expect((durationInput() as HTMLInputElement).value).toBe("DISP");
+    expect((rangeInput() as HTMLInputElement).value).toBe("willing creature");
+    expect((durationInput() as HTMLInputElement).value).toBe("disp.");
     expect((descriptionInput() as HTMLTextAreaElement).value).toBe("A **BA** and RES.");
     expect(
       (screen.getByLabelText("Higher levels (Markdown, optional)") as HTMLTextAreaElement).value,
@@ -584,7 +584,7 @@ describe("CustomSpellForm abbreviation", () => {
 
     expect((castingTimeInput() as HTMLInputElement).value).toBe("1 A");
     expect((descriptionInput() as HTMLTextAreaElement).value).toBe("Eine BA.");
-    expect((durationInput() as HTMLInputElement).value).toBe("UNM");
+    expect((durationInput() as HTMLInputElement).value).toBe("unm.");
     expect(screen.getByLabelText("Casting Time")).not.toBeNull();
     expect(screen.getByLabelText("Range")).not.toBeNull();
     expect(screen.getByLabelText("Duration")).not.toBeNull();

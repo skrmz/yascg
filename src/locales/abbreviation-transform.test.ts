@@ -35,17 +35,16 @@ describe("abbreviation transformer: required policy terms", () => {
 describe("abbreviation transformer: catalog terms", () => {
   it("abbreviates English terms", () => {
     expect(abbreviated("armor class")).toBe("AC");
-    expect(abbreviated("temporary hit points")).toBe("THP");
-    expect(abbreviated("willing creature")).toBe("WILL");
+    expect(abbreviated("temporary hit points")).toBe("temporary HP");
     expect(abbreviated("concentration")).toBe("Conc.");
-    expect(abbreviated("until dispelled")).toBe("DISP");
+    expect(abbreviated("until dispelled")).toBe("disp.");
   });
 
   it("abbreviates German terms", () => {
     expect(abbreviated("Rüstungsklasse", "de")).toBe("RK");
     expect(abbreviated("Konzentration", "de")).toBe("Konz.");
-    expect(abbreviated("Bis gebannt", "de")).toBe("BG");
-    expect(abbreviated("Berührung", "de")).toBe("BER");
+    expect(abbreviated("Bis gebannt", "de")).toBe("bis geb.");
+    expect(abbreviated("Berührung", "de")).toBe("Ber.");
   });
 
   it("matches locale-aware case-insensitively", () => {
@@ -63,8 +62,7 @@ describe("abbreviation transformer: catalog terms", () => {
   });
 
   it("uses the longest eligible phrase", () => {
-    expect(abbreviated("temporary hit points")).toBe("THP");
-    expect(abbreviated("willing creature")).toBe("WILL");
+    expect(abbreviated("temporary hit points")).toBe("temporary HP");
     expect(abbreviated("damage resistance")).toBe("RES");
   });
 });
@@ -93,7 +91,7 @@ describe("abbreviation transformer: boundaries and exactness", () => {
 
 describe("abbreviation transformer: exclusions and no-ops", () => {
   it("leaves English no-op and excluded entries unchanged", () => {
-    for (const term of ["spell", "self", "touch", "sight", "day"]) {
+    for (const term of ["spell", "self", "touch", "sight"]) {
       expect(abbreviated(term)).toBe(term);
     }
     for (const term of [
@@ -122,7 +120,7 @@ describe("abbreviation transformer: exclusions and no-ops", () => {
   });
 
   it("leaves German no-op and excluded entries unchanged", () => {
-    for (const term of ["Selbst", "Sicht", "Tag"]) {
+    for (const term of ["Selbst", "Sicht"]) {
       expect(abbreviated(term, "de")).toBe(term);
     }
     for (const term of [
@@ -159,7 +157,7 @@ describe("abbreviation transformer: exclusions and no-ops", () => {
 
   it("still applies longer eligible phrases containing excluded words", () => {
     expect(abbreviated("until the end of the next turn")).toBe("EONT");
-    expect(abbreviated("point within range")).toBe("PWR");
+    expect(abbreviated("point within range")).toBe("point within RNG");
     expect(abbreviated("bonus action")).toBe("BA");
   });
 });
@@ -261,16 +259,16 @@ describe("abbreviation transformer: links and URLs", () => {
 describe("abbreviation transformer: carets, lines, and units", () => {
   it("preserves carets and newlines", () => {
     expect(abbreviated("bonus action ^")).toBe("BA ^");
-    expect(abbreviated("bonus action\nwilling creature")).toBe("BA\nWILL");
+    expect(abbreviated("bonus action\nwilling creature")).toBe("BA\nwilling creature");
   });
 
   it("abbreviates explicit plural unit entries", () => {
-    expect(abbreviated("10 minutes")).toBe("10 MIN");
-    expect(abbreviated("2 hours")).toBe("2 HR");
-    expect(abbreviated("30 meters")).toBe("30 MTR");
-    expect(abbreviated("30 feet")).toBe("30 FT");
+    expect(abbreviated("10 minutes")).toBe("10 min");
+    expect(abbreviated("2 hours")).toBe("2 h");
+    expect(abbreviated("30 meters")).toBe("30 mtr");
+    expect(abbreviated("30 feet")).toBe("30 ft");
     expect(abbreviated("10 Minuten", "de")).toBe("10 min");
-    expect(abbreviated("2 Stunden", "de")).toBe("2 Std.");
+    expect(abbreviated("2 Stunden", "de")).toBe("2 h");
     expect(abbreviated("30 Meter", "de")).toBe("30 m");
   });
 });

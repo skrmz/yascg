@@ -17,7 +17,7 @@ The custom spell editor offers **Abbreviate** for non-SRD drafts. The action tra
 
 Matching uses the language captured when the editor opened. Only exact `en` and `de` codes have catalogs; other languages are a no-op with an explanatory status, never an English fallback. Catalog identity and display remain case-sensitive: `m` (meter) and `M` (material component) are distinct. Manual prose matching is locale-aware case-insensitive, so `Bonus Action`, `BONUS ACTION`, and `bonus action` share the `BA` short.
 
-Only catalog `full` terms are eligible, and longer phrases win. Whitespace is not collapsed and plurals are matched only through explicit catalog entries such as `minutes`, `hours`, and `meters`. The German word `Meter` is both singular and plural, so the `meter` and `meters` rows intentionally share the same German signature. No-op entries whose short is not shorter than their full form (`spell`, `self`, `touch`, `sight`, `day`, `Selbst`, `Sicht`, `Tag`) are never eligible.
+Only catalog `full` terms are eligible, and longer phrases win. Whitespace is not collapsed and plurals are matched only through explicit catalog entries such as `minutes`, `hours`, and `meters`. The German word `Meter` is both singular and plural, so the `meter` and `meters` rows intentionally share the same German signature. No-op entries whose short is not shorter than their full form (`spell`, `self`, `touch`, `sight`, `hit`, `Selbst`, `Sicht`) are never eligible.
 
 The following exclusions are policy, not algorithm. Removing an entry from this list is a product decision; it does not require a matcher change.
 
@@ -34,7 +34,6 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 
 - armor class = AC (Rüstungsklasse = RK)
 - hit points = HP (Trefferpunkte = TP)
-- temporary hit points = THP (Temporäre Trefferpunkte = TTP)
 - strength = STR (Stärke = ST)
 - dexterity = DEX (Geschicklichkeit = GE)
 - constitution = CON (Konstitution = KO)
@@ -84,46 +83,44 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - casting time = CT (Zeitaufwand = ZA)
 - range = RNG (Reichweite = RWt)
 - duration = DUR (Wirkungsdauer = WD)
-- character level = LVL (Charakterstufe = Stf.)
-- spell level = SLVL (Zaubergrad = ZGrad)
+- character level = lvl (Charakterstufe = Stf.)
 - casting at higher levels = UPCAST (Verwenden von Zauberplätzen höheren Grades = Grad+)
 - cantrip upgrade = CTP+ (Zaubertrick-Aufwertung = ZT+)
-- instantaneous = INST (Unmittelbar = UNM)
-- until dispelled = DISP (Bis gebannt = BG)
-- until the end of the next turn = EONT (Bis zum Ende des nächsten Zugs = BEZ)
-- until the start of the next turn = SONT (Bis zum Beginn des nächsten Zugs = BBZ)
-- self = SELF (Selbst = SELBST)
-- touch = TOUCH (Berührung = BER)
-- sight = SIGHT (Sicht = SICHT)
-- target = TGT (Ziel = Z)
+- instantaneous = inst. (Unmittelbar = unm.)
+- until dispelled = disp. (Bis gebannt = bis geb.)
+- until the end of the next turn = EONT (Bis zum Ende des nächsten Zugs = bis EZ)
+- until the start of the next turn = SONT (Bis zum Beginn des nächsten Zugs = bis BZ)
+- self = SELF (Selbst = Selbst)
+- touch = TOUCH (Berührung = Ber.)
+- sight = SIGHT (Sicht = Sicht)
+- target = tgt. (Ziel = Ziel)
 - object = obj. (Gegenstand = Ggst.)
 - objects = obj. (Gegenstände = Ggst.)
-- point within range = PWR (Punkt in Reichweite = PIR)
-- radius = RAD (Radius = RAD)
-- diameter = DIA (Durchmesser = DM)
-- sphere = SPH (Kugel = KUG)
-- cube = CUBE (Würfel = WÜRF)
-- cone = CONE (Kegel = KEG)
-- cylinder = CYL (Zylinder = ZYL)
-- line = LINE (Linie = LIN)
-- emanation = EMAN (Emanation = EMAN)
-- foot = FT (Fuß = FT)
-- feet = FT (Fuß = FT)
-- meter = MTR (Meter = m)
-- meters = MTR (Meter = m)
-- minute = MIN (Minute = min)
-- minutes = MIN (Minuten = min)
-- hour = HR (Stunde = Std.)
-- hours = HR (Stunden = Std.)
-- day = DAY (Tag = Tg.)
-- bonus = BON (Bonus = BON)
-- modifier = MOD (Modifikator = MOD)
-- minimum = MINVAL (Minimum = MINW)
-- maximum = MAX (Maximum = MAX)
-- half damage = HALF (Halber Schaden = HALB)
+- radius = rad. (Radius = Rad.)
+- diameter = dia. (Durchmesser = Durchm.)
+- sphere = sphere (Kugel = Kug.)
+- cube = cube (Würfel = Wwürf.)
+- cone = cone (Kegel = Kegel)
+- cylinder = cyl. (Zylinder = Zyl.)
+- line = line (Linie = Linie)
+- emanation = EMAN (Emanation = Eman.)
+- foot = ft (Fuß = Fuß)
+- feet = ft (Fuß = Fuß)
+- meter = mtr (Meter = m)
+- meters = mtr (Meter = m)
+- minute = min (Minute = min)
+- minutes = min (Minuten = min)
+- hour = h (Stunde = h)
+- hours = h (Stunden = h)
+- day = d (Tag = t)
+- bonus = bonus (Bonus = Bonus)
+- modifier = mod. (Modifikator = Mod.)
+- minimum = min. (Minimum = Min.)
+- maximum = max. (Maximum = Max.)
+- half damage = ½ dmg (Halber Schaden = ½ SCH)
 - on a failed save = FAIL (Bei misslungenem Rettungswurf = FEHL)
 - on a successful save = PASS (Bei gelungenem Rettungswurf = ERF)
-- half cover = HC (Halbe Deckung = HD)
+- half = ½ (halb = ½)
 - three-quarters cover = TQC (Dreivierteldeckung = DVD)
 - total cover = TC (Vollständige Deckung = VD)
 
@@ -164,6 +161,9 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - necrotic damage = NECR (Nekrotischer Schaden = NEKR)
 - piercing damage = PIER (Stichschaden = STICH)
 - poison damage = POIS (Giftschaden = GIFT)
+- psychic = psyc. (psychisch = psych.)
+- psychic = psyc. (psychischer = psych.)
+- psychic = psyc. (psychischen = psych.)
 - psychic damage = PSYC (Psychischer Schaden = PSY)
 - radiant damage = RADI (Gleißender Schaden = GLEISS)
 - slashing damage = SLAS (Hiebschaden = HIEB)
@@ -188,6 +188,9 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - approximately = approx. (circa = ca.)
 - possibly = poss. (eventuell = evtl.)
 - in part = partly (zum Teil = z. T.)
+- hit = hit (Treffer = Trf.)
+- attribute = attr. (Attribut = Attr.)
+- spell casting modifier = spell mod. (Zauber-Attributsmodifikator = Z.-Attr.Mod.)
 
 ### Usage conventions
 
@@ -204,14 +207,14 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - **Spell schools, class codes, and most extended codes are proposed identifiers**, not official standardized D&D abbreviations.
 - **R** means reaction; **RIT** means ritual. The official German spell-list marker **R** can also mean ritual, depending on context.
 - **R**, **K**, and **M** also occur as markers in official German spell lists: **R** indicates a ritual, **K** indicates concentration, and **M** indicates special material requirements. Their meanings depend on the display context.
-- **CON** means Constitution; **Conc.** means Concentration; **CONE** means cone; **CONJ** means Conjuration.
+- **CON** means Constitution; **Conc.** means Concentration; **CONJ** means Conjuration.
 - **RNG** means range; **RNG-R** means Ranger. Avoid reducing both to RNG in a machine-readable map.
-- **MIN** is the time unit minute; **MINVAL** is minimum.
+- **min** is the time unit minute; **min.**/**Min.** is minimum.
 - **RW** means Rettungswurf; **RWt** means Reichweite. This avoids the German collision.
 - **M** as a spell component means Material; **m** as a unit means meter. Case matters.
-- **Character level (Stufe)** and **spell level (Grad)** are different game concepts.
+- **Character level (Stufe)** and **spell level** are different concepts.
 - **S (English somatic)** corresponds to **G (German Gestenkomponente)**; English spell components **V, S, M** therefore correspond to German **V, G, M**.
-- **FT** is included for reading original English rules; German spell ranges are generally given in meters.
+- **ft** is the English foot/feet short; German spell ranges are generally given in meters.
 - **German ability abbreviations** such as ST, GE, KO, IN, WE, and CH are app-specific shorthand and do not necessarily match the abbreviations printed in the official German SRD.
 - **General language abbreviations** may overlap with D&D-specific codes. Their interpretation depends on context.
 - **Periods and spaces** are significant parts of an abbreviation. For example, `z. B.` and `d. h.` retain their internal spaces.

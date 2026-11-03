@@ -66,8 +66,8 @@ describe("abbreviation catalog", () => {
     expect(i18n.t("abbreviations.ritual.short", { lng: "en" })).toBe("RIT");
     expect(i18n.t("abbreviations.range.short", { lng: "en" })).toBe("RNG");
     expect(i18n.t("abbreviations.ranger.short", { lng: "en" })).toBe("RNG-R");
-    expect(i18n.t("abbreviations.foot.short", { lng: "en" })).toBe("FT");
-    expect(i18n.t("abbreviations.feet.short", { lng: "en" })).toBe("FT");
+    expect(i18n.t("abbreviations.foot.short", { lng: "en" })).toBe("ft");
+    expect(i18n.t("abbreviations.feet.short", { lng: "en" })).toBe("ft");
     expect(i18n.t("abbreviations.object.short", { lng: "en" })).toBe("obj.");
     expect(i18n.t("abbreviations.objects.short", { lng: "de" })).toBe("Ggst.");
     expect(en.abbreviations.foot.full).toBe("foot");
@@ -116,21 +116,19 @@ describe("abbreviation catalog", () => {
       ["en", "self"],
       ["en", "touch"],
       ["en", "sight"],
-      ["en", "day"],
       ["de", "self"],
       ["de", "sight"],
-      ["de", "day"],
     ] as const) {
       expect(isAbbreviationEligible(entryById(locale, id), locale)).toBe(false);
     }
   });
 
   it("exposes explicit plural unit entries", () => {
-    expect(entryById("en", "minutes")).toMatchObject({ full: "minutes", short: "MIN" });
-    expect(entryById("en", "hours")).toMatchObject({ full: "hours", short: "HR" });
-    expect(entryById("en", "meters")).toMatchObject({ full: "meters", short: "MTR" });
+    expect(entryById("en", "minutes")).toMatchObject({ full: "minutes", short: "min" });
+    expect(entryById("en", "hours")).toMatchObject({ full: "hours", short: "h" });
+    expect(entryById("en", "meters")).toMatchObject({ full: "meters", short: "mtr" });
     expect(entryById("de", "minutes")).toMatchObject({ full: "Minuten", short: "min" });
-    expect(entryById("de", "hours")).toMatchObject({ full: "Stunden", short: "Std." });
+    expect(entryById("de", "hours")).toMatchObject({ full: "Stunden", short: "h" });
     expect(entryById("de", "meters")).toMatchObject({ full: "Meter", short: "m" });
   });
 

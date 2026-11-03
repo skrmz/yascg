@@ -75,28 +75,28 @@ describe("compact casting-time parsing", () => {
   });
 
   it("formats minute and hour quantities with localized catalog shorts", async () => {
-    expect(displayCasting("1 minute")).toBe("1 MIN");
-    expect(displayCasting("10 minutes")).toBe("10 MIN");
-    expect(displayCasting("1 hour")).toBe("1 HR");
+    expect(displayCasting("1 minute")).toBe("1 min");
+    expect(displayCasting("10 minutes")).toBe("10 min");
+    expect(displayCasting("1 hour")).toBe("1 h");
     await i18n.changeLanguage("de");
     expect(displayCasting("1 Minute")).toBe("1 min");
     expect(displayCasting("10 Minuten")).toBe("10 min");
-    expect(displayCasting("1 Stunde")).toBe("1 Std.");
+    expect(displayCasting("1 Stunde")).toBe("1 h");
   });
 
   it("recognizes abbreviated quantity units", async () => {
-    expect(displayCasting("1 MIN")).toBe("1 MIN");
-    expect(displayCasting("10 MIN")).toBe("10 MIN");
-    expect(displayCasting("1 min")).toBe("1 MIN");
-    expect(displayCasting("1 mins")).toBe("1 MIN");
-    expect(displayCasting("1 HR")).toBe("1 HR");
-    expect(displayCasting("2 hrs")).toBe("2 HR");
+    expect(displayCasting("1 MIN")).toBe("1 min");
+    expect(displayCasting("10 MIN")).toBe("10 min");
+    expect(displayCasting("1 min")).toBe("1 min");
+    expect(displayCasting("1 mins")).toBe("1 min");
+    expect(displayCasting("1 HR")).toBe("1 h");
+    expect(displayCasting("2 hrs")).toBe("2 h");
     await i18n.changeLanguage("de");
     expect(displayCasting("1 min")).toBe("1 min");
     expect(displayCasting("10 Minuten")).toBe("10 min");
-    expect(displayCasting("1 Std.")).toBe("1 Std.");
-    expect(displayCasting("2 Std")).toBe("2 Std.");
-    expect(displayCasting("2 Stunden")).toBe("2 Std.");
+    expect(displayCasting("1 Std.")).toBe("1 h");
+    expect(displayCasting("2 Std")).toBe("2 h");
+    expect(displayCasting("2 Stunden")).toBe("2 h");
   });
 
   it("requires a Unicode word boundary after abbreviated unit tokens", () => {
