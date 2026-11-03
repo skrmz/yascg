@@ -23,7 +23,10 @@ import {
   removeEntry,
   reorderEntries,
   repairEntry,
+  replaceEntryWithSpell,
   setEntryFitMode,
+  type DeckIdentity,
+  type ReplaceEntryWithSpellResult,
 } from "@/db/active-deck.ts";
 import {
   InvalidDeckStateError,
@@ -92,6 +95,19 @@ export interface AddSpellsResult {
 }
 
 export type RepairDeckEntryResult = "repaired" | "duplicate" | "error";
+
+export type DeckMutationOutcome =
+  | { status: "ok" }
+  | { status: "conflict"; actualRevision: number }
+  | { status: "error" };
+
+export type ReplaceDeckEntryWithCopyResult =
+  | { status: "replaced" }
+  | { status: "conflict"; actualRevision: number }
+  | { status: "deck-changed" }
+  | { status: "missing" }
+  | { status: "duplicate" }
+  | { status: "error" };
 
 export type LanguageStatus = "loading" | "ready" | "failed";
 
@@ -185,6 +201,13 @@ export interface AppContextValue {
     entryId: string,
     target: { spellId: string; source: SpellSource; name: string },
   ) => Promise<RepairDeckEntryResult>;
+  replaceDeckEntryWithCopy: (
+    expectedRevision: number,
+    deckIdentity: DeckIdentity,
+    entryId: string,
+    sourceSpellId: string,
+    copy: Pick<Spell, "id" | "name" | "source">,
+  ) => Promise<ReplaceDeckEntryWithCopyResult>;
 
   saveActiveDeck: () => Promise<SaveDeckOutcome>;
   saveDeckAs: (name: string) => Promise<DeckActionOutcome>;
@@ -403,26 +426,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const runDeckMutation = useCallback(
     async (
       mutator: Parameters<typeof mutateActiveDeck>[1],
-      options?: { publish?: boolean },
-    ): Promise<boolean> => {
-      const current = await getActiveDeck();
+      options?: {
+        publish?: boolean;
+        expectedRevision?: number;
+        handleConflict?: "global" | "return";
+      },
+    ): Promise<DeckMutationOutcome> => {
+      const expectedRevision = options?.expectedRevision ?? (await getActiveDeck()).revision;
       try {
-        await mutateActiveDeck(current.revision, mutator);
+        await mutateActiveDeck(expectedRevision, mutator);
         if (options?.publish !== false) publishChange("active-deck");
         setDeckError(null);
-        return true;
+        return { status: "ok" };
       } catch (error) {
         if (error instanceof DeckConflictError) {
-          setConflict({
-            message: toMessageDescriptor(error),
-            expectedRevision: error.expectedRevision,
-            actualRevision: error.actualRevision,
-          });
+          if (options?.handleConflict !== "return") {
+            setConflict({
+              message: toMessageDescriptor(error),
+              expectedRevision: error.expectedRevision,
+              actualRevision: error.actualRevision,
+            });
+          }
           refreshAll();
-          return false;
+          return { status: "conflict", actualRevision: error.actualRevision };
         }
         setDeckError(toMessageDescriptor(error));
-        return false;
+        return { status: "error" };
       }
     },
     [refreshAll],
@@ -446,12 +475,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addSpellToDeck = useCallback(
     async (spell: Spell): Promise<AddSpellResult> => {
       let result: AddSpellResult = "duplicate";
-      const ok = await runDeckMutation((current) => {
+      const outcome = await runDeckMutation((current) => {
         if (hasSpellEntry(current.entries, spell.id)) return current;
         result = "added";
         return addEntry(current, makeEntry(spell.id, spell.source, spell.name));
       });
-      return ok ? result : "error";
+      return outcome.status === "ok" ? result : "error";
     },
     [runDeckMutation],
   );
@@ -475,7 +504,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         return next;
       });
-      return { added: ok ? added : 0, skipped, ok };
+      const succeeded = ok.status === "ok";
+      return { added: succeeded ? added : 0, skipped, ok: succeeded };
     },
     [runDeckMutation],
   );
@@ -558,7 +588,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       target: { spellId: string; source: SpellSource; name: string },
     ): Promise<RepairDeckEntryResult> => {
       let result: RepairDeckEntryResult = "error";
-      const ok = await runDeckMutation((current) => {
+      const outcome = await runDeckMutation((current) => {
         const entry = current.entries.find((candidate) => candidate.entryId === entryId);
         if (!entry) return current;
         const targetAlreadyPresent = current.entries.some(
@@ -574,7 +604,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
           reference: { source: target.source, name: target.name },
         });
       });
-      return ok ? result : "error";
+      return outcome.status === "ok" ? result : "error";
+    },
+    [runDeckMutation],
+  );
+
+  const replaceDeckEntryWithCopy = useCallback(
+    async (
+      expectedRevision: number,
+      deckIdentity: DeckIdentity,
+      entryId: string,
+      sourceSpellId: string,
+      copy: Pick<Spell, "id" | "name" | "source">,
+    ): Promise<ReplaceDeckEntryWithCopyResult> => {
+      let result: ReplaceEntryWithSpellResult = { status: "missing" };
+      const outcome = await runDeckMutation(
+        (current) => {
+          result = replaceEntryWithSpell(current, deckIdentity, entryId, sourceSpellId, {
+            spellId: copy.id,
+            reference: { source: copy.source, name: copy.name },
+          });
+          return result.status === "replaced" ? result.deck : current;
+        },
+        { expectedRevision, handleConflict: "return" },
+      );
+      if (outcome.status === "conflict") {
+        return { status: "conflict", actualRevision: outcome.actualRevision };
+      }
+      if (outcome.status === "error") return { status: "error" };
+      return { status: result.status };
     },
     [runDeckMutation],
   );
@@ -1044,6 +1102,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       renameActiveDeck,
       clearDeck,
       repairDeckEntry: repairDeckEntryFn,
+      replaceDeckEntryWithCopy,
       saveActiveDeck,
       saveDeckAs,
       openSavedDeck,
@@ -1102,6 +1161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       renameActiveDeck,
       clearDeck,
       repairDeckEntryFn,
+      replaceDeckEntryWithCopy,
       saveActiveDeck,
       saveDeckAs,
       openSavedDeck,

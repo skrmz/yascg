@@ -57,7 +57,8 @@ Paths are relative to the repository root.
   deck-entry normalization, and advisory `BroadcastChannel` notifications.
 - `src/services/data/` — manifest/dataset loading, language preference, search and filters, and
   deck reference resolution.
-- `src/markdown/` — safe `marked` token walker (raw HTML dropped, links as text), the shared
+- `src/markdown/` — safe `marked` token walker (raw HTML dropped except `<br>`, links as text;
+  authored newlines render as line breaks), the shared
   `BlockNode` renderer including structured component-description markers, headings,
   blockquotes, and nested lists, and deterministic AST splitting/pagination.
 - `src/cards/` — Classic and Compact card chrome plus hidden-card measurement, `document.fonts`
@@ -124,6 +125,19 @@ This section maps those contracts to the implementation.
 - Cross-tab notifications (`src/db/notifications.ts`) are advisory. Revision checks inside
   transactions are authoritative; a conflict keeps the user's uncommitted intent available and
   routes to the Reload Latest/Cancel or Save As/Open recovery described in the specification.
+- **Editable SRD copies:** `createCustomSpellCopy` (`src/db/custom-spells.ts`) deep-clones a
+  resolved spell, replaces identity, drops `sourceLabel`/`overridden`, and validates through
+  `spellSchema`. `replaceEntryWithSpell` (`src/db/active-deck.ts`) is the pure replacement
+  mutator; it compares `{name, savedDeckId}`, verifies the entry is still the expected SRD spell,
+  rejects duplicates, and delegates to `repairEntry` to preserve `entryId`, position, and
+  `fitMode`. `AppProvider.replaceDeckEntryWithCopy` runs it through `runDeckMutation` with an
+  explicit `expectedRevision` and `handleConflict: "return"`, so a local conflict returns a
+  structured outcome instead of opening the global dialog. `DetailsPane` captures the deck
+  revision and identity when opening the copy editor, keeps the captured flow in a ref for
+  `onSaved`, and renders the confirmation outside the empty-selection branch.
+  `CustomSpellForm` gains `editableCopy`, `onSaved`, and `selectOnSave`; it saves from the
+  existing record, preserves unexposed component fields, and uses `LIMITS.FREETEXT_MAX` for
+  authoring so copied SRD metadata over 120 characters stays editable.
 
 ## Import and export routing
 

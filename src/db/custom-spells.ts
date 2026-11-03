@@ -43,6 +43,22 @@ export function createCustomSpellDraft(language: string = "en"): Spell {
   };
 }
 
+/**
+ * Builds an unsaved custom-spell copy of any spell, preserving every field the
+ * current `Spell` schema recognizes while replacing identity and dropping SRD
+ * provenance markers. The copy is validated through the schema, which also
+ * strips unknown fields, exactly as persistence does.
+ */
+export function createCustomSpellCopy(source: Spell): Spell {
+  const clone = structuredClone(source);
+  delete clone.sourceLabel;
+  delete clone.overridden;
+  clone.id = newUuid();
+  clone.source = "Custom";
+  clone.updatedAt = Date.now();
+  return spellSchema.parse(clone);
+}
+
 function validateCustomSpell(spell: Spell): Spell {
   if (isReservedSrdId(spell.id)) {
     throw new AppError(

@@ -439,6 +439,25 @@ export const de = {
       "Die Notizen dieser Karte passen auch bei kleinster Schrift nicht auf eine Karte. Kürze die Notizen oder wähle ein anderes Kartendesign.",
     tableOverflow:
       "Eine Markdown-Tabelle ist zu groß für die Karte und kann nicht gedruckt werden. Kürze die Tabelle oder reduziere ihre Spalten.",
+    createEditableCopy: "Bearbeitbare Kopie erstellen",
+    copyReplaceTitle: 'Decks-Eintrag durch "{{name}}" ersetzen?',
+    copyReplaceDescription:
+      'Der Eintrag im aktiven Deck verwendet dann "{{name}}" und behält seine Position und seinen Anpassungsmodus. Der ursprüngliche SRD-Zauber und gespeicherte Decks bleiben unverändert. Wenn du abbrichst, bleibt die eigene Kopie in deiner Bibliothek, ohne das aktive Deck zu ändern.',
+    copyReplaceConfirm: "Eintrag ersetzen",
+    copyReplaceRetry: "Erneut versuchen",
+    copyReplaceSuccess: "Der Eintrag im aktiven Deck verwendet jetzt deine eigene Kopie.",
+    copyReplaceConflict:
+      "Das aktive Deck wurde vor dem Ersetzen geändert. Die eigene Kopie wurde gespeichert, aber das Deck nicht geändert. Versuche es erneut, um den Eintrag im aktuellen Deck zu ersetzen.",
+    copyReplaceDeckChanged:
+      "Jetzt ist ein anderes Deck aktiv. Die eigene Kopie wurde gespeichert, aber das Deck nicht geändert. Brich ab und starte den Vorgang beim aktuellen Deck erneut.",
+    copyReplaceMissing:
+      "Der ursprüngliche Eintrag ist nicht mehr im aktiven Deck. Die eigene Kopie wurde gespeichert, aber das Deck nicht geändert.",
+    copyReplaceDuplicate:
+      "Das aktive Deck enthält diese eigene Kopie bereits. Das Deck wurde nicht geändert.",
+    copyReplaceError:
+      "Der Decks-Eintrag konnte nicht ersetzt werden. Die eigene Kopie wurde gespeichert, aber das aktive Deck nicht geändert.",
+    copySavedDeckUnchanged:
+      "Die eigene Kopie wurde gespeichert. Das aktive Deck wurde nicht geändert.",
   },
   error: {
     generic: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
@@ -649,9 +668,12 @@ export const de = {
     title: {
       new: "Neuer eigener Zauber",
       edit: "Eigenen Zauber bearbeiten",
+      copy: "Bearbeitbare Kopie erstellen",
     },
     description:
       "Eigene Zauber werden lokal gespeichert und verändern niemals die mitgelieferten SRD-Daten.",
+    descriptionCopy:
+      "Die Kopie behält den Text und die Sprache, die beim Erstellen erfasst wurden; ein Wechsel der App-Sprache übersetzt sie nicht. Nach dem Speichern der Kopie wirst du gefragt, ob der Eintrag im aktiven Deck ersetzt werden soll.",
     descriptionSrd:
       "Die mitgelieferten SRD-Daten werden niemals verändert. Es werden nur deine lokalen Verbal- und Gestenkomponenten für diese Sprache gespeichert.",
     name: "Name",

@@ -11,6 +11,7 @@ import {
   spellSchema,
   type CoreClass,
   type Spell,
+  type SpellComponents,
   type SpellSchool,
 } from "@/domain/spells";
 import { classKey, schoolKey } from "@/locales/labels.ts";
@@ -27,6 +28,9 @@ export interface CustomSpellFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   spell?: Spell;
+  editableCopy?: boolean;
+  onSaved?: (spell: Spell) => void;
+  selectOnSave?: boolean;
 }
 
 interface DraftState {
@@ -75,6 +79,27 @@ function toDraft(spell: Spell): DraftState {
   };
 }
 
+const EXPOSED_COMPONENT_KEYS = new Set<keyof SpellComponents>([
+  "verbal",
+  "somatic",
+  "material",
+  "verbalDescription",
+  "somaticDescription",
+  "materialDescription",
+  "materialCost",
+  "materialConsumed",
+]);
+
+/** Keeps component fields the form does not expose (e.g. display overrides). */
+function unexposedComponents(components: SpellComponents): Partial<SpellComponents> {
+  const preserved: Partial<SpellComponents> = {};
+  for (const key of Object.keys(components) as Array<keyof SpellComponents>) {
+    if (EXPOSED_COMPONENT_KEYS.has(key)) continue;
+    (preserved as Record<string, unknown>)[key] = components[key];
+  }
+  return preserved;
+}
+
 function validationDescriptor(issue: ZodIssue): MessageDescriptor {
   const path = issue.path.map(String).join(".");
   const root = String(issue.path[0] ?? "");
@@ -88,13 +113,13 @@ function validationDescriptor(issue: ZodIssue): MessageDescriptor {
   if (root === "description") return message("form.error.description");
   if (root === "higherLevels") return message("form.error.higherLevels");
   if (root === "castingTime") {
-    return message("form.error.castingTime", { max: LIMITS.FREETEXT_AUTHORED_MAX });
+    return message("form.error.castingTime", { max: LIMITS.FREETEXT_MAX });
   }
   if (root === "range") {
-    return message("form.error.range", { max: LIMITS.FREETEXT_AUTHORED_MAX });
+    return message("form.error.range", { max: LIMITS.FREETEXT_MAX });
   }
   if (root === "duration") {
-    return message("form.error.duration", { max: LIMITS.FREETEXT_AUTHORED_MAX });
+    return message("form.error.duration", { max: LIMITS.FREETEXT_MAX });
   }
   if (root === "components" || path.startsWith("components.")) {
     return message("form.error.metaTooLong", { max: LIMITS.META_MAX });
@@ -102,7 +127,14 @@ function validationDescriptor(issue: ZodIssue): MessageDescriptor {
   return message("form.error.generic");
 }
 
-export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormProps) {
+export function CustomSpellForm({
+  open,
+  onOpenChange,
+  spell,
+  editableCopy = false,
+  onSaved,
+  selectOnSave = true,
+}: CustomSpellFormProps) {
   const { saveCustomSpell, selectSpell, saveSrdOverride, resetSrdOverride, language } = useApp();
   const { t } = useTranslation();
   const isSrd = spell?.source === "SRD-5.2.1";
@@ -172,6 +204,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
       range: draft.range.trim(),
       duration: draft.duration.trim(),
       components: {
+        ...unexposedComponents(base.components),
         verbal: draft.verbal,
         somatic: draft.somatic,
         material: draft.material,
@@ -200,7 +233,7 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
     };
 
     const nextErrors: Record<string, MessageDescriptor> = {};
-    const maxLength = LIMITS.FREETEXT_AUTHORED_MAX;
+    const maxLength = LIMITS.FREETEXT_MAX;
     if (draft.castingTime.trim().length > maxLength) {
       nextErrors.castingTime = message("form.error.castingTime", { max: maxLength });
     }
@@ -222,16 +255,23 @@ export function CustomSpellForm({ open, onOpenChange, spell }: CustomSpellFormPr
 
     const saved = await saveCustomSpell(parsed.success ? parsed.data : candidate);
     if (saved) {
-      selectSpell(saved.id);
+      if (selectOnSave) selectSpell(saved.id);
       onOpenChange(false);
+      onSaved?.(saved);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        title={t(spell ? "form.title.edit" : "form.title.new")}
-        description={t(isSrd ? "form.descriptionSrd" : "form.description")}
+        title={t(editableCopy ? "form.title.copy" : spell ? "form.title.edit" : "form.title.new")}
+        description={t(
+          editableCopy
+            ? "form.descriptionCopy"
+            : isSrd
+              ? "form.descriptionSrd"
+              : "form.description",
+        )}
         className="w-[min(92vw,42rem)]"
         footer={
           <>

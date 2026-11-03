@@ -24,6 +24,21 @@ describe("parseMarkdown safety", () => {
     expect(markup).toContain("Safe text");
   });
 
+  it("renders authored single newlines as line breaks", () => {
+    const blocks = parseMarkdown("**First:** one\n**Second:** two\n**Third:** three");
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain("<strong>First:</strong> one<br/>");
+    expect(markup).toContain("<strong>Second:</strong> two<br/>");
+    expect(markup).toContain("<strong>Third:</strong> three");
+  });
+
+  it("supports only the br tag among raw HTML", () => {
+    const blocks = parseMarkdown("one<br>two<br />three<span>text</span>");
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain("one<br/>two<br/>three");
+    expect(markup).not.toContain("<span");
+  });
+
   it("renders links as non-clickable text", () => {
     const blocks = parseMarkdown("[Click me](https://example.com)");
     const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);

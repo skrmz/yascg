@@ -104,9 +104,10 @@ spells `Custom` and bundled spells `SRD 5.2.1`.
   print geometry use dedicated strict CSS (§9–10), not utility-class geometry.
 - **Typography:** application chrome uses Karla (body/controls), Cormorant Garamond (display
   headings), and IBM Plex Mono (labels). Card typography is specified in §9.
-- **Markdown:** safe AST-based parsing with raw HTML disabled. Render only an allowlisted node
-  set; links display as non-clickable text. No remote images or external resources in spell
-  content.
+- **Markdown:** safe AST-based parsing with raw HTML disabled except the harmless `<br>` tag,
+  which renders a line break. Authored newlines render as line breaks in preview, details, and
+  print. Render only an allowlisted node set; links display as non-clickable text. No remote
+  images or external resources in spell content.
 - **Tests:** `vp test` for unit/integration tests and Playwright for browser E2E tests.
   Commands and test-file conventions are in [DEVELOPMENT](../DEVELOPMENT.md#local-verification).
 
@@ -235,10 +236,10 @@ invoke reference repair. `reference.name` is a historical display fallback, not 
   reserved. `entryId` and saved-deck IDs are UUIDs.
 - `name`: trimmed, 1–120 characters. `level`: integer 0–9. `school`: one of the eight defined
   values.
-- `castingTime`, `range`, `duration`: trimmed, non-empty free text. The runtime schema admits
-  up to 500 characters so official SRD rules text is never truncated; the custom-spell
-  authoring guideline is 120 characters. There is no rigid enum for actions, reactions,
-  minutes, or hours.
+- `castingTime`, `range`, `duration`: trimmed, non-empty free text. Both bundled data and
+  custom-spell authoring admit up to 500 characters, so official SRD rules text is never
+  truncated and a copied spell stays editable within the same limit. There is no rigid enum for
+  actions, reactions, minutes, or hours.
 - `classes`: zero or more unique, non-empty names drawn from the 12 canonical `CoreClass`
   values. Unknown class names are rejected on import and in the custom-spell form; UI filters
   list exactly those 12 classes.
@@ -285,6 +286,10 @@ actions (Show details and the existing Edit flow). No single click on the card b
 details or menus, and all interaction affordances are excluded from print. The dialog reads the
 resolved selected spell, never card DOM or fit output, and closes immediately if the selected
 spell changes.
+
+When the selected spell is `source: "SRD-5.2.1"` and has a matching entry in the active deck,
+the pane header also offers **Create editable copy**. Selecting a deck row already opens that
+spell here, so no separate per-row copy action is required.
 
 **Language selector:** place a compact, labeled, keyboard-accessible dropdown/combobox in the
 upper-right application header, reachable on small screens. Show only languages in the
@@ -348,6 +353,27 @@ results. This bulk operation is optional UI convenience, not a separate deck mod
 - Validate before saving. Report errors inline. A failed IndexedDB write must not appear
   successful. A custom spell edit or overwrite retains its ID, and cards resolve the current
   spell body by that ID; saved snapshots are not rewritten.
+- **Editable copies of SRD spells:** the Details pane offers **Create editable copy** for an SRD
+  spell present in the active deck. Clicking it creates an in-memory custom draft with a new
+  UUID and opens the custom-spell editor; nothing is persisted until **Save spell** succeeds.
+  - The draft is a schema-aware deep copy of the resolved source spell. Identity fields
+    (`id`, `source`, `updatedAt`) are replaced, SRD provenance (`sourceLabel`) and the transient
+    `overridden` marker are dropped, and the result is validated through `spellSchema`. Every
+    field recognized by the current `Spell` schema is preserved; unknown fields are stripped as
+    for any persisted spell.
+  - Preserve the source spell's name and captured text exactly. Do not add a language-specific
+    suffix. The copy is an ordinary `source: "Custom"` record, so it is not translated when the
+    app language changes.
+  - Cancelling the editor writes nothing. If saving fails, the editor remains open and no copy
+    or deck change exists.
+  - If saving succeeds, ask for confirmation before replacing the active deck entry. Cancelling
+    that confirmation keeps the saved custom copy in the library, selects it, and leaves the
+    active deck unchanged. Confirming replaces only the matching entry (see §7).
+  - The editor preserves unexposed fields on later ordinary edits: it saves from the existing
+    record and only overwrites fields it exposes, including merging component fields so
+    `componentsDisplayOverride` and other unexposed component data survive.
+  - Copies are ordinary custom spells for import, export, backup, saved-deck resolution, and
+    deletion. No new format or persistence model is required.
 - **Delete:** show a confirmation explaining that deleting a custom spell also removes *its
   entry from the active deck*. Confirm or cancel. Delete the spell and matching active entry
   atomically, checking the active-deck revision and incrementing it. **Never** silently rewrite
@@ -422,6 +448,13 @@ This section is the authoritative owner of deck-state semantics. Implementation 
   `entryId`, `spellId`, `fitMode`, and `reference`) against the persisted `baseline`, ignoring
   active `revision` and `baseline.savedRevision`. `baseline: null` is dirty if the active name
   is nonempty or entries exist. An empty unnamed active deck with null baseline is clean.
+- **Replace an entry with an editable copy:** when the user confirms the copy flow, replace
+  only the matching active entry. Preserve its `entryId`, array position, and `fitMode`; update
+  `spellId` and `reference` to the saved custom copy. Check the captured active revision and the
+  captured `{name, savedDeckId}` identity inside the compare-and-swap mutation. Abort without
+  writing when the deck identity changed, the entry is missing or rebound, the entry is no
+  longer SRD, or another entry already uses the copy ID. Never modify `db.savedDecks`, any other
+  entry, or the baseline. Dirty state recalculates from the live active-deck query.
   Baseline is created/updated **only** by successful Save As, Save, or Open. Edits, deletion,
   Undo, repair, Clear entries, and deck import never update the baseline. If Undo exactly
   restores the baseline, dirty becomes false.
@@ -510,6 +543,9 @@ payload is valid and the user confirms the operation. Runtime schemas live in
   spells plus all local SRD component-text overrides (verbal/somatic descriptions). Custom spell
   records retain their `updatedAt`; override export records omit the storage-only `updatedAt`.
   Filename `spell-card-generator-custom-spells-YYYY-MM-DD.json`.
+- Editable copies of SRD spells are ordinary custom spells and use the same payload unchanged.
+  Export preserves their UUIDs and fields; importing into an empty store restores them with
+  those UUIDs, and existing collision review applies when a UUID is already present.
 - Import cap: 5 MiB. Parse and validate the entire payload before applying changes. The
   supported payload is `{type:"custom-spells",spells:[...],srdSpellOverrides?:[...]}`. Invalid
   JSON, wrong `type`, unknown top-level fields, duplicate IDs inside the input, or invalid
@@ -822,6 +858,7 @@ duplicate these outcomes as a second invariants list.
 | S6  | Search          | Translation-unavailable spell already in deck                                                       | Single entry preserved as an unavailable placeholder; switching back restores its text                                                                                                                         | §7          |
 | S7  | Search          | Custom spell and true broken reference in a translated deck                                         | Custom spell unchanged; broken reference remains repairable and is not categorized as untranslated                                                                                                             | §7, §8.2    |
 | C1  | Custom spells   | Create/edit/duplicate                                                                               | UUID/timestamps/validation/defaults follow §6; saved snapshots are not rewritten                                                                                                                               | §6          |
+| C1a | Custom spells   | Create editable copy of an SRD spell in the active deck                                             | Draft is unsaved; save asks to replace only the matching entry (ID/position/fit mode preserved); cancelling the editor writes nothing; save failure leaves the editor open; replacement failure, retry, and a concurrent deck switch/identity change keep the saved copy and never write the wrong deck | §6, §7      |
 | C2  | Custom spells   | Delete                                                                                              | Confirmation; spell and matching active entry removed atomically; saved decks unchanged                                                                                                                        | §6          |
 | C2a | Custom spells   | Cancel custom deletion                                                                              | Spell and active deck unchanged                                                                                                                                                                                | §6          |
 | C3  | Custom spells   | Undo immediately after deletion                                                                     | Original spell and entry ID/position restored; dirty state recalculated                                                                                                                                        | §6          |

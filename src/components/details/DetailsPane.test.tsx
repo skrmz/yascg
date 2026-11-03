@@ -3,7 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n.ts";
 import type { Spell } from "@/domain/spells";
-import { makeSpell } from "@/test/fixtures/spells.ts";
+import { createEmptyActiveDeck, type ActiveDeckRecord } from "@/domain/deck";
+import { makeEntry } from "@/db/active-deck.ts";
+import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
 import { TooltipProvider } from "@/ui/Tooltip.tsx";
 import { DetailsPane } from "./DetailsPane.tsx";
 
@@ -17,16 +19,21 @@ interface FitResultStub {
 
 const holder = vi.hoisted(() => ({
   spell: null as Spell | null,
+  activeDeck: null as ActiveDeckRecord | null,
   addSpellToDeck: vi.fn(),
   canUndo: false,
   undoDelete: vi.fn(),
   fit: null as FitResultStub | null,
   presentation: null as unknown,
   cardDesign: "classic" as "classic" | "compact",
+  selectSpell: vi.fn(),
+  saveCustomSpell: vi.fn(),
+  replaceDeckEntryWithCopy: vi.fn(),
 }));
 
 const toastMock = vi.hoisted(() => ({
   info: vi.fn(),
+  success: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({ toast: toastMock }));
@@ -34,7 +41,7 @@ vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/state/AppProvider.tsx", () => ({
   useApp: () => ({
     selectedSpell: holder.spell,
-    activeDeck: null,
+    activeDeck: holder.activeDeck,
     language: "en",
     cardDesign: holder.cardDesign,
     manifest: [],
@@ -43,10 +50,11 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     addSpellToDeck: holder.addSpellToDeck,
     duplicateSpell: () => Promise.resolve(),
     deleteSpell: () => Promise.resolve(true),
-    saveCustomSpell: () => Promise.resolve(null),
+    saveCustomSpell: holder.saveCustomSpell,
     saveSrdOverride: () => Promise.resolve(null),
     resetSrdOverride: () => Promise.resolve(true),
-    selectSpell: () => {},
+    selectSpell: holder.selectSpell,
+    replaceDeckEntryWithCopy: holder.replaceDeckEntryWithCopy,
     canUndo: holder.canUndo,
     undoDelete: holder.undoDelete,
   }),
@@ -70,7 +78,12 @@ beforeEach(() => {
   holder.fit = null;
   holder.presentation = null;
   holder.cardDesign = "classic";
+  holder.activeDeck = null;
+  holder.selectSpell.mockReset();
+  holder.saveCustomSpell.mockReset().mockResolvedValue(null);
+  holder.replaceDeckEntryWithCopy.mockReset().mockResolvedValue({ status: "replaced" });
   toastMock.info.mockReset();
+  toastMock.success.mockReset();
 });
 
 afterEach(async () => {
@@ -398,6 +411,209 @@ describe("DetailsPane fit notices", () => {
       </TooltipProvider>,
     );
     expect(container.querySelector(".spell-card-compact")).not.toBeNull();
+  });
+});
+
+describe("DetailsPane editable SRD copies", () => {
+  function makeDeck(spellId = "srd-test-spell"): ActiveDeckRecord {
+    return {
+      ...createEmptyActiveDeck(),
+      name: "Deck A",
+      revision: 5,
+      entries: [makeEntry(spellId, "SRD-5.2.1", "Test Spell")],
+    };
+  }
+
+  async function openCopyEditor(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole("button", { name: "Create editable copy" }));
+    return screen.getByRole("dialog", { name: "Create editable copy" });
+  }
+
+  async function saveAndOpenConfirmation(
+    user: ReturnType<typeof userEvent.setup>,
+    name = "Test Spell",
+  ) {
+    await openCopyEditor(user);
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+    return screen.getByRole("dialog", { name: `Replace the deck entry with "${name}"?` });
+  }
+
+  it("hides the action for custom spells and SRD spells outside the active deck", () => {
+    holder.spell = makeCustomSpell({ id: "custom-1" });
+    holder.activeDeck = makeDeck("custom-1");
+    const { rerender } = render(<DetailsPane />);
+    expect(screen.queryByRole("button", { name: "Create editable copy" })).toBeNull();
+
+    holder.spell = makeSpell({ id: "srd-other" });
+    holder.activeDeck = makeDeck("srd-test-spell");
+    rerender(<DetailsPane />);
+    expect(screen.queryByRole("button", { name: "Create editable copy" })).toBeNull();
+  });
+
+  it("shows the action for an SRD spell present in the active deck", () => {
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = makeDeck();
+    render(<DetailsPane />);
+    expect(screen.getByRole("button", { name: "Create editable copy" })).not.toBeNull();
+  });
+
+  it("cancelling the editor writes nothing", async () => {
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = makeDeck();
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await openCopyEditor(user);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(holder.saveCustomSpell).not.toHaveBeenCalled();
+    expect(holder.replaceDeckEntryWithCopy).not.toHaveBeenCalled();
+  });
+
+  it("does not open the confirmation when saving fails", async () => {
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = makeDeck();
+    holder.saveCustomSpell.mockResolvedValue(null);
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await openCopyEditor(user);
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+
+    expect(screen.queryByRole("dialog", { name: /Replace the deck entry/ })).toBeNull();
+    expect(holder.replaceDeckEntryWithCopy).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog", { name: "Create editable copy" })).not.toBeNull();
+  });
+
+  it("cancelling the confirmation keeps the copy and leaves the deck unchanged", async () => {
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = makeDeck();
+    const copy = makeCustomSpell({ id: "copy-1", name: "Test Spell" });
+    holder.saveCustomSpell.mockResolvedValue(copy);
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await saveAndOpenConfirmation(user);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(holder.replaceDeckEntryWithCopy).not.toHaveBeenCalled();
+    expect(holder.selectSpell).toHaveBeenCalledWith("copy-1");
+    expect(toastMock.info).toHaveBeenCalledWith(
+      "The custom copy was saved. The active deck was not changed.",
+    );
+  });
+
+  it("confirms the replacement with the captured deck state and selects the copy", async () => {
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = makeDeck();
+    const entryId = holder.activeDeck.entries[0].entryId;
+    const copy = makeCustomSpell({ id: "copy-1", name: "Test Spell" });
+    holder.saveCustomSpell.mockResolvedValue(copy);
+    holder.replaceDeckEntryWithCopy.mockResolvedValue({ status: "replaced" });
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await saveAndOpenConfirmation(user);
+    await user.click(screen.getByRole("button", { name: "Replace entry" }));
+
+    expect(holder.replaceDeckEntryWithCopy).toHaveBeenCalledWith(
+      5,
+      { name: "Deck A" },
+      entryId,
+      "srd-test-spell",
+      { id: "copy-1", name: "Test Spell", source: "Custom" },
+    );
+    expect(holder.selectSpell).toHaveBeenCalledWith("copy-1");
+    expect(toastMock.success).toHaveBeenCalledWith(
+      "The active deck entry now uses your custom copy.",
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("submits only once when confirm is clicked twice", async () => {
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = makeDeck();
+    holder.saveCustomSpell.mockResolvedValue(makeCustomSpell({ id: "copy-1", name: "Test Spell" }));
+    let resolveReplace: (value: { status: "replaced" }) => void = () => {};
+    holder.replaceDeckEntryWithCopy.mockReturnValue(
+      new Promise((resolve) => {
+        resolveReplace = resolve;
+      }),
+    );
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await saveAndOpenConfirmation(user);
+    const confirm = screen.getByRole("button", { name: "Replace entry" });
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+
+    expect(holder.replaceDeckEntryWithCopy).toHaveBeenCalledTimes(1);
+    resolveReplace({ status: "replaced" });
+  });
+
+  it("keeps the dialog open on a conflict and retries with the actual revision", async () => {
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = makeDeck();
+    holder.saveCustomSpell.mockResolvedValue(makeCustomSpell({ id: "copy-1", name: "Test Spell" }));
+    holder.replaceDeckEntryWithCopy.mockResolvedValueOnce({
+      status: "conflict",
+      actualRevision: 9,
+    });
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await saveAndOpenConfirmation(user);
+    await user.click(screen.getByRole("button", { name: "Replace entry" }));
+
+    expect(screen.getByText(/The active deck changed before the replacement/)).not.toBeNull();
+
+    holder.replaceDeckEntryWithCopy.mockResolvedValueOnce({ status: "replaced" });
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(holder.replaceDeckEntryWithCopy).toHaveBeenLastCalledWith(
+      9,
+      { name: "Deck A" },
+      holder.activeDeck.entries[0].entryId,
+      "srd-test-spell",
+      { id: "copy-1", name: "Test Spell", source: "Custom" },
+    );
+    expect(holder.selectSpell).toHaveBeenCalledWith("copy-1");
+  });
+
+  it("does not offer retry when the active deck identity changed", async () => {
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = makeDeck();
+    holder.saveCustomSpell.mockResolvedValue(makeCustomSpell({ id: "copy-1", name: "Test Spell" }));
+    holder.replaceDeckEntryWithCopy.mockResolvedValue({ status: "deck-changed" });
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await saveAndOpenConfirmation(user);
+    await user.click(screen.getByRole("button", { name: "Replace entry" }));
+
+    expect(screen.getByText(/A different deck is active now/)).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Cancel" })).not.toBeNull();
+  });
+
+  it.each([
+    ["missing", /no longer in the active deck/],
+    ["duplicate", /already contains this custom copy/],
+    ["error", /could not be replaced/],
+  ] as const)("explains the %s outcome and offers retry", async (status, messagePattern) => {
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = makeDeck();
+    holder.saveCustomSpell.mockResolvedValue(makeCustomSpell({ id: "copy-1", name: "Test Spell" }));
+    holder.replaceDeckEntryWithCopy.mockResolvedValue({ status });
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await saveAndOpenConfirmation(user);
+    await user.click(screen.getByRole("button", { name: "Replace entry" }));
+
+    expect(screen.getByText(messagePattern)).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Retry" })).not.toBeNull();
   });
 });
 

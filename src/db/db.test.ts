@@ -10,6 +10,7 @@ import {
   mutateActiveDeck,
   removeEntry,
   repairEntry,
+  replaceEntryWithSpell,
   reorderEntries,
 } from "@/db/active-deck.ts";
 import {
@@ -144,6 +145,154 @@ describe("active deck persistence", () => {
       reference: { source: "SRD-5.2.1", name: "A" },
     });
     expect(repaired).toBe(deck);
+  });
+});
+
+describe("replaceEntryWithSpell", () => {
+  async function seedDeck() {
+    return mutateActiveDeck(0, (current) => ({
+      ...current,
+      name: "Deck A",
+      entries: [makeEntry("srd-a", "SRD-5.2.1", "A"), makeEntry("srd-b", "SRD-5.2.1", "B")],
+    }));
+  }
+
+  const copyTarget = {
+    spellId: "custom-copy",
+    reference: { source: "Custom" as const, name: "B copy" },
+  };
+
+  it("preserves entry ID, position, and fit mode", async () => {
+    const deck = await seedDeck();
+    const entry = deck.entries[1];
+    const result = replaceEntryWithSpell(
+      deck,
+      { name: "Deck A" },
+      entry.entryId,
+      "srd-b",
+      copyTarget,
+    );
+    expect(result.status).toBe("replaced");
+    if (result.status !== "replaced") return;
+
+    const replaced = result.deck.entries[1];
+    expect(replaced.entryId).toBe(entry.entryId);
+    expect(replaced.fitMode).toBe(entry.fitMode);
+    expect(replaced.spellId).toBe("custom-copy");
+    expect(replaced.reference).toEqual({ source: "Custom", name: "B copy" });
+    expect(result.deck.entries[0]).toEqual(deck.entries[0]);
+    expect(result.deck.revision).toBe(deck.revision);
+  });
+
+  it("reports a missing entry id", async () => {
+    const deck = await seedDeck();
+    const result = replaceEntryWithSpell(deck, { name: "Deck A" }, "nope", "srd-a", copyTarget);
+    expect(result).toEqual({ status: "missing" });
+  });
+
+  it("reports a rebound or non-SRD entry as missing", async () => {
+    const deck = await seedDeck();
+    const rebound = replaceEntryWithSpell(
+      deck,
+      { name: "Deck A" },
+      deck.entries[0].entryId,
+      "srd-z",
+      copyTarget,
+    );
+    expect(rebound).toEqual({ status: "missing" });
+
+    const customDeck = await mutateActiveDeck(deck.revision, (current) => ({
+      ...current,
+      entries: [makeEntry("custom-a", "Custom", "Custom A")],
+    }));
+    const nonSrd = replaceEntryWithSpell(
+      customDeck,
+      { name: "Deck A" },
+      customDeck.entries[0].entryId,
+      "custom-a",
+      copyTarget,
+    );
+    expect(nonSrd).toEqual({ status: "missing" });
+  });
+
+  it("reports a duplicate target without changing the deck", async () => {
+    const deck = await seedDeck();
+    const result = replaceEntryWithSpell(
+      deck,
+      { name: "Deck A" },
+      deck.entries[1].entryId,
+      "srd-b",
+      { spellId: "srd-a", reference: { source: "Custom", name: "A copy" } },
+    );
+    expect(result).toEqual({ status: "duplicate" });
+  });
+
+  it("rejects a different deck identity even with matching entry ids", async () => {
+    const deck = await seedDeck();
+    const entry = deck.entries[0];
+    const result = replaceEntryWithSpell(
+      deck,
+      { name: "Deck B" },
+      entry.entryId,
+      "srd-a",
+      copyTarget,
+    );
+    expect(result).toEqual({ status: "deck-changed" });
+
+    const associated = await mutateActiveDeck(deck.revision, (current) => ({
+      ...current,
+      savedDeckId: "saved-1",
+    }));
+    const identityMismatch = replaceEntryWithSpell(
+      associated,
+      { name: "Deck A", savedDeckId: "saved-2" },
+      entry.entryId,
+      "srd-a",
+      copyTarget,
+    );
+    expect(identityMismatch).toEqual({ status: "deck-changed" });
+  });
+
+  it("aborts a replacement with a stale expected revision", async () => {
+    const deck = await seedDeck();
+    const entry = deck.entries[0];
+    await mutateActiveDeck(deck.revision, (current) => ({ ...current, name: "Deck B" }));
+
+    await expect(
+      mutateActiveDeck(deck.revision, (current) => {
+        const result = replaceEntryWithSpell(
+          current,
+          { name: "Deck A" },
+          entry.entryId,
+          "srd-a",
+          copyTarget,
+        );
+        return result.status === "replaced" ? result.deck : current;
+      }),
+    ).rejects.toBeInstanceOf(DeckConflictError);
+  });
+
+  it("leaves the baseline and saved decks untouched", async () => {
+    await seedDeck();
+    const created = await saveNewDeck(1, "Deck A");
+    const deck = await getActiveDeck();
+    const entry = deck.entries[0];
+    const savedBefore = await listSavedDecks();
+
+    const next = await mutateActiveDeck(deck.revision, (current) => {
+      const result = replaceEntryWithSpell(
+        current,
+        { name: current.name, savedDeckId: current.savedDeckId },
+        entry.entryId,
+        "srd-a",
+        copyTarget,
+      );
+      return result.status === "replaced" ? result.deck : current;
+    });
+
+    expect(next.savedDeckId).toBe(created.savedDeck.id);
+    expect(next.baseline).toEqual(deck.baseline);
+    expect(await listSavedDecks()).toEqual(savedBefore);
   });
 });
 

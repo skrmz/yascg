@@ -11,6 +11,8 @@ paper. All data stays in your browser unless you export it as JSON.
   components, casting time, concentration, ritual, and source.
 - English and German bundled spell data, build-time translation support, and editable custom
   spells with JSON import/export.
+- Create an editable custom copy of an SRD spell that is in the active deck, then replace that
+  deck entry with the saved copy while keeping its position and fit mode.
 - Keep one active deck and save or load named decks locally.
 - Preview spell cards, open full details, render safe Markdown, and print with auto-shrink or
   multi-card continuation.
@@ -49,6 +51,15 @@ Browse the library, open a spell for details, and add spells to the **Active Dec
 custom spells from the library and edit them from the details view. Decks contain at most one
 entry per spell; **Append all** skips spells already present and reports how many were added
 and skipped. **Replace deck** replaces the active entries after confirmation.
+
+When the selected spell is an SRD spell that is already in the active deck, the details header
+offers **Create editable copy**. It opens the custom-spell editor with an unsaved copy; nothing
+is stored until you save. After saving, confirm **Replace entry** to point only that deck entry
+at the copy, keeping its position and fit mode. Cancelling the confirmation keeps the saved copy
+in your library and leaves the deck unchanged. If the deck changed before you confirm, the
+dialog explains the outcome and offers **Retry** where retrying is safe; a different active deck
+requires cancelling and restarting the flow. The original SRD spell and saved decks are never
+modified.
 
 The active deck is always stored locally as you edit it; "unsaved" never means "unpersisted".
 Named snapshots are independent of the working deck:
@@ -131,6 +142,9 @@ actions menu. To restore, import both files; the two exports cover different dat
   `*` on its source badge; **Reset to original** removes only that local note. These notes are
   included only in custom-spell exports and are not part of deck exports.
 - No accounts, cloud sync, backend, PDF engine, card backs, or third-party formats.
+- Editable copies of SRD spells keep the text and language captured when they were created.
+  Changing the app language does not translate a custom copy; edit its text or create a new copy
+  from the translated SRD spell if needed.
 - Print geometry is verified in Chromium; Firefox/Safari and physical printers may differ and
   should be validated against the documented settings.
 

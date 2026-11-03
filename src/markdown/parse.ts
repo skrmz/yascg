@@ -174,12 +174,18 @@ export function parseInline(
       case "br":
         nodes.push({ type: "text", value: "\n" });
         break;
+      case "html": {
+        // Raw HTML is disabled except the harmless `<br>` line-break tag.
+        const raw = (token as { raw?: unknown }).raw;
+        if (typeof raw === "string" && /^<br\s*\/?>$/i.test(raw.trim())) {
+          nodes.push({ type: "text", value: "\n" });
+        }
+        break;
+      }
       case "escape":
       case "text":
       case "url":
       case "autolink":
-      case "html":
-        if (token.type === "html") break;
         nodes.push(...inlineFromTextToken(token, options));
         break;
       default:

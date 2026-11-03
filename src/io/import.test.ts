@@ -3,7 +3,7 @@ import { db } from "@/db/database.ts";
 import { analyzeCustomImport, applyCustomImport, ImportConflictError } from "@/io/import-custom.ts";
 import { buildCustomSpellsPayload } from "@/io/export.ts";
 import { customSpellExportPayloadSchema } from "@/domain/payloads.ts";
-import { putCustomSpell } from "@/db/custom-spells.ts";
+import { putCustomSpell, createCustomSpellCopy } from "@/db/custom-spells.ts";
 import { getSrdOverride, putSrdOverride } from "@/db/srd-overrides.ts";
 import type { SrdOverrideValidationContext } from "@/domain/srd-overrides.ts";
 import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
@@ -285,5 +285,53 @@ describe("custom-spell export/import with SRD overrides", () => {
       applyCustomImport(analysis.plan, "overwrite", fingerprints),
     ).rejects.toBeInstanceOf(ImportConflictError);
     expect(await getSrdOverride("srd-fireball", "en")).toBeNull();
+  });
+});
+
+describe("custom-spell copies through export and import", () => {
+  const richSource = makeSpell({
+    id: "srd-rich",
+    name: "Rich Spell",
+    subclasses: ["Wizard: Evocation"],
+    savingThrow: "DEX",
+    damageTypes: ["Fire"],
+    components: {
+      verbal: true,
+      somatic: true,
+      material: false,
+      componentsDisplayOverride: "V, S",
+    },
+  });
+
+  it("preserves the UUID and every copied field when importing into an empty store", async () => {
+    const copy = createCustomSpellCopy(richSource);
+    const body = buildCustomSpellsPayload([copy]);
+
+    expect(body.spells[0].id).toBe(copy.id);
+
+    const analysis = analyzeCustomImport(JSON.stringify(body), []);
+    if (!analysis.ok) throw new Error("expected ok");
+    await applyCustomImport(analysis.plan, "skip", new Map());
+
+    const stored = await db.customSpells.get(copy.id);
+    expect(stored).toEqual(copy);
+  });
+
+  it("uses the existing collision review for an already-present UUID", async () => {
+    const copy = createCustomSpellCopy(richSource);
+    const existing = await putCustomSpell({ ...copy, name: "Existing" });
+    const body = buildCustomSpellsPayload([copy]);
+
+    const analysis = analyzeCustomImport(JSON.stringify(body), [existing]);
+    if (!analysis.ok) throw new Error("expected ok");
+    expect(analysis.plan.collisions).toHaveLength(1);
+
+    const fingerprints = new Map(
+      analysis.plan.collisions.map((collision) => [collision.id, collision.fingerprint]),
+    );
+    const counts = await applyCustomImport(analysis.plan, "keep-both", fingerprints);
+    expect(counts.copied).toBe(1);
+    expect(await db.customSpells.count()).toBe(2);
+    expect(await db.customSpells.get(copy.id)).toBeDefined();
   });
 });

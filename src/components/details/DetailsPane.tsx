@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Copy, Ellipsis, Info, Plus, SquarePen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -6,7 +6,10 @@ import { useApp } from "@/state/AppProvider.tsx";
 import { resolveContentLanguage } from "@/content-language.ts";
 import { CardView } from "@/cards/Card.tsx";
 import { useCardFit, AUTO_SHRINK_MIN_PT } from "@/cards/fit.tsx";
-import { LIMITS } from "@/domain/spells";
+import { LIMITS, type Spell } from "@/domain/spells";
+import type { DeckIdentity } from "@/db/active-deck.ts";
+import { createCustomSpellCopy } from "@/db/custom-spells.ts";
+import { message, translateMessage, type MessageDescriptor } from "@/locales/messages.ts";
 import { Button } from "@/ui/Button.tsx";
 import { SourceBadge } from "@/ui/Badge.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
@@ -25,6 +28,24 @@ import {
 import { CustomSpellForm } from "./CustomSpellForm.tsx";
 import { SpellDetailsDialog } from "./SpellDetailsDialog.tsx";
 
+interface CopyDraftFlow {
+  draft: Spell;
+  sourceSpellId: string;
+  entryId: string;
+  expectedRevision: number;
+  deckIdentity: DeckIdentity;
+}
+
+interface CopyConfirmationFlow {
+  copy: Spell;
+  sourceSpellId: string;
+  entryId: string;
+  expectedRevision: number;
+  deckIdentity: DeckIdentity;
+  error: MessageDescriptor | null;
+  retryable: boolean;
+}
+
 export function DetailsPane() {
   const {
     selectedSpell,
@@ -34,6 +55,8 @@ export function DetailsPane() {
     addSpellToDeck,
     duplicateSpell,
     deleteSpell,
+    selectSpell,
+    replaceDeckEntryWithCopy,
     canUndo,
     undoDelete,
   } = useApp();
@@ -41,10 +64,14 @@ export function DetailsPane() {
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [detailsSpellId, setDetailsSpellId] = useState<string | null>(null);
+  const [copyDraft, setCopyDraft] = useState<CopyDraftFlow | null>(null);
+  const [copyConfirmation, setCopyConfirmation] = useState<CopyConfirmationFlow | null>(null);
+  const [replacing, setReplacing] = useState(false);
+  const copyDraftRef = useRef<CopyDraftFlow | null>(null);
+  const replacingRef = useRef(false);
 
-  const fitMode =
-    activeDeck?.entries.find((entry) => entry.spellId === selectedSpell?.id)?.fitMode ??
-    "auto-shrink";
+  const deckEntry = activeDeck?.entries.find((entry) => entry.spellId === selectedSpell?.id);
+  const fitMode = deckEntry?.fitMode ?? "auto-shrink";
 
   const fit = useCardFit({
     spell: selectedSpell,
@@ -57,21 +84,138 @@ export function DetailsPane() {
     setDetailsSpellId(null);
   }, [selectedSpell?.id]);
 
+  // Keep the captured flow available to `onSaved`, which runs after the form
+  // closes, but discard it once neither the editor nor the confirmation is open.
+  useEffect(() => {
+    if (copyDraft === null && copyConfirmation === null) copyDraftRef.current = null;
+  }, [copyDraft, copyConfirmation]);
+
+  const closeCopyConfirmation = () => {
+    if (!copyConfirmation) return;
+    selectSpell(copyConfirmation.copy.id);
+    toast.info(t("details.copySavedDeckUnchanged"));
+    setCopyConfirmation(null);
+  };
+
+  const attemptReplace = async () => {
+    const confirmation = copyConfirmation;
+    if (!confirmation || replacingRef.current) return;
+    replacingRef.current = true;
+    setReplacing(true);
+    setCopyConfirmation((previous) => (previous ? { ...previous, error: null } : previous));
+    try {
+      const result = await replaceDeckEntryWithCopy(
+        confirmation.expectedRevision,
+        confirmation.deckIdentity,
+        confirmation.entryId,
+        confirmation.sourceSpellId,
+        {
+          id: confirmation.copy.id,
+          name: confirmation.copy.name,
+          source: confirmation.copy.source,
+        },
+      );
+      switch (result.status) {
+        case "replaced":
+          selectSpell(confirmation.copy.id);
+          toast.success(t("details.copyReplaceSuccess"));
+          setCopyConfirmation(null);
+          break;
+        case "conflict":
+          setCopyConfirmation((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  expectedRevision: result.actualRevision,
+                  error: message("details.copyReplaceConflict"),
+                }
+              : previous,
+          );
+          break;
+        case "deck-changed":
+          setCopyConfirmation((previous) =>
+            previous
+              ? { ...previous, error: message("details.copyReplaceDeckChanged"), retryable: false }
+              : previous,
+          );
+          break;
+        case "missing":
+          setCopyConfirmation((previous) =>
+            previous ? { ...previous, error: message("details.copyReplaceMissing") } : previous,
+          );
+          break;
+        case "duplicate":
+          setCopyConfirmation((previous) =>
+            previous ? { ...previous, error: message("details.copyReplaceDuplicate") } : previous,
+          );
+          break;
+        case "error":
+          setCopyConfirmation((previous) =>
+            previous ? { ...previous, error: message("details.copyReplaceError") } : previous,
+          );
+          break;
+      }
+    } finally {
+      replacingRef.current = false;
+      setReplacing(false);
+    }
+  };
+
+  const copyConfirmationDialog = (
+    <Dialog
+      open={copyConfirmation !== null}
+      onOpenChange={(open) => {
+        if (!open) closeCopyConfirmation();
+      }}
+    >
+      {copyConfirmation ? (
+        <DialogContent
+          title={t("details.copyReplaceTitle", { name: copyConfirmation.copy.name })}
+          description={t("details.copyReplaceDescription", { name: copyConfirmation.copy.name })}
+          footer={
+            <>
+              <Button variant="outline" onClick={closeCopyConfirmation}>
+                {t("common.cancel")}
+              </Button>
+              {copyConfirmation.error === null || copyConfirmation.retryable ? (
+                <Button onClick={() => void attemptReplace()} disabled={replacing}>
+                  {copyConfirmation.error === null
+                    ? t("details.copyReplaceConfirm")
+                    : t("details.copyReplaceRetry")}
+                </Button>
+              ) : null}
+            </>
+          }
+        >
+          {copyConfirmation.error ? (
+            <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
+              {translateMessage(t, copyConfirmation.error)}
+            </p>
+          ) : null}
+        </DialogContent>
+      ) : null}
+    </Dialog>
+  );
+
   if (!selectedSpell) {
     return (
-      <section className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-        <p className="text-sm text-muted-foreground">{t("details.empty")}</p>
-        {canUndo ? (
-          <Button variant="outline" size="sm" onClick={() => void undoDelete()}>
-            {t("details.undoDelete")}
-          </Button>
-        ) : null}
-      </section>
+      <>
+        <section className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+          <p className="text-sm text-muted-foreground">{t("details.empty")}</p>
+          {canUndo ? (
+            <Button variant="outline" size="sm" onClick={() => void undoDelete()}>
+              {t("details.undoDelete")}
+            </Button>
+          ) : null}
+        </section>
+        {copyConfirmationDialog}
+      </>
     );
   }
 
   const spell = selectedSpell;
   const isCustom = spell.source === "Custom";
+  const canCreateEditableCopy = spell.source === "SRD-5.2.1" && deckEntry !== undefined;
   const contentLanguage = resolveContentLanguage(spell, language);
   const detailsOpen = detailsSpellId !== null && detailsSpellId === spell.id;
   const openDetails = () => setDetailsSpellId(spell.id);
@@ -82,6 +226,37 @@ export function DetailsPane() {
         description: t("library.toast.alreadyDescription", { name: spell.name }),
       });
     }
+  };
+
+  const startCopy = () => {
+    if (!activeDeck || !deckEntry || spell.source !== "SRD-5.2.1") return;
+    const flow: CopyDraftFlow = {
+      draft: createCustomSpellCopy(spell),
+      sourceSpellId: spell.id,
+      entryId: deckEntry.entryId,
+      expectedRevision: activeDeck.revision,
+      deckIdentity: {
+        name: activeDeck.name,
+        ...(activeDeck.savedDeckId === undefined ? {} : { savedDeckId: activeDeck.savedDeckId }),
+      },
+    };
+    copyDraftRef.current = flow;
+    setCopyDraft(flow);
+  };
+
+  const onCopySaved = (saved: Spell) => {
+    const flow = copyDraftRef.current;
+    setCopyDraft(null);
+    if (!flow) return;
+    setCopyConfirmation({
+      copy: saved,
+      sourceSpellId: flow.sourceSpellId,
+      entryId: flow.entryId,
+      expectedRevision: flow.expectedRevision,
+      deckIdentity: flow.deckIdentity,
+      error: null,
+      retryable: true,
+    });
   };
 
   return (
@@ -110,6 +285,12 @@ export function DetailsPane() {
             <SquarePen size={14} aria-hidden="true" />
             {t("details.edit")}
           </Button>
+          {canCreateEditableCopy ? (
+            <Button variant="ghost" size="sm" onClick={startCopy}>
+              <Copy size={14} aria-hidden="true" />
+              {t("details.createEditableCopy")}
+            </Button>
+          ) : null}
           {isCustom ? (
             <>
               <Button variant="ghost" size="sm" onClick={() => void duplicateSpell(spell.id)}>
@@ -225,6 +406,19 @@ export function DetailsPane() {
       />
 
       <CustomSpellForm open={editing} onOpenChange={setEditing} spell={spell} />
+
+      <CustomSpellForm
+        open={copyDraft !== null}
+        onOpenChange={(open) => {
+          if (!open) setCopyDraft(null);
+        }}
+        spell={copyDraft?.draft}
+        editableCopy
+        selectOnSave={false}
+        onSaved={onCopySaved}
+      />
+
+      {copyConfirmationDialog}
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent

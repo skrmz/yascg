@@ -430,6 +430,24 @@ export const en = {
       "The card notes cannot fit at the minimum size. Shorten the notes or switch to another card design.",
     tableOverflow:
       "A Markdown table is too large for the card and cannot be printed. Shorten the table or reduce its columns.",
+    createEditableCopy: "Create editable copy",
+    copyReplaceTitle: 'Replace the deck entry with "{{name}}"?',
+    copyReplaceDescription:
+      'The active deck entry will use "{{name}}" and keep its position and fit mode. The original SRD spell and saved decks stay unchanged. Cancelling keeps the custom copy in your library without changing the active deck.',
+    copyReplaceConfirm: "Replace entry",
+    copyReplaceRetry: "Retry",
+    copyReplaceSuccess: "The active deck entry now uses your custom copy.",
+    copyReplaceConflict:
+      "The active deck changed before the replacement. The custom copy was saved, but the deck was not changed. Retry to replace the entry in the current deck.",
+    copyReplaceDeckChanged:
+      "A different deck is active now. The custom copy was saved, but the deck was not changed. Cancel and restart the flow from the current deck.",
+    copyReplaceMissing:
+      "The original entry is no longer in the active deck. The custom copy was saved, but the deck was not changed.",
+    copyReplaceDuplicate:
+      "The active deck already contains this custom copy. The deck was not changed.",
+    copyReplaceError:
+      "The deck entry could not be replaced. The custom copy was saved, but the active deck was not changed.",
+    copySavedDeckUnchanged: "The custom copy was saved. The active deck was not changed.",
   },
   error: {
     generic: "Something went wrong. Please try again.",
@@ -636,8 +654,11 @@ export const en = {
     title: {
       new: "New custom spell",
       edit: "Edit custom spell",
+      copy: "Create editable copy",
     },
     description: "Custom spells are stored locally and never modify bundled SRD data.",
+    descriptionCopy:
+      "The copy keeps the text and language captured when it was created, so changing the app language does not translate it. Saving the copy asks for confirmation before the active deck entry is replaced.",
     descriptionSrd:
       "Bundled SRD data is never modified. Only your local verbal and somatic notes are stored, for this language.",
     name: "Name",

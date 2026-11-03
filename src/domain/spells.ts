@@ -103,14 +103,12 @@ export interface Spell {
 export const LIMITS = {
   NAME_MAX: 120,
   /**
-   * Schema ceiling for casting time / range / duration. The specification's
-   * authoring guideline is 120 characters (FREETEXT_AUTHORED_MAX), but official
-   * SRD 5.2.1 rules text such as Counterspell's reaction trigger exceeds that.
-   * Bundled data must never be truncated, so the runtime schema admits up to
-   * METADATA_MAX while custom-spell authoring is limited to FREETEXT_AUTHORED_MAX.
+   * Single limit for casting time / range / duration in both bundled data and
+   * custom-spell authoring. Official SRD 5.2.1 rules text such as Counterspell's
+   * reaction trigger exceeds 120 characters, so the schema and the form share
+   * this ceiling and bundled data is never truncated.
    */
   FREETEXT_MAX: 500,
-  FREETEXT_AUTHORED_MAX: 120,
   CLASS_NAME_MAX: 80,
   DESCRIPTION_ITEM_MAX: 20_000,
   DESCRIPTION_TOTAL_MAX: 50_000,

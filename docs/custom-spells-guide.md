@@ -8,7 +8,7 @@ Custom spells let you add your own magic to Yet Another Spell Card Generator. Th
 2. Fill in the name, level, school, casting time, range, duration, concentration, ritual, components, classes, description, and higher levels. Markdown is supported in the description and higher-level text fields.
 3. Choose **Save spell**. The spell is stored locally, appears with the **Custom** badge, and can be edited from the details pane.
 
-The in-app form does not expose `subclasses`, `savingThrow`, `damageTypes`, or `sourceLabel`. Use JSON import for those fields. The form limits casting time, range, and duration to 120 characters each; the import schema accepts up to 500.
+The in-app form does not expose `subclasses`, `savingThrow`, `damageTypes`, or `sourceLabel`. Use JSON import for those fields. The form and the import schema both accept up to 500 characters for casting time, range, and duration.
 
 ## Import custom spells
 

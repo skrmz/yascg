@@ -202,6 +202,43 @@ export function repairEntry(
   };
 }
 
+export interface DeckIdentity {
+  name: string;
+  savedDeckId?: string;
+}
+
+export type ReplaceEntryWithSpellResult =
+  | { status: "replaced"; deck: ActiveDeckRecord }
+  | { status: "deck-changed" }
+  | { status: "missing" }
+  | { status: "duplicate" };
+
+/**
+ * Replaces a single SRD entry with another resolved spell while preserving the
+ * entry ID, position, and fit mode. The identity guard rejects a different
+ * active deck even when revision and entry IDs happen to match.
+ */
+export function replaceEntryWithSpell(
+  current: ActiveDeckRecord,
+  identity: DeckIdentity,
+  entryId: string,
+  sourceSpellId: string,
+  target: { spellId: string; reference: { source: SpellSource; name: string } },
+): ReplaceEntryWithSpellResult {
+  if (current.name !== identity.name || current.savedDeckId !== identity.savedDeckId) {
+    return { status: "deck-changed" };
+  }
+  const entry = current.entries.find((candidate) => candidate.entryId === entryId);
+  if (!entry || entry.spellId !== sourceSpellId || entry.reference.source !== "SRD-5.2.1") {
+    return { status: "missing" };
+  }
+  const targetAlreadyPresent = current.entries.some(
+    (candidate) => candidate.entryId !== entryId && candidate.spellId === target.spellId,
+  );
+  if (targetAlreadyPresent) return { status: "duplicate" };
+  return { status: "replaced", deck: repairEntry(current, entryId, target) };
+}
+
 export interface DeckSnapshot {
   name: string;
   entries: DeckEntry[];

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { componentLabelKey } from "@/locales/labels.ts";
 import type { BlockNode, InlineNode, ListBlock } from "./parse.ts";
@@ -27,16 +27,25 @@ function ComponentMarker({
   );
 }
 
+/** Renders authored newlines as explicit breaks; HTML collapses raw "\n" in text. */
+function renderText(value: string, keyPrefix: string): ReactNode[] {
+  return value
+    .split(/\r?\n/)
+    .flatMap((line, index) =>
+      index === 0 ? [line] : [<br key={`${keyPrefix}-br-${index}`} />, line],
+    );
+}
+
 function renderInline(nodes: readonly InlineNode[], keyPrefix: string): ReactNode[] {
   return nodes.map((node, index) => {
     const key = `${keyPrefix}-${index}`;
     switch (node.type) {
       case "text":
-        return node.value;
+        return <Fragment key={key}>{renderText(node.value, key)}</Fragment>;
       case "strong":
-        return <strong key={key}>{node.value}</strong>;
+        return <strong key={key}>{renderText(node.value, key)}</strong>;
       case "em":
-        return <em key={key}>{node.value}</em>;
+        return <em key={key}>{renderText(node.value, key)}</em>;
       case "code":
         return <code key={key}>{node.value}</code>;
       case "link":

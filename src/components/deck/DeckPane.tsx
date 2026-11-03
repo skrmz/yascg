@@ -325,7 +325,7 @@ export function DeckPane() {
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <Label htmlFor="deck-name" className="sr-only">
             {t("deck.nameLabel")}
           </Label>
@@ -354,7 +354,10 @@ export function DeckPane() {
             }}
           />
           <span
-            className={cn("shrink-0 text-xs font-semibold", statusTone)}
+            className={cn(
+              "min-w-0 max-w-[45%] shrink text-right text-xs font-semibold leading-tight [overflow-wrap:anywhere]",
+              statusTone,
+            )}
             title={statusCopy.hint}
           >
             {statusCopy.label}

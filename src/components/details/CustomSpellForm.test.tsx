@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n.ts";
@@ -165,6 +165,93 @@ describe("CustomSpellForm component authoring", () => {
     const saved = mocks.saveCustomSpell.mock.calls[0][0] as Spell;
     expect(saved.components.materialCost).toBe("100 gp");
     expect(saved.components.materialConsumed).toBe(true);
+  });
+});
+
+describe("CustomSpellForm editable copies", () => {
+  it("renders the copy title and description", () => {
+    render(<CustomSpellForm open onOpenChange={() => {}} spell={makeCustomSpell()} editableCopy />);
+    expect(screen.getByRole("dialog", { name: "Create editable copy" })).not.toBeNull();
+    expect(screen.getByText(/keeps the text and language captured/)).not.toBeNull();
+  });
+
+  it("calls onSaved without selecting when selectOnSave is false", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn();
+    const saved = makeCustomSpell({ id: "copy-1", name: "Test Spell" });
+    mocks.saveCustomSpell.mockResolvedValue(saved);
+    render(
+      <CustomSpellForm
+        open
+        onOpenChange={() => {}}
+        spell={makeCustomSpell({ id: "copy-1", name: "Test Spell" })}
+        editableCopy
+        selectOnSave={false}
+        onSaved={onSaved}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+
+    expect(mocks.saveCustomSpell).toHaveBeenCalledTimes(1);
+    expect(onSaved).toHaveBeenCalledWith(saved);
+    expect(mocks.selectSpell).not.toHaveBeenCalled();
+  });
+
+  it("saves long metadata up to the runtime schema limit", async () => {
+    const user = userEvent.setup();
+    mocks.saveCustomSpell.mockResolvedValue(makeCustomSpell());
+    const longText = "x".repeat(200);
+    renderForm(makeCustomSpell());
+    fireEvent.change(screen.getByLabelText("Casting Time"), { target: { value: longText } });
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+
+    const saved = mocks.saveCustomSpell.mock.calls[0][0] as Spell;
+    expect(saved.castingTime).toBe(longText);
+  });
+
+  it("preserves unexposed fields on an ordinary edit of a copy", async () => {
+    const user = userEvent.setup();
+    const existing = makeCustomSpell({
+      subclasses: ["Wizard: Evocation"],
+      savingThrow: "DEX",
+      damageTypes: ["Fire"],
+      components: {
+        verbal: true,
+        somatic: true,
+        material: false,
+        componentsDisplayOverride: "V, S, M (a ruby)",
+      },
+    });
+    mocks.saveCustomSpell.mockResolvedValue(existing);
+    renderForm(existing);
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+
+    const saved = mocks.saveCustomSpell.mock.calls[0][0] as Spell;
+    expect(saved.subclasses).toEqual(["Wizard: Evocation"]);
+    expect(saved.savingThrow).toBe("DEX");
+    expect(saved.damageTypes).toEqual(["Fire"]);
+    expect(saved.components.componentsDisplayOverride).toBe("V, S, M (a ruby)");
+  });
+
+  it("keeps the form open and skips onSaved when saving fails", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn();
+    mocks.saveCustomSpell.mockResolvedValue(null);
+    render(
+      <CustomSpellForm
+        open
+        onOpenChange={() => {}}
+        spell={makeCustomSpell({ id: "copy-1", name: "Test Spell" })}
+        editableCopy
+        onSaved={onSaved}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog", { name: "Create editable copy" })).not.toBeNull();
   });
 });
 

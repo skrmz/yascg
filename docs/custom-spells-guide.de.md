@@ -8,7 +8,7 @@ Eigene Zauber bringen deine eigene Magie in Yet Another Spell Card Generator. Si
 2. Fülle Name, Grad, Schule, Zeitaufwand, Reichweite, Wirkungsdauer, Konzentration, Ritual, Komponenten, Klassen, Beschreibung und höhere Grade aus. In den Feldern für Beschreibung und höhere Grade wird Markdown unterstützt.
 3. Wähle **Zauber speichern**. Der Zauber wird lokal gespeichert, erscheint mit dem Badge **Eigen** und kann im Detailbereich bearbeitet werden.
 
-Das Formular bietet keine Felder für `subclasses`, `savingThrow`, `damageTypes`, oder `sourceLabel`. Verwende für diese Felder den JSON-Import. Das Formular begrenzt Zeitaufwand, Reichweite und Wirkungsdauer jeweils auf 120 Zeichen; das Importschema akzeptiert bis zu 500.
+Das Formular bietet keine Felder für `subclasses`, `savingThrow`, `damageTypes`, oder `sourceLabel`. Verwende für diese Felder den JSON-Import. Formular und Importschema akzeptieren für Zeitaufwand, Reichweite und Wirkungsdauer jeweils bis zu 500 Zeichen.
 
 ## Eigene Zauber importieren
 
