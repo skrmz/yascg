@@ -99,21 +99,11 @@ describe("abbreviation transformer: exclusions and no-ops", () => {
       "turn",
       "line",
       "speed",
-      "advantage",
-      "disadvantage",
-      "target",
-      "object",
-      "objects",
       "bonus",
-      "minimum",
-      "maximum",
-      "example",
       "presumably",
-      "compare",
       "possibly",
       "in part",
       "or",
-      "between",
     ]) {
       expect(abbreviated(term)).toBe(term);
     }
@@ -127,18 +117,9 @@ describe("abbreviation transformer: exclusions and no-ops", () => {
       "Runde",
       "Zug",
       "Linie",
-      "Vorteil",
-      "Nachteil",
-      "Ziel",
-      "Gegenstand",
-      "Gegenstände",
       "Bonus",
-      "Minimum",
-      "Maximum",
       "vermutlich",
-      "vergleiche",
       "oder",
-      "zwischen",
       "Durchmesser",
       "Würfel",
     ]) {
@@ -159,6 +140,77 @@ describe("abbreviation transformer: exclusions and no-ops", () => {
     expect(abbreviated("until the end of the next turn")).toBe("EONT");
     expect(abbreviated("point within range")).toBe("point within RNG");
     expect(abbreviated("bonus action")).toBe("BA");
+  });
+});
+
+describe("abbreviation transformer: newly eligible prose terms", () => {
+  it("abbreviates every English policy term as a standalone word", () => {
+    expect(abbreviated("between")).toBe("b/w");
+    expect(abbreviated("advantage")).toBe("adv.");
+    expect(abbreviated("disadvantage")).toBe("disadv.");
+    expect(abbreviated("object")).toBe("obj.");
+    expect(abbreviated("objects")).toBe("obj.");
+    expect(abbreviated("target")).toBe("tgt.");
+    expect(abbreviated("minimum")).toBe("min.");
+    expect(abbreviated("maximum")).toBe("max.");
+    expect(abbreviated("example")).toBe("ex.");
+    expect(abbreviated("compare")).toBe("cf.");
+  });
+
+  it("abbreviates every German policy term as a standalone word", () => {
+    expect(abbreviated("zwischen", "de")).toBe("zw.");
+    expect(abbreviated("Vorteil", "de")).toBe("VT");
+    expect(abbreviated("Nachteil", "de")).toBe("NT");
+    expect(abbreviated("Gegenstand", "de")).toBe("Ggst.");
+    expect(abbreviated("Gegenstände", "de")).toBe("Ggst.");
+    expect(abbreviated("Minimum", "de")).toBe("Min.");
+    expect(abbreviated("Maximum", "de")).toBe("Max.");
+    expect(abbreviated("Beispiel", "de")).toBe("Bsp.");
+    expect(abbreviated("vergleiche", "de")).toBe("vgl.");
+  });
+
+  it("abbreviates the terms inside representative spell prose", () => {
+    expect(
+      abbreviated(
+        "A target between two objects has advantage and disadvantage; the minimum and maximum apply, compare this example carefully.",
+      ),
+    ).toBe(
+      "A tgt. b/w two obj. has adv. and disadv.; the min. and max. apply, cf. this ex. carefully.",
+    );
+    expect(
+      abbreviated(
+        "Zwei Gegenstände liegen zwischen dem Ziel; Vorteil und Nachteil, Minimum und Maximum, vergleiche das Beispiel sorgfältig.",
+        "de",
+      ),
+    ).toBe("Zwei Ggst. liegen zw. dem Ziel; VT und NT, Min. und Max., vgl. das Bsp. sorgfältig.");
+  });
+
+  it("matches case-insensitively", () => {
+    expect(abbreviated("ADVANTAGE and Disadvantage")).toBe("adv. and disadv.");
+    expect(abbreviated("VORTEIL und nachteil", "de")).toBe("VT und NT");
+  });
+
+  it("keeps longer phrases and related entries winning", () => {
+    expect(abbreviated("for example")).toBe("e.g.");
+    expect(abbreviated("bonus action")).toBe("BA");
+    expect(abbreviated("damage resistance")).toBe("RES");
+    expect(abbreviated("objects")).toBe("obj.");
+    expect(abbreviated("zum Beispiel", "de")).toBe("z. B.");
+    expect(abbreviated("Bonusaktion", "de")).toBe("BA");
+  });
+
+  it("does not replace word fragments or infer inflections", () => {
+    expect(abbreviated("targeted and objection")).toBe("targeted and objection");
+    expect(abbreviated("advantages and minimums")).toBe("advantages and minimums");
+    expect(abbreviated("compared and betweenness")).toBe("compared and betweenness");
+    expect(abbreviated("zielen und Vorteile", "de")).toBe("zielen und Vorteile");
+    expect(abbreviated("Gegenständen und vergleichen", "de")).toBe("Gegenständen und vergleichen");
+  });
+
+  it("is idempotent for the newly eligible terms", () => {
+    const text = "advantage before a target between objects and example compare minimum maximum";
+    const once = abbreviated(text);
+    expect(abbreviated(once)).toBe(once);
   });
 });
 

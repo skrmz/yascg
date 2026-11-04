@@ -17,14 +17,22 @@ The custom spell editor offers **Abbreviate** for non-SRD drafts. The action tra
 
 Matching uses the language captured when the editor opened. Only exact `en` and `de` codes have catalogs; other languages are a no-op with an explanatory status, never an English fallback. Catalog identity and display remain case-sensitive: `m` (meter) and `M` (material component) are distinct. Manual prose matching is locale-aware case-insensitive, so `Bonus Action`, `BONUS ACTION`, and `bonus action` share the `BA` short.
 
-Only catalog `full` terms are eligible, and longer phrases win. Whitespace is not collapsed and plurals are matched only through explicit catalog entries such as `minutes`, `hours`, and `meters`. The German word `Meter` is both singular and plural, so the `meter` and `meters` rows intentionally share the same German signature. No-op entries whose short is not shorter than their full form (`spell`, `self`, `touch`, `sight`, `hit`, `Selbst`, `Sicht`) are never eligible.
+Three distinct states apply to a catalog entry:
 
-The following exclusions are policy, not algorithm. Removing an entry from this list is a product decision; it does not require a matcher change.
+1. **Defined:** the entry exists in `en.ts`/`de.ts` and in this catalog. Defined entries always drive structured UI lookups, Compact card badges, tooltips, and the legend.
+2. **Eligible for automatic replacement:** the entry is defined, its trimmed short is strictly shorter than its trimmed full form, and its ID is not in the locale's exclusion set. Only eligible entries are matched by **Abbreviate**.
+3. **Excluded:** the ID is in the locale's exclusion set. It remains defined and usable by structured UI lookups, but **Abbreviate** leaves it unchanged and reports it only through development diagnostics.
 
-- English exclusions: `round`, `turn`, `line`, `speed`, `advantage`, `disadvantage`, `target`, `object`, `objects`, `bonus`, `minimum`, `maximum`, `example`, `presumably`, `compare`, `possibly`, `in part`, `or`, `between`.
-- German exclusions: `Runde`, `Zug`, `Linie`, `Vorteil`, `Nachteil`, `Ziel`, `Gegenstand`, `Gegenstände`, `Bonus`, `Minimum`, `Maximum`, `vermutlich`, `vergleiche`, `oder`, `zwischen`, `Durchmesser`, `Würfel`.
+A term can therefore have a defined abbreviation and still be excluded: the catalog answers "what is this term's short form?", while the exclusion list answers "should the prose transformer rewrite this word automatically?".
 
-English and German therefore differ deliberately: `Bewegungsrate` remains eligible in German, while the English `speed` is excluded. `action`, `reaction`, and `damage` (and `Aktion`, `Reaktion`, `Schaden`) are eligible as approved standalone game terms; longer phrases such as `bonus action` and `damage resistance` still win.
+Only catalog `full` terms are eligible, and longer phrases win. Whitespace is not collapsed and plurals are matched only through explicit catalog entries such as `objects`, `minutes`, `hours`, and `meters`. The German word `Meter` is both singular and plural, so the `meter` and `meters` rows intentionally share the same German signature. No-op entries whose short is not shorter than their full form (`spell`, `self`, `touch`, `sight`, `hit`, `Selbst`, `Sicht`) are never eligible, even when they are also listed as excluded for policy reasons.
+
+The following exclusions are policy, not algorithm. Removing an entry from this list is a product decision; it does not require a matcher change. Exclusions currently protect common prose words whose short form would be ambiguous or non-standard in running text:
+
+- English exclusions: `round`, `turn`, `line`, `speed`, `bonus`, `presumably`, `possibly`, `in part`, `or`.
+- German exclusions: `Runde`, `Zug`, `Linie`, `Bonus`, `vermutlich`, `oder`, `Durchmesser`, `Würfel`.
+
+English and German still differ deliberately: `Bewegungsrate` remains eligible in German, while the English `speed` is excluded; German `eventuell` and `zum Teil` are eligible while the English `possibly` and `in part` are excluded. `action`, `reaction`, `damage`, `advantage`, `disadvantage`, `target`, `object`/`objects`, `minimum`, `maximum`, `example`, `compare`, and `between` (and their German equivalents) are eligible as approved standalone terms; longer phrases such as `bonus action`, `for example`, `damage resistance`, and `Schadensresistenz` still win.
 
 Manual matching transforms only visible prose. Fenced and inline code, HTML comments/tags and attributes, autolinks, bare URLs and email addresses, reference definitions, images, link destinations/titles/reference identifiers, backslash escapes, and structural Markdown delimiters are protected and copied byte-for-byte. Bold and italic text, headings, blockquotes, list items, table cells, and inline/full-reference link labels remain transformable. Source formatting is never serialized or regenerated.
 
@@ -45,8 +53,8 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - proficiency bonus = PB (Übungsbonus = ÜB)
 - initiative = INIT (Initiative = INIT)
 - speed = SPD (Bewegungsrate = BR)
-- advantage = ADV (Vorteil = VT)
-- disadvantage = DIS (Nachteil = NT)
+- advantage = adv. (Vorteil = VT)
+- disadvantage = disadv. (Nachteil = NT)
 - attack roll = ATK (Angriffswurf = AW)
 - damage = dmg (Schaden = SCH)
 - damage resistance = RES (Schadensresistenz = RES)
@@ -176,7 +184,7 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - example = ex. (Beispiel = Bsp.)
 - or = or (oder = o.)
 - respectively / or rather = resp. (beziehungsweise = bzw.)
-- between = between (zwischen = zw.)
+- between = b/w (zwischen = zw.)
 - presumably = presum. (vermutlich = vmtl.)
 - that is = i.e. (das heißt = d. h.)
 - among others = a.o. (unter anderem = u. a.)
@@ -196,7 +204,7 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 
 - German multiword abbreviations such as **d. h.**, **u. a.**, **z. B.**, and **z. T.** retain spaces between their abbreviated elements.
 - **bzw.** is context-dependent and may mean "respectively", "or rather", or "or" depending on the sentence.
-- **o.** and **zw.** are compact, context-dependent abbreviations and should not be treated as universally standardized forms.
+- **o.** is a compact, context-dependent abbreviation and should not be treated as a universally standardized form; **zw.** is a common written abbreviation for *zwischen*.
 - **vmtl.** is a compact form of "vermutlich"; **vermutl.** is a more transparent alternative.
 - **ca.** and **approx.** indicate approximation, not exact values.
 - **etc.** and **usw.** are equivalent in many contexts; both may be retained for bilingual text.
@@ -210,6 +218,9 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - **CON** means Constitution; **Conc.** means Concentration; **CONJ** means Conjuration.
 - **RNG** means range; **RNG-R** means Ranger. Avoid reducing both to RNG in a machine-readable map.
 - **min** is the time unit minute; **min.**/**Min.** is minimum.
+- **Min.** / **Max.** are the capitalized German noun abbreviations for *Minimum* and *Maximum*; English uses lowercase **min.** /**max.**.
+- **Z.** remains *Zauber*, and **Ggst.** covers both *Gegenstand* and *Gegenstände*.
+- **b/w** is the English short for *between*; **zw.** is the German short for *zwischen*.
 - **RW** means Rettungswurf; **RWt** means Reichweite. This avoids the German collision.
 - **M** as a spell component means Material; **m** as a unit means meter. Case matters.
 - **Character level (Stufe)** and **spell level** are different concepts.

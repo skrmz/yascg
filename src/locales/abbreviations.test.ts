@@ -123,6 +123,71 @@ describe("abbreviation catalog", () => {
     }
   });
 
+  it("makes the approved policy terms eligible for prose replacement", () => {
+    const english = [
+      ["between", "b/w"],
+      ["advantage", "adv."],
+      ["disadvantage", "disadv."],
+      ["object", "obj."],
+      ["objects", "obj."],
+      ["target", "tgt."],
+      ["minimum", "min."],
+      ["maximum", "max."],
+      ["example", "ex."],
+      ["compare", "cf."],
+    ] as const;
+    const german = [
+      ["between", "zw."],
+      ["advantage", "VT"],
+      ["disadvantage", "NT"],
+      ["object", "Ggst."],
+      ["objects", "Ggst."],
+      ["minimum", "Min."],
+      ["maximum", "Max."],
+      ["example", "Bsp."],
+      ["compare", "vgl."],
+    ] as const;
+
+    for (const [id, short] of english) {
+      const entry = entryById("en", id);
+      expect(entry.short).toBe(short);
+      expect(isAbbreviationEligible(entry, "en")).toBe(true);
+    }
+    for (const [id, short] of german) {
+      const entry = entryById("de", id);
+      expect(entry.short).toBe(short);
+      expect(isAbbreviationEligible(entry, "de")).toBe(true);
+    }
+  });
+
+  it("keeps the remaining policy terms excluded", () => {
+    for (const id of [
+      "round",
+      "turn",
+      "line",
+      "speed",
+      "bonus",
+      "presumably",
+      "possibly",
+      "inPart",
+      "or",
+    ] as const) {
+      expect(isAbbreviationEligible(entryById("en", id), "en")).toBe(false);
+    }
+    for (const id of [
+      "round",
+      "turn",
+      "line",
+      "bonus",
+      "presumably",
+      "or",
+      "diameter",
+      "cube",
+    ] as const) {
+      expect(isAbbreviationEligible(entryById("de", id), "de")).toBe(false);
+    }
+  });
+
   it("exposes explicit plural unit entries", () => {
     expect(entryById("en", "minutes")).toMatchObject({ full: "minutes", short: "min" });
     expect(entryById("en", "hours")).toMatchObject({ full: "hours", short: "h" });
