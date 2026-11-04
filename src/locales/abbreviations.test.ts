@@ -3,51 +3,79 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import i18n from "@/i18n.ts";
 import {
+  CLASS_ABBREVIATION_IDS,
+  COMPONENT_ABBREVIATION_IDS,
   EXCLUDED_ABBREVIATION_IDS,
+  SCHOOL_ABBREVIATION_IDS,
   abbreviationCatalog,
+  findAbbreviationSurfaceConflicts,
   isAbbreviationEligible,
+  type AbbreviationEntry,
+  type AbbreviationId,
   type AbbreviationLocale,
 } from "./abbreviations.ts";
-import { de } from "./de.ts";
 import { en } from "./en.ts";
 
-interface AbbreviationEntry {
+interface DocumentedEntry {
   full: string;
   short: string;
 }
 
-interface DocumentedPair {
-  en: AbbreviationEntry;
-  de: AbbreviationEntry;
+interface DocumentedInventory {
+  en: DocumentedEntry[];
+  de: DocumentedEntry[];
 }
 
-const ENTRY_PATTERN = /^-\s+(.+?) = (.+?) \((.+?) = (.+)\)$/;
+const MISSING_SIDE = "\u2014";
+const ENTRY_LINE_PATTERN = /^-\s+(.*?)\s*\(([^()]*)\)\s*$/;
 
-function parseDocumentedPairs(): DocumentedPair[] {
+function parseDocumentedEntries(value: string): DocumentedEntry | null {
+  const separator = value.indexOf(" = ");
+  if (separator === -1) return null;
+  return { full: value.slice(0, separator), short: value.slice(separator + 3) };
+}
+
+function parseDocumentedInventories(): DocumentedInventory {
   const markdown = readFileSync(resolve(process.cwd(), "docs/abbreviations.md"), "utf8");
-  return markdown.split(/\r?\n/).flatMap((line) => {
-    const match = ENTRY_PATTERN.exec(line.trim());
-    if (!match) return [];
-    const [, fullEn, shortEn, fullDe, shortDe] = match;
-    return [{ en: { full: fullEn, short: shortEn }, de: { full: fullDe, short: shortDe } }];
-  });
+  const inventory: DocumentedInventory = { en: [], de: [] };
+  for (const rawLine of markdown.split(/\r?\n/)) {
+    const match = ENTRY_LINE_PATTERN.exec(rawLine.trim());
+    if (!match) continue;
+    const left = (match[1] ?? "").trim();
+    const right = (match[2] ?? "").trim();
+    const english = left === MISSING_SIDE ? null : parseDocumentedEntries(left);
+    const german = right === MISSING_SIDE ? null : parseDocumentedEntries(right);
+    if (left !== MISSING_SIDE && english === null) {
+      throw new Error(`Unparseable English abbreviation documentation line: ${rawLine}`);
+    }
+    if (right !== MISSING_SIDE && german === null) {
+      throw new Error(`Unparseable German abbreviation documentation line: ${rawLine}`);
+    }
+    if (english) inventory.en.push(english);
+    if (german) inventory.de.push(german);
+  }
+  return inventory;
 }
 
-function signature(pair: DocumentedPair): string {
-  return [pair.en.full, pair.en.short, pair.de.full, pair.de.short].join("\u0000");
+function documentedSignature(entry: DocumentedEntry): string {
+  return [entry.full, entry.short].join("\u0000");
 }
 
-const documented = parseDocumentedPairs();
-const catalog = Object.values(en.abbreviations).map((entry, index) => ({
-  en: entry,
-  de: Object.values(de.abbreviations)[index],
-}));
+function catalogSignature(entry: AbbreviationEntry): string {
+  return [entry.full, entry.short].join("\u0000");
+}
+
+const documented = parseDocumentedInventories();
 
 describe("abbreviation catalog", () => {
-  it("contains exactly the entries documented in docs/abbreviations.md", () => {
-    expect(documented.length).toBeGreaterThan(0);
-    expect(catalog).toHaveLength(documented.length);
-    expect(catalog.map(signature).sort()).toEqual(documented.map(signature).sort());
+  it("contains exactly the entries documented for each locale", () => {
+    expect(documented.en.length).toBeGreaterThan(0);
+    expect(documented.de.length).toBeGreaterThan(0);
+    for (const locale of ["en", "de"] as const) {
+      expect(abbreviationCatalog(locale)!.map(catalogSignature).sort()).toEqual(
+        documented[locale].map(documentedSignature).sort(),
+      );
+    }
   });
 
   it("exposes full and short values through the i18n runtime", () => {
@@ -69,7 +97,7 @@ describe("abbreviation catalog", () => {
     expect(i18n.t("abbreviations.foot.short", { lng: "en" })).toBe("ft");
     expect(i18n.t("abbreviations.feet.short", { lng: "en" })).toBe("ft");
     expect(i18n.t("abbreviations.object.short", { lng: "en" })).toBe("obj.");
-    expect(i18n.t("abbreviations.objects.short", { lng: "de" })).toBe("Ggst.");
+    expect(i18n.t("abbreviations.object.short", { lng: "de" })).toBe("Ggst.");
     expect(en.abbreviations.foot.full).toBe("foot");
     expect(en.abbreviations.feet.full).toBe("feet");
     expect(en.abbreviations.object.full).toBe("object");
@@ -84,43 +112,39 @@ describe("abbreviation catalog", () => {
     expect(abbreviationCatalog("en-US")).toBeNull();
   });
 
-  it("keeps every exclusion ID present in both catalogs", () => {
-    const catalogIds: Record<AbbreviationLocale, Set<string>> = {
-      en: new Set(abbreviationCatalog("en")!.map((entry) => entry.id)),
-      de: new Set(abbreviationCatalog("de")!.map((entry) => entry.id)),
-    };
+  it("keeps every exclusion ID present in its own catalog and ineligible", () => {
     for (const locale of ["en", "de"] as const) {
+      const ids = new Set(abbreviationCatalog(locale)!.map((entry) => entry.id));
       for (const id of EXCLUDED_ABBREVIATION_IDS[locale]) {
-        expect(catalogIds.en.has(id)).toBe(true);
-        expect(catalogIds.de.has(id)).toBe(true);
+        expect(ids.has(id)).toBe(true);
+        expect(isAbbreviationEligible(entryById(locale, id), locale)).toBe(false);
       }
     }
   });
 
-  it("never gives two eligible entries the same normalized full form with different shorts", () => {
+  it("never generates a surface with different shorts", () => {
     for (const locale of ["en", "de"] as const) {
-      const shortsByFull = new Map<string, string>();
-      for (const entry of eligibleEntries(locale)) {
-        const key = normalizedFull(entry, locale);
-        const short = entry.short.trim();
-        const existing = shortsByFull.get(key);
-        if (existing !== undefined) expect(existing).toBe(short);
-        else shortsByFull.set(key, short);
-      }
+      expect(findAbbreviationSurfaceConflicts(abbreviationCatalog(locale)!, locale)).toEqual([]);
     }
   });
 
-  it("treats no-op entries as ineligible", () => {
-    for (const [locale, id] of [
-      ["en", "spell"],
-      ["en", "self"],
-      ["en", "touch"],
-      ["en", "sight"],
-      ["de", "self"],
-      ["de", "sight"],
-    ] as const) {
-      expect(isAbbreviationEligible(entryById(locale, id), locale)).toBe(false);
+  it("reports conflicting generated surfaces instead of resolving them by order", () => {
+    const entries: AbbreviationEntry[] = [
+      { id: "syntheticA" as AbbreviationId, full: "term", short: "A", forms: ["term", "terms"] },
+      { id: "syntheticB" as AbbreviationId, full: "term", short: "B", forms: ["term"] },
+    ];
+    expect(findAbbreviationSurfaceConflicts(entries, "en")).toEqual([
+      { surface: "term", shorts: ["A", "B"], ids: ["syntheticA", "syntheticB"] },
+    ]);
+  });
+
+  it("treats retained no-op entries as ineligible", () => {
+    for (const entry of abbreviationCatalog("de")!) {
+      if (entry.full.trim() === entry.short.trim()) {
+        expect(isAbbreviationEligible(entry, "de")).toBe(false);
+      }
     }
+    expect(entryById("de", "target")).toMatchObject({ full: "Ziel", short: "Ziel" });
   });
 
   it("makes the approved policy terms eligible for prose replacement", () => {
@@ -141,7 +165,6 @@ describe("abbreviation catalog", () => {
       ["advantage", "VT"],
       ["disadvantage", "NT"],
       ["object", "Ggst."],
-      ["objects", "Ggst."],
       ["minimum", "Min."],
       ["maximum", "Max."],
       ["example", "Bsp."],
@@ -161,40 +184,86 @@ describe("abbreviation catalog", () => {
   });
 
   it("keeps the remaining policy terms excluded", () => {
-    for (const id of [
-      "round",
-      "turn",
-      "line",
-      "speed",
-      "bonus",
-      "presumably",
-      "possibly",
-      "inPart",
-      "or",
-    ] as const) {
+    for (const id of ["round", "turn", "speed", "presumably", "possibly", "inPart"] as const) {
       expect(isAbbreviationEligible(entryById("en", id), "en")).toBe(false);
     }
-    for (const id of [
-      "round",
-      "turn",
-      "line",
-      "bonus",
-      "presumably",
-      "or",
-      "diameter",
-      "cube",
-    ] as const) {
+    for (const id of ["round", "turn", "presumably", "or", "diameter", "cube"] as const) {
       expect(isAbbreviationEligible(entryById("de", id), "de")).toBe(false);
     }
   });
 
-  it("exposes explicit plural unit entries", () => {
+  it("generates configured inflection forms", () => {
+    expect(entryById("de", "psychic").forms).toEqual([
+      "psychisch",
+      "psychische",
+      "psychischer",
+      "psychisches",
+      "psychischem",
+      "psychischen",
+    ]);
+    expect(entryById("de", "meter").forms).toEqual(["Meter", "Meters", "Metern"]);
+    expect(entryById("de", "minute").forms).toEqual(["Minute", "Minuten"]);
+    expect(entryById("de", "hour").forms).toEqual(["Stunde", "Stunden"]);
+    expect(entryById("de", "object").forms).toEqual(["Gegenstand", "Gegenstände"]);
+  });
+
+  it("keeps locale-specific inventories without parity-only duplicates", () => {
+    const english = new Set<string>(abbreviationCatalog("en")!.map((entry) => entry.id));
+    const german = new Set<string>(abbreviationCatalog("de")!.map((entry) => entry.id));
+
+    for (const id of ["spell", "touch", "sphere", "cube", "or", "soCalled", "hit"] as const) {
+      expect(english.has(id)).toBe(false);
+      expect(german.has(id)).toBe(true);
+    }
+    for (const id of ["psychic2", "psychic3"] as const) {
+      expect(english.has(id)).toBe(false);
+      expect(german.has(id)).toBe(false);
+    }
+    for (const id of [
+      "self",
+      "sight",
+      "cone",
+      "line",
+      "bonus",
+      "foot",
+      "feet",
+      "objects",
+      "meters",
+      "minutes",
+      "hours",
+    ] as const) {
+      expect(german.has(id)).toBe(false);
+    }
+  });
+
+  it("keeps every structured lookup ID shared by both catalogs", () => {
+    const english = new Set<string>(abbreviationCatalog("en")!.map((entry) => entry.id));
+    const german = new Set<string>(abbreviationCatalog("de")!.map((entry) => entry.id));
+    const shared = [
+      ...Object.values(SCHOOL_ABBREVIATION_IDS),
+      ...Object.values(CLASS_ABBREVIATION_IDS),
+      ...Object.values(COMPONENT_ABBREVIATION_IDS),
+      "action",
+      "bonusAction",
+      "reaction",
+      "concentration",
+      "ritual",
+      "range",
+      "duration",
+      "minute",
+      "hour",
+    ] as const;
+    for (const id of shared) {
+      expect(english.has(id)).toBe(true);
+      expect(german.has(id)).toBe(true);
+    }
+  });
+
+  it("exposes explicit English plural unit entries", () => {
     expect(entryById("en", "minutes")).toMatchObject({ full: "minutes", short: "min" });
     expect(entryById("en", "hours")).toMatchObject({ full: "hours", short: "h" });
     expect(entryById("en", "meters")).toMatchObject({ full: "meters", short: "mtr" });
-    expect(entryById("de", "minutes")).toMatchObject({ full: "Minuten", short: "min" });
-    expect(entryById("de", "hours")).toMatchObject({ full: "Stunden", short: "h" });
-    expect(entryById("de", "meters")).toMatchObject({ full: "Meter", short: "m" });
+    expect(entryById("en", "minutes").forms).toEqual(["minutes"]);
   });
 
   it("uses the approved lowercase English damage short", () => {
@@ -206,12 +275,4 @@ function entryById(locale: AbbreviationLocale, id: string) {
   const entry = abbreviationCatalog(locale)!.find((candidate) => candidate.id === id);
   if (!entry) throw new Error(`Missing ${locale} abbreviation entry: ${id}`);
   return entry;
-}
-
-function eligibleEntries(locale: AbbreviationLocale) {
-  return abbreviationCatalog(locale)!.filter((entry) => isAbbreviationEligible(entry, locale));
-}
-
-function normalizedFull(entry: { full: string }, locale: AbbreviationLocale): string {
-  return entry.full.trim().normalize("NFC").toLocaleLowerCase(locale);
 }

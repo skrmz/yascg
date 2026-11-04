@@ -9,7 +9,11 @@ Abbreviations may contain periods, spaces, or special characters. Duplicate abbr
 
 Compact cards use fixed action/indicator badges with the catalog `.full` meaning in tooltips and the legend, while footer/component abbreviations display the catalog `.short` value.
 
-The parity test reads only lines matching the `- full = short (full = short)` format. Catalog entry counts should be derived automatically rather than maintained manually.
+The parity test reads this document and compares the English and German inventories independently. Each parity line has the form `- full = short (full = short)`; use `—` for a missing side, for example `- foot = ft (—)` or `- — (Zauber = Z.)`. Catalog entry counts are derived automatically rather than maintained manually.
+
+## Catalog model
+
+Each locale has an independent abbreviation catalog. A definition specifies `full`, `short`, and optionally `suffixes` and `forms`. The generated surfaces are `full`, every `full + suffix`, and every explicit `forms` entry; all of them map to the same `short`. Entries without inflection metadata match only their exact spelling. German `psychic` is one definition covering `psychisch`, `psychische`, `psychischer`, `psychisches`, `psychischem`, and `psychischen`. German `meter` (`Meter`, `Meters`, `Metern`), `minute` (`Minute`, `Minuten`), `hour` (`Stunde`, `Stunden`), and `object` (`Gegenstand`, `Gegenstände`) use the same mechanism.
 
 ## Manual abbreviation of custom spell prose
 
@@ -25,12 +29,12 @@ Three distinct states apply to a catalog entry:
 
 A term can therefore have a defined abbreviation and still be excluded: the catalog answers "what is this term's short form?", while the exclusion list answers "should the prose transformer rewrite this word automatically?".
 
-Only catalog `full` terms are eligible, and longer phrases win. Whitespace is not collapsed and plurals are matched only through explicit catalog entries such as `objects`, `minutes`, `hours`, and `meters`. The German word `Meter` is both singular and plural, so the `meter` and `meters` rows intentionally share the same German signature. No-op entries whose short is not shorter than their full form (`spell`, `self`, `touch`, `sight`, `hit`, `Selbst`, `Sicht`) are never eligible, even when they are also listed as excluded for policy reasons.
+Only catalog definitions and their generated forms are eligible, and longer surfaces win. Whitespace is not collapsed. Inflection is matched only where explicitly configured: English keeps separate `foot`/`feet`, `object`/`objects`, `meter`/`meters`, `minute`/`minutes`, and `hour`/`hours` entries, while German consolidates these into `suffixes`/`forms` on `psychic`, `object`, `meter`, `minute`, and `hour`. Unconfigured inflections and stems are never inferred. No-op entries whose short is not shorter than their full form are never eligible, even when they are also listed as excluded for policy reasons.
 
 The following exclusions are policy, not algorithm. Removing an entry from this list is a product decision; it does not require a matcher change. Exclusions currently protect common prose words whose short form would be ambiguous or non-standard in running text:
 
-- English exclusions: `round`, `turn`, `line`, `speed`, `bonus`, `presumably`, `possibly`, `in part`, `or`.
-- German exclusions: `Runde`, `Zug`, `Linie`, `Bonus`, `vermutlich`, `oder`, `Durchmesser`, `Würfel`.
+- English exclusions: `round`, `turn`, `speed`, `presumably`, `possibly`, `in part`.
+- German exclusions: `Runde`, `Zug`, `vermutlich`, `oder`, `Durchmesser`, `Würfel`.
 
 English and German still differ deliberately: `Bewegungsrate` remains eligible in German, while the English `speed` is excluded; German `eventuell` and `zum Teil` are eligible while the English `possibly` and `in part` are excluded. `action`, `reaction`, `damage`, `advantage`, `disadvantage`, `target`, `object`/`objects`, `minimum`, `maximum`, `example`, `compare`, and `between` (and their German equivalents) are eligible as approved standalone terms; longer phrases such as `bonus action`, `for example`, `damage resistance`, and `Schadensresistenz` still win.
 
@@ -60,7 +64,7 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - damage resistance = RES (Schadensresistenz = RES)
 - damage immunity = IMM (Schadensimmunität = IMM)
 - vulnerability = VUL (Schadensanfälligkeit = ANF)
-- spell = Spell (Zauber = Z.)
+- — (Zauber = Z.)
 - spell attack = SATK (Zauberangriff = ZAng.)
 - spell save DC = SSDC (SG für Zauberrettungswürfe = Z-SG)
 - spell slot = SLOT (Zauberplatz = ZP)
@@ -98,30 +102,25 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - until dispelled = disp. (Bis gebannt = bis geb.)
 - until the end of the next turn = EONT (Bis zum Ende des nächsten Zugs = bis EZ)
 - until the start of the next turn = SONT (Bis zum Beginn des nächsten Zugs = bis BZ)
-- self = SELF (Selbst = Selbst)
-- touch = TOUCH (Berührung = Ber.)
-- sight = SIGHT (Sicht = Sicht)
+- — (Berührung = Ber.)
 - target = tgt. (Ziel = Ziel)
 - object = obj. (Gegenstand = Ggst.)
-- objects = obj. (Gegenstände = Ggst.)
+- objects = obj. (—)
 - radius = rad. (Radius = Rad.)
 - diameter = dia. (Durchmesser = Durchm.)
-- sphere = sphere (Kugel = Kug.)
-- cube = cube (Würfel = Wwürf.)
-- cone = cone (Kegel = Kegel)
+- — (Kugel = Kug.)
+- — (Würfel = Wwürf.)
 - cylinder = cyl. (Zylinder = Zyl.)
-- line = line (Linie = Linie)
 - emanation = EMAN (Emanation = Eman.)
-- foot = ft (Fuß = Fuß)
-- feet = ft (Fuß = Fuß)
+- foot = ft (—)
+- feet = ft (—)
 - meter = mtr (Meter = m)
-- meters = mtr (Meter = m)
+- meters = mtr (—)
 - minute = min (Minute = min)
-- minutes = min (Minuten = min)
+- minutes = min (—)
 - hour = h (Stunde = h)
-- hours = h (Stunden = h)
+- hours = h (—)
 - day = d (Tag = t)
-- bonus = bonus (Bonus = Bonus)
 - modifier = mod. (Modifikator = Mod.)
 - minimum = min. (Minimum = Min.)
 - maximum = max. (Maximum = Max.)
@@ -170,8 +169,6 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - piercing damage = PIER (Stichschaden = STICH)
 - poison damage = POIS (Giftschaden = GIFT)
 - psychic = psyc. (psychisch = psych.)
-- psychic = psyc. (psychischer = psych.)
-- psychic = psyc. (psychischen = psych.)
 - psychic damage = PSYC (Psychischer Schaden = PSY)
 - radiant damage = RADI (Gleißender Schaden = GLEISS)
 - slashing damage = SLAS (Hiebschaden = HIEB)
@@ -182,7 +179,7 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 Common abbreviations for everyday language, descriptive text, and explanatory notes. These are not D&D-specific terms. German abbreviations follow common written usage where possible; some compact forms are app-specific. English and German abbreviations are not necessarily interchangeable in meaning or usage.
 
 - example = ex. (Beispiel = Bsp.)
-- or = or (oder = o.)
+- — (oder = o.)
 - respectively / or rather = resp. (beziehungsweise = bzw.)
 - between = b/w (zwischen = zw.)
 - presumably = presum. (vermutlich = vmtl.)
@@ -191,12 +188,12 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - for example = e.g. (zum Beispiel = z. B.)
 - and so on = etc. (und so weiter = usw.)
 - et cetera = etc. (et cetera = etc.)
-- so-called = so-called (sogenannt = sog.)
+- — (sogenannt = sog.)
 - compare = cf. (vergleiche = vgl.)
 - approximately = approx. (circa = ca.)
 - possibly = poss. (eventuell = evtl.)
 - in part = partly (zum Teil = z. T.)
-- hit = hit (Treffer = Trf.)
+- — (Treffer = Trf.)
 - attribute = attr. (Attribut = Attr.)
 - spell casting modifier = spell mod. (Zauber-Attributsmodifikator = Z.-Attr.Mod.)
 
@@ -219,7 +216,7 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - **RNG** means range; **RNG-R** means Ranger. Avoid reducing both to RNG in a machine-readable map.
 - **min** is the time unit minute; **min.**/**Min.** is minimum.
 - **Min.** / **Max.** are the capitalized German noun abbreviations for *Minimum* and *Maximum*; English uses lowercase **min.** /**max.**.
-- **Z.** remains *Zauber*, and **Ggst.** covers both *Gegenstand* and *Gegenstände*.
+- **Z.** remains *Zauber*, and **Ggst.** covers both *Gegenstand* and *Gegenstände* through the configured `object` forms.
 - **b/w** is the English short for *between*; **zw.** is the German short for *zwischen*.
 - **RW** means Rettungswurf; **RWt** means Reichweite. This avoids the German collision.
 - **M** as a spell component means Material; **m** as a unit means meter. Case matters.
@@ -229,4 +226,4 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - **German ability abbreviations** such as ST, GE, KO, IN, WE, and CH are app-specific shorthand and do not necessarily match the abbreviations printed in the official German SRD.
 - **General language abbreviations** may overlap with D&D-specific codes. Their interpretation depends on context.
 - **Periods and spaces** are significant parts of an abbreviation. For example, `z. B.` and `d. h.` retain their internal spaces.
-- **Singular and plural forms** may intentionally share an abbreviation, such as `obj.` for object and objects. Context determines the intended meaning.
+- **Singular and plural forms** may intentionally share an abbreviation, such as `obj.` for object and objects or `Ggst.` for the configured German `object` forms. Context determines the intended meaning.

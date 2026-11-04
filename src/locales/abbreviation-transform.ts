@@ -1,6 +1,7 @@
 import {
   EXCLUDED_ABBREVIATION_IDS,
   abbreviationCatalog,
+  findAbbreviationSurfaceConflicts,
   isAbbreviationEligible,
   type AbbreviationEntry,
   type AbbreviationId,
@@ -29,12 +30,13 @@ export interface AbbreviationTransformResult {
   changed: boolean;
 }
 
-interface MatcherEntry {
+export interface MatcherEntry {
   entry: AbbreviationEntry;
+  surface: string;
   folded: string;
 }
 
-interface LocaleMatcher {
+export interface LocaleMatcher {
   eligible: readonly MatcherEntry[];
   excluded: readonly MatcherEntry[];
 }
@@ -50,33 +52,60 @@ const HTML_ENTITY_PATTERN = /&[#A-Za-z0-9]+;/g;
 
 const matcherCache = new Map<AbbreviationLocale, LocaleMatcher>();
 
-function foldedTerm(entry: AbbreviationEntry, locale: AbbreviationLocale): string {
-  return entry.full.toLocaleLowerCase(locale).normalize("NFC");
+function foldedSurface(surface: string, locale: AbbreviationLocale): string {
+  return surface.toLocaleLowerCase(locale).normalize("NFC");
 }
 
 function compareMatcherEntries(a: MatcherEntry, b: MatcherEntry): number {
-  const byLength = b.entry.full.length - a.entry.full.length;
+  const byLength = b.surface.length - a.surface.length;
   if (byLength !== 0) return byLength;
   if (a.folded !== b.folded) return a.folded < b.folded ? -1 : 1;
-  if (a.entry.id === b.entry.id) return 0;
-  return a.entry.id < b.entry.id ? -1 : 1;
+  if (a.entry.id !== b.entry.id) return a.entry.id < b.entry.id ? -1 : 1;
+  if (a.surface === b.surface) return 0;
+  return a.surface < b.surface ? -1 : 1;
+}
+
+function matcherEntries(catalog: readonly AbbreviationEntry[], locale: AbbreviationLocale) {
+  const conflicts = findAbbreviationSurfaceConflicts(catalog, locale);
+  if (conflicts.length > 0) {
+    const details = conflicts
+      .map((conflict) => `${conflict.surface} -> ${conflict.shorts.join(" / ")}`)
+      .join("; ");
+    throw new Error(`Ambiguous abbreviation surfaces for locale "${locale}": ${details}`);
+  }
+
+  const canonical = new Map<string, MatcherEntry>();
+  for (const entry of catalog) {
+    for (const surface of entry.forms) {
+      const folded = foldedSurface(surface, locale);
+      const candidate: MatcherEntry = { entry, surface, folded };
+      const existing = canonical.get(folded);
+      if (!existing || entry.id < existing.entry.id) canonical.set(folded, candidate);
+    }
+  }
+  return [...canonical.values()];
+}
+
+export function createLocaleMatcher(
+  catalog: readonly AbbreviationEntry[],
+  locale: AbbreviationLocale,
+): LocaleMatcher {
+  const eligible: MatcherEntry[] = [];
+  const excluded: MatcherEntry[] = [];
+  for (const candidate of matcherEntries(catalog, locale)) {
+    if (isAbbreviationEligible(candidate.entry, locale)) eligible.push(candidate);
+    else if (EXCLUDED_ABBREVIATION_IDS[locale].has(candidate.entry.id)) excluded.push(candidate);
+  }
+  eligible.sort(compareMatcherEntries);
+  excluded.sort(compareMatcherEntries);
+  return { eligible, excluded };
 }
 
 function matcherFor(locale: AbbreviationLocale): LocaleMatcher {
   const cached = matcherCache.get(locale);
   if (cached) return cached;
 
-  const eligible: MatcherEntry[] = [];
-  const excluded: MatcherEntry[] = [];
-  for (const entry of abbreviationCatalog(locale) ?? []) {
-    const candidate: MatcherEntry = { entry, folded: foldedTerm(entry, locale) };
-    if (isAbbreviationEligible(entry, locale)) eligible.push(candidate);
-    else if (EXCLUDED_ABBREVIATION_IDS[locale].has(entry.id)) excluded.push(candidate);
-  }
-  eligible.sort(compareMatcherEntries);
-  excluded.sort(compareMatcherEntries);
-
-  const matcher: LocaleMatcher = { eligible, excluded };
+  const matcher = createLocaleMatcher(abbreviationCatalog(locale) ?? [], locale);
   matcherCache.set(locale, matcher);
   return matcher;
 }
@@ -118,7 +147,7 @@ function matchAt(
 ): MatcherEntry | null {
   if (!boundaryBefore(text, index)) return null;
   for (const candidate of entries) {
-    const end = index + candidate.entry.full.length;
+    const end = index + candidate.surface.length;
     if (end > text.length) continue;
     if (!boundaryAfter(text, end)) continue;
 
@@ -166,16 +195,16 @@ function isPartOfLongerPhrase(
   entries: readonly MatcherEntry[],
   locale: AbbreviationLocale,
 ): boolean {
-  const candidateWords = words(candidate.entry.full);
+  const candidateWords = words(candidate.surface);
   if (candidateWords.length === 0) return false;
 
   const beforeWords = words(text.slice(0, index));
-  const afterWords = words(text.slice(index + candidate.entry.full.length));
+  const afterWords = words(text.slice(index + candidate.surface.length));
   const foldedCandidate = candidateWords.map((word) => word.toLocaleLowerCase(locale));
 
   for (const longer of entries) {
-    if (longer.entry.full.length <= candidate.entry.full.length) continue;
-    const phraseWords = words(longer.entry.full);
+    if (longer.surface.length <= candidate.surface.length) continue;
+    const phraseWords = words(longer.surface);
     if (phraseWords.length <= candidateWords.length) continue;
     const foldedPhrase = phraseWords.map((word) => word.toLocaleLowerCase(locale));
 
@@ -553,7 +582,7 @@ export function transformAbbreviationText(
       const existing = applied.get(id);
       if (existing) existing.count += 1;
       else applied.set(id, { id, full, short, count: 1 });
-      cursor += full.length;
+      cursor += appliedMatch.surface.length;
       continue;
     }
 

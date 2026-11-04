@@ -143,7 +143,9 @@ Paths are relative to the repository root.
 - `src/io/` — unversioned JSON export/import with collision review and atomic commits.
 - `src/pwa/` — service-worker registration and Cache Storage verification.
 - `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE catalogs.
-  `abbreviations.ts` owns catalog access, eligibility, and per-locale exclusion sets;
+  `abbreviations.ts` owns independent per-locale catalogs, generated inflection forms, eligibility,
+  conflict validation, and per-locale exclusion sets; `abbreviation-types.ts` holds the shared
+  definition shape so locale modules never import the catalog runtime.
   `abbreviation-transform.ts` owns the user-triggered prose matcher and Markdown protected-range
   scanner.
 - `src/state/`, `src/components/`, `src/ui/` — application state and UI.
@@ -242,9 +244,10 @@ Product-level switching and confirmation behavior is owned by
 [§7](specs/MAIN-spec.md#7-active-and-saved-decks).
 
 - Catalogs are TypeScript modules under `src/locales/` (`en.ts`, `de.ts`) so no
-  `resolveJsonModule` is needed. `de` is checked for key parity via `satisfies Translations`; use
-  complete sentences, interpolation, and `_one`/`_other` plural keys rather than concatenating
-  translated fragments.
+  `resolveJsonModule` is needed. `de` is checked for UI-string key parity via
+  `satisfies Translations`; the abbreviation blocks are excluded from that deep shape and use the
+  independent `AbbreviationDefinition` shape instead. Use complete sentences, interpolation, and
+  `_one`/`_other` plural keys rather than concatenating translated fragments.
 - School/class names, component letters, damage-type names, and subclass labels are localized at
   presentation time via `src/locales/labels.ts`; unknown values fall back to the raw stored
   value or English name. Bundled and generated SRD datasets (`src/data/**`) are never modified,
@@ -265,11 +268,13 @@ Product-level switching and confirmation behavior is owned by
 - Custom-spell abbreviation is user-triggered in `CustomSpellForm`. `session.language` captures the
   matching locale when the editor opens; `abbreviationCatalog` returns only `en`/`de` and prose
   never falls back to English. `transformAbbreviationText` applies the per-locale eligible matcher
-  (longest match, locale-aware case folding, Unicode boundaries, single pass) and a source-range
-  Markdown scanner that protects code, HTML, URLs/emails, reference definitions, images, link
-  destinations/identifiers, escapes, and delimiters. The form transforms only its exposed draft
-  fields, snapshots only changed values into a session LIFO undo stack, exposes a polite status
-  region, and logs skipped excluded matches only in development. Plain URLs are protected in
+  over each definition's generated surfaces (base `full`, configured `suffixes`, and explicit
+  `forms`) with longest-surface precedence, locale-aware case folding, Unicode boundaries, and a
+  single pass, plus a source-range Markdown scanner that protects code, HTML, URLs/emails,
+  reference definitions, images, link destinations/identifiers, escapes, and delimiters. The form
+  transforms only its exposed draft fields, snapshots only changed values into a session LIFO undo
+  stack, exposes a polite status region, and logs skipped excluded matches only in development.
+  Plain URLs are protected in
   metadata and component-description fields.
 
 Intentional exclusions: the YASCG product name, exact SRD legal attribution (rendered with
@@ -300,11 +305,13 @@ settings are in the [README](../README.md#printing). Implementation details:
   after the unit token); rendering never invokes the abbreviation transformer. Compact fit blocks
   are both the measured and printed blocks. `src/cards/fingerprint.ts` keys the cache with design,
   content fingerprint (including overrides), and that block fingerprint.
-- `src/locales/abbreviations.ts` maps schools, core classes, and V/S/M components to catalog
+- `src/locales/abbreviations.ts` maps schools, core classes, and V/S/M components to shared catalog
   semantic IDs; `.short` is display text and `.full` is the accessible/tooltip/legend text. It
-  also exposes `abbreviationCatalog`, `isAbbreviationEligible`, and the per-locale exclusion sets
-  used by the manual prose transformer. `docs/abbreviations.md` remains the parity source for the
-  existing test, never a runtime parser.
+  builds each locale catalog from that locale's own definitions, generates configured inflection
+  surfaces, rejects ambiguous normalized surfaces with differing shorts, and exposes
+  `abbreviationCatalog`, `isAbbreviationEligible`, and the per-locale exclusion sets used by the
+  manual prose transformer. `docs/abbreviations.md` remains the parity source for the per-locale
+  documentation test, never a runtime parser.
 - `src/cards/fonts.ts` explicitly requests and checks every card face/weight before measurement
   and `window.print()`; `src/print/print.css` self-hosts the card families as WOFF2 assets.
 - `src/print/PrintSheet.tsx` builds the 3x3 sheets and `src/print/print.css` owns the physical

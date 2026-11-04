@@ -28,9 +28,15 @@ function leafPaths(value: unknown, prefix = ""): string[] {
   return [];
 }
 
+function uiLeafPaths(value: unknown): string[] {
+  return leafPaths(value).filter(
+    (path) => path !== "abbreviations" && !path.startsWith("abbreviations."),
+  );
+}
+
 describe("locale catalogs", () => {
-  it("German mirrors the English key shape exactly", () => {
-    expect(leafPaths(de).sort()).toEqual(leafPaths(en).sort());
+  it("German mirrors the English UI key shape exactly", () => {
+    expect(uiLeafPaths(de).sort()).toEqual(uiLeafPaths(en).sort());
   });
 
   it("English is the fallback for unknown locales", () => {

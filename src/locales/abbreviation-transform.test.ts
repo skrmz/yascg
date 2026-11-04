@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
-import { transformAbbreviationText, type AbbreviationTextMode } from "./abbreviation-transform.ts";
+import type { AbbreviationEntry, AbbreviationId } from "./abbreviations.ts";
+import {
+  createLocaleMatcher,
+  transformAbbreviationText,
+  type AbbreviationTextMode,
+} from "./abbreviation-transform.ts";
 
 type Locale = "en" | "de";
 
@@ -90,39 +95,20 @@ describe("abbreviation transformer: boundaries and exactness", () => {
 });
 
 describe("abbreviation transformer: exclusions and no-ops", () => {
-  it("leaves English no-op and excluded entries unchanged", () => {
-    for (const term of ["spell", "self", "touch", "sight"]) {
+  it("leaves English excluded and locale-specific terms unchanged", () => {
+    for (const term of ["round", "turn", "speed", "presumably", "possibly", "in part"]) {
       expect(abbreviated(term)).toBe(term);
     }
-    for (const term of [
-      "round",
-      "turn",
-      "line",
-      "speed",
-      "bonus",
-      "presumably",
-      "possibly",
-      "in part",
-      "or",
-    ]) {
+    for (const term of ["spell", "self", "touch", "sight"]) {
       expect(abbreviated(term)).toBe(term);
     }
   });
 
   it("leaves German no-op and excluded entries unchanged", () => {
-    for (const term of ["Selbst", "Sicht"]) {
+    for (const term of ["Ziel", "Selbst", "Sicht"]) {
       expect(abbreviated(term, "de")).toBe(term);
     }
-    for (const term of [
-      "Runde",
-      "Zug",
-      "Linie",
-      "Bonus",
-      "vermutlich",
-      "oder",
-      "Durchmesser",
-      "Würfel",
-    ]) {
+    for (const term of ["Runde", "Zug", "vermutlich", "oder", "Durchmesser", "Würfel"]) {
       expect(abbreviated(term, "de")).toBe(term);
     }
   });
@@ -140,6 +126,90 @@ describe("abbreviation transformer: exclusions and no-ops", () => {
     expect(abbreviated("until the end of the next turn")).toBe("EONT");
     expect(abbreviated("point within range")).toBe("point within RNG");
     expect(abbreviated("bonus action")).toBe("BA");
+  });
+});
+
+describe("abbreviation transformer: configured inflections", () => {
+  it("abbreviates every configured German adjective form", () => {
+    for (const form of [
+      "psychisch",
+      "psychische",
+      "psychischer",
+      "psychisches",
+      "psychischem",
+      "psychischen",
+    ]) {
+      expect(abbreviated(form, "de")).toBe("psych.");
+    }
+    expect(abbreviated("PSYCHISCHER", "de")).toBe("psych.");
+    expect(abbreviated("Psychisches", "de")).toBe("psych.");
+  });
+
+  it("abbreviates every configured German noun form", () => {
+    expect(abbreviated("Meter", "de")).toBe("m");
+    expect(abbreviated("Meters", "de")).toBe("m");
+    expect(abbreviated("Metern", "de")).toBe("m");
+    expect(abbreviated("Minute", "de")).toBe("min");
+    expect(abbreviated("Minuten", "de")).toBe("min");
+    expect(abbreviated("Stunde", "de")).toBe("h");
+    expect(abbreviated("Stunden", "de")).toBe("h");
+    expect(abbreviated("Gegenstand", "de")).toBe("Ggst.");
+    expect(abbreviated("Gegenstände", "de")).toBe("Ggst.");
+  });
+
+  it("does not infer unconfigured inflections or embedded substrings", () => {
+    for (const term of ["psychischste", "MeterX", "Gegenständlichkeit", "Metermaß"]) {
+      expect(abbreviated(term, "de")).toBe(term);
+    }
+  });
+
+  it("does not leak locale-specific definitions across locales", () => {
+    expect(abbreviated("spell")).toBe("spell");
+    expect(abbreviated("Zauber", "de")).toBe("Z.");
+    expect(abbreviated("target")).toBe("tgt.");
+    expect(abbreviated("Ziel", "de")).toBe("Ziel");
+  });
+
+  it("keeps longest-match precedence across generated forms", () => {
+    expect(abbreviated("Psychischer Schaden", "de")).toBe("PSY");
+    expect(abbreviated("psychischer Schaden", "de")).toBe("PSY");
+  });
+
+  it("aggregates generated variants under the base definition", () => {
+    const result = transform("Meter, Meters und Metern", "de");
+    expect(result.text).toBe("m, m und m");
+    expect(result.applied).toEqual([{ id: "meter", full: "Meter", short: "m", count: 3 }]);
+  });
+
+  it("preserves generated forms inside protected Markdown ranges", () => {
+    expect(abbreviated("`Meters` and Meters", "de")).toBe("`Meters` and m");
+  });
+
+  it("is idempotent with generated forms", () => {
+    const text = "Meters und psychische Gegenstände";
+    const once = abbreviated(text, "de");
+    expect(once).toBe("m und psych. Ggst.");
+    expect(abbreviated(once, "de")).toBe(once);
+  });
+
+  it("applies exclusions to every form of an excluded definition", () => {
+    const entries: AbbreviationEntry[] = [
+      { id: "round", full: "round", short: "RND", forms: ["round", "rounds"] },
+    ];
+    const matcher = createLocaleMatcher(entries, "en");
+    expect(matcher.eligible).toEqual([]);
+    expect(matcher.excluded.map((candidate) => candidate.surface).sort()).toEqual([
+      "round",
+      "rounds",
+    ]);
+  });
+
+  it("rejects conflicting generated variants during matcher construction", () => {
+    const entries: AbbreviationEntry[] = [
+      { id: "syntheticA" as AbbreviationId, full: "term", short: "A", forms: ["term"] },
+      { id: "syntheticB" as AbbreviationId, full: "term", short: "B", forms: ["term"] },
+    ];
+    expect(() => createLocaleMatcher(entries, "en")).toThrow(/Ambiguous abbreviation surfaces/);
   });
 });
 
@@ -322,6 +392,8 @@ describe("abbreviation transformer: carets, lines, and units", () => {
     expect(abbreviated("10 Minuten", "de")).toBe("10 min");
     expect(abbreviated("2 Stunden", "de")).toBe("2 h");
     expect(abbreviated("30 Meter", "de")).toBe("30 m");
+    expect(abbreviated("30 Meters", "de")).toBe("30 m");
+    expect(abbreviated("30 Metern", "de")).toBe("30 m");
   });
 });
 

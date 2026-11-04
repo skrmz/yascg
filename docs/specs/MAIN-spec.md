@@ -389,8 +389,10 @@ results. This bulk operation is optional UI convenience, not a separate deck mod
   - Matching uses the language captured when the editor opened, not the live UI language. Only
     exact `en` and `de` catalogs exist; another language is a no-op with an explanatory status and
     never falls back to English prose. Catalog display remains case-sensitive while prose matching
-    is locale-aware case-insensitive. Longest phrases win, whitespace is not collapsed, and only
-    explicit catalog entries match; plurals such as `minutes`, `hours`, and `meters` are explicit.
+    is locale-aware case-insensitive. Longest surfaces win, whitespace is not collapsed, and only
+    explicitly configured spellings match: catalogs may define inflected `suffixes`/`forms`, but
+    unconfigured inflections are never inferred. Locale inventories are independent, so English
+    plural entries and German generated forms need not mirror each other.
   - **Undo abbreviation** is session-scoped and last-in-first-out. Each action snapshots only the
     fields it changes; Undo restores exactly those fields, overwriting later manual edits to them
     and leaving unrelated fields untouched. The stack and status clear when the editor closes,
@@ -892,7 +894,7 @@ duplicate these outcomes as a second invariants list.
 | C2a | Custom spells   | Cancel custom deletion                                                                              | Spell and active deck unchanged                                                                                                                                                                                | §6          |
 | C3  | Custom spells   | Undo immediately after deletion                                                                     | Original spell and entry ID/position restored; dirty state recalculated                                                                                                                                        | §6          |
 | C4  | Custom spells   | Undo after intervening edit or cross-tab write                                                      | Undo refused with explanation; newer work preserved                                                                                                                                                            | §6          |
-| C5  | Custom spells   | Abbreviate and Undo abbreviation in non-SRD drafts                                                  | Action absent from the SRD override editor; only scoped draft fields change; Markdown code/links/URLs/IDs and UI labels unchanged; captured-language matching; unsupported language is a no-op; session LIFO undo restores only changed fields; save persists normally and cancel writes nothing | §6, §9      |
+| C5  | Custom spells   | Abbreviate and Undo abbreviation in non-SRD drafts                                                  | Action absent from the SRD override editor; only scoped draft fields change; Markdown code/links/URLs/IDs and UI labels unchanged; captured-language matching with explicitly configured inflected forms and no inferred variants; unsupported language is a no-op; session LIFO undo restores only changed fields; save persists normally and cancel writes nothing | §6, §9      |
 | D1  | Decks           | Reload / ordinary edits                                                                             | Active deck survives reload; every successful mutation is persisted                                                                                                                                            | §7          |
 | D2  | Decks           | Duplicate add and bulk append                                                                       | Individual duplicate rejected with bottom-right notification; Append all skips and reports added/skipped counts                                                                                                | §5, §7      |
 | D3  | Decks           | Status and Save enablement                                                                          | Four statuses remain correct across reload, deletion, Undo, Save As, and unassociated name-only content; Save is enabled only when dirty with a valid association; disabled Save writes nothing                | §7          |

@@ -1,3 +1,5 @@
+import type { AbbreviationDefinition } from "./abbreviation-types.ts";
+
 export const en = {
   app: {
     metaDescription:
@@ -736,7 +738,6 @@ export const en = {
     damageResistance: { full: "damage resistance", short: "RES" },
     damageImmunity: { full: "damage immunity", short: "IMM" },
     vulnerability: { full: "vulnerability", short: "VUL" },
-    spell: { full: "spell", short: "Spell" },
     spellAttack: { full: "spell attack", short: "SATK" },
     spellSaveDC: { full: "spell save DC", short: "SSDC" },
     spellSlot: { full: "spell slot", short: "SLOT" },
@@ -771,19 +772,12 @@ export const en = {
     untilDispelled: { full: "until dispelled", short: "disp." },
     untilTheEndOfTheNextTurn: { full: "until the end of the next turn", short: "EONT" },
     untilTheStartOfTheNextTurn: { full: "until the start of the next turn", short: "SONT" },
-    self: { full: "self", short: "SELF" },
-    touch: { full: "touch", short: "TOUCH" },
-    sight: { full: "sight", short: "SIGHT" },
     target: { full: "target", short: "tgt." },
     object: { full: "object", short: "obj." },
     objects: { full: "objects", short: "obj." },
     radius: { full: "radius", short: "rad." },
     diameter: { full: "diameter", short: "dia." },
-    sphere: { full: "sphere", short: "sphere" },
-    cube: { full: "cube", short: "cube" },
-    cone: { full: "cone", short: "cone" },
     cylinder: { full: "cylinder", short: "cyl." },
-    line: { full: "line", short: "line" },
     emanation: { full: "emanation", short: "EMAN" },
     foot: { full: "foot", short: "ft" },
     feet: { full: "feet", short: "ft" },
@@ -794,7 +788,6 @@ export const en = {
     hour: { full: "hour", short: "h" },
     hours: { full: "hours", short: "h" },
     day: { full: "day", short: "d" },
-    bonus: { full: "bonus", short: "bonus" },
     modifier: { full: "modifier", short: "mod." },
     minimum: { full: "minimum", short: "min." },
     maximum: { full: "maximum", short: "max." },
@@ -834,14 +827,11 @@ export const en = {
     piercingDamage: { full: "piercing damage", short: "PIER" },
     poisonDamage: { full: "poison damage", short: "POIS" },
     psychic: { full: "psychic", short: "psyc." },
-    psychic2: { full: "psychic", short: "psyc." },
-    psychic3: { full: "psychic", short: "psyc." },
     psychicDamage: { full: "psychic damage", short: "PSYC" },
     radiantDamage: { full: "radiant damage", short: "RADI" },
     slashingDamage: { full: "slashing damage", short: "SLAS" },
     thunderDamage: { full: "thunder damage", short: "THUN" },
     example: { full: "example", short: "ex." },
-    or: { full: "or", short: "or" },
     respectivelyOrRather: { full: "respectively / or rather", short: "resp." },
     between: { full: "between", short: "b/w" },
     presumably: { full: "presumably", short: "presum." },
@@ -850,12 +840,10 @@ export const en = {
     forExample: { full: "for example", short: "e.g." },
     andSoOn: { full: "and so on", short: "etc." },
     etCetera: { full: "et cetera", short: "etc." },
-    soCalled: { full: "so-called", short: "so-called" },
     compare: { full: "compare", short: "cf." },
     approximately: { full: "approximately", short: "approx." },
     possibly: { full: "possibly", short: "poss." },
     inPart: { full: "in part", short: "partly" },
-    hit: { full: "hit", short: "hit" },
     attribute: { full: "attribute", short: "attr." },
     spellCastingModifier: { full: "spell casting modifier", short: "spell mod." },
   },
@@ -865,4 +853,6 @@ type DeepString<T> = {
   [K in keyof T]: T[K] extends string ? string : DeepString<T[K]>;
 };
 
-export type Translations = DeepString<typeof en>;
+export type Translations = DeepString<Omit<typeof en, "abbreviations">> & {
+  abbreviations: Record<string, AbbreviationDefinition>;
+};

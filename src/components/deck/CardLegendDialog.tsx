@@ -8,7 +8,7 @@ import {
   CLASS_ABBREVIATION_IDS,
   COMPONENT_ABBREVIATION_IDS,
   SCHOOL_ABBREVIATION_IDS,
-  type AbbreviationId,
+  type SharedAbbreviationId,
 } from "@/locales/abbreviations.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
@@ -33,7 +33,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function CatalogRow({ id }: { id: AbbreviationId }) {
+function CatalogRow({ id }: { id: SharedAbbreviationId }) {
   const { t } = useTranslation();
   return <EntryRow glyph={abbreviationShort(id, t)} full={abbreviationFull(id, t)} />;
 }
