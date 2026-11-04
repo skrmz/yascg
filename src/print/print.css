@@ -377,7 +377,24 @@
 
 .spell-card-compact {
   --compact-accent: #6b5b3e;
+  --card-ink: #211e1a;
+  --card-rule: #c2b9aa;
   gap: 0;
+  color: var(--card-ink);
+  border: 0.75pt solid #625b50;
+  border-radius: 0.045in;
+  isolation: isolate;
+}
+
+/* Fine inset border: decorative only, does not affect layout. */
+.spell-card-compact::before {
+  content: "";
+  position: absolute;
+  inset: 0.035in;
+  border: 0.35pt solid var(--card-rule);
+  border-radius: 0.015in;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .spell-card-compact[data-school="abjuration"] {
@@ -429,6 +446,8 @@
   align-items: center;
   gap: 0.06in;
   min-width: 0;
+  padding-bottom: 0.025in;
+  border-bottom: 0.9pt solid var(--compact-accent);
 }
 
 .compact-title-row {
@@ -445,20 +464,22 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 0.2in;
-  height: 0.2in;
-  border: 0.75pt solid var(--compact-accent);
+  width: 0.24in;
+  height: 0.24in;
+  border: 0;
   border-radius: 50%;
-  color: #111;
-  font-size: 14pt;
-  font-weight: 500;
+  color: #fff;
+  font-size: 12pt;
+  font-weight: 700;
   line-height: 1;
+  background: var(--compact-accent);
+  font-family: var(--font-card-title);
 }
 
 .compact-name {
   flex: 0 1 auto;
   position: relative;
-  top: 0.015in;
+  top: 0;
   min-width: 0;
   margin: 0;
   line-height: 1.08;
@@ -469,6 +490,7 @@
   font-size: 11.5pt;
   font-weight: 700;
   text-overflow: ellipsis;
+  letter-spacing: -0.01em;
 }
 
 .compact-ritual {
@@ -500,10 +522,9 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.02in 0.08in;
-  margin-top: 0.03in;
-  padding: 0.02in 0;
-  border-top: 0.5pt solid #b9b2a6;
-  border-bottom: 0.5pt solid #b9b2a6;
+  margin-top: 0;
+  padding: 0.035in 0;
+  border-bottom: 0.5pt solid var(--card-rule);
   font-size: 7.5pt;
 }
 
@@ -577,6 +598,11 @@
   margin-left: 0;
 }
 
+.component-marker-container {
+  padding-top: 0.02in;
+  border-top: 0.75pt solid var(--card-rule);
+}
+
 .component-marker {
   display: inline-flex;
   box-sizing: border-box;
@@ -630,7 +656,7 @@
   border: 0.6pt solid var(--compact-accent);
   border-radius: 50%;
   color: var(--compact-accent);
-  background-color: #ccc;
+  background: transparent;
   font-size: 6.8pt;
   font-weight: 700;
   line-height: 1;
@@ -782,7 +808,7 @@
   gap: 0.04in;
   margin-top: 0.03in;
   padding-top: 0.02in;
-  border-top: 0.5pt dotted var(--compact-accent);
+  border-top: 0.75pt dashed var(--card-rule);
 }
 
 .compact-higher-marker {
@@ -815,10 +841,11 @@
   gap: 0.02in 0.04in;
   margin-top: auto;
   padding-top: 0.02in;
-  border-top: 0.5pt solid #b9b2a6;
-  color: #111;
+  border-top: 0.75pt solid var(--card-rule);
+  color: #514b43;
   font-size: 6.5pt;
   font-variant: small-caps;
+  letter-spacing: 0.015em;
 }
 
 .compact-footer-source {
@@ -851,6 +878,13 @@
   visibility: hidden;
   pointer-events: none;
   z-index: -1;
+}
+
+@media print {
+  .spell-card-compact {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
 
 /* ------------------------------------------------------------------ */

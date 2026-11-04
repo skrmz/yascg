@@ -160,7 +160,7 @@ test("opens spell details from the persistent header button", async ({ page }) =
   await expect(dialog).toHaveCount(0);
 });
 
-test("opens card actions from the ellipsis menu and the context menu", async ({ page }) => {
+test("opens card actions from the header action bar only", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Search spells").fill("Fireball");
   await page
@@ -169,18 +169,12 @@ test("opens card actions from the ellipsis menu and the context menu", async ({ 
     .click();
 
   const details = page.getByRole("region", { name: "Spell preview and details" });
-  await details.getByRole("button", { name: "More actions" }).click();
-  await expect(page.getByRole("menuitem", { name: "Show details" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Edit" })).toBeVisible();
-
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("menuitem", { name: "Show details" })).toHaveCount(0);
+  await expect(details.getByRole("button", { name: "Edit" })).toBeVisible();
 
   await page.locator(".card-preview-frame").click({ button: "right" });
-  await expect(page.getByRole("menuitem", { name: "Show details" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Edit" })).toBeVisible();
+  await expect(page.getByRole("menuitem")).toHaveCount(0);
 
-  await page.getByRole("menuitem", { name: "Show details" }).click();
+  await details.getByRole("button", { name: "Show details" }).click();
   await expect(page.getByRole("dialog", { name: "Fireball" })).toBeVisible();
 });
 

@@ -122,8 +122,14 @@ export function Block({
       }
       return <div className={`card-h card-h-sub ${depthClass}`}>{content}</div>;
     }
-    case "paragraph":
-      return <p className="card-p">{renderInline(block.children, `${keyPrefix}-p`)}</p>;
+    case "paragraph": {
+      const paragraph = <p className="card-p">{renderInline(block.children, `${keyPrefix}-p`)}</p>;
+      return block.firstComponentDescription ? (
+        <div className="component-marker-container">{paragraph}</div>
+      ) : (
+        paragraph
+      );
+    }
     case "list":
       return renderList(block, keyPrefix, renderCode);
     case "blockquote":

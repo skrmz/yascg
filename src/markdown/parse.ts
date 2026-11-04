@@ -93,6 +93,8 @@ export interface ParagraphBlock {
   type: "paragraph";
   children: InlineNode[];
   section?: BlockSection;
+  /** Set on the first component-description paragraph to render a leading rule. */
+  firstComponentDescription?: boolean;
 }
 
 export interface CodeBlock {
@@ -353,6 +355,8 @@ export function componentDescriptionBlocks(
       ],
     });
   }
+  const [first] = blocks;
+  if (first) first.firstComponentDescription = true;
   return blocks;
 }
 
