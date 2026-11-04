@@ -137,8 +137,8 @@ Paths are relative to the repository root.
   detected during hidden-card measurement and reported as blocking overflow. `design.ts` owns the design enum and
   normalization, `compact.ts` builds the pre-fit Compact presentation and notes, and
   `CompactCard.tsx` renders the Compact design.
-- `src/components/details/` — card-preview-first details pane, on-demand spell details dialog,
-  and card actions menus backed by the edit flow.
+- `src/components/details/` — card-preview-first details pane with header actions and
+  on-demand spell details dialog.
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
 - `src/io/` — unversioned JSON export/import with collision review and atomic commits.
 - `src/pwa/` — service-worker registration and Cache Storage verification.

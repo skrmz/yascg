@@ -279,11 +279,10 @@ spell/card), and **Active Deck** (ordered unique entries, fit mode, save/load/pr
 **Preview & Details pane:** the default pane shows the rendered physical card preview(s) for
 the selected spell, arranged in wrapping rows while preserving 2.5in × 3.5in dimensions. Fit
 status notices remain visible above the preview. Full spell metadata and the complete canonical
-description are available on demand in a responsive, scrollable details dialog, opened from a
-persistent localized **Show details** header control, an accessible **More actions** dropdown
-in the preview, or a right-click context menu. The dropdown and context menu expose the same
-actions (Show details and the existing Edit flow). No single click on the card body opens
-details or menus, and all interaction affordances are excluded from print. The dialog reads the
+description are available on demand in a responsive, scrollable details dialog, opened from the
+persistent localized **Show details** header control. No single click on the card body opens
+details or menus, the preview exposes no duplicate actions menu or context menu, and all
+interaction affordances are excluded from print. The dialog reads the
 resolved selected spell, never card DOM or fit output, and closes immediately if the selected
 spell changes.
 
@@ -935,7 +934,7 @@ duplicate these outcomes as a second invariants list.
 | P8  | Cards/print     | Cross-browser verification                                                                          | Chromium geometry verified; Chrome/Firefox/Safari remain the target for current and future validation                                                                                                          | §10         |
 | P9  | Cards/print     | Offline card preview and print                                                                      | Self-hosted card fonts load from precache; typography and measurement work without network                                                                                                                     | §9, §11     |
 | P10 | Cards/print     | Compact abbreviated casting-time parsing                                                            | `A`, `BA`/`B`, `R`, and localized `MIN`/`HR`/`min`/`Std.` values parse to the same base, glyph, accessible label, qualifier, caret, notes, fit, and print behavior as full text; stored text is never transformed at render | §9          |
-| U1  | Details UI      | Preview-only default pane                                                                           | No duplicated metadata/description pane by default; details open from header, dropdown, and right-click; dialog closes on spell change; print unchanged                                                        | §5          |
+| U1  | Details UI      | Preview-only default pane                                                                           | No duplicated metadata/description pane by default; details open from the header control; no duplicate preview menu or context menu; dialog closes on spell change; print unchanged                                                        | §5          |
 | H1  | Hosting         | Static production build                                                                             | Static assets plus SPA fallback deploy to Workers; no API/backend/secrets; PWA and client routes intact                                                                                                        | §3, §11     |
 | O1  | Offline/quality | First-load precache and retry                                                                       | Accurate **Setting up offline access**, **Offline ready**, or **Offline setup incomplete — Retry** states; no premature readiness claim; runtime asset errors show an actionable retry/fallback                | §11         |
 | O2  | Offline/quality | Offline language switch after readiness                                                             | No runtime network request; only manifest-listed assets are selectable                                                                                                                                         | §11         |

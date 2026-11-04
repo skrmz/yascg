@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Ellipsis, Info, Plus, SquarePen, Trash2 } from "lucide-react";
+import { Copy, Info, Plus, SquarePen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { resolveContentLanguage } from "@/content-language.ts";
@@ -13,18 +13,6 @@ import { message, translateMessage, type MessageDescriptor } from "@/locales/mes
 import { Button } from "@/ui/Button.tsx";
 import { SourceBadge } from "@/ui/Badge.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/ui/ContextMenu.tsx";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/ui/DropdownMenu.tsx";
 import { CustomSpellForm } from "./CustomSpellForm.tsx";
 import { SpellDetailsDialog } from "./SpellDetailsDialog.tsx";
 
@@ -337,65 +325,28 @@ export function DetailsPane() {
           ) : null}
         </div>
 
-        <ContextMenu>
-          <ContextMenuTrigger asChild>
-            <div className="card-preview-frame">
-              {fit.result ? (
-                fit.result.pages.map((pageBlocks, index) => (
-                  <CardView
-                    key={`${spell.id}-${index}`}
-                    spell={spell}
-                    blocks={pageBlocks}
-                    cardIndex={index + 1}
-                    cardCount={fit.result!.pages.length}
-                    fontPt={fit.result!.fontPt}
-                    contentLanguage={contentLanguage}
-                    design={cardDesign}
-                    presentation={fit.presentation ?? undefined}
-                    className="card-preview-page animate-reveal-subtle"
-                  />
-                ))
-              ) : (
-                <div className="rounded border border-dashed border-input p-4 text-xs text-muted-foreground">
-                  {t("details.measuring")}
-                </div>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="app-no-print absolute right-2 top-2"
-                    aria-label={t("details.moreActions")}
-                    title={t("details.moreActions")}
-                  >
-                    <Ellipsis size={16} aria-hidden="true" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onSelect={openDetails}>
-                    <Info size={14} aria-hidden="true" />
-                    {t("details.show")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setEditing(true)}>
-                    <SquarePen size={14} aria-hidden="true" />
-                    {t("details.edit")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+        <div className="card-preview-frame">
+          {fit.result ? (
+            fit.result.pages.map((pageBlocks, index) => (
+              <CardView
+                key={`${spell.id}-${index}`}
+                spell={spell}
+                blocks={pageBlocks}
+                cardIndex={index + 1}
+                cardCount={fit.result!.pages.length}
+                fontPt={fit.result!.fontPt}
+                contentLanguage={contentLanguage}
+                design={cardDesign}
+                presentation={fit.presentation ?? undefined}
+                className="card-preview-page animate-reveal-subtle"
+              />
+            ))
+          ) : (
+            <div className="rounded border border-dashed border-input p-4 text-xs text-muted-foreground">
+              {t("details.measuring")}
             </div>
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuItem onSelect={openDetails}>
-              <Info size={14} aria-hidden="true" />
-              {t("details.show")}
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={() => setEditing(true)}>
-              <SquarePen size={14} aria-hidden="true" />
-              {t("details.edit")}
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
+          )}
+        </div>
       </div>
 
       <SpellDetailsDialog

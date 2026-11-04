@@ -114,7 +114,16 @@ describe("DetailsPane preview-only default layout", () => {
   it("renders the persistent Show details button", () => {
     render(<DetailsPane />);
     expect(screen.getByRole("button", { name: "Show details" })).not.toBeNull();
-    expect(screen.getByRole("button", { name: "More actions" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Edit" })).not.toBeNull();
+  });
+
+  it("opens the edit flow from the header action bar", async () => {
+    const user = userEvent.setup();
+    render(<DetailsPane />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+
+    expect(screen.getByRole("dialog", { name: "Edit custom spell" })).not.toBeNull();
   });
 
   it("does not duplicate metadata or description in the default layout", () => {
@@ -207,45 +216,6 @@ describe("DetailsPane preview-only default layout", () => {
 
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.queryByRole("menuitem")).toBeNull();
-  });
-});
-
-describe("DetailsPane card actions menu", () => {
-  it("exposes Show details and Edit from the ellipsis dropdown", async () => {
-    const user = userEvent.setup();
-    render(<DetailsPane />);
-
-    await user.click(screen.getByRole("button", { name: "More actions" }));
-    expect(screen.getByRole("menuitem", { name: "Show details" })).not.toBeNull();
-
-    await user.click(screen.getByRole("menuitem", { name: "Show details" }));
-    expect(screen.getByRole("dialog", { name: "Test Spell" })).not.toBeNull();
-  });
-
-  it("opens the existing edit flow from the ellipsis dropdown", async () => {
-    const user = userEvent.setup();
-    render(<DetailsPane />);
-
-    await user.click(screen.getByRole("button", { name: "More actions" }));
-    await user.click(screen.getByRole("menuitem", { name: "Edit" }));
-
-    expect(screen.getByRole("dialog", { name: "Edit custom spell" })).not.toBeNull();
-  });
-
-  it("opens the same actions from the preview context menu", async () => {
-    const user = userEvent.setup();
-    const { container } = render(<DetailsPane />);
-
-    fireEvent.contextMenu(container.querySelector(".card-preview-frame") as HTMLElement, {
-      clientX: 20,
-      clientY: 20,
-    });
-
-    const showDetails = await screen.findByRole("menuitem", { name: "Show details" });
-    expect(screen.getByRole("menuitem", { name: "Edit" })).not.toBeNull();
-
-    await user.click(showDetails);
-    expect(screen.getByRole("dialog", { name: "Test Spell" })).not.toBeNull();
   });
 });
 

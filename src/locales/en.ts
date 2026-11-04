@@ -407,7 +407,6 @@ export const en = {
   },
   details: {
     show: "Show details",
-    moreActions: "More actions",
     edit: "Edit",
     close: "Close",
     title: "Spell preview and details",

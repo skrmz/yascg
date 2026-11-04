@@ -413,7 +413,6 @@ export const de = {
   },
   details: {
     show: "Details anzeigen",
-    moreActions: "Weitere Aktionen",
     edit: "Bearbeiten",
     close: "Schließen",
     title: "Zaubervorschau und Details",
