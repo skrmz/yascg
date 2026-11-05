@@ -79,9 +79,9 @@ spells `Custom` and bundled spells `SRD 5.2.1`.
 
 ## 3. Technology and Architecture
 
-- **Runtime/toolchain:** Node.js 24.11+ (24 LTS) or 26 LTS, pnpm v12+, React, TypeScript
-  (strict), and the unified Vite+ (`vp`) toolchain. The complete command reference is in
-  [DEVELOPMENT](../DEVELOPMENT.md#toolchain-and-commands).
+- **Runtime/toolchain:** Node.js 24.11+ (24 LTS, pinned by `.nvmrc`) or 26 LTS, pnpm v12+,
+  React, TypeScript (strict), and the unified Vite+ (`vp`) toolchain. The complete command
+  reference is in [DEVELOPMENT](../DEVELOPMENT.md#toolchain-and-commands).
 - **Hosting:** the static SPA deploys to Cloudflare Workers Static Assets using
   `@cloudflare/vite-plugin` and Wrangler. The committed `wrangler.jsonc` sets the Worker name
   and `assets.not_found_handling: "single-page-application"` for client-side routes. There is

@@ -19,11 +19,18 @@ and printing settings, see the [README](../README.md).
 
 ## Toolchain and commands
 
-Requires **Node.js 24.11+ (24 LTS) or 26 LTS** and **pnpm v12+** with the unified **Vite+
-(`vp`)** toolchain (Vite, Rolldown, Vitest, Oxlint, Oxfmt). The repository is currently
-developed on Node.js 26 LTS. `vp <name>` runs a built-in command, while `vp run <name>` runs a
-`package.json` script or a `vite.config.ts` task; scripts cannot overwrite built-ins. Check
-`package.json` and `vite.config.ts` before adding or invoking a command.
+Requires **Node.js 24 LTS (24.11 or newer)** and **pnpm v12+** with the unified **Vite+
+(`vp`)** toolchain (Vite, Rolldown, Vitest, Oxlint, Oxfmt). Node.js 26 LTS also satisfies the
+runtime requirements, but **24 is the project's intended major version**.
+
+The repository root `.nvmrc` (containing `24`) is the source of truth for that version. Run
+`fnm use`, or `nvm use` on macOS/Linux, from the repository root; nvm-windows does not read
+`.nvmrc`, so select the version explicitly with `nvm use 24`. Cloudflare Workers Builds reads
+`.nvmrc` directly, so no `NODE_VERSION` build variable is required.
+
+`vp <name>` runs a built-in command, while `vp run <name>` runs a `package.json` script or a
+`vite.config.ts` task; scripts cannot overwrite built-ins. Check `package.json` and
+`vite.config.ts` before adding or invoking a command.
 
 | Command                                 | Purpose                                                                 |
 | --------------------------------------- | ----------------------------------------------------------------------- |

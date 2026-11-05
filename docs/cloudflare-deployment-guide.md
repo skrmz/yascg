@@ -22,7 +22,7 @@ This repository is the asset-only static-SPA variant. The production Worker has 
 | Deploy (local) | `pnpm run deploy` (build, then `wrangler deploy`) |
 | Deploy (CI) | `pnpm exec wrangler deploy` after the separate build step |
 | Package manager | `pnpm@12.11.2`, pinned exactly in `package.json` |
-| Runtime | Node.js 24.11+ or 26 LTS |
+| Runtime | Node.js 24 LTS via `.nvmrc` (`24`); Node.js 26 LTS also supported |
 | Vite plugin | `cloudflare()` after the React and Tailwind plugins |
 
 ### A.2 Configuration
@@ -106,7 +106,7 @@ pnpm run deploy
 
 - `pnpm run preview` (`vp preview`) runs the built app through the Cloudflare Vite plugin in local `workerd`, so routing, headers, and asset serving match production. It does not create a Cloudflare Preview URL.
 - `pnpm exec wrangler preview` creates or updates a deployed Cloudflare Worker Preview for the current branch.
-- Cloudflare Workers Builds uses `npx wrangler preview` for non-production branches when preview builds are enabled.
+- Cloudflare Workers Builds uses `pnpm exec wrangler preview` for non-production branches when preview builds are enabled.
 
 ## B. Adding an API Worker
 
@@ -182,16 +182,22 @@ Configuration is framework-specific — don't mix entry points between framework
 | --------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | Worker name     | `yascg` (must match `wrangler.jsonc` → `name`)                                                                               |
 | Build command   | `pnpm run build`                                                                                                            |
-| Deploy command  | `pnpm exec wrangler deploy` (`npx wrangler deploy` is the documented default; any package manager works)                    |
+| Deploy command  | `pnpm exec wrangler deploy` (uses the locally installed Wrangler; avoid `npx`, which may resolve a different version)     |
 | Preview command | `pnpm exec wrangler preview` (enable preview builds in branch settings first)                                                |
 | Root directory  | `/`                                                                                                                         |
-| Node version    | set `NODE_VERSION` to `24` or `26` if the image default is older than 24.11; the repo supports Node.js 24.11+ or 26 LTS     |
+| Node version    | read from `.nvmrc` (`24`); do not set a `NODE_VERSION` build variable. The image default Node.js 24.22.1 also satisfies it |
 | pnpm version    | image default may be older — the exact `packageManager` pin in `package.json` (`pnpm@12.11.2`) supplies the project version |
 | Production branch | `main`                                                                                                                     |
 | Build watch paths | `*`                                                                                                                       |
 | Enable preview builds | Optional; required for per-branch preview deployments                                                                 |
 | Cloudflare Access | Disabled for a public app                                                                                                 |
 | API token       | leave empty — auto-generated                                                                                                |
+
+Use `pnpm exec wrangler deploy` and `pnpm exec wrangler preview` in Workers Builds. `pnpm exec`
+runs the Wrangler version pinned in `devDependencies` (`4.153.0`); `npx` may resolve or download a
+different release. The deploy command must not rebuild, because the build step already ran.
+Workers Builds reads `.nvmrc` from the repository root, so the Node.js version is configured in
+source control rather than in a separate build variable.
 
 ## E. Legacy Pages variant
 
@@ -244,8 +250,8 @@ The integration:
 2. Cloudflare detects the change through the GitHub integration.
 3. Cloudflare installs dependencies and executes the configured build command (`pnpm run build`).
 4. If the build succeeds, Cloudflare executes the appropriate deployment command:
-   - Production branch (`main`): `npx wrangler deploy`.
-   - Preview branches: `npx wrangler preview`, if preview builds are enabled.
+   - Production branch (`main`): `pnpm exec wrangler deploy`.
+   - Preview branches: `pnpm exec wrangler preview`, if preview builds are enabled.
 5. Cloudflare publishes the deployment and reports the outcome to GitHub.
 
 A failed build or deployment does not replace the existing successful production deployment.

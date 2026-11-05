@@ -25,8 +25,9 @@ paper. All data stays in your browser unless you export it as JSON.
 
 ## Quick start
 
-Local development requires **Node.js 24.11+ (24 LTS) or 26 LTS** and **pnpm v12+** with the
-unified **Vite+ (`vp`)** toolchain.
+Local development requires **Node.js 24.11+** and **pnpm v12+** with the unified **Vite+
+(`vp`)** toolchain. Node.js 26 LTS is also supported; the repository's `.nvmrc` pins the
+intended major version (24).
 
 ```powershell
 pnpm install
