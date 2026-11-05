@@ -7,6 +7,7 @@ import { LIMITS } from "@/domain/spells";
 import { useDeckCardFits, type DeckFitItem } from "@/cards/fit.tsx";
 import { waitForCardFonts } from "@/cards/fonts.ts";
 import { PrintSheets, type PaperSize, type PrintCardData } from "@/print/PrintSheet.tsx";
+import { printDocumentTitle } from "@/print/document-title.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Checkbox } from "@/ui/Checkbox.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
@@ -21,10 +22,14 @@ export function PrintDialog({
 }) {
   const { resolvedEntries, language, activeDeck, cardDesign } = useApp();
   const { t } = useTranslation();
-  const [paperSize, setPaperSize] = useState<PaperSize>("letter");
+  const [paperSize, setPaperSize] = useState<PaperSize>(language === "de" ? "A4" : "letter");
   const [cuttingBorders, setCuttingBorders] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [job, setJob] = useState<PrintCardData[] | null>(null);
+  const [job, setJob] = useState<{ cards: PrintCardData[]; title: string } | null>(null);
+
+  useEffect(() => {
+    setPaperSize(language === "de" ? "A4" : "letter");
+  }, [language]);
 
   const resolvedSpells = resolvedEntries.flatMap((item) =>
     item.resolution.status === "resolved"
@@ -89,22 +94,30 @@ export function PrintDialog({
 
   useEffect(() => {
     if (!job) return;
+    const previousTitle = document.title;
     let cancelled = false;
     let frame = 0;
+    const restoreTitle = () => {
+      document.title = previousTitle;
+    };
+    window.addEventListener("afterprint", restoreTitle);
     const run = async () => {
       await waitForCardFonts();
       if (cancelled) return;
+      document.title = job.title;
       frame = window.requestAnimationFrame(() => window.print());
     };
     void run();
     return () => {
       cancelled = true;
       window.cancelAnimationFrame(frame);
+      window.removeEventListener("afterprint", restoreTitle);
+      restoreTitle();
     };
   }, [job]);
 
   const startPrint = () => {
-    setJob(printCards);
+    setJob({ cards: printCards, title: printDocumentTitle(activeDeck?.name) });
     onOpenChange(false);
   };
 
@@ -209,7 +222,7 @@ export function PrintDialog({
       {job
         ? createPortal(
             <PrintSheets
-              cards={job}
+              cards={job.cards}
               paperSize={paperSize}
               cuttingBorders={cuttingBorders}
               datasetLanguage={language}

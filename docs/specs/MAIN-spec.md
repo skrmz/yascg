@@ -785,7 +785,11 @@ Compact design is printed as measured. Tooltip and dialog portals (including Rad
 wrappers) are screen-only and must not print; card-local rules notes are part of the card DOM and
 must print.
 
-- The user selects Letter or A4 and toggles cutting borders.
+- The user selects Letter or A4 and toggles cutting borders. The initial paper selection follows
+  the active data/UI language: **A4** for German and **US Letter** for English.
+- Before printing, set the document title to the active deck name, or to a dated generic name
+  (`spell-cards-deck-YYYY-MM-DD`) when the deck is unnamed, so browser print-to-PDF filenames are
+  descriptive. Restore the application title after printing.
 - Before programmatic printing, explicitly load and verify the Vollkorn and Alegreya Sans faces,
   including italics, rather than relying solely on `document.fonts.ready`. Card fonts are
   self-hosted and precached, so print output must not depend on network font loading or

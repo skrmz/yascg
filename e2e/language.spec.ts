@@ -107,6 +107,7 @@ test("German localizes about, import/export and print dialogs", async ({ page })
   await page.getByRole("button", { name: "Drucken" }).first().click();
   const printDialog = page.getByRole("dialog", { name: "Zauberkarten drucken" });
   await expect(printDialog.getByText("Druckeinstellungen")).toBeVisible();
+  await expect(printDialog.getByLabel("Papierformat")).toHaveValue("A4");
   await printDialog.getByRole("button", { name: "Abbrechen" }).click();
 });
 

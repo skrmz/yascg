@@ -18,18 +18,23 @@ test("print dialog explains settings and renders a 9-up sheet", async ({ page })
   await page.getByRole("button", { name: "Print" }).first().click();
   await expect(page.getByText("Print settings")).toBeVisible();
   await expect(page.getByText(/100% \/ Actual Size/)).toBeVisible();
+  await expect(page.getByLabel("Paper size")).toHaveValue("letter");
 
   await page
     .getByRole("dialog")
     .getByRole("button", { name: /^Print/ })
     .click();
 
+  await expect(page).toHaveTitle(/^spell-cards-deck-\d{4}-\d{2}-\d{2}$/);
   await expect(page.locator(".print-root")).toHaveCount(1);
   await expect(page.locator(".print-cell")).toHaveCount(9);
   await expect(page.locator(".print-cell .spell-card")).toHaveCount(1);
 
   const printed = await page.evaluate(() => (window as unknown as { __printed: number }).__printed);
   expect(printed).toBe(1);
+
+  await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
+  await expect(page).toHaveTitle("YASCG - Yet Another Spell Card Generator");
 });
 
 test("A4 sheets use ISO A4 geometry", async ({ page }) => {

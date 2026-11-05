@@ -323,6 +323,8 @@ settings are in the [README](../README.md#printing). Implementation details:
   and `window.print()`; `src/print/print.css` self-hosts the card families as WOFF2 assets.
 - `src/print/PrintSheet.tsx` builds the 3x3 sheets and `src/print/print.css` owns the physical
   `@page`, grid, Classic, and Compact card CSS. Tooltip and dialog portals are excluded in print.
+  `src/print/document-title.ts` derives the print-to-PDF document title from the active deck name
+  with a dated fallback, and `PrintDialog` restores the application title after `afterprint`.
 - `src/pwa/register.ts` verifies that the shell, manifest, every bundled dataset, and at least
   one local font are present in Cache Storage before the UI claims offline readiness. It uses a
   `prompt` update flow and never infers readiness from service-worker registration alone.

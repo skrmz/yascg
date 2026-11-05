@@ -106,10 +106,12 @@ deck. The exact deck and import edge-case rules are in the
 ## Printing
 
 Open **Print** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per sheet on a centered
-7.5in x 10.5in grid. The selected Classic or Compact card design is used consistently in preview,
-measurement, and print. In **Multi-Card** mode, the first card keeps the full header and metadata
-block; continuation cards use a compact header with a localized `contd.`/`Forts.` label and
-omit repeated metadata so more description fits.
+7.5in x 10.5in grid. The paper selection defaults to **A4** for German and **US Letter** for
+English. When saving as PDF, the browser suggests the active deck name, or a dated generic name
+when the deck is unnamed. The selected Classic or Compact card design is used consistently in
+preview, measurement, and print. In **Multi-Card** mode, the first card keeps the full header and
+metadata block; continuation cards use a compact header with a localized `contd.`/`Forts.` label
+and omit repeated metadata so more description fits.
 
 Before printing, configure your browser/printer:
 
