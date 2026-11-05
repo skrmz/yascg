@@ -397,6 +397,61 @@ describe("abbreviation transformer: carets, lines, and units", () => {
   });
 });
 
+describe("abbreviation transformer: up-to quantities", () => {
+  it("abbreviates numeric quantities and compacts time units", () => {
+    expect(abbreviated("up to 1 hour")).toBe("≤ 1h");
+    expect(abbreviated("up to 10 minutes")).toBe("≤ 10min");
+    expect(abbreviated("up to 3 days")).toBe("≤ 3d");
+    expect(abbreviated("Up to 1 Day")).toBe("≤ 1d");
+  });
+
+  it("keeps spacing for non-time units and nouns", () => {
+    expect(abbreviated("up to 30 feet")).toBe("≤ 30 ft");
+    expect(abbreviated("up to 2 meters")).toBe("≤ 2 mtr");
+    expect(abbreviated("up to 3 creatures")).toBe("≤ 3 creatures");
+  });
+
+  it("requires a numeric quantity", () => {
+    expect(abbreviated("up to the DM's discretion")).toBe("up to the DM's discretion");
+    expect(abbreviated("up to one hour")).toBe("up to one h");
+    expect(abbreviated("up to 1st level")).toBe("up to 1st level");
+  });
+
+  it("abbreviates German bis-zu quantities", () => {
+    expect(abbreviated("bis zu 1 Stunde", "de")).toBe("≤ 1h");
+    expect(abbreviated("bis zu 10 Minuten", "de")).toBe("≤ 10min");
+    expect(abbreviated("bis zu 1 Tag", "de")).toBe("≤ 1t");
+    expect(abbreviated("bis zu 3 Tage", "de")).toBe("≤ 3t");
+    expect(abbreviated("Bis zu 1 Tag", "de")).toBe("≤ 1t");
+  });
+
+  it("keeps non-time German units and non-numeric phrases spaced", () => {
+    expect(abbreviated("bis zu 30 Meter", "de")).toBe("≤ 30 m");
+    expect(abbreviated("bis zu 3 Kreaturen", "de")).toBe("≤ 3 Kreaturen");
+    expect(abbreviated("bis zur Entscheidung des SL", "de")).toBe("bis zur Entscheidung des SL");
+  });
+
+  it("counts the prefix and compacted unit as applied terms", () => {
+    const result = transform("up to 1 hour");
+    expect(result.text).toBe("≤ 1h");
+    expect(result.applied.find((entry) => entry.id === "upTo")).toMatchObject({ count: 1 });
+    expect(result.applied.find((entry) => entry.id === "hour")).toMatchObject({ count: 1 });
+  });
+
+  it("preserves Markdown protections around quantities", () => {
+    expect(abbreviated("`up to 1 hour`")).toBe("`up to 1 hour`");
+    expect(abbreviated("up to **1 hour**")).toBe("up to **1 h**");
+    expect(abbreviated("up to 1 *hour*")).toBe("≤ 1 *h*");
+    expect(abbreviated("[up to 1 hour](https://example.com)")).toBe("[≤ 1h](https://example.com)");
+  });
+
+  it("is idempotent", () => {
+    const once = abbreviated("up to 1 hour and up to 30 feet");
+    expect(once).toBe("≤ 1h and ≤ 30 ft");
+    expect(abbreviated(once)).toBe(once);
+  });
+});
+
 describe("abbreviation transformer: plain mode", () => {
   it("protects URLs and email addresses only", () => {
     expect(

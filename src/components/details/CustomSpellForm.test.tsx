@@ -369,6 +369,88 @@ describe("CustomSpellForm abbreviation", () => {
     expect(saved.name).toBe("Scoped Spell");
   });
 
+  it("abbreviates numeric up-to quantities in every exposed field", async () => {
+    const user = userEvent.setup();
+    const existing = makeCustomSpell({
+      castingTime: "up to 1 hour",
+      range: "up to 30 feet",
+      duration: "up to 10 minutes",
+      description: ["You can wait up to 3 days and affect up to 3 creatures."],
+      higherLevels: ["At higher levels, up to 2 hours."],
+      components: {
+        verbal: true,
+        verbalDescription: "speak up to 1 minute",
+        somatic: true,
+        somaticDescription: "gesture up to 1 minute",
+        material: true,
+        materialDescription: "a component used up to 1 day",
+        materialCost: "up to 30 feet",
+      },
+    });
+    mocks.saveCustomSpell.mockResolvedValue(existing);
+
+    renderForm(existing);
+    await user.click(abbreviateButton());
+    await user.click(screen.getByRole("button", { name: "Advanced / Optional" }));
+
+    expect((castingTimeInput() as HTMLInputElement).value).toBe("≤ 1h");
+    expect((rangeInput() as HTMLInputElement).value).toBe("≤ 30 ft");
+    expect((durationInput() as HTMLInputElement).value).toBe("≤ 10min");
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe(
+      "You can wait ≤ 3d and affect ≤ 3 creatures.",
+    );
+    expect(
+      (screen.getByLabelText("Higher levels (Markdown, optional)") as HTMLTextAreaElement).value,
+    ).toBe("At higher levels, ≤ 2h.");
+    expect((screen.getByLabelText("Verbal description") as HTMLInputElement).value).toBe(
+      "speak ≤ 1min",
+    );
+    expect((screen.getByLabelText("Somatic description") as HTMLInputElement).value).toBe(
+      "gesture ≤ 1min",
+    );
+    expect((screen.getByLabelText("Material description") as HTMLInputElement).value).toBe(
+      "a component used ≤ 1d",
+    );
+    expect((screen.getByLabelText("Material cost") as HTMLInputElement).value).toBe("≤ 30 ft");
+  });
+
+  it("keeps non-numeric up-to phrases unchanged", async () => {
+    const user = userEvent.setup();
+    renderForm(
+      makeCustomSpell({
+        castingTime: "up to the DM's discretion",
+        description: ["up to the DM's discretion"],
+      }),
+    );
+
+    await user.click(abbreviateButton());
+
+    expect((castingTimeInput() as HTMLInputElement).value).toBe("up to the DM's discretion");
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("up to the DM's discretion");
+  });
+
+  it("abbreviates German numeric bis-zu quantities with the captured language", async () => {
+    const user = userEvent.setup();
+    mocks.language.value = "de";
+    await i18n.changeLanguage("de");
+    renderForm(
+      makeCustomSpell({
+        castingTime: "bis zu 1 Stunde",
+        range: "bis zu 30 Meter",
+        duration: "bis zu 10 Minuten",
+        description: ["Bis zu 3 Tage und bis zu 3 Kreaturen."],
+      }),
+    );
+
+    await i18n.changeLanguage("en");
+    await user.click(abbreviateButton());
+
+    expect((castingTimeInput() as HTMLInputElement).value).toBe("≤ 1h");
+    expect((rangeInput() as HTMLInputElement).value).toBe("≤ 30 m");
+    expect((durationInput() as HTMLInputElement).value).toBe("≤ 10min");
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("≤ 3t und ≤ 3 Kreaturen.");
+  });
+
   it("does not transform automatically on open, save, or live language change", async () => {
     const user = userEvent.setup();
     const existing = makeCustomSpell({

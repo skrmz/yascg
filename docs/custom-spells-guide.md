@@ -16,6 +16,7 @@ The custom-spell editor offers **Abbreviate** and **Undo abbreviation** for new 
 
 - It shortens only your spell-data text: description, higher levels, casting time, range, duration, and component descriptions/cost. UI labels such as **Casting Time**, **Range**, and **Duration** are never abbreviated.
 - Matching uses the language captured when the editor opened. Only English and German prose catalogs are available; other languages show an explanatory status instead of using English.
+- Numeric quantities introduced by `up to`/`bis zu` become `≤`, with compact time units such as `≤ 1h`, `≤ 10min`, and `≤ 3d`. Non-time units keep their normal spacing (`≤ 30 ft`), and phrases without a number are unchanged.
 - In Markdown text, ordinary prose is abbreviated, while code, HTML attributes, URLs, link destinations/titles/reference identifiers, images, escapes, and structural syntax are preserved.
 - **Undo abbreviation** restores the fields changed by the latest action until the editor closes. Later manual edits to those changed fields are overwritten by Undo; unrelated fields are untouched.
 - Saving stores the abbreviated text. There is no persisted backup or automatic de-abbreviation, so save the original wording separately if you may need it later.

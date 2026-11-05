@@ -16,6 +16,7 @@ Der Editor für eigene Zauber bietet **Abkürzen** und **Abkürzung rückgängig
 
 - Abgekürzt werden nur deine Zauberdaten: Beschreibung, höhere Grade, Zeitaufwand, Reichweite, Wirkungsdauer sowie Komponentenbeschreibungen und Materialkosten. Oberflächenbeschriftungen wie **Zeitaufwand**, **Reichweite** und **Wirkungsdauer** werden nie abgekürzt.
 - Die Zuordnung verwendet die Sprache, die beim Öffnen des Editors erfasst wurde. Es gibt nur englische und deutsche Textkataloge; andere Sprachen zeigen einen erklärenden Status, statt auf Englisch auszuweichen.
+- Zahlenangaben nach `bis zu`/`up to` werden zu `≤`, wobei Zeiteinheiten kompakt erscheinen, etwa `≤ 1h`, `≤ 10min` und `≤ 3d`. Andere Einheiten behalten ihre normale Schreibweise (`≤ 30 ft`); Wendungen ohne Zahl bleiben unverändert.
 - In Markdown-Texten wird gewöhnlicher Fließtext abgekürzt; Code, HTML-Attribute, URLs, Linkziele/-titel/-referenzen, Bilder, Escapes und Struktursyntax bleiben erhalten.
 - **Abkürzung rückgängig machen** stellt die vom letzten Vorgang geänderten Felder wieder her, solange der Editor geöffnet ist. Spätere manuelle Änderungen an diesen Feldern werden dabei überschrieben; andere Felder bleiben unberührt.
 - Beim Speichern wird der abgekürzte Text gespeichert. Es gibt keine gespeicherte Sicherung und keine automatische Rückabkürzung; bewahre den ursprünglichen Wortlaut bei Bedarf separat auf.

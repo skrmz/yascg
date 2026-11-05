@@ -204,7 +204,20 @@ describe("abbreviation catalog", () => {
     expect(entryById("de", "meter").forms).toEqual(["Meter", "Meters", "Metern"]);
     expect(entryById("de", "minute").forms).toEqual(["Minute", "Minuten"]);
     expect(entryById("de", "hour").forms).toEqual(["Stunde", "Stunden"]);
+    expect(entryById("de", "day").forms).toEqual(["Tag", "Tage"]);
     expect(entryById("de", "object").forms).toEqual(["Gegenstand", "Gegenstände"]);
+  });
+
+  it("marks quantity prefixes and compact time units", () => {
+    for (const locale of ["en", "de"] as const) {
+      const prefix = entryById(locale, "upTo");
+      expect(prefix).toMatchObject({ short: "≤", quantityPrefix: true });
+      expect(isAbbreviationEligible(prefix, locale)).toBe(true);
+      for (const id of ["minute", "hour", "day"] as const) {
+        expect(entryById(locale, id).timeUnit).toBe(true);
+      }
+    }
+    expect(entryById("en", "days")).toMatchObject({ full: "days", short: "d", timeUnit: true });
   });
 
   it("keeps locale-specific inventories without parity-only duplicates", () => {
@@ -231,6 +244,7 @@ describe("abbreviation catalog", () => {
       "meters",
       "minutes",
       "hours",
+      "days",
     ] as const) {
       expect(german.has(id)).toBe(false);
     }

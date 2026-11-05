@@ -17,6 +17,8 @@ export interface AbbreviationEntry {
   full: string;
   short: string;
   forms: readonly string[];
+  quantityPrefix?: boolean;
+  timeUnit?: boolean;
 }
 
 export interface AbbreviationSurfaceConflict {
@@ -124,6 +126,8 @@ function catalogEntries(
     full: definition.full,
     short: definition.short,
     forms: generatedForms(definition),
+    quantityPrefix: definition.quantityPrefix,
+    timeUnit: definition.timeUnit,
   }));
 }
 

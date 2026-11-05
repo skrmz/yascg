@@ -166,6 +166,76 @@ function matchAt(
   return null;
 }
 
+interface QuantityMatch {
+  output: string;
+  end: number;
+  unit: MatcherEntry | null;
+}
+
+function recordApplied(
+  applied: Map<AbbreviationId, AppliedAbbreviation>,
+  entry: AbbreviationEntry,
+): void {
+  const existing = applied.get(entry.id);
+  if (existing) existing.count += 1;
+  else applied.set(entry.id, { id: entry.id, full: entry.full, short: entry.short, count: 1 });
+}
+
+function isDigit(character: string | undefined): boolean {
+  return character !== undefined && character >= "0" && character <= "9";
+}
+
+function horizontalSpace(character: string | undefined): boolean {
+  return character === " " || character === "\t";
+}
+
+/**
+ * Matches the numeric quantity introduced by a `quantityPrefix` entry. A
+ * following catalog time unit is consumed and compacted into the short form;
+ * other units are left to the normal single pass so their spacing is unchanged.
+ */
+function matchQuantityAfter(
+  text: string,
+  start: number,
+  mask: Uint8Array,
+  entries: readonly MatcherEntry[],
+  locale: AbbreviationLocale,
+): QuantityMatch | null {
+  let cursor = start;
+  while (horizontalSpace(text[cursor])) cursor += 1;
+  if (cursor === start || !isDigit(text[cursor])) return null;
+
+  const numberStart = cursor;
+  while (isDigit(text[cursor])) cursor += 1;
+  if (text[cursor] === "." || text[cursor] === ",") {
+    if (isDigit(text[cursor + 1])) {
+      cursor += 1;
+      while (isDigit(text[cursor])) cursor += 1;
+    }
+  }
+  if (isWordCharacterAt(text, cursor)) return null;
+  const numberEnd = cursor;
+
+  let unitStart = numberEnd;
+  while (horizontalSpace(text[unitStart])) unitStart += 1;
+  if (unitStart > numberEnd) {
+    const unit = matchAt(text, unitStart, mask, entries, locale);
+    if (unit?.entry.timeUnit) {
+      return {
+        output: `${text.slice(start, numberStart)}${text.slice(numberStart, numberEnd)}${unit.entry.short}`,
+        end: unitStart + unit.surface.length,
+        unit,
+      };
+    }
+  }
+
+  return {
+    output: `${text.slice(start, numberStart)}${text.slice(numberStart, numberEnd)}`,
+    end: numberEnd,
+    unit: null,
+  };
+}
+
 function words(value: string): string[] {
   const trimmed = value.trim();
   return trimmed === "" ? [] : trimmed.split(/\s+/);
@@ -577,11 +647,27 @@ export function transformAbbreviationText(
       appliedMatch &&
       !isPartOfLongerPhrase(text, cursor, appliedMatch, matcher.eligible, locale)
     ) {
-      const { id, full, short } = appliedMatch.entry;
-      output += short;
-      const existing = applied.get(id);
-      if (existing) existing.count += 1;
-      else applied.set(id, { id, full, short, count: 1 });
+      if (appliedMatch.entry.quantityPrefix) {
+        const quantity = matchQuantityAfter(
+          text,
+          cursor + appliedMatch.surface.length,
+          mask,
+          matcher.eligible,
+          locale,
+        );
+        if (!quantity) {
+          output += text[cursor];
+          cursor += 1;
+          continue;
+        }
+        output += appliedMatch.entry.short + quantity.output;
+        recordApplied(applied, appliedMatch.entry);
+        if (quantity.unit) recordApplied(applied, quantity.unit.entry);
+        cursor = quantity.end;
+        continue;
+      }
+      output += appliedMatch.entry.short;
+      recordApplied(applied, appliedMatch.entry);
       cursor += appliedMatch.surface.length;
       continue;
     }

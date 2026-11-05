@@ -13,11 +13,15 @@ The parity test reads this document and compares the English and German inventor
 
 ## Catalog model
 
-Each locale has an independent abbreviation catalog. A definition specifies `full`, `short`, and optionally `suffixes` and `forms`. The generated surfaces are `full`, every `full + suffix`, and every explicit `forms` entry; all of them map to the same `short`. Entries without inflection metadata match only their exact spelling. German `psychic` is one definition covering `psychisch`, `psychische`, `psychischer`, `psychisches`, `psychischem`, and `psychischen`. German `meter` (`Meter`, `Meters`, `Metern`), `minute` (`Minute`, `Minuten`), `hour` (`Stunde`, `Stunden`), and `object` (`Gegenstand`, `Gegenstände`) use the same mechanism.
+Each locale has an independent abbreviation catalog. A definition specifies `full`, `short`, and optionally `suffixes`, `forms`, `quantityPrefix`, and `timeUnit`. The generated surfaces are `full`, every `full + suffix`, and every explicit `forms` entry; all of them map to the same `short`. Entries without inflection metadata match only their exact spelling. German `psychic` is one definition covering `psychisch`, `psychische`, `psychischer`, `psychisches`, `psychischem`, and `psychischen`. German `meter` (`Meter`, `Meters`, `Metern`), `minute` (`Minute`, `Minuten`), `hour` (`Stunde`, `Stunden`), `day` (`Tag`, `Tage`), and `object` (`Gegenstand`, `Gegenstände`) use the same mechanism.
+
+`quantityPrefix` marks a short that is only applied when the surface introduces a numeric quantity. `timeUnit` marks units that are compacted after a quantity prefix, as in `≤ 1h`; other units keep their normal spacing, as in `≤ 30 ft`.
 
 ## Manual abbreviation of custom spell prose
 
 The custom spell editor offers **Abbreviate** for non-SRD drafts. The action transforms only the user-authored draft values (`description`, higher levels, casting time, range, duration, and component descriptions); it never changes UI labels or structured fields. Nothing is persisted until the spell is saved, and **Undo abbreviation** restores the fields changed by the latest action until the editor closes. See the [custom spells guide](custom-spells-guide.md) for the user workflow.
+
+English `up to` and German `bis zu` become `≤` only when they introduce a numeric quantity. A time unit in that quantity is compacted without a space: `up to 1 hour` → `≤ 1h`, `up to 10 minutes` → `≤ 10min`, `up to 3 days` → `≤ 3d`, and `bis zu 3 Tage` → `≤ 3t`. Other units and nouns keep their normal spacing: `up to 30 feet` → `≤ 30 ft`, `up to 3 creatures` → `≤ 3 creatures`. Phrases without a number, such as `up to the DM's discretion`, are unchanged.
 
 Matching uses the language captured when the editor opened. Only exact `en` and `de` codes have catalogs; other languages are a no-op with an explanatory status, never an English fallback. Catalog identity and display remain case-sensitive: `m` (meter) and `M` (material component) are distinct. Manual prose matching is locale-aware case-insensitive, so `Bonus Action`, `BONUS ACTION`, and `bonus action` share the `BA` short.
 
@@ -121,6 +125,8 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - hour = h (Stunde = h)
 - hours = h (—)
 - day = d (Tag = t)
+- days = d (—)
+- up to = ≤ (bis zu = ≤)
 - modifier = mod. (Modifikator = Mod.)
 - minimum = min. (Minimum = Min.)
 - maximum = max. (Maximum = Max.)
@@ -225,5 +231,6 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - **ft** is the English foot/feet short; German spell ranges are generally given in meters.
 - **German ability abbreviations** such as ST, GE, KO, IN, WE, and CH are app-specific shorthand and do not necessarily match the abbreviations printed in the official German SRD.
 - **General language abbreviations** may overlap with D&D-specific codes. Their interpretation depends on context.
+- **≤** is used only for numeric `up to` / `bis zu` quantities; it is not a replacement for non-numeric phrases such as `up to the DM's discretion`.
 - **Periods and spaces** are significant parts of an abbreviation. For example, `z. B.` and `d. h.` retain their internal spaces.
 - **Singular and plural forms** may intentionally share an abbreviation, such as `obj.` for object and objects or `Ggst.` for the configured German `object` forms. Context determines the intended meaning.

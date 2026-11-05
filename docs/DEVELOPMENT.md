@@ -152,9 +152,10 @@ Paths are relative to the repository root.
 - `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE catalogs.
   `abbreviations.ts` owns independent per-locale catalogs, generated inflection forms, eligibility,
   conflict validation, and per-locale exclusion sets; `abbreviation-types.ts` holds the shared
-  definition shape so locale modules never import the catalog runtime.
-  `abbreviation-transform.ts` owns the user-triggered prose matcher and Markdown protected-range
-  scanner.
+  definition shape, including `quantityPrefix` and `timeUnit` metadata, so locale modules never
+  import the catalog runtime.
+  `abbreviation-transform.ts` owns the user-triggered prose matcher, quantity-prefix handling, and
+  Markdown protected-range scanner.
 - `src/state/`, `src/components/`, `src/ui/` — application state and UI.
 
 ## Cloudflare Vite plugin integration
@@ -277,8 +278,10 @@ Product-level switching and confirmation behavior is owned by
   never falls back to English. `transformAbbreviationText` applies the per-locale eligible matcher
   over each definition's generated surfaces (base `full`, configured `suffixes`, and explicit
   `forms`) with longest-surface precedence, locale-aware case folding, Unicode boundaries, and a
-  single pass, plus a source-range Markdown scanner that protects code, HTML, URLs/emails,
-  reference definitions, images, link destinations/identifiers, escapes, and delimiters. The form
+  single pass. A `quantityPrefix` definition matches only before a numeric quantity; a following
+  `timeUnit` is consumed and compacted into its short form, while other units remain for the normal
+  pass. The scanner protects code, HTML, URLs/emails, reference definitions, images, link
+  destinations/identifiers, escapes, and delimiters. The form
   transforms only its exposed draft fields, snapshots only changed values into a session LIFO undo
   stack, exposes a polite status region, and logs skipped excluded matches only in development.
   Plain URLs are protected in
