@@ -6,6 +6,13 @@ This document is the authoritative reference for the raw SRD source shape, norma
 >
 > **Current bundled scope:** 339 English spells; German covers the same 339. Subclass assignments are populated for 204 spells with 698 assignments in each language. The committed reconciliation report is `data/reference/subclass-reconciliation.json`; the official catalog is [subclasses.md](subclasses.md).
 
+**Pipeline invariants (apply to every SRD change):**
+
+- Preserve stable SRD spell IDs (`srd-<index>`), canonical mechanics, and translation consistency across languages (§3).
+- Never hand-edit generated datasets or bypass normalization validation (see above; §3.A).
+- Keep raw sources in the canonical source shape, migrate legacy files with `pnpm exec tsx scripts/migrate-srd-source-format.ts --apply`, populate `subclasses` only through `scripts/migrate-srd-subclasses.ts`, and keep non-dataset reference material in `data/reference/` (§2.C, §2.F, §2.G).
+- Keep localization presentation-only: add UI terminology to `src/locales/` (never to generated datasets or canonical enums); the UI locale follows the spell data language (§2.E).
+
 ---
 
 ### 1. How Spells Are Loaded from JSON Files
@@ -100,7 +107,7 @@ Every raw source — English and translations alike — uses the same **canonica
 - `damage.damage_type` is a canonical lowercase slug validated against the single `DAMAGE_TYPES` vocabulary in `src/domain/spells.ts`;
 - `subclasses[]` (optional) are `"<ClassName>: <SubclassName>"` strings with exactly one `": "` separator. The parent class must be a canonical `CORE_CLASSES` name and is **independent of `classes`** (a spell may list `"Cleric: War Domain"` without Cleric in `classes`). Values are stored as canonical identifiers with no fixed subclass enumeration and no alias canonicalization; the raw adapter stays tolerant of non-catalog identifiers (reference-only subclasses, custom spells, imports). The bundled assignments were produced by the subclass reconciliation tool (§2.G): catalog subclasses use the 48 canonical identifiers from `docs/subclasses.md`, reference-only subclasses are preserved verbatim, and Artificer subclasses are excluded.
 
-`isCanonicalSourceShape` probes this shape (string `index`, string `school`, string `classes[]`, `V`/`S`/`M` components). The legacy 5e-bits shape (object `school.index`, `classes[].index`, object `damage.damage_type`, top-level `url`) is detected and rejected with an actionable message pointing at `pnpm exec tsx scripts/migrate-srd-source-format.ts --apply`. Other structures fail with `unsupported translation source structure` rather than being skipped.
+`isCanonicalSourceShape` probes this shape (string `index`, string `school`, string `classes[]`, `V`/`S`/`M` components). The legacy 5e-bits shape (object `school.index`, `classes[].index`, object `damage.damage_type`, top-level `url`) is detected and rejected with an actionable message pointing at `pnpm exec tsx scripts/migrate-srd-source-format.ts --apply`. Other structures fail with `unsupported translation source structure` rather than being skipped. Do not hand-edit raw sources into another shape; run the migration utility (§2.F) so its validation and round-trip checks apply.
 
 #### D. Minimal representative raw example
 
@@ -137,7 +144,7 @@ Translation files may localize free text (`name`, `description`, `casting_time`,
 
 `index`, `school`, `classes`, `subclasses`, and `damageType` identifiers are always mapped to canonical values, so both languages resolve to the same `srd-<index>` identity.
 
-Canonical identifiers — including `damageType` (stored lowercased, e.g. `"fire"`) — are never translated in the data pipeline. Localized display labels (school names, class names, subclass names, component letters, and damage-type names) are applied only at render time by the `src/locales/` catalogs, with English used as the fallback for any value absent from the catalog; reference-only subclass identifiers fall back to their English subclass name.
+Canonical identifiers — including `damageType` (stored lowercased, e.g. `"fire"`) — are never translated in the data pipeline. Localized display labels (school names, class names, subclass names, component letters, and damage-type names) are applied only at render time by the `src/locales/` catalogs, with English used as the fallback for any value absent from the catalog; reference-only subclass identifiers fall back to their English subclass name. Add UI terminology to `src/locales/en.ts` and `src/locales/de.ts` (the latter checked with `satisfies Translations`); never edit generated datasets or canonical enums to change presentation. The UI locale follows the resolved spell data language (`toUiLocale` in `src/i18n.ts`), falling back to English when a language has no UI catalog.
 
 #### F. Legacy source migration (one-time utility)
 
@@ -156,7 +163,7 @@ pnpm exec tsx scripts/migrate-srd-source-format.ts --apply   # write the convert
 
 #### G. Subclass reconciliation (one-time utility)
 
-`scripts/migrate-srd-subclasses.ts` populates the optional raw `subclasses` field from `data/reference/srd-spells-2024_extended-props.json` (reference material, never an input dataset). It is a one-time utility.
+`scripts/migrate-srd-subclasses.ts` populates the optional raw `subclasses` field from `data/reference/srd-spells-2024_extended-props.json` (reference material, never an input dataset). It is a one-time utility and the only supported way to populate the bundled raw `subclasses` fields; do not hand-edit assignments.
 
 ```powershell
 pnpm exec tsx scripts/migrate-srd-subclasses.ts                                   # dry run (default): report only
@@ -187,7 +194,7 @@ The term **canonical** operates across multiple layers as the bedrock for data i
 - **Fail-Fast Policy:** If a translation file introduces conflicting mechanics, an unknown canonical spell ID, or malformed/unrecognized required fields, normalization fails the build rather than silently accepting incorrect rules. Unread optional properties are ignored (see §2.B).
 
 #### C. Canonical Stable IDs (`id: "srd-<index>"`)
-- Spells are assigned deterministic, canonical IDs derived from the upstream English slug (e.g., `index: "acid-splash"` becomes `id: "srd-acid-splash"`).
+- Spells are assigned deterministic, canonical IDs derived from the upstream English slug (e.g., `index: "acid-splash"` becomes `id: "srd-acid-splash"`). Treat these IDs as immutable: never renumber or re-derive them, because decks, overrides, and custom references persist by ID.
 - These IDs are **identical across all languages**.
 - This enables persistent decks and cross-language switching: a deck created in English still points to `srd-acid-splash` when switched to German (`srd-acid-splash` resolves to *Säurespritzer*), without mutating the deck entries or database records.
 

@@ -29,20 +29,6 @@ release. Add a tool name to select part of the graph. For example, run
 ## Project-specific guidance
 
 - Follow existing project conventions and architecture.
-- Preserve stable SRD spell IDs, canonical mechanics, and translation consistency.
-- Never manually edit generated SRD datasets or bypass normalization validation.
-- Raw sources in `data/srd/` use the canonical source shape (string `school`, `classes`
-  name strings, `V`/`S`/`M` components, string `damage.damage_type`, optional
-  `subclasses`). Do not hand-edit them into another shape: migrate legacy 5e-bits files
-  with `pnpm exec tsx scripts/migrate-srd-source-format.ts --apply`. Populate `subclasses`
-  only through `scripts/migrate-srd-subclasses.ts`; the committed reconciliation report
-  lives at `data/reference/subclass-reconciliation.json`. Non-dataset reference material
-  belongs in `data/reference/`, never in `data/srd/`.
-- Preserve licensing notices and attribution requirements.
-- Maintain offline-first behavior, safe Markdown rendering, and accessible UI interactions.
-- Keep localization presentation-only: add UI terminology to `src/locales/en.ts` and
-  `src/locales/de.ts` (via `satisfies Translations`), never edit generated datasets or
-  canonical enums for translation. The UI locale follows the spell data language.
 - Run `vp check` and `vp test` after relevant changes.
 - Run normalization and affected E2E tests when changing data processing or application behavior.
 - Keep the app deployable as a static Cloudflare Worker: `wrangler.jsonc` is the input
@@ -58,22 +44,24 @@ release. Add a tool name to select part of the graph. For example, run
 - Verify deployment changes with `pnpm run build`,
   `pnpm exec wrangler deploy --dry-run`, and `pnpm run preview` (E2E runs against this
   Workers-runtime preview).
+- Maintain offline-first behavior, safe Markdown rendering, and accessible UI interactions.
+- Preserve licensing notices and attribution requirements.
 
 ## Documentation ownership
 
 Keep one authoritative location for each change-prone fact; link elsewhere instead of copying
 whole sections.
 
-| Change | Authoritative location | Keep elsewhere to a link/summary |
-| --- | --- | --- |
-| User-visible behavior, invariants, edge cases, acceptance | `docs/specs/MAIN-spec.md` | README user help, DEVELOPMENT implementation notes |
-| Product overview, features, quick start, usage, printing settings, backup guidance, attribution | `README.md` | MAIN-spec may state the requirement |
-| Commands, module map, implementation details, debugging, tests | `docs/DEVELOPMENT.md` | README quick start only |
-| Raw SRD shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection | `docs/srd-data-pipeline.md` | DEVELOPMENT integration note only |
-| Cloudflare config, Workers Builds, deploy operations, `compatibility_date` | `docs/cloudflare-deployment-guide.md` | MAIN-spec stable hosting constraints; DEVELOPMENT integration gotchas |
-| Custom-spell JSON format, examples, collisions, SRD override import/export | `docs/custom-spell-import-guide.md` | MAIN-spec §8 semantics |
-| Official 2024 subclass catalog | `docs/subclasses.md` | Link from pipeline/spec |
-| Agent workflow, review checklist, documentation policy | `AGENTS.md` | — |
+| Change                                                                                                                 | Authoritative location                | Keep elsewhere to a link/summary                                      |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------- |
+| User-visible behavior, invariants, edge cases, acceptance                                                              | `docs/specs/MAIN-spec.md`             | README user help, DEVELOPMENT implementation notes                    |
+| Product overview, features, quick start, usage, printing settings, backup guidance, attribution                        | `README.md`                           | MAIN-spec may state the requirement                                   |
+| Commands, module map, implementation details, debugging, tests                                                         | `docs/DEVELOPMENT.md`                 | README quick start only                                               |
+| Raw SRD shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection | `docs/srd-data-pipeline.md`           | DEVELOPMENT integration note only                                     |
+| Cloudflare config, Workers Builds, deploy operations, `compatibility_date`                                             | `docs/cloudflare-deployment-guide.md` | MAIN-spec stable hosting constraints; DEVELOPMENT integration gotchas |
+| Custom-spell JSON format, examples, collisions, SRD override import/export                                             | `docs/custom-spell-import-guide.md`   | MAIN-spec §8 semantics                                                |
+| Official 2024 subclass catalog                                                                                         | `docs/subclasses.md`                  | Link from pipeline/spec                                               |
+| Agent workflow, review checklist, documentation policy                                                                 | `AGENTS.md`                           | —                                                                     |
 
 Do not duplicate command tables, package scripts, payload schemas, or full deployment
 procedures across documents. Update relative links and anchors when headings move. If a
