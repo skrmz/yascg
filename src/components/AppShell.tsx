@@ -42,6 +42,27 @@ export function AppShell() {
       ?.setAttribute("content", t("app.metaDescription"));
   }, [t]);
 
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const updateInset = () => {
+      const inset = Math.max(0, window.innerHeight - viewport.height);
+      if (inset > 80) {
+        document.documentElement.style.setProperty("--app-keyboard-inset", `${inset}px`);
+      } else {
+        document.documentElement.style.removeProperty("--app-keyboard-inset");
+      }
+    };
+    updateInset();
+    viewport.addEventListener("resize", updateInset);
+    viewport.addEventListener("scroll", updateInset);
+    return () => {
+      viewport.removeEventListener("resize", updateInset);
+      viewport.removeEventListener("scroll", updateInset);
+      document.documentElement.style.removeProperty("--app-keyboard-inset");
+    };
+  }, []);
+
   const [tab, setTab] = useState<PaneKey>("library");
   const previousSelectedSpell = useRef(selectedSpellId);
 
@@ -55,7 +76,10 @@ export function AppShell() {
   const notice = languageNotice ?? deckError ?? dataError;
 
   return (
-    <div className="app-shell flex h-screen flex-col bg-background text-foreground">
+    <div
+      className="app-shell flex flex-col overflow-hidden bg-background text-foreground"
+      style={{ height: "calc(100dvh - var(--app-keyboard-inset, 0px))" }}
+    >
       <Header />
       {notice ? (
         <div className="app-no-print flex flex-wrap items-center justify-between gap-2 border-b border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs text-amber-200">
@@ -111,7 +135,7 @@ export function AppShell() {
               tab !== "library" && "max-[1199px]:hidden",
             )}
           >
-            <LibraryPane />
+            <LibraryPane active={tab === "library"} />
           </TabsContent>
           <TabsContent
             value="details"

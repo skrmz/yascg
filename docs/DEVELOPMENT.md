@@ -159,6 +159,27 @@ Paths are relative to the repository root.
   Markdown protected-range scanner.
 - `src/state/`, `src/components/`, `src/ui/` — application state and UI.
 
+## Workspace and Library UI
+
+Behavior is owned by [MAIN-spec §5](specs/MAIN-spec.md#5-workspace-and-library). Structural
+choices:
+
+- `AppShell` switches to the three-pane grid at `min-width: 1200px` and keeps every pane mounted
+  with `forceMount`, so search, filters, and list state survive tab changes. It passes
+  `active={tab === "library"}` to `LibraryPane`, which restores the saved list `scrollTop` in a
+  layout effect rather than React state.
+- `useIsDesktop` (`src/components/library/use-is-desktop.ts`) is the single JavaScript viewport
+  breakpoint. It chooses which filter tree and actions UI are mounted; purely visual density uses
+  `max-[1199px]`/`min-[1200px]` classes so resizing does not re-render rows.
+- `LibraryFilters` renders the filter fields once per viewport: `inline` inside the desktop
+  collapsible and `sheet` inside the mobile bottom sheet. Derived option lists stay in
+  `LibraryPane`; `filter-summary.ts` builds one removable chip per active filter group.
+- `DialogContent` has a `sheet` variant that anchors to the bottom edge, scrolls only its body,
+  and accounts for the visual-viewport keyboard inset (`--app-keyboard-inset`) and safe areas.
+  The shell locks `html`/`body`/`#root` overflow and restores it in print.
+- `src/test/setup.ts` stubs `matchMedia` as a desktop viewport by default. Tests that exercise
+  mobile use `setDesktopViewport(false)` before rendering.
+
 ## Cloudflare Vite plugin integration
 
 Deployment configuration and Workers Builds settings are owned by the
@@ -237,7 +258,8 @@ in the [custom spell import guide](custom-spell-import-guide.md). Implementation
   analysis, ID remapping, override validation, and atomic commit paths.
 - `src/components/import-export/DeckImportExportDialog.tsx` — deck import/export dialog.
 - `src/components/import-export/CustomSpellImportExportDialog.tsx` — custom-spell dialog,
-  triggered from `LibraryPane` next to **Create custom spell**.
+  triggered from `LibraryPane` by **Custom spell import/export** (next to **Create custom
+  spell** on desktop, in the **Library actions** menu on narrow screens).
 - Both dialogs share presentation helpers in `components/import-export/shared.tsx` but keep
   separate analysis, validation, and commit paths.
 - Custom spells persist in the Dexie `customSpells` table; SRD component-text overrides persist

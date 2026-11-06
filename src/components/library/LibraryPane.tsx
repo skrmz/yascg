@@ -1,6 +1,14 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Plus, RotateCcw, Search, Sparkles } from "lucide-react";
+import {
+  MoreHorizontal,
+  Plus,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { resolveContentLanguage } from "@/content-language.ts";
@@ -13,16 +21,15 @@ import {
 } from "@/locales/labels.ts";
 import {
   CORE_CLASSES,
-  SPELL_COMPONENT_KEYS,
-  SPELL_SCHOOLS,
   type Spell,
+  type SpellComponentKey,
+  type SpellSchool,
   type SpellSource,
 } from "@/domain/spells";
 import { subclassParentClass } from "@/domain/subclasses";
 import {
   DEFAULT_FILTERS,
   collatorFor,
-  countActiveAdvancedFilters,
   deriveCastingTimeOptions,
   deriveDurationOptions,
   deriveRangeOptions,
@@ -30,52 +37,28 @@ import {
   filterSpells,
   searchSpells,
   sortSpells,
-  type LibraryFilters,
+  type LibraryFilters as LibraryFilterState,
 } from "@/services/data/search.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Badge, SourceBadge } from "@/ui/Badge.tsx";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/Collapsible.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/ui/DropdownMenu.tsx";
 import { Input } from "@/ui/Field.tsx";
-import { MultiSelect } from "@/ui/MultiSelect.tsx";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select.tsx";
 import { Separator } from "@/ui/Separator.tsx";
 import { cn } from "@/ui/cn.ts";
 import { CustomSpellForm } from "@/components/details/CustomSpellForm.tsx";
 import { CustomSpellImportExportDialog } from "@/components/import-export/CustomSpellImportExportDialog.tsx";
-import { LevelRangeSlider } from "./LevelRangeSlider.tsx";
+import { LibraryFilters } from "./LibraryFilters.tsx";
+import { buildActiveFilterChips, type FilterChipLabels } from "./filter-summary.ts";
+import { useIsDesktop } from "./use-is-desktop.ts";
 
-function toggle<T>(values: readonly T[], value: T): T[] {
-  return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-2 py-0.5 text-xs focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
-        active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-input bg-background text-foreground hover:bg-accent",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-export function LibraryPane() {
+export function LibraryPane({ active = true }: { active?: boolean }) {
   const {
     librarySpells,
     languageSpells,
@@ -87,11 +70,17 @@ export function LibraryPane() {
     selectedSpellId,
   } = useApp();
   const { t } = useTranslation();
+  const isDesktop = useIsDesktop();
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<LibraryFilterState>(DEFAULT_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [creating, setCreating] = useState(false);
   const [customIoOpen, setCustomIoOpen] = useState(false);
+
+  const listRef = useRef<HTMLUListElement>(null);
+  const listScrollTop = useRef(0);
+  const activeRef = useRef(active);
 
   const searched = useMemo(() => searchSpells(librarySpells, query), [librarySpells, query]);
   const results = useMemo(
@@ -124,9 +113,54 @@ export function LibraryPane() {
       return collator.compare(subclassLabel(left, t), subclassLabel(right, t));
     });
   }, [librarySpells, language, t]);
-  const advancedCount = countActiveAdvancedFilters(filters);
 
-  const patch = (partial: Partial<LibraryFilters>) =>
+  const chipLabels = useMemo<FilterChipLabels>(
+    () => ({
+      levels: (range) =>
+        range.min === range.max
+          ? t("library.levelSingle", { level: range.min })
+          : t("library.levelRange", { min: range.min, max: range.max }),
+      classes: {
+        group: t("library.classFilter"),
+        value: (cls) => {
+          const key = classKey(cls);
+          return key ? t(key) : cls;
+        },
+      },
+      subclasses: { group: t("library.subclassFilter"), value: (id) => subclassLabel(id, t) },
+      schools: {
+        group: t("library.school"),
+        value: (school: SpellSchool) => t(schoolKey(school)),
+      },
+      castingTimes: { group: t("library.castingTime"), value: (value) => value },
+      ranges: { group: t("library.range"), value: (value) => value },
+      durations: { group: t("library.duration"), value: (value) => value },
+      components: {
+        group: t("library.components"),
+        value: (component: SpellComponentKey) => t(componentLabelKey(component)),
+      },
+      concentration: {
+        group: t("library.concentration"),
+        yes: t("common.yes"),
+        no: t("common.no"),
+      },
+      ritual: { group: t("library.ritual"), yes: t("common.yes"), no: t("common.no") },
+      sources: {
+        group: t("library.source"),
+        value: (source: SpellSource) =>
+          source === "Custom" ? t("source.custom") : t("source.srdShort"),
+      },
+      multiValue: (label, count) => t("library.multiValueSummary", { label, count }),
+    }),
+    [t],
+  );
+
+  const activeChips = useMemo(
+    () => buildActiveFilterChips(filters, chipLabels),
+    [filters, chipLabels],
+  );
+
+  const patch = (partial: Partial<LibraryFilterState>) =>
     setFilters((previous) => ({ ...previous, ...partial }));
 
   useEffect(() => {
@@ -138,6 +172,18 @@ export function LibraryPane() {
         : { ...previous, castingTimes: [], ranges: [], durations: [] },
     );
   }, [language]);
+
+  useLayoutEffect(() => {
+    activeRef.current = active;
+    if (!active) return;
+    const list = listRef.current;
+    if (list) list.scrollTop = listScrollTop.current;
+  }, [active]);
+
+  const onListScroll = () => {
+    if (!activeRef.current) return;
+    if (listRef.current) listScrollTop.current = listRef.current.scrollTop;
+  };
 
   const resetAll = () => {
     setQuery("");
@@ -171,284 +217,192 @@ export function LibraryPane() {
     );
   };
 
+  const filterControls = (
+    <LibraryFilters
+      variant={isDesktop ? "inline" : "sheet"}
+      filters={filters}
+      onPatch={patch}
+      onReset={resetAll}
+      castingOptions={castingOptions}
+      rangeOptions={rangeOptions}
+      durationOptions={durationOptions}
+      subclassOptions={subclassOptions}
+      searchInputClassName="text-base min-[1200px]:text-sm"
+    />
+  );
+
   return (
-    <section className="flex h-full min-h-0 flex-col" aria-label={t("library.title")}>
-      <div className="space-y-3 p-3">
-        <div className="relative">
-          <Search
-            size={15}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            id="library-search"
-            name="library-search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t("library.searchPlaceholder")}
-            aria-label={t("library.searchLabel")}
-            className="pl-7"
-          />
-        </div>
-
-        <LevelRangeSlider value={filters.levels} onChange={(levels) => patch({ levels })} />
-
-        <MultiSelect
-          label={t("library.classFilter")}
-          aria-label={t("library.classFilter")}
-          allLabel={t("library.allClasses")}
-          searchable
-          searchPlaceholder={t("library.searchClasses")}
-          options={CORE_CLASSES}
-          selected={filters.classes}
-          onChange={(classes) => patch({ classes })}
-          getLabel={(cls) => {
-            const key = classKey(cls);
-            return key ? t(key) : cls;
-          }}
-        />
-
-        <Collapsible defaultOpen={false} className="space-y-2">
-          <CollapsibleTrigger asChild>
+    <section
+      id="libraryPane"
+      className="flex h-full min-h-0 flex-col"
+      aria-label={t("library.title")}
+    >
+      <div className="shrink-0 space-y-2 p-2 min-[1200px]:space-y-3 min-[1200px]:p-3">
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search
+              size={15}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              id="library-search"
+              name="library-search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t("library.searchPlaceholder")}
+              aria-label={t("library.searchLabel")}
+              className="pl-7 text-base min-[1200px]:text-sm"
+            />
+          </div>
+          {!isDesktop ? (
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="group w-full justify-between"
+              className="h-9 shrink-0 gap-1.5 px-2.5"
+              aria-label={
+                activeChips.length > 0
+                  ? t("library.filtersActiveAria", { count: activeChips.length })
+                  : t("library.filters")
+              }
+              onClick={() => setFiltersOpen(true)}
             >
-              <span>{t("library.advancedFilters")}</span>
-              <span className="flex items-center gap-2">
-                {advancedCount > 0 ? (
-                  <Badge>{t("library.activeFilters", { count: advancedCount })}</Badge>
-                ) : null}
-                <ChevronDown
-                  size={15}
-                  aria-hidden="true"
-                  className="transition-transform group-data-[state=open]:rotate-180"
-                />
-              </span>
+              <SlidersHorizontal size={15} aria-hidden="true" />
+              {t("library.filters")}
+              {activeChips.length > 0 ? <Badge>{activeChips.length}</Badge> : null}
             </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2">
-            <div className="space-y-1">
-              <MultiSelect
-                label={t("library.subclassFilter")}
-                aria-label={t("library.subclassFilter")}
-                allLabel={t("library.allSubclasses")}
-                searchable
-                searchPlaceholder={t("library.searchSubclasses")}
-                options={subclassOptions}
-                selected={filters.subclasses}
-                onChange={(subclasses) => patch({ subclasses })}
-                getLabel={(id) => subclassLabel(id, t)}
-                groupBy={subclassParentClass}
-                getGroupLabel={(parent) => {
-                  const key = classKey(parent);
-                  return key ? t(key) : parent;
-                }}
-              />
-            </div>
-            <div className="space-y-1">
-              <MultiSelect
-                label={t("library.school")}
-                aria-label={t("library.school")}
-                allLabel={t("library.allSchools")}
-                options={SPELL_SCHOOLS}
-                selected={filters.schools}
-                onChange={(schools) => patch({ schools })}
-                getLabel={(school) => t(schoolKey(school))}
-              />
-            </div>
-            <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">{t("library.castingTime")}</span>
-              <Select
-                value={filters.castingTimes[0] ?? "any"}
-                onValueChange={(value) => patch({ castingTimes: value === "any" ? [] : [value] })}
-              >
-                <SelectTrigger aria-label={t("library.castingTime")} className="h-8 text-xs">
-                  <SelectValue placeholder={t("common.any")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">{t("common.any")}</SelectItem>
-                  {castingOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">{t("library.range")}</span>
-              <Select
-                value={filters.ranges[0] ?? "any"}
-                onValueChange={(value) => patch({ ranges: value === "any" ? [] : [value] })}
-              >
-                <SelectTrigger aria-label={t("library.range")} className="h-8 text-xs">
-                  <SelectValue placeholder={t("common.any")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">{t("common.any")}</SelectItem>
-                  {rangeOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">{t("library.duration")}</span>
-              <Select
-                value={filters.durations[0] ?? "any"}
-                onValueChange={(value) => patch({ durations: value === "any" ? [] : [value] })}
-              >
-                <SelectTrigger aria-label={t("library.duration")} className="h-8 text-xs">
-                  <SelectValue placeholder={t("common.any")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">{t("common.any")}</SelectItem>
-                  {durationOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <MultiSelect
-                label={t("library.components")}
-                aria-label={t("library.components")}
-                allLabel={t("library.allComponents")}
-                options={SPELL_COMPONENT_KEYS}
-                selected={filters.components}
-                onChange={(components) => patch({ components })}
-                getLabel={(component) => t(componentLabelKey(component))}
-              />
-            </div>
-            <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">{t("library.concentration")}</span>
-              <Select
-                value={
-                  filters.concentration === null ? "any" : filters.concentration ? "yes" : "no"
-                }
-                onValueChange={(value) =>
-                  patch({ concentration: value === "any" ? null : value === "yes" })
-                }
-              >
-                <SelectTrigger aria-label={t("library.concentration")} className="h-8 text-xs">
-                  <SelectValue placeholder={t("common.any")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">{t("common.any")}</SelectItem>
-                  <SelectItem value="yes">{t("common.yes")}</SelectItem>
-                  <SelectItem value="no">{t("common.no")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">{t("library.ritual")}</span>
-              <Select
-                value={filters.ritual === null ? "any" : filters.ritual ? "yes" : "no"}
-                onValueChange={(value) =>
-                  patch({ ritual: value === "any" ? null : value === "yes" })
-                }
-              >
-                <SelectTrigger aria-label={t("library.ritual")} className="h-8 text-xs">
-                  <SelectValue placeholder={t("common.any")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">{t("common.any")}</SelectItem>
-                  <SelectItem value="yes">{t("common.yes")}</SelectItem>
-                  <SelectItem value="no">{t("common.no")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+          ) : null}
+        </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
-          <div className="flex flex-wrap items-center gap-1">
-            <span className="mr-1 text-xs text-muted-foreground">{t("library.source")}</span>
-            {(["SRD-5.2.1", "Custom"] as SpellSource[]).map((source) => (
-              <Chip
-                key={source}
-                active={filters.sources.includes(source)}
-                onClick={() => patch({ sources: toggle(filters.sources, source) })}
-              >
-                {source === "Custom" ? t("source.custom") : t("source.srdShort")}
-              </Chip>
-            ))}
+        {!isDesktop && activeChips.length > 0 ? (
+          <div
+            role="group"
+            className="-mx-2 overflow-x-auto overscroll-x-contain px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label={t("library.activeFilterRow")}
+          >
+            <ul className="flex w-max items-center gap-1">
+              {activeChips.map((chip) => (
+                <li key={chip.key}>
+                  <button
+                    type="button"
+                    aria-label={t("library.removeFilterAria", { filter: chip.label })}
+                    onClick={() => patch(chip.clear)}
+                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-input bg-background px-2 py-1 text-xs text-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                  >
+                    <span>{chip.label}</span>
+                    <X size={12} aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={resetAll}
-            aria-label={t("library.resetFilters")}
-          >
-            <RotateCcw size={13} aria-hidden="true" />
-            {t("library.resetFilters")}
-          </Button>
+        ) : null}
+
+        {isDesktop ? filterControls : null}
+      </div>
+
+      <Separator className="my-3 !bg-transparent max-[1199px]:hidden" />
+
+      {isDesktop ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-y border-border px-3 py-2">
+            <span className="text-xs text-muted-foreground" aria-live="polite">
+              {t("library.results", { count: results.length })}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={results.length === 0}
+                onClick={() => void onAppendAll()}
+              >
+                <Sparkles size={13} aria-hidden="true" />
+                {t("library.appendAll")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={results.length === 0}
+                onClick={() => setConfirmReplace(true)}
+              >
+                {t("library.replaceDeck")}
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-stretch gap-2 px-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-auto flex-1 whitespace-normal py-1.5"
+              onClick={() => setCreating(true)}
+            >
+              <Plus size={13} aria-hidden="true" />
+              {t("library.createCustomSpell")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-auto flex-1 whitespace-normal py-1.5"
+              onClick={() => setCustomIoOpen(true)}
+            >
+              {t("library.customImportExport")}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center justify-between gap-2 border-y border-border px-3 py-1.5">
+          <span className="text-xs text-muted-foreground" aria-live="polite">
+            {t("library.results", { count: results.length })}
+          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 shrink-0 gap-1.5 px-2.5"
+                aria-label={t("library.actionsTrigger")}
+              >
+                <MoreHorizontal size={16} aria-hidden="true" />
+                {t("library.actions")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-52">
+              <DropdownMenuItem disabled={results.length === 0} onSelect={() => void onAppendAll()}>
+                <Sparkles size={15} aria-hidden="true" />
+                {t("library.appendAll")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={results.length === 0}
+                onSelect={() => setConfirmReplace(true)}
+              >
+                {t("library.replaceDeck")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setCreating(true)}>
+                <Plus size={15} aria-hidden="true" />
+                {t("library.createCustomSpell")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setCustomIoOpen(true)}>
+                {t("library.customImportExport")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </div>
+      )}
 
-      <Separator className="my-3 !bg-transparent" />
-
-      <div className="flex flex-wrap items-center justify-between gap-2 border-y border-border px-3 py-2">
-        <span className="text-xs text-muted-foreground" aria-live="polite">
-          {t("library.results", { count: results.length })}
-        </span>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={results.length === 0}
-            onClick={() => void onAppendAll()}
-          >
-            <Sparkles size={13} aria-hidden="true" />
-            {t("library.appendAll")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={results.length === 0}
-            onClick={() => setConfirmReplace(true)}
-          >
-            {t("library.replaceDeck")}
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-2 flex items-stretch gap-2 px-3">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-auto flex-1 whitespace-normal py-1.5"
-          onClick={() => setCreating(true)}
-        >
-          <Plus size={13} aria-hidden="true" />
-          {t("library.createCustomSpell")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-auto flex-1 whitespace-normal py-1.5"
-          onClick={() => setCustomIoOpen(true)}
-        >
-          {t("library.customImportExport")}
-        </Button>
-      </div>
-
-      <div className="mt-2 flex min-h-0 flex-1 flex-col">
+      <div className="mt-2 flex min-h-0 flex-1 flex-col max-[1199px]:mt-1">
         <h2
           id="spell-results-heading"
-          className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground max-[1199px]:sr-only"
         >
           {t("library.spellsHeading")}
         </h2>
         <ul
-          className="min-h-0 flex-1 overflow-auto px-2 py-2 [scrollbar-gutter:stable]"
+          ref={listRef}
+          onScroll={onListScroll}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] [scrollbar-gutter:stable]"
           aria-label={t("library.resultsAria")}
         >
           {results.length === 0 ? (
@@ -462,7 +416,7 @@ export function LibraryPane() {
               <li key={spell.id}>
                 <div
                   className={cn(
-                    "flex flex-wrap items-center justify-between gap-2 rounded px-2 py-1.5",
+                    "flex flex-nowrap items-center justify-between gap-2 rounded px-2 py-1.5 max-[1199px]:gap-1.5 max-[1199px]:py-1 min-[1200px]:flex-wrap",
                     spell.id === selectedSpellId ? "bg-accent" : "hover:bg-accent/50",
                   )}
                 >
@@ -488,6 +442,7 @@ export function LibraryPane() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="shrink-0 max-[1199px]:h-11 max-[1199px]:w-11"
                     aria-label={t("library.addToDeckAria", { name: spell.name })}
                     onClick={() => void onAdd(spell)}
                   >
@@ -499,6 +454,32 @@ export function LibraryPane() {
           })}
         </ul>
       </div>
+
+      {!isDesktop ? (
+        <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <DialogContent
+            variant="sheet"
+            title={t("library.filters")}
+            description={t("library.filterSheetDescription")}
+            footer={
+              <>
+                <Button
+                  variant="outline"
+                  className="mr-auto"
+                  onClick={resetAll}
+                  aria-label={t("library.resetFilters")}
+                >
+                  <RotateCcw size={13} aria-hidden="true" />
+                  {t("library.resetFilters")}
+                </Button>
+                <Button onClick={() => setFiltersOpen(false)}>{t("library.done")}</Button>
+              </>
+            }
+          >
+            {filterControls}
+          </DialogContent>
+        </Dialog>
+      ) : null}
 
       <CustomSpellForm open={creating} onOpenChange={setCreating} />
       <CustomSpellImportExportDialog open={customIoOpen} onOpenChange={setCustomIoOpen} />

@@ -1127,6 +1127,14 @@
 
 @media print {
   html,
+  body,
+  #root {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  html,
   body {
     margin: 0;
     padding: 0;

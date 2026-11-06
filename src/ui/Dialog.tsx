@@ -20,6 +20,7 @@ export function DialogContent({
   lang,
   titleLang,
   descriptionLang,
+  variant = "dialog",
 }: {
   title: string;
   description?: string;
@@ -31,19 +32,29 @@ export function DialogContent({
   lang?: string;
   titleLang?: string;
   descriptionLang?: string;
+  variant?: "dialog" | "sheet";
 }) {
   const { t } = useTranslation();
+  const isSheet = variant === "sheet";
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="app-no-print fixed inset-0 z-50 bg-black/50" />
       <DialogPrimitive.Content
         lang={lang}
         className={cn(
-          "app-no-print fixed left-1/2 top-1/2 z-50 w-[min(92vw,34rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-card text-card-foreground p-5 shadow-xl max-h-[85vh] overflow-auto",
+          "app-no-print fixed z-50 border border-border bg-card text-card-foreground shadow-xl",
+          isSheet
+            ? "inset-x-0 bottom-0 flex max-h-[calc(100dvh-var(--app-keyboard-inset,0px)-1rem)] w-full flex-col overflow-hidden rounded-t-xl p-0 pb-[env(safe-area-inset-bottom)]"
+            : "left-1/2 top-1/2 w-[min(92vw,34rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg p-5 max-h-[85vh] overflow-auto",
           className,
         )}
       >
-        <div className="mb-3 flex shrink-0 items-start justify-between gap-4">
+        <div
+          className={cn(
+            "flex shrink-0 items-start justify-between gap-4",
+            isSheet ? "px-4 pb-2 pt-4" : "mb-3",
+          )}
+        >
           <div className="min-w-0">
             <DialogPrimitive.Title
               lang={titleLang}
@@ -66,8 +77,25 @@ export function DialogContent({
             </Button>
           </DialogPrimitive.Close>
         </div>
-        <div className={cn("text-sm text-foreground", bodyClassName)}>{children}</div>
-        {footer ? <div className="mt-5 flex justify-end gap-2">{footer}</div> : null}
+        <div
+          className={cn(
+            "text-sm text-foreground",
+            isSheet && "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4",
+            bodyClassName,
+          )}
+        >
+          {children}
+        </div>
+        {footer ? (
+          <div
+            className={cn(
+              "flex justify-end gap-2",
+              isSheet ? "shrink-0 border-t border-border px-4 py-3" : "mt-5",
+            )}
+          >
+            {footer}
+          </div>
+        ) : null}
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
   );

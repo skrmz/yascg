@@ -53,6 +53,12 @@ custom spells from the library and edit them from the details view. Decks contai
 entry per spell; **Append all** skips spells already present and reports how many were added
 and skipped. **Replace deck** replaces the active entries after confirmation.
 
+On narrow screens the library is list-first: search and **Filters** share one row, filters open
+in a bottom sheet with removable chips for active filters, and **Append all**, **Replace deck**,
+**Create custom spell**, and **Custom spell import/export** are grouped in the **Library actions**
+menu. Search, filters, and the list scroll position are kept when switching tabs; **Reset
+filters** clears the search text and every filter.
+
 Each deck entry fits its card automatically: a description that fits on one card is shrunk as
 needed, and a longer description continues on multiple cards without truncation. The per-entry
 fit selector can instead force **Auto-shrink** (always one card, with a visible ellipsis when the
@@ -103,8 +109,9 @@ a reload.
 **Import / export deck** in the deck actions menu exports the current active deck as unversioned
 JSON: its name, ordered spell references, and display settings. Spell bodies and SRD edits are
 not included; import replaces only the active deck and does not create or modify named snapshots
-or spell definitions. **Custom spell import/export** in the Library pane next to **Create custom
-spell** exports complete custom spell definitions and SRD component-text overrides (including
+or spell definitions. **Custom spell import/export** in the Library pane (next to **Create custom
+spell** on desktop, in the **Library actions** menu on narrow screens) exports complete custom
+spell definitions and SRD component-text overrides (including
 your edited verbal/somatic notes). The two formats are separate: deck export is **not** a backup
 of custom spells or SRD overrides. For a complete backup, export custom spells first, then the
 deck. The exact deck and import edge-case rules are in the

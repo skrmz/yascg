@@ -170,7 +170,7 @@ test("opens card actions from the header action bar only", async ({ page }) => {
     .click();
 
   const details = page.getByRole("region", { name: "Spell preview and details" });
-  await expect(details.getByRole("button", { name: "Edit" })).toBeVisible();
+  await expect(details.getByRole("button", { name: "Edit", exact: true })).toBeVisible();
 
   await page.locator(".card-preview-frame").click({ button: "right" });
   await expect(page.getByRole("menuitem")).toHaveCount(0);

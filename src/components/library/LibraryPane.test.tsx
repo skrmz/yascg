@@ -1,9 +1,10 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n.ts";
 import { CORE_CLASSES, type Spell } from "@/domain/spells";
 import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
+import { setDesktopViewport } from "@/test/setup.ts";
 import { LibraryPane } from "./LibraryPane.tsx";
 
 const holder = vi.hoisted(() => ({
@@ -435,5 +436,135 @@ describe("LibraryPane custom spell creation", () => {
 
     expect(holder.addSpellToDeck).toHaveBeenCalledTimes(1);
     expect((holder.addSpellToDeck.mock.calls[0][0] as Spell).name).toBe("Moonbeam Deluxe");
+  });
+});
+
+describe("LibraryPane mobile layout", () => {
+  beforeEach(() => setDesktopViewport(false));
+  afterEach(() => setDesktopViewport(true));
+
+  it("shows search and the mobile affordances without desktop controls", () => {
+    holder.spells = [makeSpell({ id: "srd-fireball", name: "Fireball" })];
+    render(<LibraryPane />);
+
+    expect(screen.getByLabelText("Search spells")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Filters" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Library actions" })).not.toBeNull();
+    expect(screen.queryByRole("button", { name: /Advanced Filters/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Append all" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Replace deck" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Create custom spell" })).toBeNull();
+  });
+
+  it("opens the filter sheet with filter controls and footer actions", async () => {
+    holder.spells = [makeSpell({ id: "srd-fireball", name: "Fireball" })];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+
+    const sheet = screen.getByRole("dialog", { name: "Filters" });
+    expect(within(sheet).getByRole("slider", { name: "Minimum level" })).not.toBeNull();
+    expect(within(sheet).getByRole("button", { name: "Class" })).not.toBeNull();
+    expect(within(sheet).getByRole("button", { name: /Reset Filters/i })).not.toBeNull();
+
+    await user.click(within(sheet).getByRole("button", { name: "Done" }));
+    expect(screen.queryByRole("dialog", { name: "Filters" })).toBeNull();
+  });
+
+  it("adds and removes a filter chip without clearing the search query", async () => {
+    holder.spells = [makeSpell({ id: "srd-fireball", name: "Fireball", classes: ["Wizard"] })];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.type(screen.getByLabelText("Search spells"), "Fire");
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+
+    const sheet = screen.getByRole("dialog", { name: "Filters" });
+    await user.click(within(sheet).getByRole("button", { name: "Class" }));
+    await user.click(screen.getByRole("checkbox", { name: "Wizard" }));
+    await user.keyboard("{Escape}");
+    await user.click(within(sheet).getByRole("button", { name: "Done" }));
+
+    const chip = screen.getByRole("button", { name: "Remove Class: Wizard filter" });
+    await user.click(chip);
+
+    expect(screen.queryByRole("button", { name: "Remove Class: Wizard filter" })).toBeNull();
+    expect((screen.getByLabelText("Search spells") as HTMLInputElement).value).toBe("Fire");
+  });
+
+  it("resets the search query from the filter sheet", async () => {
+    holder.spells = [makeSpell({ id: "srd-fireball", name: "Fireball" })];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.type(screen.getByLabelText("Search spells"), "zzzz");
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+
+    const sheet = screen.getByRole("dialog", { name: "Filters" });
+    await user.click(within(sheet).getByRole("button", { name: /Reset Filters/i }));
+
+    expect((screen.getByLabelText("Search spells") as HTMLInputElement).value).toBe("");
+  });
+
+  it("keeps Create custom spell available from the actions menu with no results", async () => {
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+
+    await user.click(screen.getByRole("button", { name: "Library actions" }));
+    expect(
+      screen.getByRole("menuitem", { name: "Append all" }).getAttribute("data-disabled"),
+    ).not.toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Replace deck" })).not.toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Custom spell import/export" })).not.toBeNull();
+
+    await user.click(screen.getByRole("menuitem", { name: "Create custom spell" }));
+    expect(screen.getByRole("dialog", { name: "New custom spell" })).not.toBeNull();
+  });
+});
+
+describe("LibraryPane desktop layout", () => {
+  it("keeps the inline filters and desktop controls without mobile affordances", () => {
+    holder.spells = [makeSpell({ id: "srd-fireball", name: "Fireball" })];
+    render(<LibraryPane />);
+
+    expect(screen.getByRole("button", { name: /Advanced Filters/ })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Append all" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Replace deck" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Create custom spell" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Custom spell import/export" })).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Library actions" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Filters/ })).toBeNull();
+  });
+});
+
+describe("LibraryPane view state", () => {
+  it("restores the list scroll position when the pane becomes active again", () => {
+    holder.spells = Array.from({ length: 30 }, (_, index) =>
+      makeSpell({ id: `srd-${index}`, name: `Spell ${index}` }),
+    );
+    const { rerender } = render(<LibraryPane active />);
+
+    const list = screen.getByRole("list", { name: "Spell results" });
+    list.scrollTop = 120;
+    fireEvent.scroll(list);
+
+    rerender(<LibraryPane active={false} />);
+    list.scrollTop = 0;
+    rerender(<LibraryPane active />);
+
+    expect(list.scrollTop).toBe(120);
+  });
+
+  it("keeps the search query when the pane is hidden and shown again", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<LibraryPane active />);
+
+    await user.type(screen.getByLabelText("Search spells"), "Fire");
+
+    rerender(<LibraryPane active={false} />);
+    rerender(<LibraryPane active />);
+
+    expect((screen.getByLabelText("Search spells") as HTMLInputElement).value).toBe("Fire");
   });
 });

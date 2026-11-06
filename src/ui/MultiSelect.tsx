@@ -20,6 +20,7 @@ export interface MultiSelectProps<T extends string> {
   getGroupLabel?: (group: string) => string;
   "aria-label"?: string;
   className?: string;
+  searchInputClassName?: string;
 }
 
 export function MultiSelect<T extends string>({
@@ -34,6 +35,7 @@ export function MultiSelect<T extends string>({
   groupBy,
   getGroupLabel,
   className,
+  searchInputClassName,
   "aria-label": ariaLabel,
 }: MultiSelectProps<T>) {
   const { t } = useTranslation();
@@ -123,7 +125,7 @@ export function MultiSelect<T extends string>({
               onChange={(event) => setSearch(event.target.value)}
               placeholder={searchPlaceholder ?? t("common.searchPlaceholder")}
               aria-label={t("common.searchOptions", { label: accessibleLabel })}
-              className="h-8"
+              className={cn("h-8", searchInputClassName)}
             />
           </div>
         ) : null}

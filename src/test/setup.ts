@@ -11,11 +11,25 @@ if (!globalThis.crypto?.randomUUID) {
   });
 }
 
-if (!globalThis.matchMedia) {
-  Object.defineProperty(globalThis, "matchMedia", {
-    configurable: true,
-    value: (query: string) => ({
-      matches: false,
+let desktopViewport = true;
+
+/** Tests default to the desktop layout; opt into mobile before rendering. */
+export function setDesktopViewport(isDesktop: boolean) {
+  desktopViewport = isDesktop;
+}
+
+function matchesQuery(query: string): boolean {
+  return /\(\s*min-width:/.test(query) ? desktopViewport : false;
+}
+
+Object.defineProperty(globalThis, "matchMedia", {
+  configurable: true,
+  writable: true,
+  value: (query: string): MediaQueryList =>
+    ({
+      get matches() {
+        return matchesQuery(query);
+      },
       media: query,
       onchange: null,
       addListener: () => undefined,
@@ -23,9 +37,8 @@ if (!globalThis.matchMedia) {
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
       dispatchEvent: () => false,
-    }),
-  });
-}
+    }) as MediaQueryList,
+});
 
 if (typeof Element !== "undefined") {
   const elementStubs = {
@@ -53,5 +66,6 @@ if (!globalThis.ResizeObserver) {
 }
 
 afterEach(() => {
+  desktopViewport = true;
   cleanup();
 });

@@ -275,7 +275,11 @@ invoke reference repair. `reference.name` is a historical display fallback, not 
 
 Three responsive panes: **Library** (search/filter/list), **Preview & Details** (selected
 spell/card), and **Active Deck** (ordered unique entries, fit mode, save/load/print). Below
-1024px, use tabs or stacked views. Adding a spell requires one click.
+1200px, use tabs. The Library pane is list-first on those widths: search and a **Filters**
+trigger share one row, filters open in a bottom sheet with removable active-filter chips,
+secondary and destructive bulk actions live in a labeled **Library actions** menu, and the spell
+list is the only vertical scroll container in the pane. Search, filters, and list scroll position
+survive tab switches. Adding a spell requires one click.
 
 **Preview & Details pane:** the default pane shows the rendered physical card preview(s) for
 the selected spell, arranged in wrapping rows while preserving 2.5in × 3.5in dimensions. Fit
@@ -336,6 +340,18 @@ changes. Do not translate or rewrite stored identifiers.
 the active deck, retains existing entries, and reports added/skipped counts in one
 notification) or **Replace deck** (confirmation required). Disable both when there are no
 results. This bulk operation is optional UI convenience, not a separate deck model.
+
+**Narrow-viewport Library layout:** below 1200px, render search and a **Filters** trigger with an
+active-group count in one row, followed by a horizontally scrollable row of removable chips for
+active filter groups. Chips never include the search query; removing a chip clears only its
+filter group, while **Reset filters** keeps its existing behavior of clearing the search query and
+every filter. The **Filters** bottom sheet contains the filter fields, applies changes
+immediately, closes without discarding them, and exposes **Reset filters** and **Done**. The
+**Library actions** menu contains **Append all**, **Replace deck**, **Create custom spell**, and
+**Custom spell import/export**; it remains available when the result list is empty so custom-spell
+creation is always reachable. The result count and actions stay outside the result scroll area;
+the results list scrolls independently and preserves its position across tab changes. Do not
+introduce a second vertical scroll container or page-level horizontal overflow.
 
 ## 6. Custom Spell Management
 
@@ -905,6 +921,7 @@ duplicate these outcomes as a second invariants list.
 | S5  | Search          | Missing translations; cancel or confirm switch                                                      | Exact affected entry and distinct-spell counts; cancel changes nothing; confirm preserves active/saved entries, ordering, dirty state, baseline, and revisions while showing placeholders                      | §7          |
 | S6  | Search          | Translation-unavailable spell already in deck                                                       | Single entry preserved as an unavailable placeholder; switching back restores its text                                                                                                                         | §7          |
 | S7  | Search          | Custom spell and true broken reference in a translated deck                                         | Custom spell unchanged; broken reference remains repairable and is not categorized as untranslated                                                                                                             | §7, §8.2    |
+| L1  | Library UI      | Narrow-viewport Library layout and state preservation                                               | Search and **Filters** trigger visible first; sheet, removable chips, actions menu, and always-available create entry point work; the result list is the only vertical scroll container; query, filters, and scroll position survive tab switches; no page-level horizontal overflow | §5          |
 | C1  | Custom spells   | Create/edit/duplicate                                                                               | UUID/timestamps/validation/defaults follow §6; saved snapshots are not rewritten                                                                                                                               | §6          |
 | C1a | Custom spells   | Create editable copy of an SRD spell in the active deck                                             | Draft is unsaved; save asks to replace only the matching entry (ID/position/fit mode preserved); cancelling the editor writes nothing; save failure leaves the editor open; replacement failure, retry, and a concurrent deck switch/identity change keep the saved copy and never write the wrong deck | §6, §7      |
 | C2  | Custom spells   | Delete                                                                                              | Confirmation; spell and matching active entry removed atomically; saved decks unchanged                                                                                                                        | §6          |
