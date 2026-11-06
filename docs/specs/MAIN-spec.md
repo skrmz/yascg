@@ -835,11 +835,13 @@ must print.
 ## 11. Offline, Persistence, Security, and Quality
 
 - First-load readiness means required assets, the language manifest, and **every** bundled
-  language dataset are available together in the service-worker cache. Until then, show
-  **Setting up offline access**; if installation/precache fails, show
-  **Offline setup incomplete — Retry** and explain that offline use is not yet guaranteed. The
-  online app may remain usable while caching completes. Retry requests a fresh cache/install
-  attempt; never claim offline-ready based only on service-worker registration.
+  language dataset are available together in the service-worker cache. Until then, show an
+  offline-status icon whose accessible name is **Setting up offline access**; if
+  installation/precache fails, show **Offline setup incomplete** with a retry control. Hovering,
+  focusing, or tapping the icon reveals the status text. The online app may remain usable while
+  caching completes. Retry requests a fresh cache/install attempt. Once readiness is verified,
+  hide the status icon and announce **Offline ready** to assistive technology; never claim
+  offline-ready based only on service-worker registration.
 - Cache the manifest and all corresponding datasets as a coherent versioned release, never
   advertising mixed-version or absent assets as offline-ready. After the first successful
   precache, core data, card measurement, preview, and printing require no runtime network
@@ -952,7 +954,7 @@ duplicate these outcomes as a second invariants list.
 | P10 | Cards/print     | Compact abbreviated casting-time parsing                                                            | `A`, `BA`/`B`, `R`, and localized `MIN`/`HR`/`min`/`Std.` values parse to the same base, glyph, accessible label, qualifier, caret, notes, fit, and print behavior as full text; stored text is never transformed at render | §9          |
 | U1  | Details UI      | Preview-only default pane                                                                           | No duplicated metadata/description pane by default; details open from the header control; no duplicate preview menu or context menu; dialog closes on spell change; print unchanged                                                        | §5          |
 | H1  | Hosting         | Static production build                                                                             | Static assets plus SPA fallback deploy to Workers; no API/backend/secrets; PWA and client routes intact                                                                                                        | §3, §11     |
-| O1  | Offline/quality | First-load precache and retry                                                                       | Accurate **Setting up offline access**, **Offline ready**, or **Offline setup incomplete — Retry** states; no premature readiness claim; runtime asset errors show an actionable retry/fallback                | §11         |
+| O1  | Offline/quality | First-load precache and retry                                                                       | Accurate **Setting up offline access**, **Offline ready**, or **Offline setup incomplete** with retry states; status is icon-only with hover/focus/tap text, hidden when ready, and still announced to assistive technology; no premature readiness claim; runtime asset errors show an actionable retry/fallback | §11         |
 | O2  | Offline/quality | Offline language switch after readiness                                                             | No runtime network request; only manifest-listed assets are selectable                                                                                                                                         | §11         |
 | O3  | Offline/quality | Persisted language removed or invalid                                                               | Visible English fallback; saved/active decks unchanged; preference cleared or updated                                                                                                                          | §11         |
 | O4  | Offline/quality | Untrusted Markdown/JSON                                                                             | Raw HTML/scripts cannot execute; links are non-clickable; validation precedes storage/rendering                                                                                                                | §3, §11     |

@@ -38,7 +38,10 @@ test("precaches shell, manifest, datasets, and fonts, then works offline", async
     )
     .toEqual({ en: true, de: true, manifest: true, font: true });
 
-  await expect(page.getByText("Offline ready")).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("status")).toHaveText("Offline ready");
+  await expect(page.getByRole("banner").getByRole("button", { name: "Offline ready" })).toHaveCount(
+    0,
+  );
 
   await context.setOffline(true);
   await page.reload();

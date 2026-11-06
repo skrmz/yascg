@@ -335,6 +335,10 @@ settings are in the [README](../README.md#printing). Implementation details:
 - `src/pwa/register.ts` verifies that the shell, manifest, every bundled dataset, and at least
   one local font are present in Cache Storage before the UI claims offline readiness. It uses a
   `prompt` update flow and never infers readiness from service-worker registration alone.
+- `src/components/OfflineStatus.tsx` renders the offline state as an icon-only control with a
+  tooltip that also opens on tap via the `touchable` option of `src/ui/Tooltip.tsx`. It hides the
+  icon when ready and keeps a visually hidden `role="status"` live region so readiness changes
+  remain announced to assistive technology.
 - Application data lives in the Dexie tables declared in `src/db/database.ts`; the language
   preference lives in `localStorage` under `spellCards.language`.
 - To debug offline behavior, build and preview through the Workers runtime, then inspect Cache

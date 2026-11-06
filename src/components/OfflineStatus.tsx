@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CloudOff, RefreshCw, Wifi } from "lucide-react";
+import { CloudOff, RefreshCw } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
 import { setupOffline, verifyOfflineAssets, type OfflineState } from "@/pwa/register.ts";
 import { Button } from "@/ui/Button.tsx";
+import { Tooltip } from "@/ui/Tooltip.tsx";
 
 const VERIFY_ATTEMPTS = 40;
 const VERIFY_INTERVAL_MS = 500;
@@ -73,25 +74,50 @@ export function OfflineStatus() {
           ? t("offline.settingUp")
           : t("offline.unknown");
 
+  const showStatus = state.status !== "ready";
+
   return (
-    <div className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
-      {state.status === "ready" ? (
-        <Wifi size={14} className="text-emerald-300" aria-hidden="true" />
-      ) : (
-        <CloudOff size={14} className="text-amber-300" aria-hidden="true" />
-      )}
-      <span aria-live="polite">{label}</span>
-      {state.status === "incomplete" ? (
-        <Button variant="outline" size="sm" onClick={retry} aria-label={t("offline.retryAria")}>
-          <RefreshCw size={12} aria-hidden="true" />
-          {t("offline.retry")}
-        </Button>
+    <>
+      <span className="sr-only" role="status">
+        {label}
+      </span>
+      {showStatus || applyUpdate ? (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          {showStatus ? (
+            <Tooltip label={label} touchable>
+              <button
+                type="button"
+                aria-label={label}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <CloudOff
+                  size={14}
+                  className={state.status === "incomplete" ? "text-amber-300" : undefined}
+                  aria-hidden="true"
+                />
+              </button>
+            </Tooltip>
+          ) : null}
+          {state.status === "incomplete" ? (
+            <Tooltip label={t("offline.retryAria")} touchable>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={retry}
+                aria-label={t("offline.retryAria")}
+              >
+                <RefreshCw size={12} aria-hidden="true" />
+              </Button>
+            </Tooltip>
+          ) : null}
+          {applyUpdate ? (
+            <Button variant="secondary" size="sm" onClick={() => applyUpdate()}>
+              {t("offline.updateAvailable")}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
-      {applyUpdate ? (
-        <Button variant="secondary" size="sm" onClick={() => applyUpdate()}>
-          {t("offline.updateAvailable")}
-        </Button>
-      ) : null}
-    </div>
+    </>
   );
 }

@@ -408,7 +408,6 @@ export const de = {
     incomplete: "Offline-Einrichtung unvollständig",
     settingUp: "Offline-Zugriff wird eingerichtet",
     unknown: "Offline-Status unbekannt",
-    retry: "Erneut versuchen",
     retryAria: "Offline-Einrichtung erneut versuchen",
     updateAvailable: "Update verfügbar",
   },

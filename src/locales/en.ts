@@ -402,7 +402,6 @@ export const en = {
     incomplete: "Offline setup incomplete",
     settingUp: "Setting up offline access",
     unknown: "Offline unknown",
-    retry: "Retry",
     retryAria: "Retry offline setup",
     updateAvailable: "Update available",
   },

@@ -139,10 +139,12 @@ should be investigated rather than "fixed" with CSS scaling.
 
 ## Offline behavior and data safety
 
-After the first successful load, the header shows **Setting up offline access** until the app
-shell, local fonts, language manifest, and bundled datasets are cached. It then shows **Offline
-ready**; failures show **Offline setup incomplete — Retry**. Language switching after precache
-performs no network requests.
+After the first successful load, the header shows an offline-status icon while the app shell,
+local fonts, language manifest, and bundled datasets are being cached. Hover, focus, or tap the
+icon to read **Setting up offline access**; on failure it reads **Offline setup incomplete** and
+a retry control appears. The retry control re-runs the cache check. Once everything is cached,
+the icon disappears and **Offline ready** is announced to assistive technology. Language
+switching after precache performs no network requests.
 
 Spells, decks, and local SRD notes are stored in the browser's IndexedDB; the language
 preference is stored separately in `localStorage`. The active deck is written automatically;
