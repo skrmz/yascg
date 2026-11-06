@@ -24,14 +24,19 @@ export function AboutDialog({
             {SRD_ATTRIBUTION}
           </p>
           <p className="text-xs text-muted-foreground">{t("about.localData")}</p>
-          <dl className="flex flex-wrap items-baseline justify-end gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <dt className="font-medium text-foreground">Version</dt>
-            <dd>{__APP_VERSION__}</dd>
-            <dt className="font-medium text-foreground">Commit</dt>
-            <dd>
-              <code>{__APP_COMMIT__}</code>
-            </dd>
-          </dl>
+
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span>© skaramuz</span>
+            <dl className="flex items-center gap-2">
+              <dt className="sr-only">Version</dt>
+              <dd>v{__APP_VERSION__}</dd>
+              <span aria-hidden="true">·</span>
+              <dt className="sr-only">Commit</dt>
+              <dd>
+                <code>{__APP_COMMIT__}</code>
+              </dd>
+            </dl>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
