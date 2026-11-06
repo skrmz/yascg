@@ -65,7 +65,7 @@ describe("deck import analysis", () => {
       {
         entryId: "e1",
         spellId: "srd-fireball",
-        fitMode: "auto-shrink",
+        fitMode: "auto",
         reference: { source: "SRD-5.2.1", name: "Fireball" },
       },
       {
@@ -74,17 +74,28 @@ describe("deck import analysis", () => {
         fitMode: "multi-card",
         reference: { source: "Custom", name: "Homebrew" },
       },
+      {
+        entryId: "e3",
+        spellId: "srd-wish",
+        fitMode: "auto-shrink",
+        reference: { source: "SRD-5.2.1", name: "Wish" },
+      },
     ];
     const analysis = analyzeDeckImport(JSON.stringify(buildDeckPayload({ name: "Deck", entries })));
     expect(analysis.ok).toBe(true);
     if (analysis.ok) {
       expect(analysis.plan.name).toBe("Deck");
       expect(analysis.plan.entries).toEqual([
-        { spellId: "srd-fireball", fitMode: "auto-shrink", reference: validEntry.reference },
+        { spellId: "srd-fireball", fitMode: "auto", reference: validEntry.reference },
         {
           spellId: "custom-1",
           fitMode: "multi-card",
           reference: { source: "Custom", name: "Homebrew" },
+        },
+        {
+          spellId: "srd-wish",
+          fitMode: "auto-shrink",
+          reference: { source: "SRD-5.2.1", name: "Wish" },
         },
       ]);
     }

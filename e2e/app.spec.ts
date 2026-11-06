@@ -57,6 +57,7 @@ test("saves a named deck and re-saves it through Open", async ({ page }) => {
 
   const deck = page.getByRole("region", { name: "Active deck" });
   const name = page.getByLabel("Active deck name");
+  await expect(deck.getByText("Fireball")).toBeVisible();
   await name.fill("Test Deck");
   await name.press("Enter");
 

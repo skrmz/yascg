@@ -14,8 +14,8 @@ paper. All data stays in your browser unless you export it as JSON.
 - Create an editable custom copy of an SRD spell that is in the active deck, then replace that
   deck entry with the saved copy while keeping its position and fit mode.
 - Keep one active deck and save or load named decks locally.
-- Preview spell cards, open full details, render safe Markdown, and print with auto-shrink or
-  multi-card continuation.
+- Preview spell cards, open full details, render safe Markdown, and print with automatic fitting
+  (one card when it fits, otherwise multi-card continuation), or forced auto-shrink/multi-card.
 - Choose the **Classic** card layout (the default) or a denser **Compact** layout, with a Legend
   for Compact abbreviations and icons. The selection applies to preview and print and is not
   stored across reloads.
@@ -52,6 +52,11 @@ Browse the library, open a spell for details, and add spells to the **Active Dec
 custom spells from the library and edit them from the details view. Decks contain at most one
 entry per spell; **Append all** skips spells already present and reports how many were added
 and skipped. **Replace deck** replaces the active entries after confirmation.
+
+Each deck entry fits its card automatically: a description that fits on one card is shrunk as
+needed, and a longer description continues on multiple cards without truncation. The per-entry
+fit selector can instead force **Auto-shrink** (always one card, with a visible ellipsis when the
+text does not fit) or **Multi-card**.
 
 When the selected spell is an SRD spell that is already in the active deck, the details header
 offers **Create editable copy**. It opens the custom-spell editor with an unsaved copy; nothing
@@ -111,9 +116,10 @@ Open **Print** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per sheet 
 7.5in x 10.5in grid. The paper selection defaults to **A4** for German and **US Letter** for
 English. When saving as PDF, the browser suggests the active deck name, or a dated generic name
 when the deck is unnamed. The selected Classic or Compact card design is used consistently in
-preview, measurement, and print. In **Multi-Card** mode, the first card keeps the full header and
-metadata block; continuation cards use a compact header with a localized `contd.`/`Forts.` label
-and omit repeated metadata so more description fits.
+preview, measurement, and print. Automatic fitting and **Multi-Card** mode use the same
+continuation layout: the first card keeps the full header and metadata block; continuation cards
+use a compact header with a localized `contd.`/`Forts.` label and omit repeated metadata so more
+description fits.
 
 Before printing, configure your browser/printer:
 

@@ -353,6 +353,36 @@ describe("DeckPane actions", () => {
   });
 });
 
+describe("DeckPane fit mode selector", () => {
+  it("defaults to automatic and updates the entry fit mode", async () => {
+    const entry = {
+      entryId: "e1",
+      spellId: "srd-a",
+      fitMode: "auto" as const,
+      reference: { source: "SRD-5.2.1" as const, name: "A" },
+    };
+    holder.activeDeck = { ...associatedDeck, entries: [entry] };
+    holder.resolvedEntries = [
+      {
+        entry,
+        resolution: { status: "resolved", spell: { id: "srd-a", name: "A", source: "SRD-5.2.1" } },
+      },
+    ];
+    const user = userEvent.setup();
+    render(<DeckPane />);
+
+    const select = screen.getByLabelText("Fit mode for A") as HTMLSelectElement;
+    expect(select.value).toBe("auto");
+    expect(within(select).getByRole("option", { name: "Automatic" })).not.toBeNull();
+    expect(within(select).getByRole("option", { name: "Auto-shrink" })).not.toBeNull();
+    expect(within(select).getByRole("option", { name: "Multi-card" })).not.toBeNull();
+
+    await user.selectOptions(select, "multi-card");
+
+    expect(holder.setDeckEntryFitMode).toHaveBeenCalledWith("e1", "multi-card");
+  });
+});
+
 describe("DeckPane card design selector", () => {
   it("sits between deck controls and deck entries with both designs", () => {
     const { container } = render(<DeckPane />);

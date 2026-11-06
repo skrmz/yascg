@@ -36,7 +36,8 @@ decks, user-entered text, or canonical stored game mechanics.
 
 **Included:** spell-data language selection; localized UI (EN/DE); search and filters; custom
 spell CRUD and JSON import/export; unique spell entries and ordering; named local saved decks;
-deck JSON import/export; auto-shrink or continuation cards; US Letter/A4 printing; offline PWA.
+deck JSON import/export; automatic fitting with auto-shrink or continuation cards; US Letter/A4
+printing; offline PWA.
 
 **Excluded:** non-SRD bundled spells, accounts/cloud sync/backend, PDF rendering engines, card
 backs, duplex controls, external spell APIs, and third-party format adapters.
@@ -128,7 +129,7 @@ export type CoreClass =
   | "Paladin" | "Ranger" | "Rogue" | "Sorcerer" | "Warlock" | "Wizard";
 
 export type SpellSource = "SRD-5.2.1" | "Custom";
-export type CardFitMode = "auto-shrink" | "multi-card";
+export type CardFitMode = "auto" | "auto-shrink" | "multi-card";
 
 export interface SpellComponents {
   verbal: boolean;
@@ -434,8 +435,8 @@ This section is the authoritative owner of deck-state semantics. Implementation 
   normalized to the first occurrence when the database is upgraded or a saved deck is loaded.
   Reference repair must not rebind an entry to a spell already present in the deck. Entry IDs
   must be unique within a deck.
-- Support add, remove, move up/down, drag reorder, per-entry fit mode, and **Clear entries**
-  (with confirmation).
+- Support add, remove, move up/down, drag reorder, per-entry fit mode (**Automatic** by default,
+  **Auto-shrink**, or **Multi-card**), and **Clear entries** (with confirmation).
 - **Status and Save enablement:** derive a four-state status from association and dirty state —
   **Saved** (associated, clean), **Unsaved changes** (associated, dirty), **Not saved as a
   deck** (unassociated, populated), and **New deck** (unassociated, empty and unnamed).
@@ -611,9 +612,9 @@ payload is valid and the user confirms the operation. Runtime schemas live in
 - Import maximum: 5 MiB JSON and 2,000 entries. The supported payload is
   `{type:"deck",name,exportedAt,entries:[{spellId,fitMode,reference:{source,name}}]}`. Validate
   the entire payload and all entries before any write; unknown top-level fields, wrong `type`,
-  invalid `fitMode`, missing/invalid `spellId`, invalid reference source/name, or excess limits
-  cause atomic rejection. Do not infer references from names, migrate historical shapes, or
-  claim future compatibility.
+  `fitMode` outside `auto` / `auto-shrink` / `multi-card`, missing/invalid `spellId`, invalid
+  reference source/name, or excess limits cause atomic rejection. Do not infer references from
+  names, migrate historical shapes, or claim future compatibility.
 - Deck import/export and custom-spell import/export are separate workflows: deck JSON tools live
   in the deck actions menu, while custom-spell import/export lives in the Library pane next to
   **Create custom spell**. A deck export is not a backup of custom spell definitions or SRD
@@ -727,20 +728,27 @@ fingerprint. A missing measured body element is a hard measurement error, not a 
 success; the preview and print dialog show a fit error and printing stays blocked. Never perform
 measurement for every scroll event.
 
-**Auto-shrink (default):** always produces exactly one physical card. Body font starts at 8.5 pt
-and decreases in 0.5 pt steps to 6 pt; choose the largest size that fits. If the complete body
-still overflows at 6 pt, render the largest safe prefix of the parsed Markdown document that
-fits **together with a trailing visible ellipsis (`…`)**, measuring the ellipsis as part of that
-prefix rather than appending it afterwards. Prefer block boundaries, then sentence, word, and
-finally Unicode grapheme boundaries; never output malformed HTML, a broken list container, half
-a Unicode grapheme, or an empty trailing block. Drop a trailing heading or rule that has no
-remaining body text so the ellipsis stays visible. Preview and print use the same truncated
-card, and the ellipsis is printed. Show an **on-screen-only** warning that the description was
-truncated at 6 pt because it did not fit on one card and that switching to multi-card mode
-preserves the full description. The selected fit mode is authoritative: auto-shrink never
-switches to multiple cards automatically, multi-card never truncates, and changing the mode
-immediately updates preview and print. Do not silently drop content without the ellipsis and
-warning.
+**Automatic (default):** new entries start in Automatic, and existing stored entries that used the
+former implicit default migrate to it. Fit the complete body on one card at the largest size from
+8.5 pt down to 6 pt. When even 6 pt cannot hold the complete body, use the multi-card layout
+instead, so Automatic never truncates a description and never shows the truncation warning. The
+stored mode stays Automatic; preview, details, hidden measurement, and print resolve the same
+effective layout, and changing the language or card design re-resolves it.
+
+**Auto-shrink (explicit single card):** always produces exactly one physical card. Body font
+starts at 8.5 pt and decreases in 0.5 pt steps to 6 pt; choose the largest size that fits. If the
+complete body still overflows at 6 pt, render the largest safe prefix of the parsed Markdown
+document that fits **together with a trailing visible ellipsis (`…`)**, measuring the ellipsis as
+part of that prefix rather than appending it afterwards. Prefer block boundaries, then sentence,
+word, and finally Unicode grapheme boundaries; never output malformed HTML, a broken list
+container, half a Unicode grapheme, or an empty trailing block. Drop a trailing heading or rule
+that has no remaining body text so the ellipsis stays visible. Preview and print use the same
+truncated card, and the ellipsis is printed. Show an **on-screen-only** warning that the
+description was truncated at 6 pt because it did not fit on one card and that switching to
+Automatic or multi-card mode preserves the full description. An explicit fit mode is
+authoritative: Auto-shrink never switches to multiple cards automatically, multi-card never
+truncates, and changing the mode immediately updates preview and print. Do not silently drop
+content without the ellipsis and warning.
 
 **Multi-card:** body font 8 pt; use 6 pt only when an individual block cannot fit at 8 pt.
 Split description/Higher Levels at paragraph boundaries, then sentence/word boundaries as
@@ -932,7 +940,7 @@ duplicate these outcomes as a second invariants list.
 | I9  | Import/export   | Deck import same name as saved deck                                                                 | Active deck replaced; no saved snapshot modified; imported deck is **Not saved as a deck**                                                                                                                     | §7, §8.2    |
 | I10 | Import/export   | Custom vs deck formats                                                                              | Separate dialogs and files; deck export states it does not back up custom spells or SRD overrides; no combined package required                                                                                | §8          |
 | I11 | Import/export   | Export and reimport a partially translated deck                                                     | Canonical IDs and all entries preserved; no language-specific payload rewriting                                                                                                                                | §8.2        |
-| P1  | Cards/print     | Auto-shrink on long Markdown                                                                        | Exactly one card; 8.5–6 pt steps; safe visible ellipsis measured into the card; preview-only warning; print unchanged                                                                                          | §9          |
+| P1  | Cards/print     | Automatic and explicit auto-shrink on long Markdown                                                 | Automatic: one card at 8.5–6 pt when the full body fits, otherwise multi-card with no truncation or warning; explicit auto-shrink: one card with a safe measured ellipsis and preview-only warning; print matches preview | §9          |
 | P2  | Cards/print     | Multi-card on long Unicode/Markdown content                                                         | No dropped text, invalid markup, or split grapheme; continuation order retained; complete text preserved                                                                                                       | §9          |
 | P3  | Cards/print     | More than 100 continuation cards                                                                    | Visible blocking error for that entry; no silent omission                                                                                                                                                      | §9, §10     |
 | P4  | Cards/print     | Long spell title and fixed fields                                                                   | Title wraps within the header without clipping; fixed fields truncate visibly; level/icons remain visible                                                                                                      | §9          |

@@ -106,7 +106,7 @@ export function makeEntry(spellId: string, source: SpellSource, name: string): D
   return {
     entryId: newEntryId(),
     spellId,
-    fitMode: "auto-shrink",
+    fitMode: "auto",
     reference: { source, name },
   };
 }

@@ -1,7 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import type { Spell, SrdSpellOverride } from "@/domain/spells";
 import { dedupeDeckEntries, deckEntriesEqual } from "@/domain/deck";
-import type { ActiveDeckRecord, SavedDeck } from "@/domain/deck";
+import type { ActiveDeckRecord, DeckEntry, SavedDeck } from "@/domain/deck";
 
 export const DATABASE_NAME = "spell-cards-generator";
 
@@ -83,6 +83,42 @@ export class SpellCardsDatabase extends Dexie {
           if (baseline.name !== saved.name) continue;
           if (!deckEntriesEqual(baseline.entries, dedupeDeckEntries(saved.entries))) continue;
           await activeTable.put({ ...deck, baseline: { ...baseline, savedRevision: revision } });
+        }
+      });
+    this.version(5)
+      .stores(DECK_STORES)
+      .upgrade(async (tx) => {
+        const activeTable = tx.table("activeDeck") as Table<ActiveDeckRecord, string>;
+        const savedTable = tx.table("savedDecks") as Table<SavedDeck, string>;
+
+        // Auto-shrink was the implicit default before automatic fitting existed.
+        // Promote stored entries so existing decks no longer truncate.
+        const promoteAutomatic = (entries: DeckEntry[]): DeckEntry[] =>
+          entries.map((entry) =>
+            entry.fitMode === "auto-shrink" ? { ...entry, fitMode: "auto" as const } : entry,
+          );
+
+        for (const deck of await activeTable.toArray()) {
+          const entries = promoteAutomatic(deck.entries);
+          const storedBaseline = deck.baseline;
+          const baseline =
+            storedBaseline === null
+              ? null
+              : { ...storedBaseline, entries: promoteAutomatic(storedBaseline.entries) };
+          const changed =
+            entries.some((entry, index) => entry !== deck.entries[index]) ||
+            (storedBaseline !== null &&
+              baseline !== null &&
+              baseline.entries.some((entry, index) => entry !== storedBaseline.entries[index]));
+          if (changed) {
+            await activeTable.put({ ...deck, entries, baseline, revision: deck.revision + 1 });
+          }
+        }
+        for (const deck of await savedTable.toArray()) {
+          const entries = promoteAutomatic(deck.entries);
+          if (entries.some((entry, index) => entry !== deck.entries[index])) {
+            await savedTable.put({ ...deck, entries });
+          }
         }
       });
   }

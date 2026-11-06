@@ -59,6 +59,25 @@ async function expectPrintedCards(page: Page, count: number) {
   return printCards;
 }
 
+test("Wunsch defaults to automatic fitting and paginates without truncation", async ({ page }) => {
+  await page.goto("/");
+  await switchLanguage(page, /Deutsch/);
+
+  const { details, fitMode } = await addWunsch(page);
+  const cards = details.locator(".card-preview-page");
+
+  await expect(fitMode).toHaveValue("auto");
+  await expect
+    .poll(async () => cards.count(), { message: "Automatic fitting should paginate Wunsch" })
+    .toBeGreaterThan(1);
+  await expect(details.getByText(/Die Beschreibung wurde gekürzt/)).toHaveCount(0);
+
+  const previewText = (await cards.locator(".card-body").allTextContents()).join(" ");
+  expect(previewText).toContain("Wunsch ist der mächtigste Zauber");
+  expect(previewText).toContain("nie wieder wirken kannst.");
+  expect((await bodyOverflow(cards)).every((overflow) => overflow <= 1)).toBe(true);
+});
+
 test("Wunsch auto-shrink truncates to one card with a visible ellipsis", async ({ page }) => {
   await page.addInitScript(() => {
     window.print = () => undefined;
@@ -69,10 +88,13 @@ test("Wunsch auto-shrink truncates to one card with a visible ellipsis", async (
   const { details, fitMode } = await addWunsch(page);
   const cards = details.locator(".card-preview-page");
 
+  await fitMode.selectOption("auto-shrink");
   await expect(fitMode).toHaveValue("auto-shrink");
   await expect(cards).toHaveCount(1);
   await expect(details.getByText(/Die Beschreibung wurde gekürzt/)).toBeVisible();
-  await expect(details.getByText(/Wechsle in den Mehrkartenmodus/)).toBeVisible();
+  await expect(
+    details.getByText(/Wechsle zu Automatisch oder in den Mehrkartenmodus/),
+  ).toBeVisible();
   await expect(cards.first()).toHaveAttribute("style", /--body-font-pt: 6pt/);
   await expect(cards.first().locator(".card-metadata")).toHaveCount(1);
   await expect(cards.first().locator(".card-continuation-label")).toHaveCount(0);

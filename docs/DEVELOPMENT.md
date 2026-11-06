@@ -129,7 +129,7 @@ Paths are relative to the repository root.
 
 - `src/domain/` — Zod schemas, types, limits, deck/baseline/status rules, ID rules, subclass
   registry, and import/export payload schemas (`payloads.ts`).
-- `src/db/` — Dexie schema v4 (`customSpells`, `savedDecks`, singleton `activeDeck`,
+- `src/db/` — Dexie schema v5 (`customSpells`, `savedDecks`, singleton `activeDeck`,
   `srdSpellOverrides`) with compare-and-swap revisions, saved-snapshot revision tokens,
   deck-entry normalization, and advisory `BroadcastChannel` notifications.
 - `src/services/data/` — manifest/dataset loading, language preference, search and filters, and
@@ -139,7 +139,8 @@ Paths are relative to the repository root.
   `BlockNode` renderer including structured component-description markers, headings,
   blockquotes, and nested lists, and deterministic AST splitting/pagination.
 - `src/cards/` — Classic and Compact card chrome plus hidden-card measurement, `document.fonts`
-  gating, single-card auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor,
+  gating, automatic fitting (largest full-body single card, otherwise multi-card), explicit
+  single-card auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor,
   and multi-card pagination with heading-orphan prevention. Oversized Markdown tables are
   detected during hidden-card measurement and reported as blocking overflow. `design.ts` owns the design enum and
   normalization, `compact.ts` builds the pre-fit Compact presentation and notes, and
@@ -200,11 +201,13 @@ This section maps those contracts to the implementation.
 - `SaveAsDialog` and `OpenDeckDialog` perform their own validation/confirmation through provider
   actions; the deck actions menu holds Save As, New deck, deck import/export, and Clear entries.
   A saved-snapshot Save conflict offers Save As or Open.
-- `src/db/database.ts` defines `version(4)`. It normalizes saved-deck revisions below `1` to
-  `1`, and sets `baseline.savedRevision` only when the stored baseline name and ordered
+- `src/db/database.ts` defines `version(5)`. `version(4)` normalizes saved-deck revisions below
+  `1` to `1`, and sets `baseline.savedRevision` only when the stored baseline name and ordered
   deduplicated entries exactly match the associated saved snapshot. Unverifiable associations
   keep the token absent (no fabricated token, association preserved, no active revision bump);
-  Save then blocks until the user opens the snapshot or uses Save As.
+  Save then blocks until the user opens the snapshot or uses Save As. `version(5)` promotes stored
+  `auto-shrink` entries (including baselines and saved snapshots) to `auto`, the automatic mode,
+  and bumps the active revision when the active deck changed.
 - Cross-tab notifications (`src/db/notifications.ts`) are advisory. Revision checks inside
   transactions are authoritative; a conflict keeps the user's uncommitted intent available and
   routes to the Reload Latest/Cancel or Save As/Open recovery described in the specification.
@@ -299,7 +302,8 @@ the [product specification](specs/MAIN-spec.md#9-card-layout-and-text-fitting); 
 settings are in the [README](../README.md#printing). Implementation details:
 
 - `src/cards/fit.tsx` measures actual rendered heights in a hidden fixed-size card, caches by
-  content/language/fit mode/design, and implements auto-shrink and multi-card pagination.
+  content/language/fit mode/design, and implements automatic (single card or multi-card),
+  explicit auto-shrink, and multi-card pagination.
   Measurement runs only on content/style changes, never on every scroll event. A missing measured
   body element throws so preview and print surface a fit error instead of a false fit. Compact
   multi-card fitting repaginates once with the pagination line reserved when the first pass produces

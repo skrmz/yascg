@@ -59,7 +59,7 @@ export function DetailsPane() {
   const replacingRef = useRef(false);
 
   const deckEntry = activeDeck?.entries.find((entry) => entry.spellId === selectedSpell?.id);
-  const fitMode = deckEntry?.fitMode ?? "auto-shrink";
+  const fitMode = deckEntry?.fitMode ?? "auto";
 
   const fit = useCardFit({
     spell: selectedSpell,

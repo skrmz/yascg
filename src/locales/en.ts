@@ -224,6 +224,7 @@ export const en = {
     replacementSpell: "Replacement spell",
     chooseSpell: "Choose a spell…",
     fitModeAria: "Fit mode for {{name}}",
+    automatic: "Automatic",
     autoShrink: "Auto-shrink",
     multiCard: "Multi-card",
     showAria: "Show {{name}} in details",
@@ -421,7 +422,7 @@ export const en = {
     deleteConfirm: "Delete spell",
     fitError: "Could not measure this card. Please try again.",
     truncated:
-      "Description truncated to fit on one card at {{min}}pt. Switch to multi-card mode to display the full description.",
+      "Description truncated to fit on one card at {{min}}pt. Switch to Automatic or multi-card mode to display the full description.",
     overflow: "This entry exceeds the {{max}}-card continuation limit and cannot be printed.",
     cardCount: "{{count}} physical card at {{font}}pt.",
     cardCount_one: "{{count}} physical card at {{font}}pt.",

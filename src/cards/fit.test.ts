@@ -72,6 +72,38 @@ const longBody: BlockNode[] = [
   ]),
 ];
 
+describe("automatic fitting", () => {
+  it("keeps a single card when the full body fits", () => {
+    const fit = computeFit([paragraph("short text")], charBudget(100), "auto");
+
+    expect(fit.pages).toHaveLength(1);
+    expect(fit.fontPt).toBe(AUTO_SHRINK_STEPS[0]);
+    expect(fit.truncated).toBe(false);
+    expect(fit.overflow).toBe(false);
+  });
+
+  it("falls back to multi-card without truncation when 6pt does not fit", () => {
+    const text = "word ".repeat(200).trim();
+    const fit = computeFit([paragraph(text)], charBudget(120), "auto");
+
+    expect(fit.pages.length).toBeGreaterThan(1);
+    expect(fit.fontPt).toBe(MULTI_CARD_FONT_PT);
+    expect(fit.truncated).toBe(false);
+    expect(fit.overflow).toBe(false);
+    expect(allText(fit.pages.flat())).toBe(text);
+  });
+
+  it("never ellipsizes content the explicit auto-shrink mode would truncate", () => {
+    const text = "word ".repeat(200).trim();
+    const auto = computeFit([paragraph(text)], charBudget(120), "auto");
+    const single = computeFit([paragraph(text)], charBudget(120), "auto-shrink");
+
+    expect(single.truncated).toBe(true);
+    expect(auto.truncated).toBe(false);
+    expect(allText(auto.pages.flat()).endsWith("\u2026")).toBe(false);
+  });
+});
+
 describe("auto-shrink single-card fitting", () => {
   it("uses the largest font size that fits without truncation", () => {
     const fit = computeFit([paragraph("short text")], charBudget(100), "auto-shrink");

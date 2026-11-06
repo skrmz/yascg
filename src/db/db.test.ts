@@ -24,6 +24,7 @@ import {
   saveNewDeck,
 } from "@/db/saved-decks.ts";
 import { deleteCustomSpell, putCustomSpell, restoreDeletedSpell } from "@/db/custom-spells.ts";
+import type { DeckEntry } from "@/domain/deck";
 import { makeCustomSpell } from "@/test/fixtures/spells.ts";
 
 beforeEach(async () => {
@@ -629,6 +630,51 @@ describe("database migration", () => {
       expect(active?.revision).toBe(4);
       const saved = await upgraded.savedDecks.get("saved-1");
       expect(saved?.entries.map((entry) => entry.spellId)).toEqual(["srd-a", "srd-b"]);
+      expect(saved?.revision).toBe(1);
+    } finally {
+      upgraded.close();
+      await Dexie.delete(name);
+    }
+  });
+
+  it("promotes legacy auto-shrink entries to automatic fitting", async () => {
+    const name = `spell-cards-migration-fit-${Date.now()}`;
+    const legacy = await createLegacyDatabase(name);
+    const entries: DeckEntry[] = [
+      {
+        entryId: "e1",
+        spellId: "srd-a",
+        fitMode: "auto-shrink",
+        reference: { source: "SRD-5.2.1", name: "A" },
+      },
+    ];
+    await legacy.table("savedDecks").put({
+      id: "saved-fit",
+      name: "Fit",
+      updatedAt: 1,
+      revision: 1,
+      entries,
+    });
+    await legacy.table("activeDeck").put({
+      id: "active",
+      name: "Fit",
+      savedDeckId: "saved-fit",
+      entries,
+      revision: 2,
+      baseline: { name: "Fit", entries },
+    });
+    legacy.close();
+
+    const upgraded = new SpellCardsDatabase(name);
+    await upgraded.open();
+    try {
+      const active = await upgraded.activeDeck.get("active");
+      expect(active?.entries[0]?.fitMode).toBe("auto");
+      expect(active?.baseline?.entries[0]?.fitMode).toBe("auto");
+      expect(active?.baseline?.savedRevision).toBe(1);
+      expect(active?.revision).toBe(3);
+      const saved = await upgraded.savedDecks.get("saved-fit");
+      expect(saved?.entries[0]?.fitMode).toBe("auto");
       expect(saved?.revision).toBe(1);
     } finally {
       upgraded.close();

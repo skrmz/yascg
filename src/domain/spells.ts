@@ -46,7 +46,7 @@ export const ABILITY_SCORES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as cons
 
 export const SPELL_SOURCES = ["SRD-5.2.1", "Custom"] as const;
 
-export const CARD_FIT_MODES = ["auto-shrink", "multi-card"] as const;
+export const CARD_FIT_MODES = ["auto", "auto-shrink", "multi-card"] as const;
 
 export type SpellSchool = (typeof SPELL_SCHOOLS)[number];
 export type CoreClass = (typeof CORE_CLASSES)[number];

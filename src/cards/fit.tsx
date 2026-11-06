@@ -189,6 +189,57 @@ function fitMultiCard(
   };
 }
 
+function fitFullSourceSingleCard(
+  source: BlockNode[],
+  measure: BooleanMeasureFit,
+  resetTableOverflow: () => void,
+): FitResult | null {
+  for (const fontPt of AUTO_SHRINK_STEPS) {
+    resetTableOverflow();
+    if (measure(source, fontPt, false)) {
+      return { pages: [source], fontPt, truncated: false, overflow: false };
+    }
+  }
+  return null;
+}
+
+function fitAutoShrink(
+  source: BlockNode[],
+  measure: BooleanMeasureFit,
+  tableOverflowed: () => boolean,
+  resetTableOverflow: () => void,
+): FitResult {
+  const full = fitFullSourceSingleCard(source, measure, resetTableOverflow);
+  if (full) return full;
+  if (tableOverflowed()) {
+    return {
+      pages: [source],
+      fontPt: AUTO_SHRINK_MIN_PT,
+      truncated: false,
+      overflow: true,
+      overflowReason: "table",
+    };
+  }
+  const notes = leadingNotes(source);
+  if (notes.length > 0 && !measure(notes, AUTO_SHRINK_MIN_PT, false)) {
+    return {
+      pages: [notes],
+      fontPt: AUTO_SHRINK_MIN_PT,
+      truncated: false,
+      overflow: true,
+      overflowReason: "notes",
+    };
+  }
+  const truncated = truncateSingleCard(source, measure);
+  return {
+    pages: [truncated.blocks],
+    fontPt: AUTO_SHRINK_MIN_PT,
+    truncated: truncated.truncated,
+    overflow: truncated.overflow,
+    ...(truncated.overflowReason ? { overflowReason: truncated.overflowReason } : {}),
+  };
+}
+
 export function computeFit(
   blocks: readonly BlockNode[],
   rawMeasure: MeasureFit,
@@ -202,53 +253,19 @@ export function computeFit(
     if (result.tableOverflow) tableOverflow = true;
     return result.fits;
   };
+  const tableOverflowed = () => tableOverflow;
+  const resetTableOverflow = () => {
+    tableOverflow = false;
+  };
 
   if (fitMode === "auto-shrink") {
-    let lastTableOverflow = false;
-    for (const fontPt of AUTO_SHRINK_STEPS) {
-      tableOverflow = false;
-      if (measure(source, fontPt, false)) {
-        return { pages: [source], fontPt, truncated: false, overflow: false };
-      }
-      lastTableOverflow = tableOverflow;
-    }
-    if (lastTableOverflow) {
-      return {
-        pages: [source],
-        fontPt: AUTO_SHRINK_MIN_PT,
-        truncated: false,
-        overflow: true,
-        overflowReason: "table",
-      };
-    }
-    const notes = leadingNotes(source);
-    if (notes.length > 0 && !measure(notes, AUTO_SHRINK_MIN_PT, false)) {
-      return {
-        pages: [notes],
-        fontPt: AUTO_SHRINK_MIN_PT,
-        truncated: false,
-        overflow: true,
-        overflowReason: "notes",
-      };
-    }
-    const truncated = truncateSingleCard(source, measure);
-    return {
-      pages: [truncated.blocks],
-      fontPt: AUTO_SHRINK_MIN_PT,
-      truncated: truncated.truncated,
-      overflow: truncated.overflow,
-      ...(truncated.overflowReason ? { overflowReason: truncated.overflowReason } : {}),
-    };
+    return fitAutoShrink(source, measure, tableOverflowed, resetTableOverflow);
   }
-  return fitMultiCard(
-    source,
-    measure,
-    maxCards,
-    () => tableOverflow,
-    () => {
-      tableOverflow = false;
-    },
-  );
+  if (fitMode === "auto") {
+    const full = fitFullSourceSingleCard(source, measure, resetTableOverflow);
+    if (full) return full;
+  }
+  return fitMultiCard(source, measure, maxCards, tableOverflowed, resetTableOverflow);
 }
 
 const fitCache = new Map<string, FitResult>();
