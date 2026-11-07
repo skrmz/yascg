@@ -1,6 +1,6 @@
 # Custom Spells Guide
 
-Custom spells let you add your own magic to Yet Another Spell Card Generator. They are stored locally in your browser, appear in the spell library with the **Custom** badge, and can be added to decks and printed like bundled spells. They are not part of the SRD. Export your custom spells regularly so you can restore them or move them to another browser.
+Custom spells add your own magic to Yet Another Spell Card Generator. They are stored locally in your browser, appear in the spell library with the **Custom** badge, and can be added to decks and printed like bundled spells. They are not part of the SRD, and there are no accounts or cloud sync. Custom spells are language-agnostic records: the app does not translate them or link language variants automatically. Export your custom spells regularly so you can restore them or move them to another browser.
 
 ## Create a custom spell in the app
 
@@ -21,46 +21,43 @@ The custom-spell editor offers **Abbreviate** and **Undo abbreviation** for new 
 - **Undo abbreviation** restores the fields changed by the latest action until the editor closes. Later manual edits to those changed fields are overwritten by Undo; unrelated fields are untouched.
 - Saving stores the abbreviated text. There is no persisted backup or automatic de-abbreviation, so save the original wording separately if you may need it later.
 
-## Import custom spells
+## Import and export custom spells
 
-1. Open the **Library** pane and choose **Custom spell import/export**.
-2. Choose **Import custom spells…** and select a `.json` file no larger than 5 MiB.
+**Import:**
+
+1. Open the **Library** pane and choose **Custom spell import/export**, then **Import custom spells…**.
+2. Select a `.json` file no larger than 5 MiB.
 3. Wait until the spell library and SRD validation data have finished loading.
 4. Review the validation summary. If an imported `id` already exists, choose **Skip**, **Keep both**, or **Overwrite existing**.
 5. Choose **Commit import**.
 
-Import is atomic: one invalid record rejects the whole file, so nothing is written. Import never changes the active deck.
+Import is atomic: one invalid record rejects the whole file, so nothing is written. Import adds spells to the library and never changes the active deck.
 
-## Export custom spells
-
-1. Open the **Library** pane and choose **Custom spell import/export**.
-2. Choose **Export custom spells**.
-
-The export contains custom spell definitions and any SRD component-text overrides. It is not a deck backup. Export regularly; deck export is a separate action with a different file.
+**Export:** open the **Library** pane and choose **Custom spell import/export**, then **Export custom spells**. The export contains custom spell definitions and any SRD component-text overrides. It is not a deck backup; deck export is a separate action with a different file.
 
 ## JSON format
 
-The file is a JSON object with a required `type` of `"custom-spells"`, a required `spells` array, and an optional `srdSpellOverrides` array. Normal exports include `srdSpellOverrides`, possibly as `[]`.
+The file is a JSON object with a required `type` of `"custom-spells"`, a required `spells` array, and an optional `srdSpellOverrides` array. Normal exports include `srdSpellOverrides`, possibly as `[]`. The `spells` array may contain one or more spell objects; every `id` must be unique within the file.
 
 > **Caution:** Unknown top-level keys are rejected. Unknown keys inside a spell record are silently discarded, so a typo can disappear without an error. There is no `locale` or `language` field: custom spells are language-agnostic records, and language variants need distinct IDs.
 
 ### Required spell fields
 
-| Field           | Type / constraint                              | Notes                                                                     |
-| --------------- | ---------------------------------------------- | ------------------------------------------------------------------------- |
-| `id`            | non-empty string, max 120 characters           | Unique in the file and must not start with `srd-`. A UUID is recommended. |
-| `name`          | non-empty string, max 120 characters           | Displayed spell name.                                                     |
-| `level`         | integer `0`–`9`                                | `0` means cantrip.                                                        |
-| `school`        | one of the 8 exact English school names        | Case-sensitive.                                                           |
-| `castingTime`   | non-empty string, max 500 characters           | Free text, such as `"1 Action"` or `"1 Aktion"`.                          |
-| `range`         | non-empty string, max 500 characters           | Free text, such as `"60 feet"` or `"18 Meter"`.                           |
-| `components`    | object with three required booleans            | `verbal`, `somatic`, and `material`.                                      |
-| `duration`      | non-empty string, max 500 characters           | Free text, such as `"Up to 1 minute"`.                                    |
-| `concentration` | boolean                                        | Required even when `false`.                                               |
-| `ritual`        | boolean                                        | Required even when `false`.                                               |
-| `classes`       | array of unique exact English core class names | May be empty.                                                             |
-| `description`   | non-empty array of strings                     | Each entry max 20,000 characters.                                         |
-| `source`        | `"Custom"`                                     | SRD-sourced records are rejected.                                         |
+| Field           | Type / constraint                              | Notes                                                                                                    |
+| --------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `id`            | non-empty string, max 120 characters           | Unique in the file; a UUID is recommended. An `srd-` prefix is remapped to a fresh ID and reported.       |
+| `name`          | non-empty string, max 120 characters           | Displayed spell name.                                                                                    |
+| `level`         | integer `0`–`9`                                | `0` means cantrip.                                                                                       |
+| `school`        | one of the 8 exact English school names        | Case-sensitive.                                                                                          |
+| `castingTime`   | non-empty string, max 500 characters           | Free text, such as `"1 Action"` or `"1 Aktion"`.                                                         |
+| `range`         | non-empty string, max 500 characters           | Free text, such as `"60 feet"` or `"18 Meter"`.                                                          |
+| `components`    | object with three required booleans            | `verbal`, `somatic`, and `material`.                                                                     |
+| `duration`      | non-empty string, max 500 characters           | Free text, such as `"Up to 1 minute"`.                                                                   |
+| `concentration` | boolean                                        | Required even when `false`.                                                                              |
+| `ritual`        | boolean                                        | Required even when `false`.                                                                              |
+| `classes`       | array of unique exact English core class names | May be empty.                                                                                            |
+| `description`   | non-empty array of strings                     | Each entry max 20,000 characters.                                                                        |
+| `source`        | `"Custom"`                                     | SRD-sourced records are rejected.                                                                        |
 
 ### Optional spell fields
 
@@ -97,7 +94,7 @@ The three boolean flags are required. Optional details are `verbalDescription`, 
 
 ### Complete example
 
-This example is a playable custom spell inspired by [The Funniest Joke in the World](https://en.wikipedia.org/wiki/The_Funniest_Joke_in_the_World). It demonstrates every supported property, including all optional fields and component details. The `description` and `higherLevels` values demonstrate Markdown; the `source` value stays canonical even when the spell text is localized.
+This example is a playable custom spell inspired by [The Funniest Joke in the World](https://en.wikipedia.org/wiki/The_Funniest_Joke_in_the_World). It demonstrates every supported property, including all optional fields and component details. The `source` value stays canonical even when the spell text is localized.
 
 ```json
 {
@@ -169,22 +166,18 @@ This example is a playable custom spell inspired by [The Funniest Joke in the Wo
 
 ## Generate with an AI assistant
 
-For more reliable results, download the [JSON Schema](/custom-spell-card-json-schema.json "download") and use it with an AI model that supports **Structured Outputs** (JSON Schema). This helps ensure the generated spell follows the required format.
-
-Copy the complete JSON example above and provide it to an AI assistant together with this prompt. If supported, also configure the downloaded schema as the output schema. Describe your spell in the last line.
+For more reliable results, download the [JSON Schema](/custom-spell-card-json-schema.json "download") and use it with an AI model that supports **Structured Outputs** (JSON Schema). Copy the complete JSON example above and provide it to the assistant together with this prompt; if supported, also configure the downloaded schema as the output schema. Describe your spell in the last line.
 
 ```text
 Create a custom spell for D&D 5.5e 2024 rules.
 
-Use the provided JSON example as the exact structural template. Return a complete, directly importable custom-spells JSON file, not just a spell object.
+Use the provided JSON example as the exact structural template. Return a complete, directly importable custom-spells JSON file, not just a spell object, in the top-level format {"type":"custom-spells","spells":[...],"srdSpellOverrides":[]}.
 
 Requirements:
 - Follow the example's structure, field types, and allowed values.
 - Keep required fields; include optional fields only when relevant.
-- Preserve the top-level format: {"type":"custom-spells","spells":[...],"srdSpellOverrides":[]}.
 - Set source to "Custom" and generate a unique id that does not start with "srd-".
-- Keep JSON keys and machine-readable values in their expected English format.
-- Write spell names, descriptions, and other readable text in English.
+- Keep JSON keys and machine-readable values in English; write spell names, descriptions, and other readable text in English.
 - Follow D&D 2024 spell conventions and aim for reasonable game balance.
 - Before responding, check JSON syntax, schema consistency, and spell mechanics.
 
@@ -193,16 +186,6 @@ Output only valid JSON, without Markdown fences, explanations, comments, or trai
 Spell concept: <describe your spell here>
 ```
 
-Review the generated spell before importing it.
-
-Then save the response as a `.json` file, import it through **Custom spell import/export**, review the validation summary, and commit the import. The app validates structure, not game balance or rules correctness; review the generated spell before using it at the table.
-
-## Limitations
-
-- Custom spells live only in local browser storage. There are no accounts or cloud sync.
-- The app does not translate custom spells or link language variants automatically.
-- Import adds spells to the library, not to the active deck.
-- SRD records and SRD component-text overrides are separate from custom spells.
-- Import files are limited to 5 MiB.
+Review the generated spell before importing it. Save the response as a `.json` file, import it through **Custom spell import/export**, review the validation summary, and commit the import. The app validates structure, not game balance or rules correctness; review the generated spell before using it at the table.
 
 See the [SRD 5.2.1](https://www.dndbeyond.com/srd) for the bundled rules content.

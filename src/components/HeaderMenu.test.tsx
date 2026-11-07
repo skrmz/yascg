@@ -70,6 +70,9 @@ describe("HeaderMenu", () => {
       configurable: true,
       value: { writeText },
     });
+    expect(within(dialog).getAllByRole("button", { name: "Download JSON example" })).toHaveLength(
+      1,
+    );
     fireEvent.click(within(dialog).getAllByRole("button", { name: "Copy code" })[0]);
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining('"type": "custom-spells"'));
     expect(await within(dialog).findByText("Copied")).not.toBeNull();
@@ -93,5 +96,8 @@ describe("HeaderMenu", () => {
       "Leitfaden für eigene Zauber",
     );
     expect(within(dialog).getByText("Vollständiges Beispiel")).not.toBeNull();
+    expect(
+      within(dialog).getAllByRole("button", { name: "JSON-Beispiel herunterladen" }),
+    ).toHaveLength(1);
   });
 });

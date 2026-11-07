@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Copy } from "lucide-react";
-import { toUiLocale } from "@/i18n.ts";
+import { Check, Copy, Download } from "lucide-react";
+import { toUiLocale, type UiLocale } from "@/i18n.ts";
+import { downloadText } from "@/io/export.ts";
 import { parseMarkdown } from "@/markdown/parse.ts";
 import { BlockList } from "@/markdown/render.tsx";
 import { Button } from "@/ui/Button.tsx";
@@ -13,9 +14,19 @@ const GUIDES = { en: enGuide, de: deGuide } as const;
 
 type CopyStatus = "idle" | "copied" | "failed";
 
-function GuideCodeBlock({ value }: { value: string }) {
+function isCustomSpellsExample(value: string): boolean {
+  try {
+    const parsed = JSON.parse(value) as { type?: unknown } | null;
+    return parsed?.type === "custom-spells";
+  } catch {
+    return false;
+  }
+}
+
+function GuideCodeBlock({ value, locale }: { value: string; locale: UiLocale }) {
   const { t } = useTranslation();
   const [status, setStatus] = useState<CopyStatus>("idle");
+  const isExample = isCustomSpellsExample(value);
 
   async function copyCode() {
     try {
@@ -38,8 +49,10 @@ function GuideCodeBlock({ value }: { value: string }) {
         </span>
         <Button
           variant="outline"
-          size="sm"
+          size="icon"
+          className="h-7 w-7"
           aria-label={t("guide.copyCode")}
+          title={t("guide.copyCode")}
           onClick={() => void copyCode()}
         >
           {status === "copied" ? (
@@ -47,8 +60,19 @@ function GuideCodeBlock({ value }: { value: string }) {
           ) : (
             <Copy size={14} aria-hidden="true" />
           )}
-          {t("guide.copyCode")}
         </Button>
+        {isExample ? (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-7 w-7"
+            aria-label={t("guide.downloadExample")}
+            title={t("guide.downloadExample")}
+            onClick={() => downloadText(`custom-spell-example-${locale}.json`, value)}
+          >
+            <Download size={14} aria-hidden="true" />
+          </Button>
+        ) : null}
       </div>
       <pre className="card-pre overflow-x-auto" style={{ whiteSpace: "pre" }}>
         {value}
@@ -78,7 +102,7 @@ export function CustomSpellsGuideDialog({
         <div lang={locale} className="spell-details-content guide-markdown">
           <BlockList
             blocks={blocks}
-            renderCode={(value, key) => <GuideCodeBlock key={key} value={value} />}
+            renderCode={(value, key) => <GuideCodeBlock key={key} value={value} locale={locale} />}
           />
         </div>
       </DialogContent>

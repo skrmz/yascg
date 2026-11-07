@@ -253,13 +253,18 @@ The authoritative format semantics are in
 in the [custom spell import guide](custom-spell-import-guide.md). Implementation structure:
 
 - `src/domain/payloads.ts` — strict wire schemas, payload types, and `deckEntryToExport`.
-- `src/io/export.ts` — payload builders and JSON download helper.
+- `src/io/export.ts` — payload builders plus `downloadText` (raw text) and `downloadJson`
+  (pretty-printed payload) download helpers.
 - `src/io/import-deck.ts`, `src/io/import-custom.ts` — full-payload validation, collision
   analysis, ID remapping, override validation, and atomic commit paths.
 - `src/components/import-export/DeckImportExportDialog.tsx` — deck import/export dialog.
 - `src/components/import-export/CustomSpellImportExportDialog.tsx` — custom-spell dialog,
   triggered from `LibraryPane` by **Custom spell import/export** (next to **Create custom
   spell** on desktop, in the **Library actions** menu on narrow screens).
+- `src/components/CustomSpellsGuideDialog.tsx` renders the bundled Markdown guides and adds
+  icon-only copy controls to every code block plus a download control for the complete example.
+  The example downloads its literal code-block text through `downloadText`, so the file matches
+  what the user copies and remains directly importable.
 - Both dialogs share presentation helpers in `components/import-export/shared.tsx` but keep
   separate analysis, validation, and commit paths.
 - Custom spells persist in the Dexie `customSpells` table; SRD component-text overrides persist

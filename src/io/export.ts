@@ -74,10 +74,8 @@ export function activeDeckToSnapshot(deck: ActiveDeck): { name: string; entries:
   return { name: deck.name, entries: deck.entries };
 }
 
-export function downloadJson(filename: string, data: unknown): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
+export function downloadText(filename: string, text: string, mimeType = "application/json"): void {
+  const blob = new Blob([text], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -86,4 +84,8 @@ export function downloadJson(filename: string, data: unknown): void {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+export function downloadJson(filename: string, data: unknown): void {
+  downloadText(filename, JSON.stringify(data, null, 2));
 }

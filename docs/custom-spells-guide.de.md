@@ -1,6 +1,6 @@
 # Leitfaden für eigene Zauber
 
-Eigene Zauber bringen deine eigene Magie in Yet Another Spell Card Generator. Sie werden lokal in deinem Browser gespeichert, erscheinen mit dem Badge **Eigen** in der Zauberbibliothek und lassen sich wie mitgelieferte Zauber zu Decks hinzufügen und drucken. Sie sind nicht Teil des SRD. Exportiere deine eigenen Zauber regelmäßig, damit du sie wiederherstellen oder in einen anderen Browser übertragen kannst.
+Eigene Zauber bringen deine eigene Magie in Yet Another Spell Card Generator. Sie werden lokal in deinem Browser gespeichert, erscheinen mit dem Badge **Eigen** in der Zauberbibliothek und lassen sich wie mitgelieferte Zauber zu Decks hinzufügen und drucken. Sie sind nicht Teil des SRD, und es gibt keine Konten oder Cloud-Synchronisierung. Eigene Zauber sind sprachunabhängige Datensätze: Die App übersetzt sie nicht und verknüpft Sprachvarianten nicht automatisch. Exportiere deine eigenen Zauber regelmäßig, damit du sie wiederherstellen oder in einen anderen Browser übertragen kannst.
 
 ## Einen eigenen Zauber in der App erstellen
 
@@ -21,46 +21,43 @@ Der Editor für eigene Zauber bietet **Abkürzen** und **Abkürzung rückgängig
 - **Abkürzung rückgängig machen** stellt die vom letzten Vorgang geänderten Felder wieder her, solange der Editor geöffnet ist. Spätere manuelle Änderungen an diesen Feldern werden dabei überschrieben; andere Felder bleiben unberührt.
 - Beim Speichern wird der abgekürzte Text gespeichert. Es gibt keine gespeicherte Sicherung und keine automatische Rückabkürzung; bewahre den ursprünglichen Wortlaut bei Bedarf separat auf.
 
-## Eigene Zauber importieren
+## Eigene Zauber importieren und exportieren
 
-1. Öffne die **Bibliothek** und wähle **Eigene Zauber importieren/exportieren**.
-2. Wähle **Eigene Zauber importieren…** und eine `.json`-Datei mit höchstens 5 MiB.
+**Import:**
+
+1. Öffne die **Bibliothek** und wähle **Eigene Zauber importieren/exportieren**, dann **Eigene Zauber importieren…**.
+2. Wähle eine `.json`-Datei mit höchstens 5 MiB.
 3. Warte, bis die Zauberbibliothek und die SRD-Validierungsdaten fertig geladen sind.
 4. Prüfe die Validierungszusammenfassung. Wenn eine importierte `id` bereits existiert, wähle **Überspringen**, **Beide behalten** oder **Vorhandenes überschreiben**.
 5. Wähle **Import übernehmen**.
 
-Der Import ist atomar: Ein ungültiger Datensatz verwirft die gesamte Datei, sodass nichts geschrieben wird. Der Import verändert niemals das aktive Deck.
+Der Import ist atomar: Ein ungültiger Datensatz verwirft die gesamte Datei, sodass nichts geschrieben wird. Ein Import fügt Zauber zur Bibliothek hinzu und verändert niemals das aktive Deck.
 
-## Eigene Zauber exportieren
-
-1. Öffne die **Bibliothek** und wähle **Eigene Zauber importieren/exportieren**.
-2. Wähle **Eigene Zauber exportieren**.
-
-Der Export enthält Definitionen eigener Zauber und alle SRD-Überschreibungen für Komponententexte. Er ist keine Deck-Sicherung. Exportiere regelmäßig; der Deck-Export ist eine separate Aktion mit einer anderen Datei.
+**Export:** Öffne die **Bibliothek** und wähle **Eigene Zauber importieren/exportieren**, dann **Eigene Zauber exportieren**. Der Export enthält Definitionen eigener Zauber und alle SRD-Überschreibungen für Komponententexte. Er ist keine Deck-Sicherung; der Deck-Export ist eine separate Aktion mit einer anderen Datei.
 
 ## JSON-Format
 
-Die Datei ist ein JSON-Objekt mit dem erforderlichen `type` `"custom-spells"`, einem erforderlichen `spells`-Array und einem optionalen `srdSpellOverrides`-Array. Normale Exporte enthalten `srdSpellOverrides`, gegebenenfalls als `[]`.
+Die Datei ist ein JSON-Objekt mit dem erforderlichen `type` `"custom-spells"`, einem erforderlichen `spells`-Array und einem optionalen `srdSpellOverrides`-Array. Normale Exporte enthalten `srdSpellOverrides`, gegebenenfalls als `[]`. Das `spells`-Array darf einen oder mehrere Zauberobjekte enthalten; jede `id` muss innerhalb der Datei eindeutig sein.
 
 > **Achtung:** Unbekannte Schlüssel auf oberster Ebene werden abgelehnt. Unbekannte Schlüssel innerhalb eines Zauberdatensatzes werden stillschweigend verworfen, sodass ein Tippfehler ohne Fehler verschwinden kann. Es gibt kein Feld `locale` oder `language`: Eigene Zauber sind sprachunabhängige Datensätze, und Sprachvarianten benötigen unterschiedliche IDs.
 
 ### Erforderliche Zauberfelder
 
-| Feld            | Typ / Einschränkung                           | Hinweise                                                                             |
-| --------------- | --------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `id`            | nicht leerer String, maximal 120 Zeichen      | Eindeutig in der Datei und darf nicht mit `srd-` beginnen. Eine UUID wird empfohlen. |
-| `name`          | nicht leerer String, maximal 120 Zeichen      | Angezeigter Zaubername.                                                              |
-| `level`         | Ganzzahl `0`–`9`                              | `0` bedeutet Zaubertrick.                                                            |
-| `school`        | einer der 8 exakten englischen Schulnamen     | Groß- und Kleinschreibung beachten.                                                  |
-| `castingTime`   | nicht leerer String, maximal 500 Zeichen      | Freitext, etwa `"1 Action"` oder `"1 Aktion"`.                                       |
-| `range`         | nicht leerer String, maximal 500 Zeichen      | Freitext, etwa `"60 feet"` oder `"18 Meter"`.                                        |
-| `components`    | Objekt mit drei erforderlichen Booleans       | `verbal`, `somatic` und `material`.                                                  |
-| `duration`      | nicht leerer String, maximal 500 Zeichen      | Freitext, etwa `"Up to 1 minute"` oder `"Bis zu 1 Minute"`.                          |
-| `concentration` | Boolean                                       | Auch bei `false` erforderlich.                                                       |
-| `ritual`        | Boolean                                       | Auch bei `false` erforderlich.                                                       |
-| `classes`       | Array eindeutiger englischer Kernklassennamen | Darf leer sein.                                                                      |
-| `description`   | nicht leeres Array aus Strings                | Jeder Eintrag maximal 20.000 Zeichen.                                                |
-| `source`        | `"Custom"`                                    | SRD-Datensätze werden abgelehnt.                                                     |
+| Feld            | Typ / Einschränkung                           | Hinweise                                                                                         |
+| --------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `id`            | nicht leerer String, maximal 120 Zeichen      | Eindeutig in der Datei; eine UUID wird empfohlen. Ein `srd-`-Präfix wird neu zugewiesen und gemeldet. |
+| `name`          | nicht leerer String, maximal 120 Zeichen      | Angezeigter Zaubername.                                                                          |
+| `level`         | Ganzzahl `0`–`9`                              | `0` bedeutet Zaubertrick.                                                                        |
+| `school`        | einer der 8 exakten englischen Schulnamen     | Groß- und Kleinschreibung beachten.                                                              |
+| `castingTime`   | nicht leerer String, maximal 500 Zeichen      | Freitext, etwa `"1 Action"` oder `"1 Aktion"`.                                                   |
+| `range`         | nicht leerer String, maximal 500 Zeichen      | Freitext, etwa `"60 feet"` oder `"18 Meter"`.                                                    |
+| `components`    | Objekt mit drei erforderlichen Booleans       | `verbal`, `somatic` und `material`.                                                              |
+| `duration`      | nicht leerer String, maximal 500 Zeichen      | Freitext, etwa `"Up to 1 minute"` oder `"Bis zu 1 Minute"`.                                      |
+| `concentration` | Boolean                                       | Auch bei `false` erforderlich.                                                                   |
+| `ritual`        | Boolean                                       | Auch bei `false` erforderlich.                                                                   |
+| `classes`       | Array eindeutiger englischer Kernklassennamen | Darf leer sein.                                                                                  |
+| `description`   | nicht leeres Array aus Strings                | Jeder Eintrag maximal 20.000 Zeichen.                                                            |
+| `source`        | `"Custom"`                                    | SRD-Datensätze werden abgelehnt.                                                                 |
 
 ### Optionale Zauberfelder
 
@@ -97,7 +94,7 @@ Die drei Boolean-Flags sind erforderlich. Optionale Details sind `verbalDescript
 
 ### Vollständiges Beispiel
 
-Dieses Beispiel ist ein spielbarer eigener Zauber, inspiriert von [Der tödlichste Witz der Welt](https://de.wikipedia.org/wiki/Der_t%C3%B6dlichste_Witz_der_Welt). Es zeigt jede unterstützte Eigenschaft, einschließlich aller optionalen Felder und Komponentendetails. Die Werte von `description` und `higherLevels` demonstrieren Markdown; der Wert von `source` bleibt kanonisch, auch wenn der Zaubertext lokalisiert ist.
+Dieses Beispiel ist ein spielbarer eigener Zauber, inspiriert von [Der tödlichste Witz der Welt](https://de.wikipedia.org/wiki/Der_t%C3%B6dlichste_Witz_der_Welt). Es zeigt jede unterstützte Eigenschaft, einschließlich aller optionalen Felder und Komponentendetails. Der Wert von `source` bleibt kanonisch, auch wenn der Zaubertext lokalisiert ist.
 
 ```json
 {
@@ -169,22 +166,18 @@ Dieses Beispiel ist ein spielbarer eigener Zauber, inspiriert von [Der tödlichs
 
 ## Mit einem KI-Assistenten generieren
 
-Für zuverlässigere Ergebnisse lade das [JSON-Schema](/custom-spell-card-json-schema.json "download") herunter und verwende es mit einem KI-Modell, das **Structured Outputs** (JSON Schema) unterstützt. Dadurch wird das erforderliche Ausgabeformat besser eingehalten.
-
-Kopiere das vollständige JSON-Beispiel oben und übergib es zusammen mit diesem Prompt an einen KI-Assistenten. Falls unterstützt, hinterlege zusätzlich das heruntergeladene Schema als Ausgabeschema. Beschreibe deinen Zauber in der letzten Zeile.
+Für zuverlässigere Ergebnisse lade das [JSON-Schema](/custom-spell-card-json-schema.json "download") herunter und verwende es mit einem KI-Modell, das **Structured Outputs** (JSON Schema) unterstützt. Kopiere das vollständige JSON-Beispiel oben und übergib es zusammen mit diesem Prompt an den Assistenten; falls unterstützt, hinterlege zusätzlich das heruntergeladene Schema als Ausgabeschema. Beschreibe deinen Zauber in der letzten Zeile.
 
 ```text
 Erstelle einen Zauber für D&D 5.5e 2024.
 
-Verwende das bereitgestellte JSON-Beispiel als genaue strukturelle Vorlage. Gib eine vollständige, direkt importierbare custom-spells-JSON-Datei zurück, nicht nur ein einzelnes Zauberobjekt.
+Verwende das bereitgestellte JSON-Beispiel als genaue strukturelle Vorlage. Gib eine vollständige, direkt importierbare custom-spells-JSON-Datei zurück, nicht nur ein einzelnes Zauberobjekt, im obersten Format {"type":"custom-spells","spells":[...],"srdSpellOverrides":[]}.
 
 Anforderungen:
 - Halte dich an die Struktur, Datentypen und erlaubten Werte des Beispiels.
 - Behalte alle Pflichtfelder bei; verwende optionale Felder nur, wenn sie sinnvoll sind.
-- Behalte das oberste Format bei: {"type":"custom-spells","spells":[...],"srdSpellOverrides":[]}.
 - Setze source auf "Custom" und erstelle eine eindeutige id, die nicht mit "srd-" beginnt.
-- Belasse JSON-Schlüssel und maschinenlesbare Werte im erwarteten englischen Format.
-- Schreibe Zaubernamen, Beschreibungen und andere lesbare Texte auf Deutsch.
+- Belasse JSON-Schlüssel und maschinenlesbare Werte im erwarteten englischen Format; schreibe Zaubernamen, Beschreibungen und andere lesbare Texte auf Deutsch.
 - Orientiere dich an den D&D-Regeln von 2024 und achte auf eine angemessene Spielbalance.
 - Prüfe vor der Ausgabe die JSON-Syntax, die Schemakonformität und die Zaubermechanik.
 
@@ -193,16 +186,6 @@ Gib ausschließlich gültiges JSON zurück, ohne Markdown-Codeblöcke, Erklärun
 Zauberkonzept: <beschreibe hier deinen Zauber>
 ```
 
-Überprüfe den generierten Zauber vor dem Import.
-
-Speichere die Antwort anschließend als `.json`-Datei, importiere sie über **Eigene Zauber importieren/exportieren**, prüfe die Validierungszusammenfassung und übernimm den Import. Die App validiert die Struktur, nicht die Spielbalance oder Regelkorrektheit; prüfe den generierten Zauber, bevor du ihn am Spieltisch verwendest.
-
-## Einschränkungen
-
-- Eigene Zauber liegen nur im lokalen Browserspeicher. Es gibt keine Konten und keine Cloud-Synchronisierung.
-- Die App übersetzt eigene Zauber nicht und verknüpft Sprachvarianten nicht automatisch.
-- Ein Import fügt Zauber zur Bibliothek hinzu, nicht zum aktiven Deck.
-- SRD-Datensätze und SRD-Überschreibungen für Komponententexte sind von eigenen Zaubern getrennt.
-- Importdateien sind auf 5 MiB begrenzt.
+Überprüfe den generierten Zauber vor dem Import. Speichere die Antwort anschließend als `.json`-Datei, importiere sie über **Eigene Zauber importieren/exportieren**, prüfe die Validierungszusammenfassung und übernimm den Import. Die App validiert die Struktur, nicht die Spielbalance oder Regelkorrektheit; prüfe den generierten Zauber, bevor du ihn am Spieltisch verwendest.
 
 Siehe das [SRD 5.2.1](https://www.dndbeyond.com/srd) für die mitgelieferten Regeltexte.

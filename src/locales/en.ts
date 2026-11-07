@@ -64,6 +64,7 @@ export const en = {
   guide: {
     title: "Custom Spells Guide",
     copyCode: "Copy code",
+    downloadExample: "Download JSON example",
     copied: "Copied",
     copyFailed: "Copy failed. Select the text and copy it manually.",
   },

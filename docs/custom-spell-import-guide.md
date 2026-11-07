@@ -116,6 +116,8 @@ Optional component detail fields:
 
 ## Complete example
 
+The in-app [custom spells guide](custom-spells-guide.md) contains the same complete example with copy and download controls.
+
 ```json
 {
   "type": "custom-spells",

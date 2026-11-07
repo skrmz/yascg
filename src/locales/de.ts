@@ -63,6 +63,7 @@ export const de = {
   guide: {
     title: "Leitfaden für eigene Zauber",
     copyCode: "Code kopieren",
+    downloadExample: "JSON-Beispiel herunterladen",
     copied: "Kopiert",
     copyFailed: "Kopieren fehlgeschlagen. Markiere den Text und kopiere ihn manuell.",
   },
