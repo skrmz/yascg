@@ -354,7 +354,7 @@ describe("DeckPane actions", () => {
 });
 
 describe("DeckPane fit mode selector", () => {
-  it("defaults to automatic and updates the entry fit mode", async () => {
+  it("defaults to best fit and updates the entry fit mode", async () => {
     const entry = {
       entryId: "e1",
       spellId: "srd-a",
@@ -373,7 +373,7 @@ describe("DeckPane fit mode selector", () => {
 
     const select = screen.getByLabelText("Fit mode for A") as HTMLSelectElement;
     expect(select.value).toBe("auto");
-    expect(within(select).getByRole("option", { name: "Automatic" })).not.toBeNull();
+    expect(within(select).getByRole("option", { name: "Best fit" })).not.toBeNull();
     expect(within(select).getByRole("option", { name: "Auto-shrink" })).not.toBeNull();
     expect(within(select).getByRole("option", { name: "Multi-card" })).not.toBeNull();
 

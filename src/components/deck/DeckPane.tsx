@@ -757,7 +757,7 @@ function DeckRow({
         value={entry.fitMode}
         onChange={(event) => onFitMode(event.target.value as CardFitMode)}
       >
-        <option value="auto">{t("deck.automatic")}</option>
+        <option value="auto">{t("deck.bestFit")}</option>
         <option value="auto-shrink">{t("deck.autoShrink")}</option>
         <option value="multi-card">{t("deck.multiCard")}</option>
       </NativeSelect>

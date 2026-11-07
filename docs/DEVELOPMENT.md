@@ -139,8 +139,8 @@ Paths are relative to the repository root.
   `BlockNode` renderer including structured component-description markers, headings,
   blockquotes, and nested lists, and deterministic AST splitting/pagination.
 - `src/cards/` — Classic and Compact card chrome plus hidden-card measurement, `document.fonts`
-  gating, automatic fitting (largest full-body single card, otherwise multi-card), explicit
-  single-card auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor,
+  gating, best-fit fitting (largest full-body single card at 8.5pt → 8pt, otherwise multi-card),
+  explicit single-card auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor,
   and multi-card pagination with heading-orphan prevention. Oversized Markdown tables are
   detected during hidden-card measurement and reported as blocking overflow. `design.ts` owns the design enum and
   normalization, `compact.ts` builds the pre-fit Compact presentation and notes, and
@@ -329,8 +329,8 @@ the [product specification](specs/MAIN-spec.md#9-card-layout-and-text-fitting); 
 settings are in the [README](../README.md#printing). Implementation details:
 
 - `src/cards/fit.tsx` measures actual rendered heights in a hidden fixed-size card, caches by
-  content/language/fit mode/design, and implements automatic (single card or multi-card),
-  explicit auto-shrink, and multi-card pagination.
+  content/language/fit mode/design, and implements best fit (single card at 8.5–8 pt, otherwise
+  multi-card), explicit auto-shrink, and multi-card pagination.
   Measurement runs only on content/style changes, never on every scroll event. A missing measured
   body element throws so preview and print surface a fit error instead of a false fit. Compact
   multi-card fitting repaginates once with the pagination line reserved when the first pass produces

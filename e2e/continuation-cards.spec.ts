@@ -93,7 +93,7 @@ test("Wunsch auto-shrink truncates to one card with a visible ellipsis", async (
   await expect(cards).toHaveCount(1);
   await expect(details.getByText(/Die Beschreibung wurde gekürzt/)).toBeVisible();
   await expect(
-    details.getByText(/Wechsle zu Automatisch oder in den Mehrkartenmodus/),
+    details.getByText(/Wechsle zu „Beste Anpassung“ oder in den Mehrkartenmodus/),
   ).toBeVisible();
   await expect(cards.first()).toHaveAttribute("style", /--body-font-pt: 6pt/);
   await expect(cards.first().locator(".card-metadata")).toHaveCount(1);

@@ -102,6 +102,38 @@ describe("automatic fitting", () => {
     expect(auto.truncated).toBe(false);
     expect(allText(auto.pages.flat()).endsWith("\u2026")).toBe(false);
   });
+
+  it("uses 8pt as the smallest single-card size", () => {
+    const measure: MeasureFit = (blocks, fontPt) =>
+      allText(blocks).length <= (fontPt <= 8 ? 100 : 10);
+    const fit = computeFit([paragraph("x".repeat(80))], measure, "auto");
+
+    expect(fit.pages).toHaveLength(1);
+    expect(fit.fontPt).toBe(MULTI_CARD_FONT_PT);
+    expect(fit.truncated).toBe(false);
+  });
+
+  it("paginates instead of shrinking below the automatic floor", () => {
+    const text = "x".repeat(80);
+    const measure: MeasureFit = (blocks, fontPt) =>
+      allText(blocks).length <= (fontPt >= 8 ? 40 : 100);
+    const fit = computeFit([paragraph(text)], measure, "auto");
+
+    expect(fit.pages.length).toBeGreaterThan(1);
+    expect(fit.fontPt).toBe(MULTI_CARD_FONT_PT);
+    expect(fit.truncated).toBe(false);
+    expect(allText(fit.pages.flat())).toBe(text);
+  });
+
+  it("keeps explicit auto-shrink at 7.5pt for the same body", () => {
+    const measure: MeasureFit = (blocks, fontPt) =>
+      allText(blocks).length <= (fontPt >= 8 ? 40 : 100);
+    const fit = computeFit([paragraph("x".repeat(80))], measure, "auto-shrink");
+
+    expect(fit.pages).toHaveLength(1);
+    expect(fit.fontPt).toBe(7.5);
+    expect(fit.truncated).toBe(false);
+  });
 });
 
 describe("auto-shrink single-card fitting", () => {

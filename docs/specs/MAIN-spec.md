@@ -451,7 +451,7 @@ This section is the authoritative owner of deck-state semantics. Implementation 
   normalized to the first occurrence when the database is upgraded or a saved deck is loaded.
   Reference repair must not rebind an entry to a spell already present in the deck. Entry IDs
   must be unique within a deck.
-- Support add, remove, move up/down, drag reorder, per-entry fit mode (**Automatic** by default,
+- Support add, remove, move up/down, drag reorder, per-entry fit mode (**Best fit** by default,
   **Auto-shrink**, or **Multi-card**), and **Clear entries** (with confirmation).
 - **Status and Save enablement:** derive a four-state status from association and dirty state —
   **Saved** (associated, clean), **Unsaved changes** (associated, dirty), **Not saved as a
@@ -744,12 +744,14 @@ fingerprint. A missing measured body element is a hard measurement error, not a 
 success; the preview and print dialog show a fit error and printing stays blocked. Never perform
 measurement for every scroll event.
 
-**Automatic (default):** new entries start in Automatic, and existing stored entries that used the
-former implicit default migrate to it. Fit the complete body on one card at the largest size from
-8.5 pt down to 6 pt. When even 6 pt cannot hold the complete body, use the multi-card layout
-instead, so Automatic never truncates a description and never shows the truncation warning. The
-stored mode stays Automatic; preview, details, hidden measurement, and print resolve the same
-effective layout, and changing the language or card design re-resolves it.
+**Best fit (default, stored value `auto`):** new entries start in Best fit, and existing stored
+entries that used the former implicit default migrate to it. Fit the complete body on one card at
+the largest size from 8.5 pt down to 8 pt. When even 8 pt cannot hold the complete body, use the
+multi-card layout at 8 pt instead, so Best fit never truncates a description, never shows the
+truncation warning, and never renders single-card body text below 8 pt. The stored mode stays
+`auto`; preview, details, hidden measurement, and print resolve the same effective layout, and
+changing the language or card design re-resolves it. Multi-card's existing per-block 6 pt fallback
+for an individual unbreakable block is unchanged.
 
 **Auto-shrink (explicit single card):** always produces exactly one physical card. Body font
 starts at 8.5 pt and decreases in 0.5 pt steps to 6 pt; choose the largest size that fits. If the
@@ -761,7 +763,7 @@ container, half a Unicode grapheme, or an empty trailing block. Drop a trailing 
 that has no remaining body text so the ellipsis stays visible. Preview and print use the same
 truncated card, and the ellipsis is printed. Show an **on-screen-only** warning that the
 description was truncated at 6 pt because it did not fit on one card and that switching to
-Automatic or multi-card mode preserves the full description. An explicit fit mode is
+Best fit or multi-card mode preserves the full description. An explicit fit mode is
 authoritative: Auto-shrink never switches to multiple cards automatically, multi-card never
 truncates, and changing the mode immediately updates preview and print. Do not silently drop
 content without the ellipsis and warning.
@@ -959,7 +961,7 @@ duplicate these outcomes as a second invariants list.
 | I9  | Import/export   | Deck import same name as saved deck                                                                 | Active deck replaced; no saved snapshot modified; imported deck is **Not saved as a deck**                                                                                                                     | §7, §8.2    |
 | I10 | Import/export   | Custom vs deck formats                                                                              | Separate dialogs and files; deck export states it does not back up custom spells or SRD overrides; no combined package required                                                                                | §8          |
 | I11 | Import/export   | Export and reimport a partially translated deck                                                     | Canonical IDs and all entries preserved; no language-specific payload rewriting                                                                                                                                | §8.2        |
-| P1  | Cards/print     | Automatic and explicit auto-shrink on long Markdown                                                 | Automatic: one card at 8.5–6 pt when the full body fits, otherwise multi-card with no truncation or warning; explicit auto-shrink: one card with a safe measured ellipsis and preview-only warning; print matches preview | §9          |
+| P1  | Cards/print     | Best fit and explicit auto-shrink on long Markdown                                                  | Best fit: one card at 8.5–8 pt when the full body fits, otherwise multi-card at 8 pt with no truncation or warning; explicit auto-shrink: one card down to 6 pt with a safe measured ellipsis and preview-only warning; print matches preview | §9          |
 | P2  | Cards/print     | Multi-card on long Unicode/Markdown content                                                         | No dropped text, invalid markup, or split grapheme; continuation order retained; complete text preserved                                                                                                       | §9          |
 | P3  | Cards/print     | More than 100 continuation cards                                                                    | Visible blocking error for that entry; no silent omission                                                                                                                                                      | §9, §10     |
 | P4  | Cards/print     | Long spell title and fixed fields                                                                   | Title wraps within the header without clipping; fixed fields truncate visibly; level/icons remain visible                                                                                                      | §9          |

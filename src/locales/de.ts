@@ -238,7 +238,7 @@ export const de = {
     replacementSpell: "Ersatzzauber",
     chooseSpell: "Zauber auswählen…",
     fitModeAria: "Anpassungsmodus für {{name}}",
-    automatic: "Automatisch",
+    bestFit: "Beste Anpassung",
     autoShrink: "Auto-Anpassung",
     multiCard: "Mehrere Karten",
     showAria: "{{name}} in den Details anzeigen",
@@ -440,7 +440,7 @@ export const de = {
     deleteConfirm: "Zauber löschen",
     fitError: "Diese Karte konnte nicht gemessen werden. Bitte versuche es erneut.",
     truncated:
-      "Die Beschreibung wurde gekürzt, damit sie bei {{min}} pt auf eine Karte passt. Wechsle zu Automatisch oder in den Mehrkartenmodus, um die vollständige Beschreibung anzuzeigen.",
+      "Die Beschreibung wurde gekürzt, damit sie bei {{min}} pt auf eine Karte passt. Wechsle zu „Beste Anpassung“ oder in den Mehrkartenmodus, um die vollständige Beschreibung anzuzeigen.",
     overflow:
       "Dieser Eintrag überschreitet das Limit von {{max}} Fortsetzungskarten und kann nicht gedruckt werden.",
     cardCount: "{{count}} physische Karte bei {{font}} pt.",

@@ -14,8 +14,9 @@ paper. All data stays in your browser unless you export it as JSON.
 - Create an editable custom copy of an SRD spell that is in the active deck, then replace that
   deck entry with the saved copy while keeping its position and fit mode.
 - Keep one active deck and save or load named decks locally.
-- Preview spell cards, open full details, render safe Markdown, and print with automatic fitting
-  (one card when it fits, otherwise multi-card continuation), or forced auto-shrink/multi-card.
+- Preview spell cards, open full details, render safe Markdown, and print with best-fit layout
+  (one card at 8 pt or larger when it fits, otherwise multi-card continuation), or forced
+  auto-shrink/multi-card.
 - Choose the **Classic** card layout (the default) or a denser **Compact** layout, with a Legend
   for Compact abbreviations and icons. The selection applies to preview and print and is not
   stored across reloads.
@@ -59,10 +60,10 @@ in a bottom sheet with removable chips for active filters, and **Append all**, *
 menu. Search, filters, and the list scroll position are kept when switching tabs; **Reset
 filters** clears the search text and every filter.
 
-Each deck entry fits its card automatically: a description that fits on one card is shrunk as
-needed, and a longer description continues on multiple cards without truncation. The per-entry
-fit selector can instead force **Auto-shrink** (always one card, with a visible ellipsis when the
-text does not fit) or **Multi-card**.
+Each deck entry uses **Best fit** by default: a description that fits on one card is shrunk only
+down to 8 pt, and a longer description continues on multiple cards without truncation. The
+per-entry fit selector can instead force **Auto-shrink** (always one card, shrinking to 6 pt with
+a visible ellipsis and warning when the text does not fit) or **Multi-card**.
 
 When the selected spell is an SRD spell that is already in the active deck, the details header
 offers **Create editable copy**. It opens the custom-spell editor with an unsaved copy; nothing
