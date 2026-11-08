@@ -164,21 +164,33 @@ Paths are relative to the repository root.
 Behavior is owned by [MAIN-spec §5](specs/MAIN-spec.md#5-workspace-and-library). Structural
 choices:
 
-- `AppShell` switches to the three-pane grid at `min-width: 1200px` and keeps every pane mounted
-  with `forceMount`, so search, filters, and list state survive tab changes. It passes
-  `active={tab === "library"}` to `LibraryPane`, which restores the saved list `scrollTop` in a
-  layout effect rather than React state.
-- `useIsDesktop` (`src/components/library/use-is-desktop.ts`) is the single JavaScript viewport
-  breakpoint. It chooses which filter tree and actions UI are mounted; purely visual density uses
-  `max-[1199px]`/`min-[1200px]` classes so resizing does not re-render rows.
-- `LibraryFilters` renders the filter fields once per viewport: `inline` inside the desktop
-  collapsible and `sheet` inside the mobile bottom sheet. Derived option lists stay in
+- `workspace-layout.ts` owns the mode thresholds in MAIN-spec §5 and observes one workspace
+  container with `ResizeObserver`. Only mode changes update layout state. It starts in Compact,
+  measures before paint, and uses container measurement on window resize as the observer fallback.
+  `AppShell` keeps panes mounted with `forceMount` and hides inactive panes, preserving local
+  state and deck-name drafts. Compact and Split share Radix tab navigation; `ShowDetailsContext`
+  reveals Details even when a user reselects the same spell. Hidden-pane focus moves to a visible
+  pane after navigation or a mode change. `LibraryPane` restores its recorded list `scrollTop`
+  when it becomes visible.
+- `WorkspaceLayoutContext` chooses the Library filter tree and actions UI. The shell's mode is
+  mirrored to the root element for shared screen-only touch sizing, including portaled dialogs
+  and popovers. Wide coarse-pointer layouts use the same sizing variable. Header viewport
+  classes remain independent of workspace layout.
+- `LibraryFilters` renders the filter fields once per mode: `inline` in Wide and `sheet` in
+  Compact/Split. Both variants use a primary group and Advanced disclosure. Derived options stay in
   `LibraryPane`; `filter-summary.ts` builds one removable chip per active filter group.
 - `DialogContent` has a `sheet` variant that anchors to the bottom edge, scrolls only its body,
   and accounts for the visual-viewport keyboard inset (`--app-keyboard-inset`) and safe areas.
   The shell locks `html`/`body`/`#root` overflow and restores it in print.
-- `src/test/setup.ts` stubs `matchMedia` as a desktop viewport by default. Tests that exercise
-  mobile use `setDesktopViewport(false)` before rendering.
+  At short viewport heights, CSS makes the Deck pane the single scroll container and lets
+  its entries flow normally, keeping toolbar controls and rows reachable at high zoom.
+- `PreviewFrame` scales only rendered screen cards using a transform inside a slot sized for
+  the visual card bounds. It observes the padded preview content width; fitting, hidden
+  measurement, and print renderers receive no scale input.
+- `src/test/setup.ts` provides `setWorkspaceWidth(width)` for controlled workspace observer
+  notifications (wrap updates in `act`). Isolated pane tests provide `WorkspaceLayoutContext`.
+  `e2e/workspace.spec.ts` covers container/viewport independence, responsive modes, preview
+  invariants, coarse-pointer targets, and state preservation against Workers preview.
 
 ## Cloudflare Vite plugin integration
 

@@ -1,11 +1,26 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render as renderUI, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n.ts";
 import { CORE_CLASSES, type Spell } from "@/domain/spells";
 import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
-import { setDesktopViewport } from "@/test/setup.ts";
+import { WorkspaceLayoutContext } from "../workspace-layout.ts";
 import { LibraryPane } from "./LibraryPane.tsx";
+
+let desktopLayout = true;
+function setDesktopViewport(value: boolean) {
+  desktopLayout = value;
+}
+function render(ui: ReactNode) {
+  return renderUI(ui, {
+    wrapper: ({ children }) => (
+      <WorkspaceLayoutContext.Provider value={desktopLayout ? "wide" : "compact"}>
+        {children}
+      </WorkspaceLayoutContext.Provider>
+    ),
+  });
+}
 
 const holder = vi.hoisted(() => ({
   spells: [] as unknown[],
@@ -72,7 +87,7 @@ describe("LibraryPane class filter", () => {
     ];
     const user = userEvent.setup();
     render(<LibraryPane />);
-    await user.click(screen.getByRole("button", { name: "Class" }));
+    await user.click(screen.getByRole("button", { name: /^Class:/ }));
     const popover = screen.getByRole("dialog");
     expect(within(popover).getAllByRole("checkbox")).toHaveLength(CORE_CLASSES.length);
     for (const cls of CORE_CLASSES) {
@@ -85,7 +100,7 @@ describe("LibraryPane class filter", () => {
     await i18n.changeLanguage("de");
     const user = userEvent.setup();
     render(<LibraryPane />);
-    await user.click(screen.getByRole("button", { name: "Klasse" }));
+    await user.click(screen.getByRole("button", { name: /^Klasse:/ }));
     const popover = screen.getByRole("dialog");
     await user.click(within(popover).getByRole("checkbox", { name: "Magier" }));
     expect(within(popover).getAllByRole("checkbox")).toHaveLength(CORE_CLASSES.length);
@@ -142,14 +157,14 @@ describe("LibraryPane advanced filters", () => {
     render(<LibraryPane />);
 
     await user.click(screen.getByRole("button", { name: /Advanced Filters/ }));
-    await user.click(screen.getByRole("button", { name: "Components" }));
+    await user.click(screen.getByRole("button", { name: /^Components:/ }));
     await user.click(screen.getByRole("checkbox", { name: "Somatic" }));
     await user.keyboard("{Escape}");
 
     expect(screen.getByText("Touch Spell")).not.toBeNull();
     expect(screen.queryByText("Self Spell")).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Components" }));
+    await user.click(screen.getByRole("button", { name: /^Components:/ }));
     await user.click(screen.getByRole("checkbox", { name: "Verbal" }));
     await user.keyboard("{Escape}");
 
@@ -194,7 +209,7 @@ describe("LibraryPane subclass filter", () => {
     render(<LibraryPane />);
 
     await user.click(screen.getByRole("button", { name: /Advanced Filters/ }));
-    await user.click(screen.getByRole("button", { name: "Subclass" }));
+    await user.click(screen.getByRole("button", { name: /^Subclass:/ }));
 
     const popover = screen.getByRole("dialog");
     const clericGroup = within(popover).getByRole("group", { name: "Cleric" });
@@ -223,7 +238,7 @@ describe("LibraryPane subclass filter", () => {
     render(<LibraryPane />);
 
     await user.click(screen.getByRole("button", { name: /Erweiterte Filter/ }));
-    await user.click(screen.getByRole("button", { name: "Unterklasse" }));
+    await user.click(screen.getByRole("button", { name: /^Unterklasse:/ }));
 
     const popover = screen.getByRole("dialog");
     const clericGroup = within(popover).getByRole("group", { name: "Kleriker" });
@@ -240,7 +255,7 @@ describe("LibraryPane subclass filter", () => {
     const { rerender } = render(<LibraryPane />);
 
     await user.click(screen.getByRole("button", { name: /Advanced Filters/ }));
-    await user.click(screen.getByRole("button", { name: "Subclass" }));
+    await user.click(screen.getByRole("button", { name: /^Subclass:/ }));
     await user.click(screen.getByRole("checkbox", { name: "War Domain" }));
     await user.keyboard("{Escape}");
 
@@ -254,7 +269,7 @@ describe("LibraryPane subclass filter", () => {
     expect(screen.getByText("War Spell")).not.toBeNull();
     expect(screen.queryByText("Life Spell")).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Unterklasse" }));
+    await user.click(screen.getByRole("button", { name: /^Unterklasse:/ }));
     const checkbox = screen.getByRole("checkbox", {
       name: "Domäne des Krieges",
     }) as HTMLInputElement;
@@ -465,7 +480,7 @@ describe("LibraryPane mobile layout", () => {
 
     const sheet = screen.getByRole("dialog", { name: "Filters" });
     expect(within(sheet).getByRole("slider", { name: "Minimum level" })).not.toBeNull();
-    expect(within(sheet).getByRole("button", { name: "Class" })).not.toBeNull();
+    expect(within(sheet).getByRole("button", { name: /^Class:/ })).not.toBeNull();
     expect(within(sheet).getByRole("button", { name: /Reset Filters/i })).not.toBeNull();
 
     await user.click(within(sheet).getByRole("button", { name: "Done" }));
@@ -481,7 +496,7 @@ describe("LibraryPane mobile layout", () => {
     await user.click(screen.getByRole("button", { name: "Filters" }));
 
     const sheet = screen.getByRole("dialog", { name: "Filters" });
-    await user.click(within(sheet).getByRole("button", { name: "Class" }));
+    await user.click(within(sheet).getByRole("button", { name: /^Class:/ }));
     await user.click(screen.getByRole("checkbox", { name: "Wizard" }));
     await user.keyboard("{Escape}");
     await user.click(within(sheet).getByRole("button", { name: "Done" }));
@@ -507,6 +522,32 @@ describe("LibraryPane mobile layout", () => {
     expect((screen.getByLabelText("Search spells") as HTMLInputElement).value).toBe("");
   });
 
+  it("reopens active advanced filters expanded and updates the live match count", async () => {
+    holder.spells = [
+      makeSpell({ id: "srd-a", name: "Alpha", ritual: true }),
+      makeSpell({ id: "srd-b", name: "Beta", ritual: false }),
+    ];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    let sheet = screen.getByRole("dialog", { name: "Filters" });
+    expect(within(sheet).queryByRole("combobox", { name: "Ritual" })).toBeNull();
+    expect(within(sheet).getByRole("status").textContent).toBe("2 spells match");
+    await user.click(within(sheet).getByRole("button", { name: /Advanced Filters/ }));
+    await user.click(within(sheet).getByRole("combobox", { name: "Ritual" }));
+    await user.click(screen.getByRole("option", { name: "Yes" }));
+    expect(within(sheet).getByRole("status").textContent).toBe("1 spell matches");
+    await user.click(within(sheet).getByRole("button", { name: "Done" }));
+    await user.click(screen.getByRole("button", { name: "Filters, 1 active" }));
+    sheet = screen.getByRole("dialog", { name: "Filters" });
+    expect(
+      within(sheet)
+        .getByRole("button", { name: /Advanced Filters/ })
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
+    expect(within(sheet).getByRole("combobox", { name: "Ritual" })).not.toBeNull();
+  });
+
   it("keeps Create custom spell available from the actions menu with no results", async () => {
     const user = userEvent.setup();
     render(<LibraryPane />);
@@ -524,6 +565,43 @@ describe("LibraryPane mobile layout", () => {
 });
 
 describe("LibraryPane desktop layout", () => {
+  it("shows explicit source scope and keeps a selected specific source selected", async () => {
+    holder.spells = [
+      makeSpell({ id: "srd-a", name: "SRD spell" }),
+      makeCustomSpell({ id: "custom-a", name: "Custom spell" }),
+    ];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+    const sources = screen.getByRole("group", { name: "Source" });
+    expect(within(sources).getByRole("button", { name: "All" }).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    await user.click(within(sources).getByRole("button", { name: "SRD" }));
+    expect(screen.queryByText("Custom spell")).toBeNull();
+    await user.click(within(sources).getByRole("button", { name: "Custom" }));
+    await user.click(within(sources).getByRole("button", { name: "Custom" }));
+    expect(screen.queryByText("SRD spell")).toBeNull();
+    await user.click(within(sources).getByRole("button", { name: "All" }));
+    expect(screen.getByText("SRD spell")).not.toBeNull();
+    expect(screen.getByText("Custom spell")).not.toBeNull();
+  });
+  it("exposes current selection and clears empty search with focus recovery", async () => {
+    holder.spells = [
+      makeSpell({ id: "srd-a", name: "Alpha" }),
+      makeSpell({ id: "srd-b", name: "Beta" }),
+    ];
+    holder.selectedSpellId = "srd-a";
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+    const list = screen.getByRole("list", { name: "Spell results" });
+    expect(within(list).getByRole("button", { name: /Alpha/, current: true })).not.toBeNull();
+    expect(within(list).getByRole("button", { name: /^Beta/, current: false })).not.toBeNull();
+    await user.type(screen.getByLabelText("Search spells"), "zzzz");
+    await user.click(screen.getByRole("button", { name: "Clear search and filters" }));
+    expect(document.activeElement).toBe(screen.getByLabelText("Search spells"));
+    expect(screen.getByText("Alpha")).not.toBeNull();
+    expect(holder.selectedSpellId).toBe("srd-a");
+  });
   it("keeps the inline filters and desktop controls without mobile affordances", () => {
     holder.spells = [makeSpell({ id: "srd-fireball", name: "Fireball" })];
     render(<LibraryPane />);

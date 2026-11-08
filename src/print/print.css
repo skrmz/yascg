@@ -899,9 +899,22 @@
   width: 100%;
   align-items: flex-start;
   align-content: flex-start;
+  justify-content: center;
   gap: 0.16in;
-  /* Reserve a strip for the floating preview actions trigger. */
-  padding-top: 2rem;
+}
+
+.screen-preview-slot {
+  flex: 0 0 auto;
+}
+
+@media print {
+  .screen-preview-transform {
+    transform: none !important;
+  }
+  .screen-preview-slot {
+    width: 2.5in !important;
+    height: 3.5in !important;
+  }
 }
 
 .card-preview-page {

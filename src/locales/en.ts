@@ -2,6 +2,7 @@ import type { AbbreviationDefinition } from "./abbreviation-types.ts";
 
 export const en = {
   app: {
+    workspaceNavigation: "Workspace views",
     metaDescription:
       "Offline-first SRD 5.2.1 spell card generator for Dungeons & Dragons 5.5e (2024).",
     tabs: {
@@ -128,6 +129,10 @@ export const en = {
     spellsHeading: "Spells",
     resultsAria: "Spell results",
     empty: "No spells match the current search and filters.",
+    clearSearchFilters: "Clear search and filters",
+    matchCount: "{{count}} spells match",
+    matchCount_one: "{{count}} spell matches",
+    matchCount_other: "{{count}} spells match",
     addToDeckAria: "Add {{name}} to active deck",
     replaceTitle: "Replace the active deck?",
     replaceDescription:
@@ -157,10 +162,10 @@ export const en = {
     nameLabel: "Active deck name",
     namePlaceholder: "Untitled deck",
     save: "Save",
-    saveAs: "Save As…",
+    saveAs: "Save as…",
     open: "Open…",
     actions: "Deck actions",
-    newDeck: "New deck",
+    newDeck: "Start new deck",
     importExport: "Import / export deck",
     print: "Print",
     entries: "{{count}} entry",
@@ -190,7 +195,7 @@ export const en = {
       saved: "Saved as a named snapshot. The active deck is also stored locally.",
       unsaved:
         "The active deck changed after its named snapshot. Changes are still stored locally.",
-      notSaved: "Stored locally, but not saved as a named snapshot. Save As… creates one.",
+      notSaved: "Stored locally. Save as… creates a named snapshot.",
       empty: "New deck. Working changes are stored locally as you go.",
       invalid:
         "The saved association is inconsistent. Open a saved deck or use Save As… to continue.",
@@ -224,7 +229,7 @@ export const en = {
     newDeckTitle: "Start a new deck?",
     newDeckDescription:
       "The active deck has unsaved changes. Starting a new deck replaces them. Saved decks are not changed.",
-    newDeckConfirm: "New deck",
+    newDeckConfirm: "Start new deck",
     deleteTitle: "Delete saved deck?",
     deleteDescription:
       "This permanently deletes the saved snapshot. The active deck content is not changed unless it was associated with this snapshot.",
@@ -236,6 +241,9 @@ export const en = {
     replacementSpell: "Replacement spell",
     chooseSpell: "Choose a spell…",
     fitModeAria: "Fit mode for {{name}}",
+    fitHelpTitle: "About fit modes",
+    fitHelp:
+      "Best fit: largest single card down to 8pt, then multi-card. Auto shrink: down to 6pt with a truncation warning. Multi-card: continuation cards at 8pt.",
     bestFit: "Best fit",
     autoShrink: "Auto-shrink",
     multiCard: "Multi-card",
@@ -423,6 +431,9 @@ export const en = {
     close: "Close",
     title: "Spell preview and details",
     empty: "Select a spell to preview its card and details.",
+    previewScale: "Preview scale",
+    previewPhysical: "Physical (100%)",
+    previewFit: "Fit width (up to 200%)",
     undoDelete: "Undo delete",
     add: "Add",
     duplicate: "Duplicate",
@@ -654,7 +665,8 @@ export const en = {
       hint: "Applies to preview and print.",
       legend: "Legend",
       legendTitle: "Card legend",
-      legendDescription: "Meanings of the abbreviations and icons used on Compact cards.",
+      legendDescription:
+        "Abbreviations and icons used by Compact cards, and abbreviations applied by Abbreviate to editable spell text in either card design.",
       legendCastingTime: "Casting time",
       legendProperties: "Properties",
       legendComponents: "Components",

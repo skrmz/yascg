@@ -156,6 +156,81 @@ body,
   overflow: hidden;
 }
 
+/* Shared effective target size, including controls rendered through portals. */
+@media screen {
+  :root {
+    --touch-target: 0px;
+  }
+  :root[data-workspace-mode="compact"],
+  :root[data-workspace-mode="split"] {
+    --touch-target: 44px;
+  }
+  button,
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  [role="menuitem"],
+  [role="option"],
+  summary,
+  label:has(input[type="checkbox"]) {
+    min-height: var(--touch-target);
+    min-width: var(--touch-target);
+  }
+  .slider-thumb {
+    position: relative;
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+  }
+  .slider-root {
+    min-height: var(--touch-target);
+    margin-inline: calc(var(--touch-target) / 2);
+    width: calc(100% - var(--touch-target));
+  }
+  :root:not([data-workspace-mode="wide"]) .slider-thumb {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  :root:not([data-workspace-mode="wide"]) .slider-thumb::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--input);
+    border-radius: 50%;
+    background: var(--background);
+  }
+  .workspace-panes > [hidden] {
+    display: none;
+  }
+}
+
+@media screen and (pointer: coarse) {
+  :root {
+    --touch-target: 44px;
+  }
+}
+
+/* At high browser zoom, let the whole deck scroll instead of squeezing rows away. */
+@media screen and (max-height: 600px) {
+  #deck-panel {
+    overflow-y: auto;
+  }
+  #deck-controls,
+  #deck-design {
+    flex-shrink: 0;
+  }
+  #deck-entries-container {
+    flex: none;
+  }
+  #deck-entries {
+    flex: none;
+    overflow: visible;
+  }
+}
+
 @keyframes reveal {
   from {
     opacity: 0;

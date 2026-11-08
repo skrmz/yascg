@@ -131,7 +131,7 @@ export function buildActiveFilterChips(
       clear: { ritual: null },
     });
   }
-  if (filters.sources.length > 0) {
+  if (filters.sources.length === 1) {
     chips.push({
       key: "sources",
       label: summarize(filters.sources, labels, labels.sources),

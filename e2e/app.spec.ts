@@ -61,7 +61,7 @@ test("saves a named deck and re-saves it through Open", async ({ page }) => {
   await name.fill("Test Deck");
   await name.press("Enter");
 
-  await deck.getByRole("button", { name: "Save" }).click();
+  await deck.getByRole("button", { name: "Save as…" }).click();
   const saveAs = page.getByRole("dialog", { name: "Save deck as" });
   await expect(saveAs.getByLabel("Active deck name")).toHaveValue("Test Deck");
   await saveAs.getByRole("button", { name: "Save" }).click();
@@ -98,7 +98,7 @@ test("New deck keeps saved snapshots and Clear entries preserves association", a
   await name.fill("Kept Deck");
   await name.press("Enter");
 
-  await deck.getByRole("button", { name: "Save" }).click();
+  await deck.getByRole("button", { name: "Save as…" }).click();
   await page
     .getByRole("dialog", { name: "Save deck as" })
     .getByRole("button", { name: "Save" })
@@ -128,10 +128,10 @@ test("New deck keeps saved snapshots and Clear entries preserves association", a
     .click();
 
   await deck.getByRole("button", { name: "Deck actions" }).click();
-  await page.getByRole("menuitem", { name: "New deck" }).click();
+  await page.getByRole("menuitem", { name: "Start new deck" }).click();
   const confirm = page.getByRole("dialog", { name: "Start a new deck?" });
   if (await confirm.isVisible()) {
-    await confirm.getByRole("button", { name: "New deck" }).click();
+    await confirm.getByRole("button", { name: "Start new deck" }).click();
   }
 
   await expect(deck.getByText("New deck", { exact: true })).toBeVisible();

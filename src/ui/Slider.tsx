@@ -14,7 +14,10 @@ export function Slider({ className, thumbLabel, thumbAriaLabel, ...props }: Slid
   const values = props.value ?? props.defaultValue ?? [];
   return (
     <SliderPrimitive.Root
-      className={cn("relative flex w-full touch-none select-none items-center", className)}
+      className={cn(
+        "slider-root relative flex w-full touch-none select-none items-center",
+        className,
+      )}
       {...props}
     >
       <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-secondary">
@@ -25,7 +28,7 @@ export function Slider({ className, thumbLabel, thumbAriaLabel, ...props }: Slid
           <SliderPrimitive.Thumb
             key={index}
             aria-label={thumbAriaLabel?.(index)}
-            className="block h-4 w-4 rounded-full border border-input bg-background shadow transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50"
+            className="slider-thumb block h-4 w-4 rounded-full border border-input bg-background shadow transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50"
           />
         );
         if (!thumbLabel) return thumb;

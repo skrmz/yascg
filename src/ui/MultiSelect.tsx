@@ -101,7 +101,7 @@ export function MultiSelect<T extends string>({
         <Button
           type="button"
           variant="outline"
-          aria-label={ariaLabel ?? label ?? accessibleLabel}
+          aria-label={`${ariaLabel ?? label ?? accessibleLabel}: ${summary}`}
           className={cn("w-full justify-between gap-2 font-normal", className)}
         >
           <span className="flex min-w-0 items-baseline gap-1.5 text-sm">

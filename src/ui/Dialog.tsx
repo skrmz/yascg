@@ -89,7 +89,7 @@ export function DialogContent({
         {footer ? (
           <div
             className={cn(
-              "flex justify-end gap-2",
+              "flex flex-wrap items-center justify-end gap-2",
               isSheet ? "shrink-0 border-t border-border px-4 py-3" : "mt-5",
             )}
           >

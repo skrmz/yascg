@@ -2,6 +2,7 @@ import type { Translations } from "./en.ts";
 
 export const de = {
   app: {
+    workspaceNavigation: "Arbeitsbereichansichten",
     metaDescription: "Offline-fähiger Zauberkarten-Generator für Dungeons & Dragons 5.5e (2024).",
     tabs: {
       library: "Bibliothek",
@@ -129,6 +130,10 @@ export const de = {
     spellsHeading: "Zauber",
     resultsAria: "Ergebnisse",
     empty: "Keine Zauber entsprechen der aktuellen Suche und den Filtern.",
+    clearSearchFilters: "Suche und Filter zurücksetzen",
+    matchCount: "{{count}} passende Zauber",
+    matchCount_one: "{{count}} passender Zauber",
+    matchCount_other: "{{count}} passende Zauber",
     addToDeckAria: "{{name}} zum aktiven Deck hinzufügen",
     replaceTitle: "Das aktive Deck ersetzen?",
     replaceDescription:
@@ -161,7 +166,7 @@ export const de = {
     saveAs: "Speichern unter…",
     open: "Öffnen…",
     actions: "Deck-Aktionen",
-    newDeck: "Neues Deck",
+    newDeck: "Neues Deck beginnen",
     importExport: "Deck importieren/exportieren",
     print: "Drucken",
     entries: "{{count}} Eintrag",
@@ -226,7 +231,7 @@ export const de = {
     newDeckTitle: "Ein neues Deck beginnen?",
     newDeckDescription:
       "Das aktive Deck enthält nicht gespeicherte Änderungen. Ein neues Deck ersetzt sie. Gespeicherte Decks werden nicht geändert.",
-    newDeckConfirm: "Neues Deck",
+    newDeckConfirm: "Neues Deck beginnen",
     deleteTitle: "Gespeichertes Deck löschen?",
     deleteDescription:
       "Dadurch wird der gespeicherte Stand dauerhaft gelöscht. Der Inhalt des aktiven Decks wird nicht geändert, es sei denn, er war mit diesem Stand verknüpft.",
@@ -238,6 +243,9 @@ export const de = {
     replacementSpell: "Ersatzzauber",
     chooseSpell: "Zauber auswählen…",
     fitModeAria: "Anpassungsmodus für {{name}}",
+    fitHelpTitle: "Anpassungsmodi erklärt",
+    fitHelp:
+      "Beste Anpassung: größte Einzelkarte bis 8pt, danach mehrere Karten. Automatisch verkleinern: bis 6pt mit Kürzungswarnung. Mehrere Karten: Folgekarten mit 8pt.",
     bestFit: "Beste Anpassung",
     autoShrink: "Auto-Anpassung",
     multiCard: "Mehrere Karten",
@@ -430,6 +438,9 @@ export const de = {
     close: "Schließen",
     title: "Zaubervorschau und Details",
     empty: "Wähle einen Zauber aus, um seine Karte und Details anzuzeigen.",
+    previewScale: "Vorschaumaßstab",
+    previewPhysical: "Originalgröße (100%)",
+    previewFit: "Breite ausfüllen (bis 200%)",
     undoDelete: "Löschen rückgängig machen",
     add: "Hinzufügen",
     duplicate: "Duplizieren",
@@ -667,7 +678,8 @@ export const de = {
       hint: "Gilt für Vorschau und Druck.",
       legend: "Legende",
       legendTitle: "Kartenlegende",
-      legendDescription: "Bedeutungen der Abkürzungen und Symbole auf Kompaktkarten.",
+      legendDescription:
+        "Abkürzungen und Symbole auf Kompaktkarten sowie Abkürzungen, die „Abkürzen“ auf bearbeitbare Zaubertexte in beiden Kartendesigns anwendet.",
       legendCastingTime: "Zeitaufwand",
       legendProperties: "Eigenschaften",
       legendComponents: "Komponenten",

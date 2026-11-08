@@ -18,10 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/ui/cn.ts";
 import { LevelRangeSlider } from "./LevelRangeSlider.tsx";
 
-function toggle<T>(values: readonly T[], value: T): T[] {
-  return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
-}
-
 function Chip({
   active,
   onClick,
@@ -231,47 +227,46 @@ export function LibraryFilters({
         }}
       />
 
-      {variant === "inline" ? (
-        <Collapsible defaultOpen={false} className="space-y-2">
-          <CollapsibleTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="group w-full justify-between"
-            >
-              <span>{t("library.advancedFilters")}</span>
-              <span className="flex items-center gap-2">
-                {advancedCount > 0 ? (
-                  <Badge>{t("library.activeFilters", { count: advancedCount })}</Badge>
-                ) : null}
-                <ChevronDown
-                  size={15}
-                  aria-hidden="true"
-                  className="transition-transform group-data-[state=open]:rotate-180"
-                />
-              </span>
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2">{advancedFields}</CollapsibleContent>
-        </Collapsible>
-      ) : (
-        <div className="space-y-2">{advancedFields}</div>
-      )}
+      <div
+        role="group"
+        aria-label={t("library.source")}
+        className="flex flex-wrap items-center gap-1"
+      >
+        <span className="mr-1 text-xs text-muted-foreground">{t("library.source")}</span>
+        <Chip active={filters.sources.length !== 1} onClick={() => onPatch({ sources: [] })}>
+          {t("common.all")}
+        </Chip>
+        {(["SRD-5.2.1", "Custom"] as SpellSource[]).map((source) => (
+          <Chip
+            key={source}
+            active={filters.sources.length === 1 && filters.sources[0] === source}
+            onClick={() => onPatch({ sources: [source] })}
+          >
+            {source === "Custom" ? t("source.custom") : t("source.srdShort")}
+          </Chip>
+        ))}
+      </div>
+
+      <Collapsible defaultOpen={advancedCount > 0} className="space-y-2">
+        <CollapsibleTrigger asChild>
+          <Button type="button" variant="ghost" size="sm" className="group w-full justify-between">
+            <span>{t("library.advancedFilters")}</span>
+            <span className="flex items-center gap-2">
+              {advancedCount > 0 ? (
+                <Badge>{t("library.activeFilters", { count: advancedCount })}</Badge>
+              ) : null}
+              <ChevronDown
+                size={15}
+                aria-hidden="true"
+                className="transition-transform group-data-[state=open]:rotate-180"
+              />
+            </span>
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-2">{advancedFields}</CollapsibleContent>
+      </Collapsible>
 
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
-        <div className="flex flex-wrap items-center gap-1">
-          <span className="mr-1 text-xs text-muted-foreground">{t("library.source")}</span>
-          {(["SRD-5.2.1", "Custom"] as SpellSource[]).map((source) => (
-            <Chip
-              key={source}
-              active={filters.sources.includes(source)}
-              onClick={() => onPatch({ sources: toggle(filters.sources, source) })}
-            >
-              {source === "Custom" ? t("source.custom") : t("source.srdShort")}
-            </Chip>
-          ))}
-        </div>
         {variant === "inline" ? (
           <Button
             variant="outline"

@@ -15,6 +15,7 @@ import { SourceBadge } from "@/ui/Badge.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { CustomSpellForm } from "./CustomSpellForm.tsx";
 import { SpellDetailsDialog } from "./SpellDetailsDialog.tsx";
+import { PreviewFrame } from "./PreviewFrame.tsx";
 
 interface CopyDraftFlow {
   draft: Spell;
@@ -325,9 +326,9 @@ export function DetailsPane() {
           ) : null}
         </div>
 
-        <div className="card-preview-frame">
-          {fit.result ? (
-            fit.result.pages.map((pageBlocks, index) => (
+        {fit.result ? (
+          <PreviewFrame>
+            {fit.result.pages.map((pageBlocks, index) => (
               <CardView
                 key={`${spell.id}-${index}`}
                 spell={spell}
@@ -340,13 +341,13 @@ export function DetailsPane() {
                 presentation={fit.presentation ?? undefined}
                 className="card-preview-page animate-reveal-subtle"
               />
-            ))
-          ) : (
-            <div className="rounded border border-dashed border-input p-4 text-xs text-muted-foreground">
-              {t("details.measuring")}
-            </div>
-          )}
-        </div>
+            ))}
+          </PreviewFrame>
+        ) : (
+          <div className="rounded border border-dashed border-input p-4 text-xs text-muted-foreground">
+            {t("details.measuring")}
+          </div>
+        )}
       </div>
 
       <SpellDetailsDialog

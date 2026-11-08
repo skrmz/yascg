@@ -110,7 +110,7 @@ describe("DeckPane status and save", () => {
     const user = userEvent.setup();
     render(<DeckPane />);
 
-    const save = screen.getByRole("button", { name: "Save" });
+    const save = screen.getByRole("button", { name: "Save as…" });
     expect(save).toHaveProperty("disabled", true);
     expect(screen.getByText("New deck")).not.toBeNull();
 
@@ -142,7 +142,7 @@ describe("DeckPane status and save", () => {
     expect(toastMock.success).toHaveBeenCalledWith("Deck saved.");
   });
 
-  it("offers Save As when Save needs a new snapshot", async () => {
+  it("offers a visible Save as action for an unassociated deck", async () => {
     holder.activeDeck = { ...emptyDeck, name: "Working", revision: 1 };
     holder.dirty = true;
     holder.deckStatus = "not-saved";
@@ -150,7 +150,7 @@ describe("DeckPane status and save", () => {
     const user = userEvent.setup();
     render(<DeckPane />);
 
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save as…" }));
 
     expect(screen.getByRole("dialog", { name: "Save deck as" })).not.toBeNull();
   });
@@ -244,8 +244,8 @@ describe("DeckPane actions", () => {
 
     await user.click(screen.getByRole("button", { name: "Deck actions" }));
 
-    expect(screen.getByRole("menuitem", { name: "Save As…" })).not.toBeNull();
-    expect(screen.getByRole("menuitem", { name: "New deck" })).not.toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Save as…" })).not.toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Start new deck" })).not.toBeNull();
     expect(screen.getByRole("menuitem", { name: "Import / export deck" })).not.toBeNull();
     expect(screen.getByRole("menuitem", { name: "Clear entries" })).not.toBeNull();
   });
@@ -258,10 +258,10 @@ describe("DeckPane actions", () => {
     render(<DeckPane />);
 
     await user.click(screen.getByRole("button", { name: "Deck actions" }));
-    await user.click(screen.getByRole("menuitem", { name: "New deck" }));
+    await user.click(screen.getByRole("menuitem", { name: "Start new deck" }));
 
     const dialog = screen.getByRole("dialog", { name: "Start a new deck?" });
-    await user.click(within(dialog).getByRole("button", { name: "New deck" }));
+    await user.click(within(dialog).getByRole("button", { name: "Start new deck" }));
 
     expect(holder.newActiveDeck).toHaveBeenCalledTimes(1);
   });
@@ -271,7 +271,7 @@ describe("DeckPane actions", () => {
     render(<DeckPane />);
 
     await user.click(screen.getByRole("button", { name: "Deck actions" }));
-    await user.click(screen.getByRole("menuitem", { name: "Save As…" }));
+    await user.click(screen.getByRole("menuitem", { name: "Save as…" }));
 
     const dialog = screen.getByRole("dialog", { name: "Save deck as" });
     await user.type(within(dialog).getByLabelText("Active deck name"), "Fresh deck");
@@ -372,6 +372,7 @@ describe("DeckPane fit mode selector", () => {
     render(<DeckPane />);
 
     const select = screen.getByLabelText("Fit mode for A") as HTMLSelectElement;
+    expect(select.getAttribute("aria-description")).toContain("6pt");
     expect(select.value).toBe("auto");
     expect(within(select).getByRole("option", { name: "Best fit" })).not.toBeNull();
     expect(within(select).getByRole("option", { name: "Auto-shrink" })).not.toBeNull();
@@ -410,12 +411,17 @@ describe("DeckPane card design selector", () => {
     expect(holder.setCardDesign).toHaveBeenCalledWith("compact");
   });
 
-  it("opens the localized legend dialog", async () => {
-    const user = userEvent.setup();
-    render(<DeckPane />);
-    await user.click(screen.getByRole("button", { name: "Legend" }));
-    const dialog = screen.getByRole("dialog", { name: "Card legend" });
-    expect(within(dialog).getByText("TRN")).not.toBeNull();
-    expect(within(dialog).getByText("WIZ")).not.toBeNull();
-  });
+  it.each(["classic", "compact"] as const)(
+    "opens the localized legend with %s cards",
+    async (design) => {
+      holder.cardDesign = design;
+      const user = userEvent.setup();
+      render(<DeckPane />);
+      await user.click(screen.getByRole("button", { name: "Legend" }));
+      const dialog = screen.getByRole("dialog", { name: "Card legend" });
+      expect(within(dialog).getByText(/editable spell text in either card design/)).not.toBeNull();
+      expect(within(dialog).getByText("TRN")).not.toBeNull();
+      expect(within(dialog).getByText("WIZ")).not.toBeNull();
+    },
+  );
 });

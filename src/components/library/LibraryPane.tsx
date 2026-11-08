@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   MoreHorizontal,
@@ -56,7 +56,7 @@ import { CustomSpellForm } from "@/components/details/CustomSpellForm.tsx";
 import { CustomSpellImportExportDialog } from "@/components/import-export/CustomSpellImportExportDialog.tsx";
 import { LibraryFilters } from "./LibraryFilters.tsx";
 import { buildActiveFilterChips, type FilterChipLabels } from "./filter-summary.ts";
-import { useIsDesktop } from "./use-is-desktop.ts";
+import { ShowDetailsContext, useWorkspaceMode } from "../workspace-layout.ts";
 
 export function LibraryPane({ active = true }: { active?: boolean }) {
   const {
@@ -70,7 +70,8 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
     selectedSpellId,
   } = useApp();
   const { t } = useTranslation();
-  const isDesktop = useIsDesktop();
+  const isDesktop = useWorkspaceMode() === "wide";
+  const showDetails = useContext(ShowDetailsContext);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<LibraryFilterState>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -79,6 +80,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
   const [customIoOpen, setCustomIoOpen] = useState(false);
 
   const listRef = useRef<HTMLUListElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const listScrollTop = useRef(0);
   const activeRef = useRef(active);
 
@@ -192,7 +194,10 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
 
   const onAdd = async (spell: Spell) => {
     const result = await addSpellToDeck(spell);
-    if (result === "added") selectSpell(spell.id);
+    if (result === "added") {
+      selectSpell(spell.id);
+      showDetails();
+    }
     if (result === "duplicate") {
       toast.info(t("library.toast.alreadyTitle"), {
         description: t("library.toast.alreadyDescription", { name: spell.name }),
@@ -227,7 +232,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
       rangeOptions={rangeOptions}
       durationOptions={durationOptions}
       subclassOptions={subclassOptions}
-      searchInputClassName="text-base min-[1200px]:text-sm"
+      searchInputClassName={isDesktop ? "text-sm" : "text-base"}
     />
   );
 
@@ -237,7 +242,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
       className="flex h-full min-h-0 flex-col"
       aria-label={t("library.title")}
     >
-      <div className="shrink-0 space-y-2 p-2 min-[1200px]:space-y-3 min-[1200px]:p-3">
+      <div className={cn("shrink-0", isDesktop ? "space-y-3 p-3" : "space-y-2 p-2")}>
         <div className="flex items-center gap-2">
           <div className="relative min-w-0 flex-1">
             <Search
@@ -246,13 +251,14 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
               className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
             <Input
+              ref={searchRef}
               id="library-search"
               name="library-search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t("library.searchPlaceholder")}
               aria-label={t("library.searchLabel")}
-              className="pl-7 text-base min-[1200px]:text-sm"
+              className={cn("pl-7", isDesktop ? "text-sm" : "text-base")}
             />
           </div>
           {!isDesktop ? (
@@ -392,10 +398,13 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
         </div>
       )}
 
-      <div className="mt-2 flex min-h-0 flex-1 flex-col max-[1199px]:mt-1">
+      <div className="mt-1 flex min-h-0 flex-1 flex-col">
         <h2
           id="spell-results-heading"
-          className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground max-[1199px]:sr-only"
+          className={cn(
+            "px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+            !isDesktop && "sr-only",
+          )}
         >
           {t("library.spellsHeading")}
         </h2>
@@ -408,6 +417,16 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
           {results.length === 0 ? (
             <li className="px-2 py-6 text-center text-sm text-muted-foreground">
               {t("library.empty")}
+              <Button
+                variant="ghost"
+                className="mt-2"
+                onClick={() => {
+                  resetAll();
+                  searchRef.current?.focus();
+                }}
+              >
+                {t("library.clearSearchFilters")}
+              </Button>
             </li>
           ) : null}
           {results.map((spell) => {
@@ -416,19 +435,26 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
               <li key={spell.id}>
                 <div
                   className={cn(
-                    "flex flex-nowrap items-center justify-between gap-2 rounded px-2 py-1.5 max-[1199px]:gap-1.5 max-[1199px]:py-1 min-[1200px]:flex-wrap",
-                    spell.id === selectedSpellId ? "bg-accent" : "hover:bg-accent/50",
+                    "flex flex-nowrap items-center justify-between gap-2 rounded px-2 py-1.5",
+                    "border-l-2",
+                    spell.id === selectedSpellId
+                      ? "border-primary bg-accent"
+                      : "border-transparent hover:bg-accent/50",
                   )}
                 >
                   <button
                     type="button"
+                    aria-current={spell.id === selectedSpellId ? "true" : undefined}
                     className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                    onClick={() => selectSpell(spell.id)}
+                    onClick={() => {
+                      selectSpell(spell.id);
+                      showDetails();
+                    }}
                   >
                     <span className="min-w-0 flex-1">
                       <span
                         lang={contentLanguage}
-                        className="block truncate text-sm font-medium text-foreground"
+                        className="line-clamp-2 break-words text-sm font-medium text-foreground"
                       >
                         {spell.name}
                       </span>
@@ -442,7 +468,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="shrink-0 max-[1199px]:h-11 max-[1199px]:w-11"
+                    className="shrink-0"
                     aria-label={t("library.addToDeckAria", { name: spell.name })}
                     onClick={() => void onAdd(spell)}
                   >
@@ -463,6 +489,13 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
             description={t("library.filterSheetDescription")}
             footer={
               <>
+                <span
+                  className="w-full text-xs text-muted-foreground"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {t("library.matchCount", { count: results.length })}
+                </span>
                 <Button
                   variant="outline"
                   className="mr-auto"

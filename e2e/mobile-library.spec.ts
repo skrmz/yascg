@@ -59,15 +59,18 @@ test("mobile filter sheet applies, chips, and resets filters", async ({ page }) 
   expect(sheetBox!.y + sheetBox!.height).toBeLessThanOrEqual(845);
 
   await expect(sheet.getByRole("slider", { name: "Minimum level" })).toBeVisible();
-  await expect(sheet.getByRole("button", { name: "Class", exact: true })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: /^Class:/, exact: true })).toBeVisible();
   await expect(sheet.getByRole("button", { name: "SRD", exact: true })).toBeVisible();
   const concentration = sheet.getByRole("combobox", { name: "Concentration" });
+  await expect(concentration).toBeHidden();
+  await expect(sheet.getByRole("status")).toContainText("spells match");
+  await sheet.getByRole("button", { name: /Advanced Filters/ }).click();
   await concentration.scrollIntoViewIfNeeded();
   await expect(concentration).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Reset Filters", exact: true })).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Done", exact: true })).toBeVisible();
 
-  await sheet.getByRole("button", { name: "Class", exact: true }).click();
+  await sheet.getByRole("button", { name: /^Class:/, exact: true }).click();
   await page.getByRole("checkbox", { name: "Wizard" }).check();
   await page.keyboard.press("Escape");
   await sheet.getByRole("button", { name: "Done", exact: true }).click();
@@ -119,7 +122,7 @@ test("mobile list scroll, query, and filters survive a tab round-trip", async ({
   await page.getByLabel("Search spells").fill("a");
   await page.getByRole("button", { name: "Filters", exact: true }).click();
   const sheet = page.getByRole("dialog", { name: "Filters" });
-  await sheet.getByRole("button", { name: "Class", exact: true }).click();
+  await sheet.getByRole("button", { name: /^Class:/, exact: true }).click();
   await page.getByRole("checkbox", { name: "Wizard" }).check();
   await page.keyboard.press("Escape");
   await sheet.getByRole("button", { name: "Done", exact: true }).click();

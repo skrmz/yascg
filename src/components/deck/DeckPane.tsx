@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type DragEvent } from "react";
+import { ShowDetailsContext } from "../workspace-layout.ts";
 import { useTranslation } from "react-i18next";
 import {
   ArrowDown,
@@ -42,6 +43,7 @@ interface FlushResult {
 }
 
 export function DeckPane() {
+  const showDetails = useContext(ShowDetailsContext);
   const {
     activeDeck,
     dirty,
@@ -385,12 +387,14 @@ export function DeckPane() {
           >
             <Button
               size="sm"
-              onClick={() => void onSave()}
+              onClick={() =>
+                void (activeDeck?.savedDeckId === undefined ? requestSaveAs() : onSave())
+              }
               disabled={saveDisabled}
               title={t("deck.persistenceHint")}
             >
               <Save size={13} aria-hidden="true" />
-              {t("deck.save")}
+              {t(activeDeck?.savedDeckId === undefined ? "deck.saveAs" : "deck.save")}
             </Button>
           </div>
           <Button
@@ -486,6 +490,14 @@ export function DeckPane() {
         >
           {t("deck.heading")}
         </h2>
+        <details className="px-2 text-xs text-muted-foreground">
+          <summary className="cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-ring">
+            {t("deck.fitHelpTitle")}
+          </summary>
+          <p id="deck-fit-help" className="py-2">
+            {t("deck.fitHelp")}
+          </p>
+        </details>
         <ol
           id="deck-entries"
           className="min-h-0 flex-1 overflow-auto p-2"
@@ -516,7 +528,10 @@ export function DeckPane() {
                   setRepairSpellId("");
                 }}
                 onSelect={() => {
-                  if (resolution.status === "resolved") selectSpell(resolution.spell.id);
+                  if (resolution.status === "resolved") {
+                    selectSpell(resolution.spell.id);
+                    showDetails();
+                  }
                 }}
                 dragProps={{
                   draggable: true,
@@ -753,6 +768,7 @@ function DeckRow({
         id={`fit-mode-${entry.entryId}`}
         name={`fit-mode-${entry.entryId}`}
         aria-label={t("deck.fitModeAria", { name })}
+        aria-description={t("deck.fitHelp")}
         className="h-7 w-32 text-xs"
         value={entry.fitMode}
         onChange={(event) => onFitMode(event.target.value as CardFitMode)}

@@ -11,6 +11,11 @@ import { Button } from "@/ui/Button.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs.tsx";
 import { cn } from "@/ui/cn.ts";
+import {
+  ShowDetailsContext,
+  WorkspaceLayoutContext,
+  useWorkspaceLayout,
+} from "./workspace-layout.ts";
 
 type PaneKey = "library" | "details" | "deck";
 
@@ -64,11 +69,35 @@ export function AppShell() {
   }, []);
 
   const [tab, setTab] = useState<PaneKey>("library");
+  const [rightTab, setRightTab] = useState<"details" | "deck">("details");
+  const { ref: workspaceRef, mode } = useWorkspaceLayout();
+  useEffect(() => {
+    document.documentElement.dataset.workspaceMode = mode;
+    return () => {
+      delete document.documentElement.dataset.workspaceMode;
+    };
+  }, [mode]);
+  const changeTab = (value: string) => {
+    setTab(value as PaneKey);
+    if (value === "details" || value === "deck") setRightTab(value);
+  };
+  const activeTab = mode === "split" ? rightTab : tab;
+  const paneVisible = (pane: PaneKey) =>
+    mode === "wide" || (mode === "split" ? pane === "library" || pane === rightTab : pane === tab);
+  useEffect(() => {
+    const focused = document.activeElement as HTMLElement | null;
+    if (focused?.closest("[data-workspace-pane][hidden]")) {
+      workspaceRef.current
+        ?.querySelector<HTMLElement>(`[data-workspace-pane="${activeTab}"]:not([hidden])`)
+        ?.focus();
+    }
+  }, [mode, activeTab, workspaceRef]);
   const previousSelectedSpell = useRef(selectedSpellId);
 
   useEffect(() => {
     if (selectedSpellId !== null && selectedSpellId !== previousSelectedSpell.current) {
       setTab("details");
+      setRightTab("details");
     }
     previousSelectedSpell.current = selectedSpellId;
   }, [selectedSpellId]);
@@ -78,6 +107,7 @@ export function AppShell() {
   return (
     <div
       className="app-shell flex flex-col overflow-hidden bg-background text-foreground"
+      data-workspace-mode={mode}
       style={{ height: "calc(100dvh - var(--app-keyboard-inset, 0px))" }}
     >
       <Header />
@@ -105,60 +135,116 @@ export function AppShell() {
           </div>
         </div>
       ) : null}
-      <main className="min-h-0 flex-1 overflow-hidden">
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(value as PaneKey)}
-          className="flex h-full min-h-0 flex-col min-[1200px]:grid min-[1200px]:grid-cols-[2fr_6fr_2fr]"
-        >
-          <TabsList className="mx-2 mt-2 self-start min-[1200px]:hidden">
-            <TabsTrigger value="library">
-              <BookOpen size={14} aria-hidden="true" />
-              {t("app.tabs.library")}
-            </TabsTrigger>
-            <TabsTrigger value="details">
-              <Eye size={14} aria-hidden="true" />
-              {t("app.tabs.details")}
-            </TabsTrigger>
-            <TabsTrigger value="deck">
-              <Layers size={14} aria-hidden="true" />
-              {t("app.tabs.deck")}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent
-            value="library"
-            forceMount
-            tabIndex={tab === "library" ? 0 : -1}
-            className={cn(
-              PANE_CONTENT,
-              "min-[1200px]:border-r min-[1200px]:border-border",
-              tab !== "library" && "max-[1199px]:hidden",
-            )}
+      <ShowDetailsContext.Provider value={() => changeTab("details")}>
+        <WorkspaceLayoutContext.Provider value={mode}>
+          <main
+            ref={workspaceRef}
+            data-workspace-mode={mode}
+            className="min-h-0 flex-1 overflow-hidden"
           >
-            <LibraryPane active={tab === "library"} />
-          </TabsContent>
-          <TabsContent
-            value="details"
-            forceMount
-            tabIndex={tab === "details" ? 0 : -1}
-            className={cn(PANE_CONTENT, tab !== "details" && "max-[1199px]:hidden")}
-          >
-            <DetailsPane />
-          </TabsContent>
-          <TabsContent
-            value="deck"
-            forceMount
-            tabIndex={tab === "deck" ? 0 : -1}
-            className={cn(
-              PANE_CONTENT,
-              "min-[1200px]:border-l min-[1200px]:border-border",
-              tab !== "deck" && "max-[1199px]:hidden",
-            )}
-          >
-            <DeckPane />
-          </TabsContent>
-        </Tabs>
-      </main>
+            <Tabs
+              value={activeTab}
+              onValueChange={changeTab}
+              className={cn(
+                "workspace-panes h-full min-h-0",
+                mode === "compact" ? "flex flex-col" : "grid",
+              )}
+              style={
+                mode === "wide"
+                  ? {
+                      gridTemplateColumns:
+                        "clamp(320px,24%,400px) minmax(560px,1fr) clamp(300px,22%,360px)",
+                      gridTemplateRows: "minmax(0,1fr)",
+                    }
+                  : mode === "split"
+                    ? {
+                        gridTemplateColumns: "clamp(320px,36%,420px) minmax(400px,1fr)",
+                        gridTemplateRows: "auto minmax(0,1fr)",
+                      }
+                    : undefined
+              }
+            >
+              {mode !== "wide" ? (
+                <TabsList
+                  aria-label={t("app.workspaceNavigation")}
+                  className={cn(
+                    "mx-2 mt-2 self-start justify-self-start",
+                    mode === "split" && "col-start-2 row-start-1",
+                  )}
+                >
+                  {mode === "compact" ? (
+                    <TabsTrigger id="workspace-tab-library" value="library">
+                      <BookOpen size={14} aria-hidden="true" />
+                      {t("app.tabs.library")}
+                    </TabsTrigger>
+                  ) : null}
+                  <TabsTrigger id="workspace-tab-details" value="details">
+                    <Eye size={14} aria-hidden="true" />
+                    {t("app.tabs.details")}
+                  </TabsTrigger>
+                  <TabsTrigger id="workspace-tab-deck" value="deck">
+                    <Layers size={14} aria-hidden="true" />
+                    {t("app.tabs.deck")}
+                  </TabsTrigger>
+                </TabsList>
+              ) : null}
+              <TabsContent
+                value="library"
+                forceMount
+                data-workspace-pane="library"
+                hidden={!paneVisible("library")}
+                role={mode === "compact" ? "tabpanel" : "region"}
+                aria-label={t("app.tabs.library")}
+                aria-labelledby={mode === "compact" ? "workspace-tab-library" : undefined}
+                tabIndex={0}
+                className={cn(
+                  PANE_CONTENT,
+                  mode !== "compact" && "col-start-1 row-start-1 border-r border-border",
+                  mode === "split" && "row-span-2",
+                  !paneVisible("library") && "hidden",
+                )}
+              >
+                <LibraryPane active={paneVisible("library")} />
+              </TabsContent>
+              <TabsContent
+                value="details"
+                forceMount
+                data-workspace-pane="details"
+                hidden={!paneVisible("details")}
+                role={mode === "wide" ? "region" : "tabpanel"}
+                aria-label={t("app.tabs.details")}
+                aria-labelledby={mode === "wide" ? undefined : "workspace-tab-details"}
+                tabIndex={0}
+                className={cn(
+                  PANE_CONTENT,
+                  mode === "split" && "col-start-2 row-start-2",
+                  !paneVisible("details") && "hidden",
+                )}
+              >
+                <DetailsPane />
+              </TabsContent>
+              <TabsContent
+                value="deck"
+                forceMount
+                data-workspace-pane="deck"
+                hidden={!paneVisible("deck")}
+                role={mode === "wide" ? "region" : "tabpanel"}
+                aria-label={t("app.tabs.deck")}
+                aria-labelledby={mode === "wide" ? undefined : "workspace-tab-deck"}
+                tabIndex={0}
+                className={cn(
+                  PANE_CONTENT,
+                  mode === "wide" && "border-l border-border",
+                  mode === "split" && "col-start-2 row-start-2",
+                  !paneVisible("deck") && "hidden",
+                )}
+              >
+                <DeckPane />
+              </TabsContent>
+            </Tabs>
+          </main>
+        </WorkspaceLayoutContext.Provider>
+      </ShowDetailsContext.Provider>
 
       <Dialog
         open={pendingLanguageSwitch !== null}

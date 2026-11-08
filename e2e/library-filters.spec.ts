@@ -56,7 +56,7 @@ test("range and components filters narrow the results", async ({ page }) => {
   await expect(results.getByText("Shield", { exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Reset filters" }).click();
-  await page.getByRole("button", { name: "Components" }).click();
+  await page.getByRole("button", { name: /^Components:/ }).click();
   await page.getByRole("checkbox", { name: "Material" }).check();
   await page.keyboard.press("Escape");
 
@@ -81,12 +81,12 @@ test("school multi-select ORs the selected schools", async ({ page }) => {
   const results = page.getByRole("list", { name: "Spell results" });
 
   await page.getByRole("button", { name: /Advanced Filters/ }).click();
-  await page.getByRole("button", { name: "School" }).click();
+  await page.getByRole("button", { name: /^School:/ }).click();
   await page.getByRole("checkbox", { name: "Evocation" }).check();
   await page.getByRole("checkbox", { name: "Abjuration" }).check();
   await page.keyboard.press("Escape");
 
-  await expect(page.getByRole("button", { name: "School" })).toContainText("2 selected");
+  await expect(page.getByRole("button", { name: /^School:/ })).toContainText("2 selected");
   await expect(results).toContainText("Evocation");
   await expect(results).toContainText("Abjuration");
 });
@@ -96,7 +96,7 @@ test("subclass multi-select groups by class and ORs the selected subclasses", as
   const results = page.getByRole("list", { name: "Spell results" });
 
   await page.getByRole("button", { name: /Advanced Filters/ }).click();
-  await page.getByRole("button", { name: "Subclass" }).click();
+  await page.getByRole("button", { name: /^Subclass:/ }).click();
 
   await expect(page.getByRole("group", { name: "Cleric" })).toContainText("Arcana");
   await expect(page.getByRole("group", { name: "Warlock" })).toContainText("Hexblade");
@@ -105,7 +105,7 @@ test("subclass multi-select groups by class and ORs the selected subclasses", as
   await page.getByRole("checkbox", { name: "Hexblade" }).check();
   await page.keyboard.press("Escape");
 
-  await expect(page.getByRole("button", { name: "Subclass" })).toContainText("2 selected");
+  await expect(page.getByRole("button", { name: /^Subclass:/ })).toContainText("2 selected");
   await expect(results.getByText("Magic Missile", { exact: true })).toBeVisible();
   await expect(results.getByText("Shield", { exact: true })).toBeVisible();
   await expect(results.getByText("Fireball", { exact: true })).toHaveCount(0);

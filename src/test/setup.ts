@@ -11,24 +11,13 @@ if (!globalThis.crypto?.randomUUID) {
   });
 }
 
-let desktopViewport = true;
-
-/** Tests default to the desktop layout; opt into mobile before rendering. */
-export function setDesktopViewport(isDesktop: boolean) {
-  desktopViewport = isDesktop;
-}
-
-function matchesQuery(query: string): boolean {
-  return /\(\s*min-width:/.test(query) ? desktopViewport : false;
-}
-
 Object.defineProperty(globalThis, "matchMedia", {
   configurable: true,
   writable: true,
   value: (query: string): MediaQueryList =>
     ({
       get matches() {
-        return matchesQuery(query);
+        return /\(\s*min-width:/.test(query);
       },
       media: query,
       onchange: null,
@@ -53,19 +42,40 @@ if (typeof Element !== "undefined") {
   }
 }
 
-if (!globalThis.ResizeObserver) {
-  class ResizeObserverStub {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  }
-  Object.defineProperty(globalThis, "ResizeObserver", {
-    configurable: true,
-    value: ResizeObserverStub,
-  });
+let workspaceWidth = 1280;
+const workspaceObservers = new Set<() => void>();
+/** Notify the observed workspace without changing the window's viewport. Wrap in act(). */
+export function setWorkspaceWidth(width: number) {
+  workspaceWidth = width;
+  workspaceObservers.forEach((notify) => notify());
 }
+class ResizeObserverStub {
+  private notify: (() => void) | undefined;
+  constructor(private callback: ResizeObserverCallback) {}
+  observe(target: Element) {
+    if (target.tagName !== "MAIN") return;
+    this.notify = () =>
+      this.callback(
+        [{ target, contentRect: { width: workspaceWidth } } as ResizeObserverEntry],
+        this as unknown as ResizeObserver,
+      );
+    workspaceObservers.add(this.notify);
+    this.notify();
+  }
+  unobserve() {
+    this.disconnect();
+  }
+  disconnect() {
+    if (this.notify) workspaceObservers.delete(this.notify);
+  }
+}
+Object.defineProperty(globalThis, "ResizeObserver", {
+  configurable: true,
+  writable: true,
+  value: ResizeObserverStub,
+});
 
 afterEach(() => {
-  desktopViewport = true;
+  workspaceWidth = 1280;
   cleanup();
 });

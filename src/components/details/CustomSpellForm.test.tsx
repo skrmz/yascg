@@ -31,7 +31,7 @@ function renderForm(spell?: Spell) {
 }
 
 async function openClasses(user: ReturnType<typeof userEvent.setup>, name = "Classes") {
-  await user.click(screen.getByRole("button", { name }));
+  await user.click(screen.getByRole("button", { name: new RegExp(`^${name}:`) }));
 }
 
 beforeEach(async () => {
@@ -262,7 +262,7 @@ describe("CustomSpellForm SRD override mode", () => {
     expect((screen.getByLabelText("Casting Time") as HTMLInputElement).disabled).toBe(true);
     expect(screen.getByText("Wizard, Bard")).not.toBeNull();
     // No custom-spell class picker in SRD mode.
-    expect(screen.queryByRole("button", { name: "Classes" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Classes:/ })).toBeNull();
   });
 
   it("saves an override targeting the captured spell id and locale without touching custom spells", async () => {
