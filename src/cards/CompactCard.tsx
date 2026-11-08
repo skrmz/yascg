@@ -197,16 +197,6 @@ export function CompactCardView({
             <h2 className="compact-name" title={spell.name}>
               {spell.name}
             </h2>
-            {spell.ritual ? (
-              <HoverHint
-                label={abbreviationFull("ritual", t)}
-                enabled={!disabledHints}
-                className="compact-ritual"
-                ariaLabel={abbreviationFull("ritual", t)}
-              >
-                R
-              </HoverHint>
-            ) : null}
           </div>
           {isContinuation ? (
             <span className="compact-continuation">{t("card.continued")}</span>
@@ -277,6 +267,16 @@ export function CompactCardView({
                   ariaLabel={abbreviationFull("concentration", t)}
                 >
                   <span className="compact-glyph">C</span>
+                </HoverHint>
+              ) : null}
+              {spell.ritual ? (
+                <HoverHint
+                  label={abbreviationFull("ritual", t)}
+                  enabled={!disabledHints}
+                  className="compact-ritual"
+                  ariaLabel={abbreviationFull("ritual", t)}
+                >
+                  R
                 </HoverHint>
               ) : null}
             </div>
