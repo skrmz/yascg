@@ -65,6 +65,115 @@ for (const [width, height] of [
   });
 }
 
+for (const language of ["en", "de"]) {
+  test(`deck names and controls align as the pane resizes (${language})`, async ({
+    page,
+  }, testInfo) => {
+    const name = "Protection from Evil and Good";
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await page.getByLabel("Search spells").fill(name);
+    await page.getByRole("button", { name: `Add ${name} to active deck`, exact: true }).click();
+    await page.getByLabel("Search spells").fill("Fireball");
+    await page.getByRole("button", { name: "Add Fireball to active deck", exact: true }).click();
+    if (language === "de") {
+      await page.getByRole("button", { name: /Spell data language/ }).click();
+      await page.getByRole("option", { name: /Deutsch/ }).click();
+      await expect(page.getByRole("textbox", { name: "Zauber suchen" })).toBeVisible();
+    }
+
+    for (const width of [320, 390, 700, 720, 820, 1024, 1199, 1200, 1440, 1920, 2560]) {
+      await page.setViewportSize({ width, height: 900 });
+      const mode = width < 720 ? "compact" : width < 1200 ? "split" : "wide";
+      await expect(page.locator("main")).toHaveAttribute("data-workspace-mode", mode);
+      if (mode !== "wide") {
+        await page.getByRole("tab", { name: "Deck", exact: true }).click();
+      }
+      if (width === 390) {
+        const settings = page.getByRole("button", {
+          name: language === "de" ? "Deck-Einstellungen" : "Deck settings",
+          exact: true,
+        });
+        await expect(settings).toHaveAttribute("aria-expanded", "false");
+        await expect(page.locator("#deck-design-select")).toBeHidden();
+        const listHeight = (await page.locator("#deck-entries").boundingBox())!.height;
+        const paneHeight = (await page.locator("#deck-panel").boundingBox())!.height;
+        expect(listHeight / paneHeight).toBeGreaterThan(0.65);
+        await settings.click();
+        await expect(page.locator("#deck-name")).toBeVisible();
+        await page.locator("#deck-design-select").selectOption("compact");
+        const expandedListHeight = (await page.locator("#deck-entries").boundingBox())!.height;
+        expect(listHeight - expandedListHeight).toBeGreaterThan(100);
+        await settings.click();
+        await expect(page.locator("#deck-design-select")).toBeHidden();
+        await settings.click();
+        await expect(page.locator("#deck-design-select")).toHaveValue("compact");
+        await settings.click();
+      }
+      const rows = page.locator("#deck-entries > li");
+      const row = rows.first();
+      const title = row.getByRole("button").first();
+      await expect(title).toBeVisible();
+      const titleBox = (await title.boundingBox())!;
+      const rowBox = (await row.boundingBox())!;
+      expect(titleBox.width).toBeGreaterThanOrEqual(Math.min(200, rowBox.width - 64));
+      const text = title.locator("span");
+      expect(await text.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true,
+      );
+      const fit = row.getByRole("combobox");
+      const fitBox = (await fit.boundingBox())!;
+      const secondFitBox = (await rows.nth(1).getByRole("combobox").boundingBox())!;
+      expect(secondFitBox.x).toBeCloseTo(fitBox.x, 0);
+      expect(secondFitBox.width).toBeCloseTo(fitBox.width, 0);
+      const singleRow = await page.locator("#deck-entries").evaluate((element) => {
+        const style = getComputedStyle(element);
+        return (
+          element.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) >=
+          576
+        );
+      });
+      if (singleRow) {
+        expect(fitBox.x).toBeGreaterThanOrEqual(titleBox.x + titleBox.width);
+        expect(
+          Math.abs(fitBox.y + fitBox.height / 2 - titleBox.y - titleBox.height / 2),
+        ).toBeLessThan(1);
+      } else {
+        expect(fitBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height);
+        expect(fitBox.width).toBeLessThanOrEqual(160);
+        const buttons = await row.locator("select + div button").all();
+        const first = (await buttons[0].boundingBox())!;
+        const second = (await buttons[1].boundingBox())!;
+        expect(second.x - first.x).toBeCloseTo(first.width, 0);
+      }
+      if (width >= 1920) expect(singleRow).toBe(true);
+      expect(
+        await fit.evaluate((element) => {
+          const select = element as HTMLSelectElement;
+          const style = getComputedStyle(select);
+          const context = document.createElement("canvas").getContext("2d")!;
+          context.font = style.font;
+          const labelWidth = context.measureText(select.selectedOptions[0].text).width;
+          return (
+            select.clientWidth >=
+            labelWidth + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + 20
+          );
+        }),
+      ).toBe(true);
+      for (const button of await row.locator("select + div button").all()) {
+        const box = (await button.boundingBox())!;
+        expect(Math.abs(box.y + box.height / 2 - fitBox.y - fitBox.height / 2)).toBeLessThan(1);
+      }
+      if (width === 390 || width === 2560) {
+        await page
+          .locator("#deck-panel")
+          .screenshot({ path: testInfo.outputPath(`deck-${width}.png`) });
+      }
+      await noPageOverflow(page);
+    }
+  });
+}
+
 test("container resizing preserves state and right-pane selection", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
@@ -76,6 +185,7 @@ test("container resizing preserves state and right-pane selection", async ({ pag
   await page.getByLabel("Search spells").fill("Fireball");
   await page.getByRole("button", { name: /Add Fireball to active deck/ }).click();
   await page.getByRole("tab", { name: "Deck", exact: true }).click();
+  await page.getByRole("button", { name: "Deck settings", exact: true }).click();
   const deckName = page.getByLabel("Active deck name", { exact: true });
   await deckName.fill("Unsubmitted name");
   await workspace.evaluate((element) => {
@@ -183,6 +293,10 @@ for (const width of [390, 820, 1024]) {
     await touchTarget(add);
     await add.click();
     await page.getByRole("tab", { name: "Deck", exact: true }).click();
+    if (width < 720) {
+      await touchTarget(page.getByRole("button", { name: "Deck settings", exact: true }));
+      await page.getByRole("button", { name: "Deck settings", exact: true }).click();
+    }
     for (const name of [
       "Save as…",
       "Print",
@@ -265,6 +379,9 @@ for (const viewport of [
     await page.getByLabel("Search spells").fill("Fireball");
     await page.getByRole("button", { name: /Add Fireball to active deck/ }).click();
     await page.getByRole("tab", { name: "Deck", exact: true }).click();
+    if (viewport.width < 720) {
+      await page.getByRole("button", { name: "Deck settings", exact: true }).click();
+    }
     const legend = page.getByRole("button", { name: "Legend", exact: true });
     await legend.scrollIntoViewIfNeeded();
     await expect(legend).toBeInViewport({ ratio: 1 });

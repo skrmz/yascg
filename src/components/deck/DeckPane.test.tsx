@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { message } from "@/locales/messages.ts";
 import { DeckPane } from "./DeckPane.tsx";
+import { WorkspaceLayoutContext } from "../workspace-layout.ts";
 
 const holder = vi.hoisted(() => ({
   activeDeck: null as unknown,
@@ -354,24 +355,24 @@ describe("DeckPane actions", () => {
 });
 
 describe("DeckPane fit mode selector", () => {
-  it("defaults to best fit and updates the entry fit mode", async () => {
+  it.each(["A", "Protection from Evil and Good"])("updates the fit mode for %s", async (name) => {
     const entry = {
       entryId: "e1",
       spellId: "srd-a",
       fitMode: "auto" as const,
-      reference: { source: "SRD-5.2.1" as const, name: "A" },
+      reference: { source: "SRD-5.2.1" as const, name },
     };
     holder.activeDeck = { ...associatedDeck, entries: [entry] };
     holder.resolvedEntries = [
       {
         entry,
-        resolution: { status: "resolved", spell: { id: "srd-a", name: "A", source: "SRD-5.2.1" } },
+        resolution: { status: "resolved", spell: { id: "srd-a", name, source: "SRD-5.2.1" } },
       },
     ];
     const user = userEvent.setup();
     render(<DeckPane />);
 
-    const select = screen.getByLabelText("Fit mode for A") as HTMLSelectElement;
+    const select = screen.getByLabelText(`Fit mode for ${name}`) as HTMLSelectElement;
     expect(select.getAttribute("aria-description")).toContain("6pt");
     expect(select.value).toBe("auto");
     expect(within(select).getByRole("option", { name: "Best fit" })).not.toBeNull();
@@ -381,6 +382,50 @@ describe("DeckPane fit mode selector", () => {
     await user.selectOptions(select, "multi-card");
 
     expect(holder.setDeckEntryFitMode).toHaveBeenCalledWith("e1", "multi-card");
+  });
+});
+
+describe("DeckPane mobile settings", () => {
+  it("keeps the summary and actions visible while settings are collapsed", async () => {
+    holder.activeDeck = { ...associatedDeck };
+    holder.deckStatus = "saved";
+    const user = userEvent.setup();
+    const view = render(
+      <WorkspaceLayoutContext.Provider value="compact">
+        <DeckPane />
+      </WorkspaceLayoutContext.Provider>,
+    );
+    const toggle = screen.getByRole("button", { name: "Deck settings" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByRole("heading", { name: "Deck" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Save" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Print" })).not.toBeNull();
+    expect(screen.queryByRole("textbox", { name: "Active deck name" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Card design" })).toBeNull();
+
+    await user.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("textbox", { name: "Active deck name" })).not.toBeNull();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Card design" }), "compact");
+    expect(holder.setCardDesign).toHaveBeenCalledWith("compact");
+    await user.click(toggle);
+    expect(screen.queryByRole("button", { name: "Legend" })).toBeNull();
+
+    view.rerender(
+      <WorkspaceLayoutContext.Provider value="wide">
+        <DeckPane />
+      </WorkspaceLayoutContext.Provider>,
+    );
+    expect(screen.getByRole("textbox", { name: "Active deck name" })).not.toBeNull();
+    expect(screen.getByRole("combobox", { name: "Card design" })).not.toBeNull();
+    view.rerender(
+      <WorkspaceLayoutContext.Provider value="compact">
+        <DeckPane />
+      </WorkspaceLayoutContext.Provider>,
+    );
+    expect(
+      screen.getByRole("button", { name: "Deck settings" }).getAttribute("aria-expanded"),
+    ).toBe("false");
   });
 });
 

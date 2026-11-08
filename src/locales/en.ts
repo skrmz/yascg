@@ -184,6 +184,7 @@ export const en = {
     heading: "Deck entries",
     empty: "The active deck is empty. Add spells from the library.",
     statusLabel: "Deck status",
+    settings: "Deck settings",
     status: {
       saved: "Saved",
       unsaved: "Unsaved changes",

@@ -153,7 +153,7 @@ export function AppShell() {
                 mode === "wide"
                   ? {
                       gridTemplateColumns:
-                        "clamp(320px,24%,400px) minmax(560px,1fr) clamp(300px,22%,360px)",
+                        "clamp(320px,24%,400px) minmax(560px,1fr) clamp(300px,calc(50% - 300px),640px)",
                       gridTemplateRows: "minmax(0,1fr)",
                     }
                   : mode === "split"

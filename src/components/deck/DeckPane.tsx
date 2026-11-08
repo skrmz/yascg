@@ -1,9 +1,10 @@
 import { useCallback, useContext, useEffect, useRef, useState, type DragEvent } from "react";
-import { ShowDetailsContext } from "../workspace-layout.ts";
+import { ShowDetailsContext, useWorkspaceMode } from "../workspace-layout.ts";
 import { useTranslation } from "react-i18next";
 import {
   ArrowDown,
   ArrowUp,
+  ChevronDown,
   FolderOpen,
   GripVertical,
   MoreHorizontal,
@@ -44,6 +45,9 @@ interface FlushResult {
 
 export function DeckPane() {
   const showDetails = useContext(ShowDetailsContext);
+  const compact = useWorkspaceMode() === "compact";
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsHidden = compact && !settingsOpen;
   const {
     activeDeck,
     dirty,
@@ -321,13 +325,49 @@ export function DeckPane() {
     <section id="deck-panel" className="flex h-full min-h-0 flex-col" aria-label={t("deck.title")}>
       <div id="deck-controls" className="space-y-2 border-b border-border p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-foreground">{t("deck.title")}</h2>
-          <span className="text-xs text-muted-foreground">
-            {t("deck.entries", { count: entries.length })}
-          </span>
+          {compact ? (
+            <>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+                  {activeDeck?.name || t("deck.title")}
+                </h2>
+                <p className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+                  <span>{t("deck.entries", { count: entries.length })}</span>
+                  <span className={statusTone} title={statusCopy.hint}>
+                    {statusCopy.label}
+                  </span>
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-expanded={settingsOpen}
+                aria-controls="deck-name-settings deck-persistence-hint deck-design"
+                onClick={() => setSettingsOpen((open) => !open)}
+              >
+                {t("deck.settings")}
+                <ChevronDown
+                  size={14}
+                  className={cn(settingsOpen && "rotate-180")}
+                  aria-hidden="true"
+                />
+              </Button>
+            </>
+          ) : (
+            <>
+              <h2 className="text-sm font-semibold text-foreground">{t("deck.title")}</h2>
+              <span className="text-xs text-muted-foreground">
+                {t("deck.entries", { count: entries.length })}
+              </span>
+            </>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div
+          id="deck-name-settings"
+          hidden={settingsHidden}
+          className={cn("items-center gap-2", settingsHidden ? "hidden" : "flex")}
+        >
           <Label htmlFor="deck-name" className="sr-only">
             {t("deck.nameLabel")}
           </Label>
@@ -376,7 +416,13 @@ export function DeckPane() {
             {actionError}
           </p>
         ) : null}
-        <p className="text-xs text-muted-foreground">{statusCopy.hint}</p>
+        <p
+          id="deck-persistence-hint"
+          hidden={settingsHidden}
+          className="text-xs text-muted-foreground"
+        >
+          {statusCopy.hint}
+        </p>
 
         <div className="flex flex-wrap items-center gap-1.5">
           <div
@@ -459,7 +505,11 @@ export function DeckPane() {
         </div>
       </div>
 
-      <div id="deck-design" className="space-y-1.5 border-b border-border p-3">
+      <div
+        id="deck-design"
+        hidden={settingsHidden}
+        className="space-y-1.5 border-b border-border p-3"
+      >
         <div className="flex flex-wrap items-end gap-2">
           <div className="min-w-0 flex-1">
             <Label htmlFor="deck-design-select">{t("card.design.label")}</Label>
@@ -500,7 +550,7 @@ export function DeckPane() {
         </details>
         <ol
           id="deck-entries"
-          className="min-h-0 flex-1 overflow-auto p-2"
+          className="@container/deck-entries min-h-0 flex-1 overflow-auto p-2"
           aria-labelledby="deck-entries-heading"
         >
           {entries.length === 0 ? (
@@ -730,7 +780,10 @@ function DeckRow({
   const name = resolution.status === "resolved" ? resolution.spell.name : resolution.referenceName;
   const nameContent = (
     <>
-      <span lang={contentLanguage} className="block truncate text-sm text-foreground">
+      <span
+        lang={contentLanguage}
+        className="block text-sm text-foreground [overflow-wrap:anywhere]"
+      >
         {name}
       </span>
       {resolution.status === "translation-unavailable" ? (
@@ -743,69 +796,75 @@ function DeckRow({
   return (
     <li
       className={cn(
-        "mb-1 flex flex-wrap supports-[flex-wrap:balance]:[flex-wrap:balance] items-center gap-1 rounded border px-2 py-1.5",
+        "mb-1 grid grid-cols-[minmax(0,1fr)] items-center gap-1 rounded border px-2 py-1.5 @min-[36rem]/deck-entries:grid-cols-[minmax(0,1fr)_auto] @min-[36rem]/deck-entries:gap-2 @min-[36rem]/deck-entries:py-2",
         resolution.status === "resolved"
           ? "border-border bg-card"
           : "border-dashed border-amber-400/30 bg-amber-400/10",
       )}
       {...dragProps}
     >
-      <GripVertical size={14} className="text-muted-foreground" aria-hidden="true" />
-      <span className="w-5 text-start text-xs text-muted-foreground">{index + 1}</span>
-      {resolution.status === "resolved" ? (
-        <button
-          type="button"
-          className="min-w-[8rem] flex-1 rounded text-start hover:bg-accent/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          aria-label={t("deck.showAria", { name })}
-          onClick={onSelect}
+      <div className="flex min-w-0 items-center gap-1">
+        <GripVertical size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+        <span className="w-5 shrink-0 text-start text-xs text-muted-foreground">{index + 1}</span>
+        {resolution.status === "resolved" ? (
+          <button
+            type="button"
+            className="min-w-0 flex-1 rounded text-start hover:bg-accent/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            aria-label={t("deck.showAria", { name })}
+            onClick={onSelect}
+          >
+            {nameContent}
+          </button>
+        ) : (
+          <span className="min-w-0 flex-1 text-start">{nameContent}</span>
+        )}
+        {resolution.status === "missing" ? (
+          <Button variant="ghost" size="icon" aria-label={t("deck.repairAria")} onClick={onRepair}>
+            <Wrench size={14} aria-hidden="true" />
+          </Button>
+        ) : null}
+      </div>
+      <div className="flex min-w-0 items-center gap-1 @min-[24rem]/deck-entries:ps-[2.625rem] @min-[36rem]/deck-entries:grid @min-[36rem]/deck-entries:grid-cols-[11rem_auto] @min-[36rem]/deck-entries:gap-2 @min-[36rem]/deck-entries:ps-0">
+        <NativeSelect
+          id={`fit-mode-${entry.entryId}`}
+          name={`fit-mode-${entry.entryId}`}
+          aria-label={t("deck.fitModeAria", { name })}
+          aria-description={t("deck.fitHelp")}
+          className="h-8 w-40 min-w-0 text-xs @min-[36rem]/deck-entries:w-full"
+          value={entry.fitMode}
+          onChange={(event) => onFitMode(event.target.value as CardFitMode)}
         >
-          {nameContent}
-        </button>
-      ) : (
-        <span className="min-w-[8rem] flex-1 text-start">{nameContent}</span>
-      )}
-      <NativeSelect
-        id={`fit-mode-${entry.entryId}`}
-        name={`fit-mode-${entry.entryId}`}
-        aria-label={t("deck.fitModeAria", { name })}
-        aria-description={t("deck.fitHelp")}
-        className="h-7 w-32 text-xs"
-        value={entry.fitMode}
-        onChange={(event) => onFitMode(event.target.value as CardFitMode)}
-      >
-        <option value="auto">{t("deck.bestFit")}</option>
-        <option value="auto-shrink">{t("deck.autoShrink")}</option>
-        <option value="multi-card">{t("deck.multiCard")}</option>
-      </NativeSelect>
-      {resolution.status === "missing" ? (
-        <Button variant="ghost" size="icon" aria-label={t("deck.repairAria")} onClick={onRepair}>
-          <Wrench size={14} aria-hidden="true" />
-        </Button>
-      ) : null}
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label={t("deck.moveUpAria", { name })}
-        onClick={onMoveUp}
-      >
-        <ArrowUp size={14} aria-hidden="true" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label={t("deck.moveDownAria", { name })}
-        onClick={onMoveDown}
-      >
-        <ArrowDown size={14} aria-hidden="true" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label={t("deck.removeAria", { name })}
-        onClick={onRemove}
-      >
-        <Trash2 size={14} aria-hidden="true" />
-      </Button>
+          <option value="auto">{t("deck.bestFit")}</option>
+          <option value="auto-shrink">{t("deck.autoShrink")}</option>
+          <option value="multi-card">{t("deck.multiCard")}</option>
+        </NativeSelect>
+        <div className="flex shrink-0 items-center @min-[36rem]/deck-entries:gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("deck.moveUpAria", { name })}
+            onClick={onMoveUp}
+          >
+            <ArrowUp size={14} aria-hidden="true" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("deck.moveDownAria", { name })}
+            onClick={onMoveDown}
+          >
+            <ArrowDown size={14} aria-hidden="true" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("deck.removeAria", { name })}
+            onClick={onRemove}
+          >
+            <Trash2 size={14} aria-hidden="true" />
+          </Button>
+        </div>
+      </div>
     </li>
   );
 }

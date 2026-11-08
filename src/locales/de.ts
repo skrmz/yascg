@@ -185,6 +185,7 @@ export const de = {
     heading: "Zauber im Deck",
     empty: "Das aktive Deck ist leer. Füge Zauber aus der Bibliothek hinzu.",
     statusLabel: "Deck-Status",
+    settings: "Deck-Einstellungen",
     status: {
       saved: "Gespeichert",
       unsaved: "Nicht gespeicherte Änderungen",
