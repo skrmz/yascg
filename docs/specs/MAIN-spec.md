@@ -295,9 +295,9 @@ Primary workflow controls have 44×44px effective targets in Compact/Split and o
 with a coarse primary pointer; fine-pointer Wide retains its existing density.
 At short viewport heights (including browser zoom), the Deck uses a single whole-pane scroll
 region so pinned controls cannot squeeze its entries out of reach. The page remains fixed.
-In Compact mode, deck settings start collapsed. The deck name, entry count, status, and
-Save/Print/Open actions stay visible; a **Deck settings** disclosure reveals name editing,
-persistence help, card design, and legend. Split/Wide always show these settings. Expanding
+In Compact mode, deck settings start collapsed. The deck name, entry count, status,
+persistence help, and Save/Print/Open actions stay visible; a **Deck settings** disclosure
+reveals name editing, card design, and legend. Split/Wide always show these settings. Expanding
 or collapsing settings preserves their values, and validation/action errors remain visible.
 Deck entry names wrap without truncation. Narrow deck entries use two aligned rows: name
 above, fit selector and actions below. When the entry list's content width reaches 36rem,

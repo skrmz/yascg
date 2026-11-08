@@ -342,7 +342,7 @@ export function DeckPane() {
                 variant="ghost"
                 size="sm"
                 aria-expanded={settingsOpen}
-                aria-controls="deck-name-settings deck-persistence-hint deck-design"
+                aria-controls="deck-design"
                 onClick={() => setSettingsOpen((open) => !open)}
               >
                 {t("deck.settings")}
@@ -363,6 +363,27 @@ export function DeckPane() {
           )}
         </div>
 
+        {nameError ? (
+          <p id="deck-name-error" role="alert" className="text-xs text-red-300">
+            {nameError}
+          </p>
+        ) : null}
+        {actionError ? (
+          <p role="alert" className="text-xs text-red-300">
+            {actionError}
+          </p>
+        ) : null}
+
+        <p id="deck-persistence-hint" className="text-xs text-muted-foreground">
+          {statusCopy.hint}
+        </p>
+      </div>
+
+      <div
+        id="deck-design"
+        hidden={settingsHidden}
+        className="space-y-1.5 border-b border-border p-3"
+      >
         <div
           id="deck-name-settings"
           hidden={settingsHidden}
@@ -379,12 +400,12 @@ export function DeckPane() {
             aria-invalid={nameError ? true : undefined}
             aria-describedby={nameError ? "deck-name-error" : undefined}
             onFocus={startEdit}
+            onBlur={onNameBlur}
             onChange={(event) => {
               setNameDraft(event.target.value);
               if (nameError) setNameError(null);
               if (actionError) setActionError(null);
             }}
-            onBlur={onNameBlur}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
@@ -405,25 +426,30 @@ export function DeckPane() {
             {statusCopy.label}
           </span>
         </div>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-0 flex-1">
+            <Label htmlFor="deck-design-select">{t("card.design.label")}</Label>
+            <NativeSelect
+              id="deck-design-select"
+              value={cardDesign}
+              className="mt-1 h-8"
+              onChange={(event) => setCardDesign(event.target.value as CardDesign)}
+            >
+              {CARD_DESIGNS.map((design) => (
+                <option key={design} value={design}>
+                  {t(CARD_DESIGN_LABEL_KEYS[design])}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setLegendOpen(true)}>
+            {t("card.design.legend")}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">{t("card.design.hint")}</p>
+      </div>
 
-        {nameError ? (
-          <p id="deck-name-error" role="alert" className="text-xs text-red-300">
-            {nameError}
-          </p>
-        ) : null}
-        {actionError ? (
-          <p role="alert" className="text-xs text-red-300">
-            {actionError}
-          </p>
-        ) : null}
-        <p
-          id="deck-persistence-hint"
-          hidden={settingsHidden}
-          className="text-xs text-muted-foreground"
-        >
-          {statusCopy.hint}
-        </p>
-
+      <div id="deck-actions" className="space-y-2 border-b border-border p-3">
         <div className="flex flex-wrap items-center gap-1.5">
           <div
             className="inline-flex"
@@ -503,34 +529,6 @@ export function DeckPane() {
             <span className="text-red-300">{t("deck.missing", { count: missingCount })}</span>
           ) : null}
         </div>
-      </div>
-
-      <div
-        id="deck-design"
-        hidden={settingsHidden}
-        className="space-y-1.5 border-b border-border p-3"
-      >
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-0 flex-1">
-            <Label htmlFor="deck-design-select">{t("card.design.label")}</Label>
-            <NativeSelect
-              id="deck-design-select"
-              value={cardDesign}
-              className="mt-1 h-8"
-              onChange={(event) => setCardDesign(event.target.value as CardDesign)}
-            >
-              {CARD_DESIGNS.map((design) => (
-                <option key={design} value={design}>
-                  {t(CARD_DESIGN_LABEL_KEYS[design])}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
-          <Button size="sm" variant="outline" onClick={() => setLegendOpen(true)}>
-            {t("card.design.legend")}
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground">{t("card.design.hint")}</p>
       </div>
 
       <div id="deck-entries-container" className="mt-2 flex min-h-0 flex-1 flex-col">

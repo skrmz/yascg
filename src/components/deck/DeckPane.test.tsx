@@ -434,12 +434,15 @@ describe("DeckPane card design selector", () => {
     const { container } = render(<DeckPane />);
     const controls = container.querySelector("#deck-controls");
     const design = container.querySelector("#deck-design");
+    const actions = container.querySelector("#deck-actions");
     const entries = container.querySelector("#deck-entries-container");
     expect(controls).not.toBeNull();
     expect(design).not.toBeNull();
+    expect(actions).not.toBeNull();
     expect(entries).not.toBeNull();
     expect(controls!.nextElementSibling).toBe(design);
-    expect(design!.nextElementSibling).toBe(entries);
+    expect(design!.nextElementSibling).toBe(actions);
+    expect(actions!.nextElementSibling).toBe(entries);
 
     const select = within(design as HTMLElement).getByLabelText("Card design") as HTMLSelectElement;
     expect(Array.from(select.options, (option) => option.textContent)).toEqual([

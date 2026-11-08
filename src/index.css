@@ -219,7 +219,8 @@ body,
     overflow-y: auto;
   }
   #deck-controls,
-  #deck-design {
+  #deck-design,
+  #deck-actions {
     flex-shrink: 0;
   }
   #deck-entries-container {
