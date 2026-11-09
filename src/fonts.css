@@ -1,0 +1,139 @@
+/*
+ * Self-hosted font faces for the application UI and spell cards.
+ *
+ * All families are bundled as latin-subset WOFF2 files so the app makes no
+ * external font requests, works offline, and keeps card measurement and
+ * printing deterministic.
+ */
+
+/* UI faces */
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("./assets/fonts/CormorantGaramond-normal-500-700.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("./assets/fonts/CormorantGaramond-normal-500-700.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("./assets/fonts/CormorantGaramond-normal-500-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karla";
+  src: url("./assets/fonts/Karla-normal-400-700.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karla";
+  src: url("./assets/fonts/Karla-normal-400-700.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Karla";
+  src: url("./assets/fonts/Karla-normal-400-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("./assets/fonts/IBMPlexMono-normal-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("./assets/fonts/IBMPlexMono-normal-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Card faces */
+
+@font-face {
+  font-family: "Vollkorn";
+  src: url("./assets/fonts/Vollkorn-normal-600-700.woff2") format("woff2");
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vollkorn";
+  src: url("./assets/fonts/Vollkorn-italic-600-700.woff2") format("woff2");
+  font-weight: 600 700;
+  font-style: italic;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Alegreya Sans";
+  src: url("./assets/fonts/AlegreyaSans-normal-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Alegreya Sans";
+  src: url("./assets/fonts/AlegreyaSans-normal-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Alegreya Sans";
+  src: url("./assets/fonts/AlegreyaSans-normal-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Alegreya Sans";
+  src: url("./assets/fonts/AlegreyaSans-italic-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Alegreya Sans";
+  src: url("./assets/fonts/AlegreyaSans-italic-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Alegreya Sans";
+  src: url("./assets/fonts/AlegreyaSans-italic-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: block;
+}

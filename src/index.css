@@ -53,14 +53,14 @@
   --color-paper: var(--card-paper);
   --color-ink: var(--card-ink);
 
-  /* Fonts mapped from Google Fonts */
+  /* Fonts self-hosted via src/fonts.css */
   --font-display: "Cormorant Garamond", serif;
   --font-sans: "Karla", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
 
   /* Dedicated Spell Card Fonts */
   --font-card-title: "Vollkorn", serif;
-  --font-card-body: "Alegreya Sans", "Barlow Semi Condensed", sans-serif;
+  --font-card-body: "Alegreya Sans", sans-serif;
 }
 
 :root {

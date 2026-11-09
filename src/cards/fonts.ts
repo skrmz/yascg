@@ -1,9 +1,9 @@
 /**
- * Card typography is loaded from Google Fonts rather than bundled @font-face
- * rules, so `document.fonts.ready` alone cannot guarantee the card faces are
- * available: it only waits for fonts already requested by rendered text.
- * Explicitly request every weight/style the cards can use before measuring or
- * printing, then report whether the real faces (not fallbacks) are ready.
+ * Card faces are self-hosted through the @font-face rules in src/fonts.css, so
+ * `document.fonts.ready` alone cannot guarantee they are available: it only
+ * waits for fonts already requested by rendered text. Explicitly request every
+ * weight/style the cards can use before measuring or printing, then report
+ * whether the real faces (not fallbacks) are ready.
  */
 const CARD_FONT_FACES = [
   '600 8pt "Vollkorn"',

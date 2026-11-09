@@ -7,77 +7,9 @@
  *
  * Card typography is isolated from the application UI: titles use
  * --font-card-title and all card body text uses --font-card-body. Both are
- * registered in src/index.css and loaded from the Google Fonts link.
+ * registered in src/index.css and loaded from the self-hosted @font-face rules
+ * in src/fonts.css.
  */
-
-/*
- * Card fonts are also self-hosted (Latin subset) so measurement, offline use,
- * and printing stay deterministic. The Google Fonts link remains the canonical
- * family source for UI and for weights outside the card set.
- */
-@font-face {
-  font-family: "Vollkorn";
-  src: url("../assets/fonts/Vollkorn-normal-600-700.woff2") format("woff2");
-  font-weight: 600 700;
-  font-style: normal;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "Vollkorn";
-  src: url("../assets/fonts/Vollkorn-italic-600-700.woff2") format("woff2");
-  font-weight: 600 700;
-  font-style: italic;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "Alegreya Sans";
-  src: url("../assets/fonts/AlegreyaSans-normal-400.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "Alegreya Sans";
-  src: url("../assets/fonts/AlegreyaSans-normal-500.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "Alegreya Sans";
-  src: url("../assets/fonts/AlegreyaSans-normal-700.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "Alegreya Sans";
-  src: url("../assets/fonts/AlegreyaSans-italic-400.woff2") format("woff2");
-  font-weight: 400;
-  font-style: italic;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "Alegreya Sans";
-  src: url("../assets/fonts/AlegreyaSans-italic-500.woff2") format("woff2");
-  font-weight: 500;
-  font-style: italic;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "Alegreya Sans";
-  src: url("../assets/fonts/AlegreyaSans-italic-700.woff2") format("woff2");
-  font-weight: 700;
-  font-style: italic;
-  font-display: block;
-}
 
 :root {
   --card-width: 2.5in;
