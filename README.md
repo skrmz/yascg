@@ -80,9 +80,11 @@ notes; UI labels such as **Casting Time**, **Range**, and **Duration** remain sp
 Matching uses the language captured when the editor opened, and only English and German prose
 catalogs are available (other languages show an explanatory status instead of falling back to
 English). Numeric quantities introduced by `up to`/`bis zu` become `≤` (for example
-`up to 1 hour` → `≤ 1h`), while non-numeric phrases are left unchanged. **Undo abbreviation**
-restores the fields changed by the latest action until the editor closes. Saving stores the
-abbreviated text, so there is no automatic way to reverse it afterwards.
+`up to 1 hour` → `≤ 1h` or `up to one hour` → `≤ 1h`), while non-numeric phrases are left
+unchanged. Standalone number words from zero through ten and hundred are also shortened, but
+compounds and hyphenated forms such as `twenty-one` are not. **Undo abbreviation** restores the
+fields changed by the latest action until the editor closes. Saving stores the abbreviated text,
+so there is no automatic way to reverse it afterwards.
 
 The active deck is always stored locally as you edit it; "unsaved" never means "unpersisted".
 Named snapshots are independent of the working deck:

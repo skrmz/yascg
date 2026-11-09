@@ -86,7 +86,6 @@ export function componentAbbreviation(component: SpellComponentKey): SharedAbbre
 }
 
 const EXCLUDED_EN: ReadonlySet<AbbreviationId> = new Set([
-  "round",
   "turn",
   "speed",
   "presumably",
@@ -95,7 +94,6 @@ const EXCLUDED_EN: ReadonlySet<AbbreviationId> = new Set([
 ]);
 
 const EXCLUDED_DE: ReadonlySet<AbbreviationId> = new Set([
-  "round",
   "turn",
   "presumably",
   "or",

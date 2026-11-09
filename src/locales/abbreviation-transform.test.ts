@@ -96,7 +96,7 @@ describe("abbreviation transformer: boundaries and exactness", () => {
 
 describe("abbreviation transformer: exclusions and no-ops", () => {
   it("leaves English excluded and locale-specific terms unchanged", () => {
-    for (const term of ["round", "turn", "speed", "presumably", "possibly", "in part"]) {
+    for (const term of ["turn", "speed", "presumably", "possibly", "in part"]) {
       expect(abbreviated(term)).toBe(term);
     }
     for (const term of ["spell", "self", "touch", "sight"]) {
@@ -104,11 +104,17 @@ describe("abbreviation transformer: exclusions and no-ops", () => {
     }
   });
 
+  it("abbreviates formerly excluded rounds", () => {
+    expect(abbreviated("round")).toBe("rnd.");
+    expect(abbreviated("Round")).toBe("rnd.");
+    expect(abbreviated("Runde", "de")).toBe("Rnd.");
+  });
+
   it("leaves German no-op and excluded entries unchanged", () => {
     for (const term of ["Ziel", "Selbst", "Sicht"]) {
       expect(abbreviated(term, "de")).toBe(term);
     }
-    for (const term of ["Runde", "Zug", "vermutlich", "oder", "Durchmesser", "Würfel"]) {
+    for (const term of ["Zug", "vermutlich", "oder", "Durchmesser", "Würfel"]) {
       expect(abbreviated(term, "de")).toBe(term);
     }
   });
@@ -124,7 +130,7 @@ describe("abbreviation transformer: exclusions and no-ops", () => {
 
   it("still applies longer eligible phrases containing excluded words", () => {
     expect(abbreviated("until the end of the next turn")).toBe("EONT");
-    expect(abbreviated("point within range")).toBe("point within RNG");
+    expect(abbreviated("point within range")).toBe("pt. within rng.");
     expect(abbreviated("bonus action")).toBe("BA");
   });
 });
@@ -154,7 +160,8 @@ describe("abbreviation transformer: configured inflections", () => {
     expect(abbreviated("Stunde", "de")).toBe("h");
     expect(abbreviated("Stunden", "de")).toBe("h");
     expect(abbreviated("Gegenstand", "de")).toBe("Ggst.");
-    expect(abbreviated("Gegenstände", "de")).toBe("Ggst.");
+    expect(abbreviated("Gegenstände", "de")).toBe("Ggstd.");
+    expect(abbreviated("Gegenständen", "de")).toBe("Ggstd.");
   });
 
   it("does not infer unconfigured inflections or embedded substrings", () => {
@@ -188,19 +195,19 @@ describe("abbreviation transformer: configured inflections", () => {
   it("is idempotent with generated forms", () => {
     const text = "Meters und psychische Gegenstände";
     const once = abbreviated(text, "de");
-    expect(once).toBe("m und psych. Ggst.");
+    expect(once).toBe("m und psych. Ggstd.");
     expect(abbreviated(once, "de")).toBe(once);
   });
 
   it("applies exclusions to every form of an excluded definition", () => {
     const entries: AbbreviationEntry[] = [
-      { id: "round", full: "round", short: "RND", forms: ["round", "rounds"] },
+      { id: "turn", full: "turn", short: "TURN", forms: ["turn", "turns"] },
     ];
     const matcher = createLocaleMatcher(entries, "en");
     expect(matcher.eligible).toEqual([]);
     expect(matcher.excluded.map((candidate) => candidate.surface).sort()).toEqual([
-      "round",
-      "rounds",
+      "turn",
+      "turns",
     ]);
   });
 
@@ -225,6 +232,27 @@ describe("abbreviation transformer: newly eligible prose terms", () => {
     expect(abbreviated("maximum")).toBe("max.");
     expect(abbreviated("example")).toBe("ex.");
     expect(abbreviated("compare")).toBe("cf.");
+    expect(abbreviated("including")).toBe("incl.");
+    expect(abbreviated("condition")).toBe("cond.");
+    expect(abbreviated("against")).toBe("vs.");
+    expect(abbreviated("obviously")).toBe("obv.");
+    expect(abbreviated("obvious")).toBe("obv.");
+    expect(abbreviated("range")).toBe("rng.");
+    expect(abbreviated("duration")).toBe("dur.");
+    expect(abbreviated("spell slot")).toBe("slot");
+    expect(abbreviated("point")).toBe("pt.");
+    expect(abbreviated("physical")).toBe("phys.");
+    expect(abbreviated("following")).toBe("foll.");
+    expect(abbreviated("option")).toBe("opt.");
+    expect(abbreviated("illusory")).toBe("illus.");
+    expect(abbreviated("at least")).toBe("≥");
+    expect(abbreviated("strength check")).toBe("STR check");
+    expect(abbreviated("strength saving throw")).toBe("STR save");
+    expect(abbreviated("dexterity saving throw")).toBe("DEX save");
+    expect(abbreviated("constitution saving throw")).toBe("CON save");
+    expect(abbreviated("intelligence saving throw")).toBe("INT save");
+    expect(abbreviated("wisdom saving throw")).toBe("WIS save");
+    expect(abbreviated("charisma saving throw")).toBe("CHA save");
   });
 
   it("abbreviates every German policy term as a standalone word", () => {
@@ -232,11 +260,30 @@ describe("abbreviation transformer: newly eligible prose terms", () => {
     expect(abbreviated("Vorteil", "de")).toBe("VT");
     expect(abbreviated("Nachteil", "de")).toBe("NT");
     expect(abbreviated("Gegenstand", "de")).toBe("Ggst.");
-    expect(abbreviated("Gegenstände", "de")).toBe("Ggst.");
+    expect(abbreviated("Gegenstände", "de")).toBe("Ggstd.");
+    expect(abbreviated("Gegenständen", "de")).toBe("Ggstd.");
     expect(abbreviated("Minimum", "de")).toBe("Min.");
     expect(abbreviated("Maximum", "de")).toBe("Max.");
     expect(abbreviated("Beispiel", "de")).toBe("Bsp.");
     expect(abbreviated("vergleiche", "de")).toBe("vgl.");
+    expect(abbreviated("addieren", "de")).toBe("add.");
+    expect(abbreviated("Punkt", "de")).toBe("Pkt.");
+    expect(abbreviated("für", "de")).toBe("f.");
+    expect(abbreviated("mindestens", "de")).toBe("mind.");
+    expect(abbreviated("physisch", "de")).toBe("phys.");
+    expect(abbreviated("folgenden", "de")).toBe("folg.");
+    expect(abbreviated("Option", "de")).toBe("Opt.");
+    expect(abbreviated("Zauberwirken-Attributsmodifikator", "de")).toBe("Zauberwirken-Attr.mod.");
+    expect(abbreviated("illusionär", "de")).toBe("illus.");
+    expect(abbreviated("gegen", "de")).toBe("gg.");
+    expect(abbreviated("innerhalb", "de")).toBe("innerh.");
+    expect(abbreviated("Stärkewurf", "de")).toBe("ST-Wurf");
+    expect(abbreviated("Stärkerettungswurf", "de")).toBe("ST-RW");
+    expect(abbreviated("Geschicklichkeitsrettungswurf", "de")).toBe("GE-RW");
+    expect(abbreviated("Konstitutionsrettungswurf", "de")).toBe("KO-RW");
+    expect(abbreviated("Intelligenzrettungswurf", "de")).toBe("IN-RW");
+    expect(abbreviated("Weisheitsrettungswurf", "de")).toBe("WE-RW");
+    expect(abbreviated("Charismarettungswurf", "de")).toBe("CH-RW");
   });
 
   it("abbreviates the terms inside representative spell prose", () => {
@@ -245,19 +292,21 @@ describe("abbreviation transformer: newly eligible prose terms", () => {
         "A target between two objects has advantage and disadvantage; the minimum and maximum apply, compare this example carefully.",
       ),
     ).toBe(
-      "A tgt. b/w two obj. has adv. and disadv.; the min. and max. apply, cf. this ex. carefully.",
+      "A tgt. b/w 2 obj. has adv. and disadv.; the min. and max. apply, cf. this ex. carefully.",
     );
     expect(
       abbreviated(
         "Zwei Gegenstände liegen zwischen dem Ziel; Vorteil und Nachteil, Minimum und Maximum, vergleiche das Beispiel sorgfältig.",
         "de",
       ),
-    ).toBe("Zwei Ggst. liegen zw. dem Ziel; VT und NT, Min. und Max., vgl. das Bsp. sorgfältig.");
+    ).toBe("2 Ggstd. liegen zw. dem Ziel; VT und NT, Min. und Max., vgl. das Bsp. sorgfältig.");
   });
 
   it("matches case-insensitively", () => {
     expect(abbreviated("ADVANTAGE and Disadvantage")).toBe("adv. and disadv.");
     expect(abbreviated("VORTEIL und nachteil", "de")).toBe("VT und NT");
+    expect(abbreviated("PHYSICAL and Illusory")).toBe("phys. and illus.");
+    expect(abbreviated("gegen und innerhalb", "de")).toBe("gg. und innerh.");
   });
 
   it("keeps longer phrases and related entries winning", () => {
@@ -274,13 +323,78 @@ describe("abbreviation transformer: newly eligible prose terms", () => {
     expect(abbreviated("advantages and minimums")).toBe("advantages and minimums");
     expect(abbreviated("compared and betweenness")).toBe("compared and betweenness");
     expect(abbreviated("zielen und Vorteile", "de")).toBe("zielen und Vorteile");
-    expect(abbreviated("Gegenständen und vergleichen", "de")).toBe("Gegenständen und vergleichen");
+    expect(abbreviated("Gegenständen und vergleichen", "de")).toBe("Ggstd. und vergleichen");
   });
 
   it("is idempotent for the newly eligible terms", () => {
     const text = "advantage before a target between objects and example compare minimum maximum";
     const once = abbreviated(text);
     expect(abbreviated(once)).toBe(once);
+  });
+});
+
+describe("abbreviation transformer: written numbers", () => {
+  it("abbreviates standalone English numbers", () => {
+    for (const [full, short] of [
+      ["zero", "0"],
+      ["one", "1"],
+      ["two", "2"],
+      ["three", "3"],
+      ["four", "4"],
+      ["five", "5"],
+      ["six", "6"],
+      ["seven", "7"],
+      ["eight", "8"],
+      ["nine", "9"],
+      ["ten", "10"],
+      ["hundred", "100"],
+    ] as const) {
+      expect(abbreviated(full)).toBe(short);
+    }
+  });
+
+  it("abbreviates standalone German numbers", () => {
+    for (const [full, short] of [
+      ["null", "0"],
+      ["eins", "1"],
+      ["zwei", "2"],
+      ["drei", "3"],
+      ["vier", "4"],
+      ["fünf", "5"],
+      ["sechs", "6"],
+      ["sieben", "7"],
+      ["acht", "8"],
+      ["neun", "9"],
+      ["zehn", "10"],
+      ["hundert", "100"],
+    ] as const) {
+      expect(abbreviated(full, "de")).toBe(short);
+    }
+  });
+
+  it("matches number words case-insensitively", () => {
+    expect(abbreviated("One and TEN")).toBe("1 and 10");
+    expect(abbreviated("EINS und ZEHN", "de")).toBe("1 und 10");
+  });
+
+  it("does not replace embedded, hyphenated, or compound numbers", () => {
+    for (const term of [
+      "often",
+      "someone",
+      "one-handed",
+      "twenty-one",
+      "three-quarters",
+      "tenfold",
+    ]) {
+      expect(abbreviated(term)).toBe(term);
+    }
+    for (const term of ["einschließlich", "zehnseitiger", "Hundertschaft"]) {
+      expect(abbreviated(term, "de")).toBe(term);
+    }
+  });
+
+  it("keeps longer catalog phrases winning over number words", () => {
+    expect(abbreviated("three-quarters cover")).toBe("TQC");
   });
 });
 
@@ -301,9 +415,9 @@ describe("abbreviation transformer: result contract", () => {
   });
 
   it("reports excluded matches but not terms covered by an applied longer match", () => {
-    const result = transform("round and action");
-    expect(result.text).toBe("round and A");
-    expect(result.skipped.map((entry) => entry.id)).toEqual(["round"]);
+    const result = transform("turn and action");
+    expect(result.text).toBe("turn and A");
+    expect(result.skipped.map((entry) => entry.id)).toEqual(["turn"]);
     expect(result.applied.map((entry) => entry.id)).toEqual(["action"]);
 
     const phrase = transform("bonus action");
@@ -413,8 +527,17 @@ describe("abbreviation transformer: up-to quantities", () => {
 
   it("requires a numeric quantity", () => {
     expect(abbreviated("up to the DM's discretion")).toBe("up to the DM's discretion");
-    expect(abbreviated("up to one hour")).toBe("up to one h");
+    expect(abbreviated("up to a few hours")).toBe("up to a few h");
     expect(abbreviated("up to 1st level")).toBe("up to 1st level");
+  });
+
+  it("accepts written number words as quantities", () => {
+    expect(abbreviated("up to one hour")).toBe("≤ 1h");
+    expect(abbreviated("up to ten minutes")).toBe("≤ 10min");
+    expect(abbreviated("up to hundred days")).toBe("≤ 100d");
+    expect(abbreviated("bis zu zwei Stunden", "de")).toBe("≤ 2h");
+    expect(abbreviated("bis zu zehn Minuten", "de")).toBe("≤ 10min");
+    expect(abbreviated("bis zu drei Tage", "de")).toBe("≤ 3t");
   });
 
   it("abbreviates German bis-zu quantities", () => {
@@ -435,6 +558,18 @@ describe("abbreviation transformer: up-to quantities", () => {
     const result = transform("up to 1 hour");
     expect(result.text).toBe("≤ 1h");
     expect(result.applied.find((entry) => entry.id === "upTo")).toMatchObject({ count: 1 });
+    expect(result.applied.find((entry) => entry.id === "hour")).toMatchObject({ count: 1 });
+  });
+
+  it("counts the written number entry as an applied term", () => {
+    const result = transform("up to one hour");
+    expect(result.text).toBe("≤ 1h");
+    expect(result.applied.find((entry) => entry.id === "upTo")).toMatchObject({ count: 1 });
+    expect(result.applied.find((entry) => entry.id === "one")).toMatchObject({
+      full: "one",
+      short: "1",
+      count: 1,
+    });
     expect(result.applied.find((entry) => entry.id === "hour")).toMatchObject({ count: 1 });
   });
 

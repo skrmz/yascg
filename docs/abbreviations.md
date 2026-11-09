@@ -13,34 +13,34 @@ The parity test reads this document and compares the English and German inventor
 
 ## Catalog model
 
-Each locale has an independent abbreviation catalog. A definition specifies `full`, `short`, and optionally `suffixes`, `forms`, `quantityPrefix`, and `timeUnit`. The generated surfaces are `full`, every `full + suffix`, and every explicit `forms` entry; all of them map to the same `short`. Entries without inflection metadata match only their exact spelling. German `psychic` is one definition covering `psychisch`, `psychische`, `psychischer`, `psychisches`, `psychischem`, and `psychischen`. German `meter` (`Meter`, `Meters`, `Metern`), `minute` (`Minute`, `Minuten`), `hour` (`Stunde`, `Stunden`), `day` (`Tag`, `Tage`), and `object` (`Gegenstand`, `Gegenstände`) use the same mechanism.
+Each locale has an independent abbreviation catalog. A definition specifies `full`, `short`, and optionally `suffixes`, `forms`, `quantityPrefix`, and `timeUnit`. The generated surfaces are `full`, every `full + suffix`, and every explicit `forms` entry; all of them map to the same `short`. Entries without inflection metadata match only their exact spelling. German `psychic` is one definition covering `psychisch`, `psychische`, `psychischer`, `psychisches`, `psychischem`, and `psychischen`. German `meter` (`Meter`, `Meters`, `Metern`), `minute` (`Minute`, `Minuten`), `hour` (`Stunde`, `Stunden`), `day` (`Tag`, `Tage`), `object` (`Gegenstand`), `objects` (`Gegenstände`, `Gegenständen`), and `physical` (`physisch`, `physische`, `physischer`, `physisches`, `physischem`, `physischen`) use the same mechanism.
 
-`quantityPrefix` marks a short that is only applied when the surface introduces a numeric quantity. `timeUnit` marks units that are compacted after a quantity prefix, as in `≤ 1h`; other units keep their normal spacing, as in `≤ 30 ft`.
+`quantityPrefix` marks a short that is only applied when the surface introduces a numeric quantity. A written number word with a numeric short counts as such a quantity. `timeUnit` marks units that are compacted after a quantity prefix, as in `≤ 1h`; other units keep their normal spacing, as in `≤ 30 ft`.
 
 ## Manual abbreviation of custom spell prose
 
 The custom spell editor offers **Abbreviate** for non-SRD drafts. The action transforms only the user-authored draft values (`description`, higher levels, casting time, range, duration, and component descriptions); it never changes UI labels or structured fields. Nothing is persisted until the spell is saved, and **Undo abbreviation** restores the fields changed by the latest action until the editor closes. See the [custom spells guide](custom-spells-guide.md) for the user workflow.
 
-English `up to` and German `bis zu` become `≤` only when they introduce a numeric quantity. A time unit in that quantity is compacted without a space: `up to 1 hour` → `≤ 1h`, `up to 10 minutes` → `≤ 10min`, `up to 3 days` → `≤ 3d`, and `bis zu 3 Tage` → `≤ 3t`. Other units and nouns keep their normal spacing: `up to 30 feet` → `≤ 30 ft`, `up to 3 creatures` → `≤ 3 creatures`. Phrases without a number, such as `up to the DM's discretion`, are unchanged.
+English `up to` and German `bis zu` become `≤` only when they introduce a numeric quantity. A time unit in that quantity is compacted without a space: `up to 1 hour` → `≤ 1h`, `up to 10 minutes` → `≤ 10min`, `up to 3 days` → `≤ 3d`, and `bis zu 3 Tage` → `≤ 3t`. Written number words from zero through ten and hundred also count as quantities: `up to one hour` → `≤ 1h`, `up to ten minutes` → `≤ 10min`, and `bis zu zwei Stunden` → `≤ 2h`. Other units and nouns keep their normal spacing: `up to 30 feet` → `≤ 30 ft`, `up to 3 creatures` → `≤ 3 creatures`. Phrases without a number, such as `up to the DM's discretion`, are unchanged.
 
 Matching uses the language captured when the editor opened. Only exact `en` and `de` codes have catalogs; other languages are a no-op with an explanatory status, never an English fallback. Catalog identity and display remain case-sensitive: `m` (meter) and `M` (material component) are distinct. Manual prose matching is locale-aware case-insensitive, so `Bonus Action`, `BONUS ACTION`, and `bonus action` share the `BA` short.
 
 Three distinct states apply to a catalog entry:
 
-1. **Defined:** the entry exists in `en.ts`/`de.ts` and in this catalog. Defined entries always drive structured UI lookups, Compact card badges, tooltips, and the legend.
+1. **Defined:** the entry exists in `abbreviations-en.ts`/`abbreviations-de.ts` (wired into `en.ts`/`de.ts`) and in this catalog. Defined entries always drive structured UI lookups, Compact card badges, tooltips, and the legend.
 2. **Eligible for automatic replacement:** the entry is defined, its trimmed short is strictly shorter than its trimmed full form, and its ID is not in the locale's exclusion set. Only eligible entries are matched by **Abbreviate**.
 3. **Excluded:** the ID is in the locale's exclusion set. It remains defined and usable by structured UI lookups, but **Abbreviate** leaves it unchanged and reports it only through development diagnostics.
 
 A term can therefore have a defined abbreviation and still be excluded: the catalog answers "what is this term's short form?", while the exclusion list answers "should the prose transformer rewrite this word automatically?".
 
-Only catalog definitions and their generated forms are eligible, and longer surfaces win. Whitespace is not collapsed. Inflection is matched only where explicitly configured: English keeps separate `foot`/`feet`, `object`/`objects`, `meter`/`meters`, `minute`/`minutes`, and `hour`/`hours` entries, while German consolidates these into `suffixes`/`forms` on `psychic`, `object`, `meter`, `minute`, and `hour`. Unconfigured inflections and stems are never inferred. No-op entries whose short is not shorter than their full form are never eligible, even when they are also listed as excluded for policy reasons.
+Only catalog definitions and their generated forms are eligible, and longer surfaces win. Whitespace is not collapsed. Inflection is matched only where explicitly configured: English keeps separate `foot`/`feet`, `object`/`objects`, `meter`/`meters`, `minute`/`minutes`, and `hour`/`hours` entries, while German consolidates these into `suffixes`/`forms` on `psychic`, `physical`, `object`/`objects`, `meter`, `minute`, `hour`, and `day`. Unconfigured inflections and stems are never inferred. No-op entries whose short is not shorter than their full form are never eligible, even when they are also listed as excluded for policy reasons.
 
 The following exclusions are policy, not algorithm. Removing an entry from this list is a product decision; it does not require a matcher change. Exclusions currently protect common prose words whose short form would be ambiguous or non-standard in running text:
 
-- English exclusions: `round`, `turn`, `speed`, `presumably`, `possibly`, `in part`.
-- German exclusions: `Runde`, `Zug`, `vermutlich`, `oder`, `Durchmesser`, `Würfel`.
+- English exclusions: `turn`, `speed`, `presumably`, `possibly`, `in part`.
+- German exclusions: `Zug`, `vermutlich`, `oder`, `Durchmesser`, `Würfel`.
 
-English and German still differ deliberately: `Bewegungsrate` remains eligible in German, while the English `speed` is excluded; German `eventuell` and `zum Teil` are eligible while the English `possibly` and `in part` are excluded. `action`, `reaction`, `damage`, `advantage`, `disadvantage`, `target`, `object`/`objects`, `minimum`, `maximum`, `example`, `compare`, and `between` (and their German equivalents) are eligible as approved standalone terms; longer phrases such as `bonus action`, `for example`, `damage resistance`, and `Schadensresistenz` still win.
+English and German still differ deliberately: `Bewegungsrate` remains eligible in German, while the English `speed` is excluded; German `eventuell` and `zum Teil` are eligible while the English `possibly` and `in part` are excluded. `action`, `reaction`, `round`, `damage`, `advantage`, `disadvantage`, `target`, `object`/`objects`, `minimum`, `maximum`, `example`, `compare`, `between`, `including`, `condition`, `against`, `obviously`/`obvious`, `point`, `physical`, `following`, `option`, `illusory`, `at least`, `strength check`, the ability saving throws, and the written numbers (and their German equivalents) are eligible as approved standalone terms; longer phrases such as `bonus action`, `for example`, `damage resistance`, and `Schadensresistenz` still win.
 
 Manual matching transforms only visible prose. Fenced and inline code, HTML comments/tags and attributes, autolinks, bare URLs and email addresses, reference definitions, images, link destinations/titles/reference identifiers, backslash escapes, and structural Markdown delimiters are protected and copied byte-for-byte. Bold and italic text, headings, blockquotes, list items, table cells, and inline/full-reference link labels remain transformable. Source formatting is never serialized or regenerated.
 
@@ -58,6 +58,13 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - charisma = CHA (Charisma = CH)
 - difficulty class = DC (Schwierigkeitsgrad = SG)
 - saving throw = SAVE (Rettungswurf = RW)
+- strength check = STR check (Stärkewurf = ST-Wurf)
+- strength saving throw = STR save (Stärkerettungswurf = ST-RW)
+- dexterity saving throw = DEX save (Geschicklichkeitsrettungswurf = GE-RW)
+- constitution saving throw = CON save (Konstitutionsrettungswurf = KO-RW)
+- intelligence saving throw = INT save (Intelligenzrettungswurf = IN-RW)
+- wisdom saving throw = WIS save (Weisheitsrettungswurf = WE-RW)
+- charisma saving throw = CHA save (Charismarettungswurf = CH-RW)
 - proficiency bonus = PB (Übungsbonus = ÜB)
 - initiative = INIT (Initiative = INIT)
 - speed = SPD (Bewegungsrate = BR)
@@ -71,7 +78,7 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - — (Zauber = Z.)
 - spell attack = SATK (Zauberangriff = ZAng.)
 - spell save DC = SSDC (SG für Zauberrettungswürfe = Z-SG)
-- spell slot = SLOT (Zauberplatz = ZP)
+- spell slot = slot (Zauberplatz = ZP)
 - cantrip = CTP (Zaubertrick = ZT)
 - ritual = RIT (Ritual = RIT)
 - concentration = Conc. (Konzentration = Konz.)
@@ -81,7 +88,7 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - action = A (Aktion = A)
 - bonus action = BA (Bonusaktion = BA)
 - reaction = R (Reaktion = R)
-- round = RD (Runde = RD)
+- round = rnd. (Runde = Rnd.)
 - turn = TURN (Zug = ZUG)
 - short rest = SR (Kurze Rast = KR)
 - long rest = LR (Lange Rast = LR)
@@ -97,8 +104,8 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 
 - area of effect = AoE (Wirkungsbereich = WB)
 - casting time = CT (Zeitaufwand = ZA)
-- range = RNG (Reichweite = RWt)
-- duration = DUR (Wirkungsdauer = WD)
+- range = rng. (Reichweite = RWt)
+- duration = dur. (Wirkungsdauer = WD)
 - character level = lvl (Charakterstufe = Stf.)
 - casting at higher levels = UPCAST (Verwenden von Zauberplätzen höheren Grades = Grad+)
 - cantrip upgrade = CTP+ (Zaubertrick-Aufwertung = ZT+)
@@ -109,7 +116,7 @@ Manual matching transforms only visible prose. Fenced and inline code, HTML comm
 - — (Berührung = Ber.)
 - target = tgt. (Ziel = Ziel)
 - object = obj. (Gegenstand = Ggst.)
-- objects = obj. (—)
+- objects = obj. (Gegenstände = Ggstd.)
 - radius = rad. (Radius = Rad.)
 - diameter = dia. (Durchmesser = Durchm.)
 - — (Kugel = Kug.)
@@ -202,6 +209,38 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - — (Treffer = Trf.)
 - attribute = attr. (Attribut = Attr.)
 - spell casting modifier = spell mod. (Zauber-Attributsmodifikator = Z.-Attr.Mod.)
+- including = incl. (—)
+- condition = cond. (—)
+- against = vs. (gegen = gg.)
+- obviously = obv. (—)
+- obvious = obv. (—)
+- point = pt. (Punkt = Pkt.)
+- physical = phys. (physisch = phys.)
+- following = foll. (folgenden = folg.)
+- option = opt. (Option = Opt.)
+- illusory = illus. (illusionär = illus.)
+- at least = ≥ (mindestens = mind.)
+- — (addieren = add.)
+- — (für = f.)
+- — (innerhalb = innerh.)
+- — (Zauberwirken-Attributsmodifikator = Zauberwirken-Attr.mod.)
+
+### Numbers
+
+The prose transformer converts only standalone number words; compounds, hyphenated forms, ordinals, and larger numbers stay unchanged. For example, `twenty-one`, `tenfold`, and `one-handed` are not matched. Idioms such as `one another` and `no one` are not context-filtered, so their number word is converted. The catalog stops at `ten` and `hundred`; there are no eleven-plus, compound, or ordinal entries.
+
+- zero = 0 (null = 0)
+- one = 1 (eins = 1)
+- two = 2 (zwei = 2)
+- three = 3 (drei = 3)
+- four = 4 (vier = 4)
+- five = 5 (fünf = 5)
+- six = 6 (sechs = 6)
+- seven = 7 (sieben = 7)
+- eight = 8 (acht = 8)
+- nine = 9 (neun = 9)
+- ten = 10 (zehn = 10)
+- hundred = 100 (hundert = 100)
 
 ### Usage conventions
 
@@ -219,10 +258,11 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - **R** means reaction; **RIT** means ritual. The official German spell-list marker **R** can also mean ritual, depending on context.
 - **R**, **K**, and **M** also occur as markers in official German spell lists: **R** indicates a ritual, **K** indicates concentration, and **M** indicates special material requirements. Their meanings depend on the display context.
 - **CON** means Constitution; **Conc.** means Concentration; **CONJ** means Conjuration.
-- **RNG** means range; **RNG-R** means Ranger. Avoid reducing both to RNG in a machine-readable map.
-- **min** is the time unit minute; **min.**/**Min.** is minimum.
+- **rng.** means range; **RNG-R** means Ranger. Avoid reducing both to RNG in a machine-readable map.
+- **min** is the time unit minute; **min.**/**Min.** is minimum, and German **mind.** is *mindestens* (at least).
 - **Min.** / **Max.** are the capitalized German noun abbreviations for *Minimum* and *Maximum*; English uses lowercase **min.** /**max.**.
-- **Z.** remains *Zauber*, and **Ggst.** covers both *Gegenstand* and *Gegenstände* through the configured `object` forms.
+- **rnd.** and **Rnd.** are the English and German round abbreviations; **TURN** / **ZUG** remain the turn abbreviations.
+- **Z.** remains *Zauber*; **Ggst.** is the singular *Gegenstand*, while **Ggstd.** is the plural *Gegenstände* / *Gegenständen*.
 - **b/w** is the English short for *between*; **zw.** is the German short for *zwischen*.
 - **RW** means Rettungswurf; **RWt** means Reichweite. This avoids the German collision.
 - **M** as a spell component means Material; **m** as a unit means meter. Case matters.
@@ -231,6 +271,7 @@ Common abbreviations for everyday language, descriptive text, and explanatory no
 - **ft** is the English foot/feet short; German spell ranges are generally given in meters.
 - **German ability abbreviations** such as ST, GE, KO, IN, WE, and CH are app-specific shorthand and do not necessarily match the abbreviations printed in the official German SRD.
 - **General language abbreviations** may overlap with D&D-specific codes. Their interpretation depends on context.
-- **≤** is used only for numeric `up to` / `bis zu` quantities; it is not a replacement for non-numeric phrases such as `up to the DM's discretion`.
+- **≤** is used only for numeric `up to` / `bis zu` quantities; it is not a replacement for non-numeric phrases such as `up to the DM's discretion`. **≥** is the corresponding `at least` / `mindestens` short; both glyphs depend on the surrounding comparison, so read the adjacent quantity to disambiguate them.
 - **Periods and spaces** are significant parts of an abbreviation. For example, `z. B.` and `d. h.` retain their internal spaces.
-- **Singular and plural forms** may intentionally share an abbreviation, such as `obj.` for object and objects or `Ggst.` for the configured German `object` forms. Context determines the intended meaning.
+- **Singular and plural forms** may intentionally share an abbreviation, such as `obj.` for object and objects. German distinguishes **Ggst.** (singular) from **Ggstd.** (plural). Context determines the intended meaning.
+- **Written numbers** convert only as standalone words; compounds (`twenty-one`), hyphenated forms (`one-handed`), ordinals, and larger numbers are unchanged.

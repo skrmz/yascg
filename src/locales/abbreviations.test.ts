@@ -92,7 +92,11 @@ describe("abbreviation catalog", () => {
   it("keeps intentionally reused abbreviations distinct", () => {
     expect(i18n.t("abbreviations.reaction.short", { lng: "en" })).toBe("R");
     expect(i18n.t("abbreviations.ritual.short", { lng: "en" })).toBe("RIT");
-    expect(i18n.t("abbreviations.range.short", { lng: "en" })).toBe("RNG");
+    expect(i18n.t("abbreviations.range.short", { lng: "en" })).toBe("rng.");
+    expect(i18n.t("abbreviations.duration.short", { lng: "en" })).toBe("dur.");
+    expect(i18n.t("abbreviations.spellSlot.short", { lng: "en" })).toBe("slot");
+    expect(i18n.t("abbreviations.round.short", { lng: "en" })).toBe("rnd.");
+    expect(i18n.t("abbreviations.round.short", { lng: "de" })).toBe("Rnd.");
     expect(i18n.t("abbreviations.ranger.short", { lng: "en" })).toBe("RNG-R");
     expect(i18n.t("abbreviations.foot.short", { lng: "en" })).toBe("ft");
     expect(i18n.t("abbreviations.feet.short", { lng: "en" })).toBe("ft");
@@ -159,16 +163,56 @@ describe("abbreviation catalog", () => {
       ["maximum", "max."],
       ["example", "ex."],
       ["compare", "cf."],
+      ["range", "rng."],
+      ["duration", "dur."],
+      ["spellSlot", "slot"],
+      ["including", "incl."],
+      ["condition", "cond."],
+      ["against", "vs."],
+      ["obviously", "obv."],
+      ["obvious", "obv."],
+      ["point", "pt."],
+      ["physical", "phys."],
+      ["following", "foll."],
+      ["option", "opt."],
+      ["illusory", "illus."],
+      ["atLeast", "≥"],
+      ["strengthCheck", "STR check"],
+      ["strengthSavingThrow", "STR save"],
+      ["dexteritySavingThrow", "DEX save"],
+      ["constitutionSavingThrow", "CON save"],
+      ["intelligenceSavingThrow", "INT save"],
+      ["wisdomSavingThrow", "WIS save"],
+      ["charismaSavingThrow", "CHA save"],
     ] as const;
     const german = [
       ["between", "zw."],
       ["advantage", "VT"],
       ["disadvantage", "NT"],
       ["object", "Ggst."],
+      ["objects", "Ggstd."],
       ["minimum", "Min."],
       ["maximum", "Max."],
       ["example", "Bsp."],
       ["compare", "vgl."],
+      ["add", "add."],
+      ["point", "Pkt."],
+      ["for", "f."],
+      ["atLeast", "mind."],
+      ["physical", "phys."],
+      ["following", "folg."],
+      ["option", "Opt."],
+      ["spellcastingAbilityModifier", "Zauberwirken-Attr.mod."],
+      ["illusory", "illus."],
+      ["against", "gg."],
+      ["within", "innerh."],
+      ["strengthCheck", "ST-Wurf"],
+      ["strengthSavingThrow", "ST-RW"],
+      ["dexteritySavingThrow", "GE-RW"],
+      ["constitutionSavingThrow", "KO-RW"],
+      ["intelligenceSavingThrow", "IN-RW"],
+      ["wisdomSavingThrow", "WE-RW"],
+      ["charismaSavingThrow", "CH-RW"],
     ] as const;
 
     for (const [id, short] of english) {
@@ -184,12 +228,46 @@ describe("abbreviation catalog", () => {
   });
 
   it("keeps the remaining policy terms excluded", () => {
-    for (const id of ["round", "turn", "speed", "presumably", "possibly", "inPart"] as const) {
+    for (const id of ["turn", "speed", "presumably", "possibly", "inPart"] as const) {
       expect(isAbbreviationEligible(entryById("en", id), "en")).toBe(false);
     }
-    for (const id of ["round", "turn", "presumably", "or", "diameter", "cube"] as const) {
+    for (const id of ["turn", "presumably", "or", "diameter", "cube"] as const) {
       expect(isAbbreviationEligible(entryById("de", id), "de")).toBe(false);
     }
+  });
+
+  it("makes round eligible in both locales", () => {
+    expect(entryById("en", "round")).toMatchObject({ full: "round", short: "rnd." });
+    expect(entryById("de", "round")).toMatchObject({ full: "Runde", short: "Rnd." });
+    expect(isAbbreviationEligible(entryById("en", "round"), "en")).toBe(true);
+    expect(isAbbreviationEligible(entryById("de", "round"), "de")).toBe(true);
+  });
+
+  it("defines eligible written numbers from zero through ten and hundred", () => {
+    const numbers = [
+      ["zero", "0"],
+      ["one", "1"],
+      ["two", "2"],
+      ["three", "3"],
+      ["four", "4"],
+      ["five", "5"],
+      ["six", "6"],
+      ["seven", "7"],
+      ["eight", "8"],
+      ["nine", "9"],
+      ["ten", "10"],
+      ["hundred", "100"],
+    ] as const;
+    for (const locale of ["en", "de"] as const) {
+      for (const [id, short] of numbers) {
+        const entry = entryById(locale, id);
+        expect(entry.short).toBe(short);
+        expect(isAbbreviationEligible(entry, locale)).toBe(true);
+      }
+    }
+    expect(entryById("en", "one").full).toBe("one");
+    expect(entryById("de", "one").full).toBe("eins");
+    expect(entryById("de", "hundred").full).toBe("hundert");
   });
 
   it("generates configured inflection forms", () => {
@@ -205,7 +283,20 @@ describe("abbreviation catalog", () => {
     expect(entryById("de", "minute").forms).toEqual(["Minute", "Minuten"]);
     expect(entryById("de", "hour").forms).toEqual(["Stunde", "Stunden"]);
     expect(entryById("de", "day").forms).toEqual(["Tag", "Tage"]);
-    expect(entryById("de", "object").forms).toEqual(["Gegenstand", "Gegenstände"]);
+    expect(entryById("de", "object").forms).toEqual(["Gegenstand"]);
+    expect(entryById("de", "objects")).toMatchObject({
+      full: "Gegenstände",
+      short: "Ggstd.",
+    });
+    expect(entryById("de", "objects").forms).toEqual(["Gegenstände", "Gegenständen"]);
+    expect(entryById("de", "physical").forms).toEqual([
+      "physisch",
+      "physische",
+      "physischer",
+      "physisches",
+      "physischem",
+      "physischen",
+    ]);
   });
 
   it("marks quantity prefixes and compact time units", () => {
@@ -224,7 +315,19 @@ describe("abbreviation catalog", () => {
     const english = new Set<string>(abbreviationCatalog("en")!.map((entry) => entry.id));
     const german = new Set<string>(abbreviationCatalog("de")!.map((entry) => entry.id));
 
-    for (const id of ["spell", "touch", "sphere", "cube", "or", "soCalled", "hit"] as const) {
+    for (const id of [
+      "spell",
+      "touch",
+      "sphere",
+      "cube",
+      "or",
+      "soCalled",
+      "hit",
+      "add",
+      "for",
+      "within",
+      "spellcastingAbilityModifier",
+    ] as const) {
       expect(english.has(id)).toBe(false);
       expect(german.has(id)).toBe(true);
     }
@@ -240,7 +343,6 @@ describe("abbreviation catalog", () => {
       "bonus",
       "foot",
       "feet",
-      "objects",
       "meters",
       "minutes",
       "hours",

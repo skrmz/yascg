@@ -442,9 +442,13 @@ introduce a second vertical scroll container or page-level horizontal overflow.
     unconfigured inflections are never inferred. Locale inventories are independent, so English
     plural entries and German generated forms need not mirror each other.
   - English `up to` and German `bis zu` become `≤` only when followed by a numeric quantity.
+    Written number words from zero through ten and hundred also count as numeric quantities
+    (`up to one hour` → `≤ 1h`, `up to ten minutes` → `≤ 10min`, `bis zu zwei Stunden` → `≤ 2h`).
     A following catalog time unit is compacted without a space (`≤ 1h`, `≤ 10min`, `≤ 3d`,
     `≤ 3t`); other units and nouns keep normal spacing (`≤ 30 ft`, `≤ 3 creatures`). Phrases
-    without a number, such as `up to the DM's discretion`, are unchanged.
+    without a number, such as `up to the DM's discretion`, are unchanged. Standalone number words
+    convert only as complete words; compounds, hyphenated forms, ordinals, and larger numbers are
+    not inferred.
   - **Undo abbreviation** is session-scoped and last-in-first-out. Each action snapshots only the
     fields it changes; Undo restores exactly those fields, overwriting later manual edits to them
     and leaving unrelated fields untouched. The stack and status clear when the editor closes,

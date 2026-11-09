@@ -16,7 +16,7 @@ test("abbreviates custom spell prose, preserves links, and can undo", async ({ p
   const description = editor.getByLabel("Description (Markdown)");
   const duration = editor.getByLabel("Duration");
   await description.fill(original);
-  await duration.fill("up to 1 hour");
+  await duration.fill("up to one hour");
 
   await editor.getByRole("button", { name: "Abbreviate" }).click();
 
@@ -27,7 +27,7 @@ test("abbreviates custom spell prose, preserves links, and can undo", async ({ p
 
   await editor.getByRole("button", { name: "Undo abbreviation" }).click();
   await expect(description).toHaveValue(original);
-  await expect(duration).toHaveValue("up to 1 hour");
+  await expect(duration).toHaveValue("up to one hour");
 
   await editor.getByRole("button", { name: "Abbreviate" }).click();
   await editor.getByRole("button", { name: "Save spell" }).click();
