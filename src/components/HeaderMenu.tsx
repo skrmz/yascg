@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BookOpen, Info, Menu } from "lucide-react";
+import { BookOpen, Info, Menu, ShieldCheck } from "lucide-react";
 import { Button } from "@/ui/Button.tsx";
 import {
   DropdownMenu,
@@ -10,11 +10,13 @@ import {
 } from "@/ui/DropdownMenu.tsx";
 import { AboutDialog } from "./AboutDialog.tsx";
 import { CustomSpellsGuideDialog } from "./CustomSpellsGuideDialog.tsx";
+import { PrivacyDialog } from "./PrivacyDialog.tsx";
 
 export function HeaderMenu() {
   const { t } = useTranslation();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   return (
     <>
@@ -33,10 +35,15 @@ export function HeaderMenu() {
             <BookOpen size={16} aria-hidden="true" />
             {t("menu.customSpellsGuide")}
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setPrivacyOpen(true)}>
+            <ShieldCheck size={16} aria-hidden="true" />
+            {t("menu.privacyPolicy")}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
       <CustomSpellsGuideDialog open={guideOpen} onOpenChange={setGuideOpen} />
+      <PrivacyDialog open={privacyOpen} onOpenChange={setPrivacyOpen} />
     </>
   );
 }

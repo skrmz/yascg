@@ -164,6 +164,13 @@ browser storage may be cleared, use the export tools to keep backups: export cus
 (including SRD component-text edits) from the Library and the active deck JSON from the deck
 actions menu. To restore, import both files; the two exports cover different data.
 
+The header menu includes a bilingual **Privacy Policy** entry. All UI and card fonts are
+self-hosted; the app makes no Google Fonts or other third-party font requests. Existing deletion
+mechanisms are unchanged: individual custom-spell deletion, saved-deck deletion, deck-entry
+removal and Clear entries, and SRD override reset. Clearing a browser's site data removes
+IndexedDB, `localStorage`, and Cache Storage. The app intentionally provides no bulk
+"delete all local data" action.
+
 ## Limitations
 
 - Bundled spells are SRD 5.2.1 only; no non-SRD material is included.
@@ -188,6 +195,10 @@ https://creativecommons.org/licenses/by/4.0/.
 Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells are labeled
 `Custom`. No Wizards of the Coast logos or D&D trademarks are used.
 
+Fonts are self-hosted under the SIL Open Font License 1.1. The full license text and upstream
+copyright notices are in [font-licenses.txt](src/data/font-licenses.txt), served at
+`/font-licenses.txt`.
+
 ## Documentation
 
 - [Development guide](docs/DEVELOPMENT.md) — commands, architecture, implementation notes,
@@ -201,4 +212,8 @@ Bundled spells are SRD 5.2.1 only and labeled `SRD 5.2.1`; user-authored spells 
 - [Custom spell import guide](docs/custom-spell-import-guide.md) — JSON format and import
   behavior.
 - [Official subclass catalog](docs/subclasses.md) — the canonical 2024 subclass list.
+- [Privacy and legal audit](docs/privacy-and-legal.md) — verified storage/network behavior, font
+  licensing, Impressum assessment, and Cloudflare verification checklist.
+- [Privacy Policy](docs/privacy-policy.md) / [Datenschutzerklärung](docs/privacy-policy.de.md) —
+  the in-app policy text (German is authoritative).
 - [Agent and contributor guidance](AGENTS.md).

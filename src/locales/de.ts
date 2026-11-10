@@ -61,6 +61,10 @@ export const de = {
     triggerAria: "Menü öffnen",
     aboutApp: "Über die App",
     customSpellsGuide: "Leitfaden für eigene Zauber",
+    privacyPolicy: "Datenschutzerklärung",
+  },
+  privacy: {
+    title: "Datenschutzerklärung",
   },
   guide: {
     title: "Leitfaden für eigene Zauber",

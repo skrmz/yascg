@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n.ts";
+import { LEGAL_CONFIG } from "@/legal/config.ts";
 import { HeaderMenu } from "./HeaderMenu.tsx";
 
 async function setLocale(code: string) {
@@ -99,5 +100,34 @@ describe("HeaderMenu", () => {
     expect(
       within(dialog).getAllByRole("button", { name: "JSON-Beispiel herunterladen" }),
     ).toHaveLength(1);
+  });
+
+  it("opens the Privacy Policy in English and German", async () => {
+    render(<HeaderMenu />);
+
+    const user = await openMenuItem("Privacy Policy");
+    const englishDialog = screen.getByRole("dialog", { name: "Privacy Policy" });
+    expect(englishDialog.textContent).toContain("TDDDG");
+    expect(englishDialog.textContent).toContain(LEGAL_CONFIG.controllerName);
+    expect(englishDialog.textContent).toContain(LEGAL_CONFIG.controllerEmail);
+    expect(
+      within(englishDialog).queryByRole("button", {
+        name: /Delete all local data|Alle lokalen Daten löschen/i,
+      }),
+    ).toBeNull();
+    await user.click(within(englishDialog).getByText("Close"));
+
+    await setLocale("de");
+    await user.click(screen.getByRole("button", { name: "Menü öffnen" }));
+    await user.click(screen.getByRole("menuitem", { name: "Datenschutzerklärung" }));
+
+    const germanDialog = screen.getByRole("dialog", { name: "Datenschutzerklärung" });
+    expect(germanDialog.textContent).toContain("TDDDG");
+    expect(germanDialog.textContent).toContain("DSGVO");
+    expect(
+      within(germanDialog).queryByRole("button", {
+        name: /Delete all local data|Alle lokalen Daten löschen/i,
+      }),
+    ).toBeNull();
   });
 });

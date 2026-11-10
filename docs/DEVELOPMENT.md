@@ -147,7 +147,12 @@ Paths are relative to the repository root.
   `CompactCard.tsx` renders the Compact design.
 - `src/components/details/` — card-preview-first details pane with header actions and
   on-demand spell details dialog.
+- `src/components/PrivacyDialog.tsx` — bundled bilingual privacy policy dialog (see
+  [Privacy and local data](#privacy-and-local-data)).
 - `src/print/` — strict physical print CSS and 3x3 sheet rendering.
+- `src/fonts.css` — self-hosted `@font-face` rules for every UI and card family, importing
+  latin-subset WOFF2 files from `src/assets/fonts/`.
+- `src/legal/config.ts` — legal controller identity and policy last-updated date.
 - `src/io/` — unversioned JSON export/import with collision review and atomic commits.
 - `src/pwa/` — service-worker registration and Cache Storage verification.
 - `src/i18n.ts`, `src/locales/` — typed `react-i18next` configuration and EN/DE catalogs.
@@ -336,6 +341,23 @@ Intentional exclusions: the YASCG product name, exact SRD legal attribution (ren
 or persisted names/content, export filenames and identifiers, paper product names (US Letter /
 ISO A4), and technical diagnostics that are logged but not shown.
 
+## Privacy and local data
+
+The in-app Privacy Policy is opened from the header menu and rendered by
+`src/components/PrivacyDialog.tsx` from `docs/privacy-policy.md` and
+`docs/privacy-policy.de.md` (`?raw` imports). German is authoritative; English is a translation.
+`parseMarkdown(..., { links: "anchor" })` and `BlockList` provide the same safe rendering as the
+custom-spells guide. `{{controllerName}}`, `{{controllerEmail}}`, and `{{lastUpdated}}` are
+replaced from `src/legal/config.ts`; the controller name and email are configured there, while a
+postal address is still missing and remains an optional documentation TODO.
+
+Storage inventory and verified network behavior are documented in
+[privacy-and-legal.md](privacy-and-legal.md). In short: Dexie/IndexedDB holds user content,
+`localStorage` holds `spellCards.language`, and Cache Storage holds only app assets and bundled
+datasets. Existing deletion mechanisms are unchanged and no bulk deletion exists. Do not add
+bulk-delete/reset behavior or change storage keys/schema as part of privacy work. The privacy E2E
+coverage is in `e2e/privacy.spec.ts`.
+
 ## Cards, printing, and offline
 
 Product geometry, typography, pagination, print omission, and offline guarantees are owned by
@@ -368,7 +390,7 @@ settings are in the [README](../README.md#printing). Implementation details:
   the per-locale exclusion sets used by the manual prose transformer. `docs/abbreviations.md`
   remains the parity source for the per-locale documentation test, never a runtime parser.
 - `src/cards/fonts.ts` explicitly requests and checks every card face/weight before measurement
-  and `window.print()`; `src/print/print.css` self-hosts the card families as WOFF2 assets.
+  and `window.print()`; `src/fonts.css` self-hosts all UI and card families as WOFF2 assets.
 - `src/print/PrintSheet.tsx` builds the 3x3 sheets and `src/print/print.css` owns the physical
   `@page`, grid, Classic, and Compact card CSS. Tooltip and dialog portals are excluded in print.
   `src/print/document-title.ts` derives the print-to-PDF document title from the active deck name

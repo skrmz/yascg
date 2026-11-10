@@ -62,6 +62,10 @@ export const en = {
     triggerAria: "Open menu",
     aboutApp: "About App",
     customSpellsGuide: "Custom Spells Guide",
+    privacyPolicy: "Privacy Policy",
+  },
+  privacy: {
+    title: "Privacy Policy",
   },
   guide: {
     title: "Custom Spells Guide",

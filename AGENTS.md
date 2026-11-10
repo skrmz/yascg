@@ -76,6 +76,8 @@ whole sections.
 | Cloudflare config, Workers Builds, deploy operations, `compatibility_date`                                             | `docs/cloudflare-deployment-guide.md` | MAIN-spec stable hosting constraints; DEVELOPMENT integration gotchas |
 | Custom-spell JSON format, examples, collisions, SRD override import/export                                             | `docs/custom-spell-import-guide.md`   | MAIN-spec §8 semantics                                                |
 | Official 2024 subclass catalog                                                                                         | `docs/subclasses.md`                  | Link from pipeline/spec                                               |
+| Privacy Policy text (German authoritative, English translation)                                                       | `docs/privacy-policy.de.md`, `docs/privacy-policy.md` | In-app dialog, README link                            |
+| Privacy/storage/network audit, font licensing, Impressum assessment, Cloudflare checklist                              | `docs/privacy-and-legal.md`           | README link, DEVELOPMENT summary                                      |
 | Agent workflow, review checklist, documentation policy                                                                 | `AGENTS.md`                           | —                                                                     |
 
 Do not duplicate command tables, package scripts, payload schemas, or full deployment

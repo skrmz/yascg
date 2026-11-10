@@ -104,7 +104,8 @@ spells `Custom` and bundled spells `SRD 5.2.1`.
   for accessible dialogs, menus, comboboxes, tabs, and tooltips, with Lucide icons. Card and
   print geometry use dedicated strict CSS (§9–10), not utility-class geometry.
 - **Typography:** application chrome uses Karla (body/controls), Cormorant Garamond (display
-  headings), and IBM Plex Mono (labels). Card typography is specified in §9.
+  headings), and IBM Plex Mono (labels). All UI and card fonts are self-hosted WOFF2 files declared
+  in `src/fonts.css`; the app makes no Google Fonts requests. Card typography is specified in §9.
 - **Markdown:** safe AST-based parsing with raw HTML disabled except the harmless `<br>` tag,
   which renders a line break. Authored newlines render as line breaks in preview, details, and
   print. Render only an allowlisted node set; links display as non-clickable text. No remote
@@ -906,10 +907,12 @@ must print.
   advertising mixed-version or absent assets as offline-ready. After the first successful
   precache, core data, card measurement, preview, and printing require no runtime network
   requests. Language switching after full precache must work without network access.
-- Card typography assets are self-hosted WOFF2 files included in the precache release. Offline
-  card preview, measurement, and printing must use those local faces; Google Fonts is not
-  required for card rendering. Application-shell Google Fonts are progressive enhancement and
-  may fall back to system fonts offline.
+- All UI and card typography assets are self-hosted WOFF2 files included in the precache release.
+  Offline card preview, measurement, printing, and application chrome must use those local faces;
+  no font request may leave the origin, including on first load. The header menu provides a
+  bilingual Privacy Policy that accurately documents local storage, existing deletion mechanisms,
+  browser-settings deletion, and the absence of a bulk-delete action. Opening the policy must not
+  alter stored data or caches.
 - Production hosting is static: Cloudflare serves the built client assets and the service
   worker over HTTPS, and all user data remains in the browser. Deployment must not introduce
   server-side storage, API endpoints, or secrets, and public `VITE_*` variables must never
@@ -953,7 +956,7 @@ duplicate these outcomes as a second invariants list.
 
 | ID  | Area            | Scenario                                                                                            | Expected outcome                                                                                                                                                                                               | Requirement |
 | --- | --------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| B1  | Build           | Strict TypeScript build                                                                             | Build succeeds; no runtime external requests during normal use after first load                                                                                                                                | §3, §11     |
+| B1  | Build           | Strict TypeScript build                                                                             | Build succeeds; no external font or third-party requests on first load or during normal use                                                                                                                     | §3, §11     |
 | B2  | Build           | SRD input missing, malformed, incomplete, or duplicate-ID                                           | Build fails with a readable indexed error; no partial English dataset; bundled spells remain SRD-only with attribution                                                                                         | §2          |
 | B3  | Build           | New valid language file                                                                             | Discovered without an allowlist; manifest and dataset generated; English remains selectable                                                                                                                    | §2, §11     |
 | B4  | Build           | Translation changes `index`, duplicates an index, uses an unknown ID, or conflicts on mechanics     | Build fails; no fallback parsing and no invalid dataset shipped                                                                                                                                                | §2, §4      |
@@ -1007,11 +1010,11 @@ duplicate these outcomes as a second invariants list.
 | P2  | Cards/print     | Multi-card on long Unicode/Markdown content                                                         | No dropped text, invalid markup, or split grapheme; continuation order retained; complete text preserved                                                                                                       | §9          |
 | P3  | Cards/print     | More than 100 continuation cards                                                                    | Visible blocking error for that entry; no silent omission                                                                                                                                                      | §9, §10     |
 | P4  | Cards/print     | Long spell title and fixed fields                                                                   | Title wraps within the header without clipping; fixed fields truncate visibly; level/icons remain visible                                                                                                      | §9          |
-| P5  | Cards/print     | Card typography and font readiness                                                                  | Vollkorn 700 title, Alegreya Sans 500 body with fallbacks; required faces verified before measurement and `print()`; app chrome fonts unchanged                                                                | §9, §10     |
+| P5  | Cards/print     | Card typography and font readiness                                                                  | Vollkorn 700 title, Alegreya Sans 500 body with fallbacks; self-hosted required faces verified before measurement and `print()`; app chrome fonts unchanged                                                       | §9, §10     |
 | P6  | Cards/print     | Letter/A4 nine-card sheet                                                                           | Up to nine 2.5in × 3.5in cards on a centered grid; no clipping, unwanted scaling, or extra blank sheet at correct settings                                                                                     | §10         |
 | P7  | Cards/print     | Unresolved or untranslated entries at print                                                         | Separate counts; confirmation; omitted without deleting entries; print disabled if none resolved                                                                                                               | §10         |
 | P8  | Cards/print     | Cross-browser verification                                                                          | Chromium geometry verified; Chrome/Firefox/Safari remain the target for current and future validation                                                                                                          | §10         |
-| P9  | Cards/print     | Offline card preview and print                                                                      | Self-hosted card fonts load from precache; typography and measurement work without network                                                                                                                     | §9, §11     |
+| P9  | Cards/print     | Offline card preview and print                                                                      | Self-hosted UI and card fonts load from precache; typography and measurement work without network                                                                                                               | §9, §11     |
 | P10 | Cards/print     | Compact abbreviated casting-time parsing                                                            | `A`, `BA`/`B`, `R`, and localized `MIN`/`HR`/`min`/`Std.` values parse to the same base, glyph, accessible label, qualifier, caret, notes, fit, and print behavior as full text; stored text is never transformed at render | §9          |
 | U1  | Details UI      | Preview-only default pane                                                                           | No duplicated metadata/description pane by default; details open from the header control; no duplicate preview menu or context menu; dialog closes on spell change; print unchanged                                                        | §5          |
 | U2  | Workspace       | Compact / Split / Wide and container boundaries | Modes follow measured container width, including viewport mismatch; 720px starts Split and 1200px starts Wide; pane minima hold; one relevant tab list; selection reveals Details; state and focus survive resizing without page scrolling | §5 |
@@ -1026,6 +1029,7 @@ duplicate these outcomes as a second invariants list.
 | O4  | Offline/quality | Untrusted Markdown/JSON                                                                             | Raw HTML/scripts cannot execute; links are non-clickable; validation precedes storage/rendering                                                                                                                | §3, §11     |
 | O5  | Offline/quality | Accessibility and performance targets                                                               | Keyboard/labels/focus/modals hold; WCAG 2.2 AA core workflows; search/edit performance targets met or measured                                                                                                 | §11         |
 | O6  | Offline/quality | Cache update                                                                                        | Versioned cache update prompt and clean reload; IndexedDB is not erased during app updates                                                                                                                     | §11         |
+| O7  | Offline/quality | Privacy Policy access and accuracy                                                                   | Policy opens in both UI languages without authentication and documents actual storage, existing deletion mechanisms, browser-settings deletion, and no bulk-delete action; existing data and deletion behavior are preserved | §11         |
 
 **Storage implementation note:** the `activeDeck` singleton and `savedDecks` records use
 explicit Dexie keys. Explicit Dexie schema versions govern future evolution; migrations must
