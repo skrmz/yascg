@@ -1,1 +1,104 @@
-{}
+{
+  "srd-acid-arrow": {
+    "description": "Ein grüner Pfeil trifft ein Ziel in RWt und explodiert in Säure. Führe einen Fernkampf-ZAng. aus. Bei Trf.: 4W4 SÄU plus 2W4 SÄU am Ende des nächsten Zugs des Ziels. Bei Misserfolg: ½ des anfänglichen SCH.",
+    "higherLevels": "Pro ZP-Grad über 2. steigen anfänglicher und späterer SCH je um 1W4."
+  },
+  "srd-aid": {
+    "description": "Wähle ≤3 Kreaturen in RWt. Für die WD steigen TP-Max. und aktuelle TP jedes Ziels um 5.",
+    "higherLevels": "Je ZP-Grad über 2. steigen TP jedes Ziels um jeweils 5."
+  },
+  "srd-alter-self": {
+    "description": "Du veränderst deine physische Gestalt; wähle 1 der folg. Opt., deren Effekt für die WD anhält. Mit einer magischen A wählst du stattdessen eine andere Opt.\n\n- **Aquatische Anpassung:** Kiemen und Schwimmhäute; du kannst unter Wasser atmen und erhältst eine Schwimm-BR in Höhe deiner BR.\n- **Erscheinungsbild ändern:** Du bestimmst dein Aussehen (Größe, Gewicht, Gesichtszüge, Stimme, Haarlänge/-farbe, Merkmale) und kannst dich als Mitglied einer anderen Spezies ausgeben. Spielwerte bleiben unverändert; keine andere Größenkategorie, Grundgestalt bleibt gleich (kein Wechsel Zweibeiner/Vierbeiner). Mit einer magischen A kannst du das Erscheinungsbild erneut so ändern.\n- **Natürliche Waffen:** Klauen (HIEB), Fangzähne (STICH), Hörner (STICH) o. Hufe (WUCHT). Dein waffenloser Angriff mit diesen Waffen bewirkt 1W6 SCH der angegebenen Art statt des normalen SCH; für AW und SCH-Würfe nutzt du deinen Zauberwirken-Attr.mod. statt ST."
+  },
+  "srd-animal-shapes": {
+    "description": "Wähle ≤ beliebige Anzahl bereitwilliger Kreaturen in RWt, die du siehst. Jedes Ziel verwandelt sich in ein Tier deiner Wahl ≤ großer Größe mit HG ≤ 4. Du kannst f. jedes Ziel eine andere Gestalt bestimmen. In deinen folg. Zügen kannst du eine magische A ausführen, um die Ziele erneut zu verwandeln.\n\nDie Spielwerte eines Ziels werden durch die Werte des jeweiligen Tieres ersetzt. Das Ziel behält jedoch seinen Kreaturentyp, seine TP sowie TP-Würfel, seine Gesinnung, seine Kommunikationsfähigkeit sowie seine Werte f. IN, WE und CH. Die Aktionen des Ziels sind durch die Anatomie der Tiergestalt begrenzt. Das Ziel kann keine Z. wirken. Seine Ausrüstung verschmilzt mit der neuen Gestalt, und das Ziel kann seine Ausrüstung in dieser Gestalt nicht verwenden.\n\nDas Ziel erhält temporäre TP in Höhe der TP der neuen Gestalt. Nach der WD verbleibende temporäre TP gehen verloren. Die Verwandlungsmagie hält f. die WD an, oder bis das Ziel sie als BA beendet."
+  },
+  "srd-antilife-shell": {
+    "description": "Für die WD geht eine Aura (Ausströmung, 3 m) von dir aus. Kreaturen außer Konstrukten u. Untoten können nicht hineinbewegen o. hineingreifen; sie können jedoch Z. hineinwirken u. mit Fernkampfwaffen o. Waffen mit RWt durch die Barriere angreifen. Bewegst du dich so, dass eine betroffene Kreatur die Barriere passieren muss, endet der Z."
+  },
+  "srd-antimagic-field": {
+    "description": "Aktion. Reichweite: Selbst. WD: bis zu 1h. Du bist von einer antimagischen Aura (Rad. 3m) umgeben. In der Aura können keine Zauber oder magischen Effekte gewirkt oder erzeugt werden. Ziele in der Aura sind von magischen Effekten nicht betroffen. Magische Eigenschaften von Ggstd. wirken in der Aura nicht. Wirkungsbereiche magischer Effekte können die Aura nicht durchdringen. Teleportationen und Ebenenreisen sind blockiert; Portale schließen sich innerhalb der Aura. Bereits wirksame Zauber werden unterdrückt, außer sie stammen von Artefakten o. Gottheiten; die Zeit unterdrückter Effekte wird von dessen WD abgezogen. _Magie bannen_ wirkt in der Aura nicht. Mehrere Auren heben einander nicht auf."
+  },
+  "srd-arcane-eye": {
+    "description": "Du erschaffst ein unsichtbares, unverwundbares Auge in RWt, das bis zu 1 h schwebt. Es blickt in alle Richtungen, übermittelt dir mental visuelle Infos und hat Dunkelsicht (9 m).\n\nAls BA bewegst du es bis zu 9 m in beliebige Richtung. Massive Barrieren kann es nicht durchdringen, Öffnungen ab 2,5 cm Durchmesser schon."
+  },
+  "srd-arcane-sword": {
+    "description": "Du erschaffst ein geisterhaftes Schwert, das in RWt schwebt und für die WD bleibt. Beim Erscheinen kannst du einen Nahkampf-ZAng. gg. ein Ziel ≤1,5 m vom Schwert ausführen. Bei Treffer: 4W12 ENERG + Z.-Attr.Mod. In folg. Zügen kannst du das Schwert per BA ≤9 m an einen sichtbaren Ort bewegen und den Angriff gg. dasselbe o. ein anderes Ziel wiederholen."
+  },
+  "srd-astral-projection": {
+    "description": "Du projizierst deinen Astralkörper und die Astralkörper von ≤ 8 bereitwilligen Kreaturen in RWt auf die Astralebene (befindest du dich bereits dort, endet der Z. sofort). Die physischen Körper der Ziele bleiben scheintot zurück: bewusstlos, ohne Nahrung/Luft und ohne Alterung.\n\nDie Astralgestalt gleicht dem physischen Körper weitgehend, hat dessen Spielwerte und Habseligkeiten. Von den Schulterblättern entspringt eine Silberschnur, die nach 30 cm verblasst und unsichtbar wird. Wird die Schnur durchtrennt – nur wenn ein Effekt dies explizit erwähnt –, sterben physischer Körper und Astralgestalt.\n\nDie Astralgestalt kann durch die Astralebene reisen. Verlässt sie diese Ebene, werden physischer Körper und Habseligkeiten entlang der Silberschnur mitgeführt, sodass das Ziel auf der neuen Ebene in seinen Körper gelangt.\n\nSCH und sonstige Effekte auf die Astralgestalt wirken nicht auf den physischen Körper und umgekehrt. Sinken die TP der Astralgestalt oder des physischen Körpers eines Ziels auf 0, endet der Z. für dieses Ziel. Du kannst den Z. als magische A. verwerfen, wodurch er für alle Ziele endet. Endet der Z. für ein nicht totes Ziel, kehrt es in seinen physischen Körper zurück und dessen scheintoter Zustand endet."
+  },
+  "srd-augury": {
+    "description": "Du erhältst ein Omen eines außerweltlichen Wesens zum Ergebnis eines Vorhabens, das du innerhalb von 30 min planst. Der SL wählt das Omen:\n\n- **Wohl:** gut\n- **Wehe:** schlecht\n- **Wohl und Wehe:** gut und schlecht\n- **Gleichgültig:** weder gut noch schlecht\n\nUmstände wie andere Z. werden nicht berücksichtigt. Wirkst du den Z. vor einer LR mehr als einmal, steigt das Risiko, keine Antwort zu erhalten, mit jedem weiteren Wirken um 25 %."
+  },
+  "srd-aura-of-life": {
+    "description": "Für die WD geht eine 9 m-Eman. von dir aus. Du und deine Verbündeten innerh. sind gegen NEKR resistent; eure TP-Maxima können nicht verringert werden. Beginnt ein Verbündeter mit 0 TP seinen ZUG innerh., erhält er 1 TP zurück."
+  },
+  "srd-awaken": {
+    "description": "Du zeichnest 8 h lang magische Pfade in einen kostbaren Edelstein und berührst dann ein Ziel: ein Tier, eine Pflanzenkreatur mit IN ≤ 3 o. eine natürliche Pflanze (keine Kreatur). Das Ziel erhält IN 10 u. kann eine dir bekannte Sprache sprechen. Eine natürliche Pflanze wird zur Pflanzenkreatur, die Wurzeln, Triebe, Ranken usw. bewegen u. menschähnlich wahrnehmen kann. Der SL wählt Spielwerte (z. B. erwachter Busch o. erwachten Baum). Die Kreatur ist bezaubert; dies endet nach 30 t o. wenn du/deine Verbündeten ihr SCH zufügen. Danach wählt sie ihre Haltung dir ggü."
+  },
+  "srd-bane": {
+    "description": "≤3 Kreaturen deiner Wahl in RWt, die du siehst, machen je einen CH-RW. Misslingt er einem Ziel, zieht es während der WD von jedem AW o. RW 1W4 ab.",
+    "higherLevels": "Für jeden ZP-Grad über 1 kannst du auf 1 weitere Kreatur zielen."
+  },
+  "srd-banishment": {
+    "description": "Eine sichtbare Kreatur in RWt muss einen CH-RW bestehen, sonst wird sie für die WD auf eine harmlose Halbebene transportiert und ist dort kampfunfähig. Endet der Z., erscheint das Ziel am ursprünglichen Ort oder im nächstgelegenen freien Bereich, falls dieser besetzt ist.\n\nIst das Ziel eine Aberration, ein celestisches Wesen, ein Elementar, ein Feenwesen oder ein Unhold, kehrt es nicht zurück, wenn der Z. 1 min lang wirkt; es gelangt stattdessen an einen zufälligen, vom SL gewählten Ort einer mit seinem Kreaturentyp assoziierten Ebene.",
+    "higherLevels": "Für jeden ZP-Grad über 4 kannst du auf eine weitere Kreatur zielen."
+  },
+  "srd-barkskin": {
+    "description": "Ber. eine bereitwillige Kreatur: Für die WD erhält das Ziel RK 17, falls seine RK niedriger ist."
+  },
+  "srd-beacon-of-hope": {
+    "description": "Wähle beliebig viele Kreaturen in RWt. Für WD: Ziele haben VT bei WE- u. Todes-RW und erhalten bei Heilung stets max. TP zurück."
+  },
+  "srd-befuddlement": {
+    "description": "Du greifst den Verstand einer sichtbaren Kreatur in RWt an. Ziel führt IN-RW aus. FEHL: 10W12 PSY und Ziel kann weder Z. wirken noch magische Aktionen ausführen. Nach jeweils 30 t wiederholt das Ziel den RW; bei Erfolg endet der Effekt. Auch durch Heilung, Vollständige Genesung oder Wunsch beendbar. ERF: nur ½ SCH."
+  },
+  "srd-bestow-curse": {
+    "description": "Berühre eine Kreatur; sie muss einen WE-RW bestehen, sonst verflucht (WD). Wähle einen Effekt bis zum Ende des Fluchs:\n- Wähle ein Attr.: Ziel hat NT bei allen Attr.- und RW mit diesem Attr.\n- Ziel hat NT bei AW gg. dich.\n- Zu Beginn jedes seiner ZÜGE im Kampf: WE-RW bestehen, sonst Ausweichaktion.\n- Fügst du dem Ziel mit AW o. Z. SCH zu, erleidet es zusätzlich 1W8 NEKR.",
+    "higherLevels": "Mit ZP 4. Grades: Konz. bis zu 10 min. Ab ZP 5. Grades: keine Konz., WD 8 h (Grad 5–6) o. 24 h (Grad 7–8). Mit ZP 9. Grades: bis geb."
+  },
+  "srd-black-tentacles": {
+    "description": "Ein 6 m großes Bodenquadrat in RWt, das du siehst, füllt sich mit schwarzen Tentakeln: schwieriges Gelände für WD.\n\nJede Kreatur im Bereich macht einen ST-RW. FEHL: 3W6 WUCHT und festgesetzt bis Zauberende. Auch wer den Bereich betritt oder ZUG darin beendet, würfelt – nur 1× pro ZUG.\n\nFestgesetzt: A für ST-Wurf (Athletik) gg. Z-SG; Erfolg beendet den Zustand."
+  },
+  "srd-blade-barrier": {
+    "description": "Du erschaffst eine Wand wirbelnder Klingen aus magischer Energie in RWt, die für die WD besteht. Wähle eine gerade Wand ≤30 m lang oder eine ringförmige Wand mit Rad. ≤9 m; beide sind 6 m hoch und 1,5 m dick. Die Wand bietet DVD, ihr Bereich ist schwieriges Gelände.\n\nJede Kreatur im Bereich führt einen GE-RW aus: FEHL → 6W10 ENERG, ERF → ½ SCH. Auch wer sich in den Bereich begibt oder seinen ZUG darin beendet, würfelt; jede Kreatur nur einmal pro ZUG."
+  },
+  "srd-bless": {
+    "description": "Segne ≤ 3 Kreaturen in RWt (9 m). Während der WD fügt jedes Ziel seinen AW- und RW-Ergebnissen 1W4 hinzu.",
+    "higherLevels": "Für jeden ZP-Grad über 1 kannst du auf 1 weitere Kreatur zielen."
+  },
+  "srd-blight": {
+    "description": "Eine sichtbare Kreatur in RWt macht einen KO-RW. FEHL: 8W8 NEKR, sonst ½. Pflanzenkreaturen misslingt der RW automatisch.\n\nAlternativ: nichtmagische Pflanze (keine Kreatur, z. B. Baum o. Strauch) verdorrt und stirbt ohne RW.",
+    "higherLevels": "Für jeden ZP-Grad über 4. +1W8 SCH."
+  },
+  "srd-blindness-deafness": {
+    "description": "Eine sichtbare Kreatur in RWt muss einen KO-RW bestehen, sonst ist sie für die WD blind oder taub (deine Wahl). Das Ziel wiederholt den RW am Ende jedes seiner Züge; bei Erfolg endet der Z.",
+    "higherLevels": "Für jeden ZP-Grad über 2 kannst du auf eine weitere Kreatur zielen."
+  },
+  "srd-blink": {
+    "description": "Würfle während der WD am Ende jedes deiner Züge 1W6. Bei 4–6 verschwindest du von deiner Ebene und erscheinst auf der Ätherebene (Z. endet sofort, wenn du dort bereits bist). Von dort nimmst du deine verlassene Ebene in Graustufen wahr, Sichtweite ≤ 18 m. Du kannst nur Kreaturen auf der Ätherebene beeinflussen o. von ihnen beeinflusst werden; Kreaturen der anderen Ebene nehmen dich nicht wahr, außer durch Spezialfähigkeiten.\n\nDu kehrst zu Beginn deines nächsten Zugs zurück – o. wenn der Z. endet, während du auf der Ätherebene bist – in einen freien Bereich deiner Wahl, den du siehst, ≤ 3 m vom verlassenen Bereich entfernt. Gibt es dort keinen, erscheinst du im nächstgelegenen freien Bereich."
+  },
+  "srd-blur": {
+    "description": "Dein Körper wird unscharf. Für die WD sind Kreaturen bei AW gg. dich im NT. Angreifer mit Blindsicht o. Wahrer Blick sind immun gg. diesen Effekt."
+  },
+  "srd-burning-hands": {
+    "description": "Du verschießt ein dünnes Flammenband. Jede Kreatur in einem Kegel von 4,5 m führt einen GE-RW aus: FEHL → 3W6 FEUER, ERF → ½ SCH. Brennbare, nicht getragene o. gehaltene Ggstd. im Kegel beginnen zu brennen.",
+    "higherLevels": "Für jeden ZP-Grad über 1. wird der SCH um 1W6 erhöht."
+  },
+  "srd-call-lightning": {
+    "description": "Du erschaffst an einem sichtbaren Punkt in RWt über dir eine Sturmwolke (Zyl., 3 m hoch, Rad. 18 m).\n\nBeim Wirken wählst du einen sichtbaren Punkt unter der Wolke: Ein Blitz schlägt dort ein. Jede Kreatur ≤1,5 m um den Punkt macht einen GE-RW; FEHL: 3W10 BLITZ, ERF: ½ SCH.\n\nFür die WD kannst du eine magische Aktion nutzen, um einen weiteren Blitz einschlagen zu lassen (derselbe o. ein anderer Punkt).\n\nBist du beim Wirken draußen und herrscht ein Sturm, kontrollierst du diesen statt einen neuen zu erschaffen; der SCH steigt dann um 1W10.",
+    "higherLevels": "Für jeden ZP-Grad über 3. steigt der SCH um 1W10."
+  },
+  "srd-calm-emotions": {
+    "description": "Jeder Humanoide in einer Kugel mit Rad. 6 m um einen Punkt deiner Wahl in RWt muss einen CH-RW bestehen, sonst wirkt einer der folg. Effekte auf ihn (wähle f. jede Kreatur einen Effekt):\n\n- Das Ziel ist f. die WD immun gg. Bezaubert und Verängstigt; bestehende Zustände werden f. die WD unterdrückt.\n- Das Ziel wird Kreaturen deiner Wahl gleichgültig, denen es feindlich gesinnt war. Dies endet, wenn das Ziel SCH erleidet o. sieht, dass Verbündete SCH erleiden. Nach Zauberende wird die Haltung wieder normal."
+  },
+  "srd-chain-lightning": {
+    "description": "Du schleuderst einen Blitz auf ein sichtbares Ziel in RWt. Von dort springen drei Blitze auf ≤ drei weitere Ziele deiner Wahl ≤ 9 m vom ersten Ziel über. Ziele können Kreaturen o. Ggstd. sein; jedes wird nur von einem Blitz getroffen. Jedes Ziel macht einen GE-RW: FEHL → 10W8 BLITZ, ERF → ½ SCH.",
+    "higherLevels": "Für jeden ZP-Grad über 6 springt ein zusätzlicher Blitz vom ersten Ziel auf ein weiteres über."
+  },
+  "srd-charm-monster": {
+    "description": "Eine sichtbare Kreatur in RWt macht einen WE-RW; VT, falls du o. Verbündete gg. sie kämpfen. FEHL: Ziel ist bezaubert, bis Z. endet o. du/Verbündete ihm SCH zufügen. Es ist dir freundlich gesinnt. Nach Ende weiß es von der Bezauberung.",
+    "higherLevels": "Pro ZP-Grad über 4 kannst du auf 1 weitere Kreatur zielen."
+  }
+}

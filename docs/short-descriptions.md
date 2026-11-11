@@ -247,6 +247,7 @@ pnpm run short-descriptions:generate -- --locale de --all --limit 20
 | `--max-cost <usd>`  | Stop before the next call when the estimated cost cap is reached                               |
 | `--max-entries N`   | Refuse a larger selection unless `--all`, `--ids`, or `--limit` is given (default 25)          |
 | `--show-config`     | Print the effective non-secret configuration and exit; generation only                         |
+| `--timings`         | Print per-entry and run-level stage durations; no behavior change                               |
 
 Selection defaults:
 
@@ -263,7 +264,7 @@ Exit codes for generation and validation: `0` success (warnings and withheld rev
 
 - `data/reference/short-description-review.json`
 
-Review the report before committing. An entry is auto-accepted only when no high-severity finding exists, the semantic comparison reports no medium/high finding and `mechanicallyEquivalent: true`, and every deterministic unresolved item was explicitly reviewed. Otherwise it is committed as `status: "withheld"` for human review. Confirmed mismatches (high) block automatic acceptance even if a judge disagrees.
+Review the report before committing. An entry is auto-accepted only when no high-severity finding exists, the semantic comparison reports no medium/high finding and `mechanicallyEquivalent: true`, and every deterministic unresolved item was explicitly reviewed. Otherwise it is committed as `status: "withheld"` for human review. Confirmed mismatches (high) block automatic acceptance even if a judge disagrees. Conservative automation is intentional: a repeated value or an unrecognized unit is sent to the semantic comparison instead of being auto-accepted or blocked on a normalization artifact.
 
 ### Authoring file format
 
@@ -336,16 +337,37 @@ Severity is based on potential mechanical impact, never on model confidence:
 
 `src/tools/short-descriptions/normalize.ts` is a literal pattern-to-canonical-value table plus a multiset comparison. It never infers values outside the table. Adding an equivalence requires a unit test.
 
+- **Scope:** the source side is the replaceable description text. The spell's casting time, range, and duration are passed separately as metadata because the app displays them outside the description. A candidate value that only restates that metadata is whole-spell equivalent and is not a finding. Metadata never excuses a source-description value that disappears, and a candidate value that matches neither the description nor the metadata is still a confirmed mismatch.
 - **Dice:** `NdS`, `NS`/`WS` (German `W`), optional `±` modifier. `1d8`, `d8`, and `1W8` are equivalent; `1d8 + 2` equals `1d8+2`.
-- **Time (seconds):** 1 round = 6 seconds, 1 minute = 10 rounds = 60 seconds, 1 hour = 60 minutes, 1 day = 24 hours.
-- **Distance (meters):** 5 feet = 1.5 meters (labeled approximation, factor 0.3 m per foot); 1 meter = 100 centimeters is not needed because only the listed units are recognized.
+- **Time (seconds):** 1 round = 6 seconds, 1 minute = 10 rounds = 60 seconds, 1 hour = 60 minutes, 1 day = 24 hours. The locale catalog's time abbreviations are accepted (`min`, `h`, `t`, `d`, and the `Std.`-style long forms), including German `Sek.` for seconds.
+- **Distance (meters):** 5 feet = 1.5 meters (labeled approximation, factor 0.3 m per foot); 1 kilometer = 1000 meters (`km`, `Kilometer`).
 - **Weight (kilograms):** 1 pound = 0.45 kilograms (labeled approximation).
-- **Counts:** numbers and number words (zero through twenty plus tens and hundred, English and German) with `creature`/`target`/`object`/`spell` nouns, including German equivalents.
+- **Counts:** numbers and number words (zero through twenty plus tens and hundred, English and German) with `creature`/`target`/`object`/`spell` nouns, including German equivalents and catalog abbreviations (`Ggstd.`, `obj.`). Inflected German numerals (`ein`, `eine`, `einem`, `einer`) count as quantities but not as counts, so an article never becomes a target requirement. A value separated from its noun by up to three lowercase modifiers (`≤ 4 von dir erschaffene Kreaturen`) still matches; a capitalized word in between rejects the association because it is another noun or an abbreviation.
 - **Unresolved units:** miles, inches/yards, square units, stone, and tons are known but have no table factor; they are reported as unresolved and forwarded to the semantic comparison.
 - **Relative markers:** `half`, `one-half`, `halb`, `hälfte`, and `½` are preserved as a relative marker and are never equated with a fixed number.
+- **Repeated values:** the same value appearing a different number of times is `unresolved`, not a confirmed mismatch. Natural-language repetition may restate one rule, but it may also denote separate rules, so the semantic comparison must decide. A different value is still a confirmed mismatch.
 - **Formatting:** thousands separators, locale decimal commas, trailing zeros, and dash variants normalize before comparison. `10 feet` and `3 meters` are equivalent; `1d8` vs `1d6` is a confirmed mismatch.
 
-Other deterministic checks: Markdown safety, droppable rules vocabulary (damage, saving throw, hit points, advantage, disadvantage, concentration, bonus action, reaction and their German equivalents, accepting catalog abbreviations), higher-level completeness, duplicated scaling, and the compression budget.
+Other deterministic checks: Markdown safety, droppable rules vocabulary (damage, saving throw, hit points, advantage, disadvantage, concentration, bonus action, reaction and their German equivalents, accepting catalog abbreviations, English inflection such as `damaged`, and German compounds such as `Schadensvermeidung`), higher-level completeness, duplicated scaling, and the compression budget.
+
+Each numeric finding names the field (`description` or `higherLevels`), both raw value lists, whether the candidate has no value for a source value or adds an unsupported value, and whether a candidate value restates metadata. Unresolved items appear as low-severity findings with the same explanation and are also sent to the semantic comparison.
+
+### Timing diagnostics
+
+`--timings` prints a duration per pipeline stage after each entry and for the run as a whole. The clock is monotonic, the flag changes no behavior, and the lines contain only durations.
+
+```text
+de srd-example: accepted
+  generation API:        2.4s
+  deterministic checks:  0.1s
+  judge API:             3.1s
+  total:                 5.8s
+  authoring files:       0.0s
+  review report:         0.0s
+  total run:             5.9s
+```
+
+Timing lines are printed for failed entries as far as the stages were reached.
 
 ### Review report reference
 

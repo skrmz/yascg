@@ -1,63 +1,397 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-11T20:50:27.238Z",
+  "generatedAt": "2026-11-11T22:51:41.963Z",
   "provider": "openrouter",
   "baseUrl": "https://openrouter.ai/api/v1",
-  "generationModel": "openai/gpt-4o-mini",
+  "generationModel": "deepseek/deepseek-v4.1-flash-1017",
   "judgeModel": "deepseek/deepseek-v4.1-flash-1017",
   "command": "short-descriptions:generate",
   "dryRun": false,
-  "outcome": "failed",
+  "outcome": "partial",
   "counts": {
-    "selected": 1,
-    "accepted": 0,
-    "autoAccepted": 0,
+    "selected": 10,
+    "accepted": 5,
+    "autoAccepted": 5,
     "humanAccepted": 0,
-    "withheld": 0,
+    "withheld": 5,
     "invalid": 0,
-    "failed": 1,
+    "failed": 0,
     "skipped": 0
   },
   "countsByLocale": {
-    "en": {
-      "accepted": 0,
-      "withheld": 0,
+    "de": {
+      "accepted": 5,
+      "withheld": 5,
       "invalid": 0,
-      "failed": 1
+      "failed": 0
     }
   },
-  "autoAcceptanceRatio": "unavailable",
-  "exitCode": 2,
+  "autoAcceptanceRatio": 0.5,
+  "exitCode": 0,
   "entries": [
     {
-      "locale": "en",
-      "spellId": "srd-fireball",
-      "status": "failed",
-      "acceptance": null,
-      "origin": null,
+      "locale": "de",
+      "spellId": "srd-acid-splash",
+      "status": "withheld",
+      "acceptance": "auto",
+      "origin": "generated",
       "severity": "high",
-      "findings": [],
-      "reasons": [
-        "generation request failed (HTTP 400): {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid schema for response_format 'short_description': In context=(), 'required' i..."
+      "findings": [
+        {
+          "category": "dice",
+          "severity": "high",
+          "evidence": "description dice: source [1W6, 1W6, 2W6, 3W6, 4W6] vs candidate [1W6]; the candidate has no value for [1W6, 2W6, 3W6, 4W6]",
+          "recommendedAction": "Restore the original value; do not write this entry until it matches."
+        },
+        {
+          "category": "higher-levels",
+          "severity": "high",
+          "evidence": "the candidate adds higher-level rules the source does not have; \"1W6\", \"2W6\", \"3W6\", \"4W6\" also occur in the source description, so the text may be relocated instead of invented",
+          "recommendedAction": "Remove the invented scaling; regenerate or withhold."
+        }
       ],
-      "written": false,
-      "usage": "unavailable",
-      "estimatedCostUsd": "unavailable"
+      "reasons": [
+        "A high-severity finding blocks automatic acceptance."
+      ],
+      "written": true,
+      "usage": {
+        "promptTokens": 2691,
+        "completionTokens": 151,
+        "totalTokens": 2842
+      },
+      "estimatedCostUsd": 0.000092
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-alarm",
+      "status": "accepted",
+      "acceptance": "auto",
+      "origin": "generated",
+      "severity": "low",
+      "findings": [],
+      "reasons": [],
+      "written": true,
+      "usage": {
+        "promptTokens": 2692,
+        "completionTokens": 201,
+        "totalTokens": 2893
+      },
+      "estimatedCostUsd": 0.000117
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-animal-friendship",
+      "status": "accepted",
+      "acceptance": "auto",
+      "origin": "generated",
+      "severity": "low",
+      "findings": [
+        {
+          "category": "semantic",
+          "severity": "low",
+          "evidence": "targeting/range sentence: The source phrase 'Ziele auf ein Tier in Reichweite, das du sehen kannst' is abbreviated; 'in RWt' corresponds to the 9-meter range from metadata, and 'das du siehst' preserves the visibility requirement. No mechanical change.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        },
+        {
+          "category": "semantic",
+          "severity": "low",
+          "evidence": "saves/conditions/duration abbreviation: WE-RW is a standard abbreviation for Weisheitsrettungswurf, 'f. WD' for für die Wirkungsdauer, and 'sonst bezaubert' preserves the failure consequence. No mechanical change.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        },
+        {
+          "category": "semantic",
+          "severity": "low",
+          "evidence": "end condition abbreviation: 'du o. ein Verbündeter' abbreviates 'du oder einer deiner Verbündeten', and 'SCH zufügt' abbreviates 'Schaden zufügt'. The trigger and its effect remain the same. No mechanical change.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        },
+        {
+          "category": "semantic",
+          "severity": "low",
+          "evidence": "higher-level scaling abbreviation: ZP-Grad abbreviates Zauberplatzgrad; the scaling rule of targeting one additional beast per slot level above 1 is preserved.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        }
+      ],
+      "reasons": [],
+      "written": true,
+      "usage": {
+        "promptTokens": 2288,
+        "completionTokens": 633,
+        "totalTokens": 2921
+      },
+      "estimatedCostUsd": 0.000331
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-animal-messenger",
+      "status": "withheld",
+      "acceptance": "auto",
+      "origin": "generated",
+      "severity": "medium",
+      "findings": [
+        {
+          "category": "semantic",
+          "severity": "medium",
+          "evidence": "restriction: The source specifies that the target must attempt (versuchen) to deliver the message, implying a best-effort obligation that can fail; the candidate states it must deliver the message without the 'attempt' qualifier, potentially changing the obligation to an absolute requirement.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        },
+        {
+          "category": "semantic",
+          "severity": "low",
+          "evidence": "targets: The candidate omits 'deiner Wahl' (of your choice). While the choice is implicit in selecting a visible tiny beast within range, this is a minor compression that does not materially change the mechanic.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        }
+      ],
+      "reasons": [
+        "The semantic comparison reported a medium or high finding.",
+        "The semantic comparison did not confirm mechanical equivalence.",
+        "The semantic comparison reported severity \"medium\"."
+      ],
+      "written": true,
+      "usage": {
+        "promptTokens": 3096,
+        "completionTokens": 544,
+        "totalTokens": 3640
+      },
+      "estimatedCostUsd": 0.000291
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-animate-dead",
+      "status": "accepted",
+      "acceptance": "auto",
+      "origin": "generated",
+      "severity": "low",
+      "findings": [
+        {
+          "category": "quantity",
+          "severity": "low",
+          "evidence": "unresolved description count: source [vier Kreaturen] vs candidate []; the candidate states the value of \"vier Kreaturen\" separately from its count noun; the association needs semantic review",
+          "recommendedAction": "Review the representation against the source; the semantic comparison must clear it."
+        },
+        {
+          "category": "quantity",
+          "severity": "low",
+          "evidence": "unresolved higherLevels count: source [zwei zusätzliche untote Kreaturen, zwei zusätzliche untote Kreaturen] vs candidate [zwei zusätzliche untote Kreaturen]; the same count values appear a different number of times (\"zwei zusätzliche untote Kreaturen\"); the table cannot tell whether a repetition denotes a separate rule",
+          "recommendedAction": "Review the representation against the source; the semantic comparison must clear it."
+        },
+        {
+          "category": "semantic",
+          "severity": "low",
+          "evidence": "targets: The parentheticals 'Knochen' and 'Leiche' correctly map the bone heap to skeleton and corpse to zombie, matching the source. No mechanical change.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        },
+        {
+          "category": "semantic",
+          "severity": "low",
+          "evidence": "range: Source says 'jede Kreatur ... bis zu 18 Metern'; candidate abbreviates to ≤ 18 m with 'alle', preserving the same range and target set.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        },
+        {
+          "category": "semantic",
+          "severity": "low",
+          "evidence": "targets: Source states 'bis zu vier Kreaturen'; candidate uses '≤ 4' with the same associated noun phrase. The value and count noun are both present, just separated syntactically.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        },
+        {
+          "category": "semantic",
+          "severity": "low",
+          "evidence": "scaling: Source higher levels contains the phrase 'zwei zusätzliche untote Kreaturen' twice (once for creating, once for extending control). Candidate states it once with an 'o.' alternative covering both. The repetition in source is stylistic; the rule is the same two additional creatures or two additional control extensions per slot level above 3rd.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        }
+      ],
+      "reasons": [],
+      "written": true,
+      "usage": {
+        "promptTokens": 3389,
+        "completionTokens": 899,
+        "totalTokens": 4288
+      },
+      "estimatedCostUsd": 0.00047
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-animate-objects",
+      "status": "withheld",
+      "acceptance": "auto",
+      "origin": "generated",
+      "severity": "medium",
+      "findings": [
+        {
+          "category": "quantity",
+          "severity": "low",
+          "evidence": "unresolved description count: source [zwei Gegenstände, drei Gegenstände] vs candidate []; the candidate states the value of \"zwei Gegenstände\", \"drei Gegenstände\" separately from its count noun; the association needs semantic review",
+          "recommendedAction": "Review the representation against the source; the semantic comparison must clear it."
+        },
+        {
+          "category": "semantic",
+          "severity": "medium",
+          "evidence": "description count: Die Zuordnung der Anzahlen (1/2/3) zu den Größenkategorien bleibt inhaltlich erhalten, auch wenn die Formulierung komprimiert ist. Die deterministische Prüfung verlangt hier eine explizite Feststellung; die semantische Prüfung ergibt keine mechanische Abweichung.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        },
+        {
+          "category": "semantic",
+          "severity": "medium",
+          "evidence": "sprachen: Die Quelle beschränkt die verstandenen Sprachen auf die vom Zauberwirker gesprochenen Sprachen. Der Kandidat verallgemeinert dies zu 'gesprochene Sprachen' und entfernt damit eine Einschränkung der Kreatur.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        }
+      ],
+      "reasons": [
+        "The semantic comparison reported a medium or high finding.",
+        "The semantic comparison did not confirm mechanical equivalence.",
+        "The semantic comparison reported severity \"medium\"."
+      ],
+      "written": true,
+      "usage": {
+        "promptTokens": 4604,
+        "completionTokens": 883,
+        "totalTokens": 5487
+      },
+      "estimatedCostUsd": 0.000469
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-antipathy-sympathy",
+      "status": "withheld",
+      "acceptance": "auto",
+      "origin": "generated",
+      "severity": "medium",
+      "findings": [
+        {
+          "category": "semantic",
+          "severity": "medium",
+          "evidence": "duration: Die Vorlage sagt: Nach einem erfolgreichen Rettungswurf ist eine Kreatur eine Minute lang gegen den Effekt immun. Danach kann er erneut auf sie gewirkt werden. Der Kandidat formuliert, der Effekt ende auf sie, danach sei sie 1 min immun, dann könne er erneut gewirkt werden. Das legt nahe, dass die Immunitätsdauer erst nach dem Ende des Effekts beginnt, während sie in der Vorlage unmittelbar nach dem erfolgreichen Rettungswurf beginnt. Dieser Timing-Unterschied kann mechanisch relevant sein.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        }
+      ],
+      "reasons": [
+        "The semantic comparison reported a medium or high finding.",
+        "The semantic comparison did not confirm mechanical equivalence.",
+        "The semantic comparison reported severity \"medium\"."
+      ],
+      "written": true,
+      "usage": {
+        "promptTokens": 3314,
+        "completionTokens": 632,
+        "totalTokens": 3946
+      },
+      "estimatedCostUsd": 0.000336
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-arcane-hand",
+      "status": "accepted",
+      "acceptance": "auto",
+      "origin": "generated",
+      "severity": "low",
+      "findings": [],
+      "reasons": [],
+      "written": true,
+      "usage": {
+        "promptTokens": 3662,
+        "completionTokens": 454,
+        "totalTokens": 4116
+      },
+      "estimatedCostUsd": 0.000249
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-arcane-lock",
+      "status": "withheld",
+      "acceptance": "auto",
+      "origin": "generated",
+      "severity": "medium",
+      "findings": [
+        {
+          "category": "semantic",
+          "severity": "medium",
+          "evidence": "duration: Die Quelle legt fest, dass das Kennwort den Gegenstand 'eine Minute lang' öffnet. Der Kandidat sagt '1 min lang', was dieselbe Dauer ist; es fehlt jedoch der explizite Hinweis, dass dies nur beim Aussprechen des Kennworts und innerhalb von 1,5 Metern gilt. Die Formulierung 'in ≤ 1,5 m Entfernung' könnte als Reichweite des Kennworts statt als Bedingung für das Öffnen verstanden werden, was die Mechanik leicht verändert oder unklar macht.",
+          "recommendedAction": "Review the semantic finding; regenerate or withhold."
+        }
+      ],
+      "reasons": [
+        "The semantic comparison reported a medium or high finding.",
+        "The semantic comparison did not confirm mechanical equivalence.",
+        "The semantic comparison reported severity \"medium\"."
+      ],
+      "written": true,
+      "usage": {
+        "promptTokens": 2389,
+        "completionTokens": 379,
+        "totalTokens": 2768
+      },
+      "estimatedCostUsd": 0.000204
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-arcanists-magic-aura",
+      "status": "accepted",
+      "acceptance": "auto",
+      "origin": "generated",
+      "severity": "low",
+      "findings": [],
+      "reasons": [],
+      "written": true,
+      "usage": {
+        "promptTokens": 3083,
+        "completionTokens": 303,
+        "totalTokens": 3386
+      },
+      "estimatedCostUsd": 0.00017
     }
   ],
   "failures": [
     {
-      "locale": "en",
-      "spellId": "srd-fireball",
-      "status": "failed",
-      "reason": "generation request failed (HTTP 400): {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid schema for response_format 'short_description': In context=(), 'required' i...",
-      "committed": false
+      "locale": "de",
+      "spellId": "srd-acid-splash",
+      "status": "withheld",
+      "reason": "A high-severity finding blocks automatic acceptance.",
+      "committed": true
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-animal-messenger",
+      "status": "withheld",
+      "reason": "The semantic comparison reported a medium or high finding. The semantic comparison did not confirm mechanical equivalence. The semantic comparison reported severity \"medium\".",
+      "committed": true
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-animate-objects",
+      "status": "withheld",
+      "reason": "The semantic comparison reported a medium or high finding. The semantic comparison did not confirm mechanical equivalence. The semantic comparison reported severity \"medium\".",
+      "committed": true
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-antipathy-sympathy",
+      "status": "withheld",
+      "reason": "The semantic comparison reported a medium or high finding. The semantic comparison did not confirm mechanical equivalence. The semantic comparison reported severity \"medium\".",
+      "committed": true
+    },
+    {
+      "locale": "de",
+      "spellId": "srd-arcane-lock",
+      "status": "withheld",
+      "reason": "The semantic comparison reported a medium or high finding. The semantic comparison did not confirm mechanical equivalence. The semantic comparison reported severity \"medium\".",
+      "committed": true
     }
   ],
   "skipped": [],
-  "generationUsage": "unavailable",
-  "judgementUsage": "unavailable",
-  "usage": "unavailable",
-  "estimatedCostUsd": "unavailable",
+  "generationUsage": {
+    "promptTokens": 20732,
+    "completionTokens": 2622,
+    "totalTokens": 23354
+  },
+  "judgementUsage": {
+    "promptTokens": 10476,
+    "completionTokens": 2457,
+    "totalTokens": 12933
+  },
+  "usage": {
+    "promptTokens": 31208,
+    "completionTokens": 5079,
+    "totalTokens": 36287
+  },
+  "estimatedCostUsd": 0.002729,
   "notes": []
 }

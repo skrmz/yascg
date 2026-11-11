@@ -16,6 +16,7 @@ describe("short-descriptions CLI options", () => {
     expect(options.ids).toBeUndefined();
     expect(options.locale).toBeUndefined();
     expect(options.showConfig).toBe(false);
+    expect(options.timings).toBe(false);
   });
 
   it("parses ids, locale, limits, and numeric options", () => {
@@ -58,6 +59,11 @@ describe("short-descriptions CLI options", () => {
   it("parses --show-config", () => {
     expect(parseCliOptions(["--show-config"]).showConfig).toBe(true);
     expect(parseCliOptions(["--", "--show-config"]).showConfig).toBe(true);
+  });
+
+  it("parses --timings", () => {
+    expect(parseCliOptions(["--timings"]).timings).toBe(true);
+    expect(parseCliOptions([]).timings).toBe(false);
   });
 
   it("requires the API key from the environment only", () => {

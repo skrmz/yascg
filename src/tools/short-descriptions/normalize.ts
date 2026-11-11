@@ -6,7 +6,15 @@
  * never resolves a value that the table does not explicitly cover. Additions
  * are allowed only as literal equivalences that hold in the game's rules, and
  * each addition requires a unit test.
+ *
+ * Scope: the source side is the replaceable description text, while the spell's
+ * casting time, range, and duration metadata is passed separately. A candidate
+ * atom that only restates that metadata is whole-spell equivalent, but a
+ * source-description atom that disappears is still a mismatch: metadata never
+ * excuses an omission from the description.
  */
+
+import { abbreviationCatalog } from "../../locales/abbreviations.ts";
 
 export type NormalizationCategory = "dice" | "time" | "distance" | "weight" | "count" | "relative";
 
@@ -26,6 +34,26 @@ export interface CategoryComparison {
   classification: EquivalenceClassification;
   source: NormalizedAtom[];
   candidate: NormalizedAtom[];
+  /** Atoms extracted from the spell's casting time, range, and duration metadata. */
+  metadata: NormalizedAtom[];
+  /** Candidate atoms that restate a value the spell metadata already provides. */
+  metadataRestated: NormalizedAtom[];
+  /** Source values with no counterpart in the candidate. */
+  missing: NormalizedAtom[];
+  /** Candidate values that appear in neither the source description nor the metadata. */
+  added: NormalizedAtom[];
+  /** Short, actionable explanations of an `unresolved` classification. */
+  notes: string[];
+}
+
+export interface ComparisonOptions {
+  /** Enables the locale's catalog abbreviations for time units and count nouns. */
+  locale?: string;
+  /**
+   * Casting time, range, and duration text. The app displays these fields
+   * separately, so a candidate may legitimately restate them.
+   */
+  metadata?: string;
 }
 
 export interface NumericComparisonReport {
@@ -49,6 +77,7 @@ const TIME_UNITS: Record<string, number> = {
   secs: 1,
   sekunde: 1,
   sekunden: 1,
+  sek: 1,
   round: 6,
   rounds: 6,
   runde: 6,
@@ -74,7 +103,7 @@ const TIME_UNITS: Record<string, number> = {
 
 /**
  * Distance/area: 5 feet = 1.5 meters is a labeled approximation, so the table
- * uses the literal factor 0.3 meters per foot. Miles are outside the table.
+ * uses the literal factor 0.3 meters per foot. 1 kilometer = 1000 meters.
  */
 const DISTANCE_UNITS: Record<string, number> = {
   foot: 0.3,
@@ -86,6 +115,11 @@ const DISTANCE_UNITS: Record<string, number> = {
   meters: 1,
   metern: 1,
   m: 1,
+  kilometer: 1000,
+  kilometers: 1000,
+  kilometern: 1000,
+  kilometres: 1000,
+  km: 1000,
 };
 
 /** Weight: 1 pound = 0.45 kilograms (labeled approximation). */
@@ -185,6 +219,20 @@ const NUMBER_WORDS: Record<string, number> = {
   hundert: 100,
 };
 
+/**
+ * Inflected German numerals ("eine Minute", "einem Meter") are quantities, not
+ * counts. They are deliberately excluded from count extraction so an article
+ * such as "ein Ziel" never becomes a one-target requirement.
+ */
+const ARTICLE_NUMBER_WORDS: Record<string, number> = {
+  ein: 1,
+  eine: 1,
+  einen: 1,
+  einem: 1,
+  einer: 1,
+  eines: 1,
+};
+
 const COUNT_NOUN_CLASSES: Record<string, string> = {
   creature: "creature",
   creatures: "creature",
@@ -206,6 +254,27 @@ const COUNT_NOUN_CLASSES: Record<string, string> = {
   zauber: "spell",
 };
 
+/**
+ * Catalogue entries whose surfaces denote a count noun. Their short forms
+ * ("Ggstd.", "obj.") are legitimate authoring surfaces and must compare equal
+ * to the full noun.
+ */
+const COUNT_NOUN_CATALOG_CLASSES: Record<string, string> = {
+  target: "target",
+  object: "object",
+  objects: "object",
+};
+
+/** Catalogue entries that carry a time dimension, with their literal factor. */
+const CATALOG_TIME_FACTORS: Record<string, number> = {
+  minute: 60,
+  minutes: 60,
+  hour: 3600,
+  hours: 3600,
+  day: 86400,
+  days: 86400,
+};
+
 const RELATIVE_PATTERN = /(?<![\p{L}])(one-half|half|hälfte|halb)(?![\p{L}])|½/giu;
 
 function escapeRegExp(value: string): string {
@@ -219,34 +288,116 @@ function sortedAlternation(keys: readonly string[]): string {
     .join("|");
 }
 
-const NUMBER_SOURCE = `\\d{1,3}(?:[.,]\\d{3})+|\\d+(?:[.,]\\d+)?|${sortedAlternation(Object.keys(NUMBER_WORDS))}`;
-const COUNT_NOUN_SOURCE = sortedAlternation(Object.keys(COUNT_NOUN_CLASSES));
+const DIGIT_NUMBER_SOURCE = `\\d{1,3}(?:[.,]\\d{3})+|\\d+(?:[.,]\\d+)?`;
+const NUMBER_SOURCE = `${DIGIT_NUMBER_SOURCE}|${sortedAlternation(Object.keys(NUMBER_WORDS))}`;
+const QUANTITY_WORD_NUMBER_SOURCE = sortedAlternation([
+  ...Object.keys(NUMBER_WORDS),
+  ...Object.keys(ARTICLE_NUMBER_WORDS),
+]);
 
-function quantityPattern(units: readonly string[]): RegExp {
-  return new RegExp(
-    `(?<![\\p{L}\\d])(${NUMBER_SOURCE})\\s*[-–—]?\\s*(${sortedAlternation(units)})(?![\\p{L}])`,
-    "giu",
-  );
+interface ExtractionTables {
+  timePattern: RegExp;
+  distancePattern: RegExp;
+  weightPattern: RegExp;
+  timeFactors: Record<string, number>;
+  countNouns: Record<string, string>;
+  countPattern: RegExp;
+  countSurfaces: Map<string, string[]>;
 }
+
+const tableCache = new Map<string, ExtractionTables>();
 
 const DICE_PATTERN = new RegExp(
   `(?<![\\p{L}\\d])(\\d{0,3})\\s*([dws])\\s*(\\d{1,3})(?:\\s*([+-])\\s*(\\d{1,3}))?(?![\\p{L}\\d])`,
   "giu",
 );
 
-const TIME_PATTERN = quantityPattern(Object.keys(TIME_UNITS));
-const DISTANCE_PATTERN = quantityPattern(Object.keys(DISTANCE_UNITS));
-const WEIGHT_PATTERN = quantityPattern(Object.keys(WEIGHT_UNITS));
+/**
+ * Quantities accept digits with an optional space ("20-foot", "1,5m") and
+ * number words only when a separator follows ("eine Minute"). Requiring the
+ * separator prevents an inflected numeral from absorbing the next unit
+ * ("einem" must not parse as "eine" + "m").
+ */
+function quantityPattern(wordNumbers: string, units: readonly string[]): RegExp {
+  return new RegExp(
+    `(?<![\\p{L}\\d])(?:(${DIGIT_NUMBER_SOURCE})\\s*|(${wordNumbers})\\s+)[-–—]?\\s*(${sortedAlternation(units)})(?![\\p{L}])`,
+    "giu",
+  );
+}
+
+/** Catalogue surfaces compare as written without their trailing period. */
+function catalogSurface(value: string): string {
+  return value.trim().toLocaleLowerCase("en").normalize("NFC").replace(/\.$/, "");
+}
+
+function catalogDerivedTables(locale: string | undefined): {
+  timeUnits: Record<string, number>;
+  countNouns: Record<string, string>;
+} {
+  const catalog = locale ? abbreviationCatalog(locale) : null;
+  if (!catalog) return { timeUnits: {}, countNouns: {} };
+  const timeUnits: Record<string, number> = {};
+  const countNouns: Record<string, string> = {};
+  for (const entry of catalog) {
+    const factor = CATALOG_TIME_FACTORS[entry.id];
+    if (entry.timeUnit && factor !== undefined) {
+      for (const form of [entry.short, ...entry.forms]) {
+        const surface = catalogSurface(form);
+        if (surface !== "") timeUnits[surface] = factor;
+      }
+    }
+    const nounClass = COUNT_NOUN_CATALOG_CLASSES[entry.id];
+    if (nounClass) {
+      for (const form of [entry.short, ...entry.forms]) {
+        const surface = catalogSurface(form);
+        if (surface !== "") countNouns[surface] = nounClass;
+      }
+    }
+  }
+  return { timeUnits, countNouns };
+}
+
+function countSurfacesFor(countNouns: Readonly<Record<string, string>>): Map<string, string[]> {
+  const byClass = new Map<string, string[]>();
+  for (const [surface, nounClass] of Object.entries(countNouns)) {
+    const list = byClass.get(nounClass) ?? [];
+    list.push(surface);
+    byClass.set(nounClass, list);
+  }
+  return byClass;
+}
+
+function tablesFor(locale: string | undefined): ExtractionTables {
+  const key = locale ?? "";
+  const cached = tableCache.get(key);
+  if (cached) return cached;
+  const derived = catalogDerivedTables(locale);
+  const timeUnits = { ...TIME_UNITS, ...derived.timeUnits };
+  const countNouns = { ...COUNT_NOUN_CLASSES, ...derived.countNouns };
+  const countNounSource = sortedAlternation(Object.keys(countNouns));
+  const tables: ExtractionTables = {
+    timePattern: quantityPattern(QUANTITY_WORD_NUMBER_SOURCE, Object.keys(timeUnits)),
+    distancePattern: quantityPattern(QUANTITY_WORD_NUMBER_SOURCE, Object.keys(DISTANCE_UNITS)),
+    weightPattern: quantityPattern(QUANTITY_WORD_NUMBER_SOURCE, Object.keys(WEIGHT_UNITS)),
+    timeFactors: timeUnits,
+    countNouns,
+    countPattern: new RegExp(
+      `(?<![\\p{L}\\d])(${NUMBER_SOURCE})\\s+(${countNounSource})(?![\\p{L}])`,
+      "giu",
+    ),
+    countSurfaces: countSurfacesFor(countNouns),
+  };
+  tableCache.set(key, tables);
+  return tables;
+}
+
 const UNRESOLVED_WEIGHT_UNIT_SET = new Set(UNRESOLVED_WEIGHT_UNITS);
-const UNRESOLVED_PATTERN = quantityPattern([
+const UNRESOLVED_PATTERN = quantityPattern(QUANTITY_WORD_NUMBER_SOURCE, [
   ...UNRESOLVED_DISTANCE_UNITS,
   ...UNRESOLVED_WEIGHT_UNITS,
 ]);
 
-const COUNT_PATTERN = new RegExp(
-  `(?<![\\p{L}\\d])(${NUMBER_SOURCE})\\s+(${COUNT_NOUN_SOURCE})(?![\\p{L}])`,
-  "giu",
-);
+const COUNT_WINDOW_TOKENS = 3;
 
 interface Span {
   start: number;
@@ -266,7 +417,8 @@ export function parseNumberToken(token: string): number {
 }
 
 function numericValue(token: string): number {
-  const word = NUMBER_WORDS[token.trim().toLowerCase()];
+  const key = token.trim().toLowerCase();
+  const word = NUMBER_WORDS[key] ?? ARTICLE_NUMBER_WORDS[key];
   return word !== undefined ? word : parseNumberToken(token);
 }
 
@@ -295,7 +447,61 @@ function collect(
   return atoms;
 }
 
-function extractAtoms(text: string): Map<NormalizationCategory, NormalizedAtom[]> {
+/**
+ * Second count pass for compression such as "≤ 4 von dir erschaffene
+ * Kreaturen", where up to three words separate the value from its noun. It
+ * never crosses punctuation, another number, or an already claimed atom, so it
+ * cannot steal a value that belongs to a unit or dice expression. A capitalized
+ * word in the gap is another noun or an abbreviation ("1 weiteres Tier als
+ * Ziel", "0 TP kehrt das Ziel"), so such an association is rejected instead of
+ * guessed.
+ */
+function collectSeparatedCounts(
+  table: ExtractionTables,
+  text: string,
+  claimed: Span[],
+): NormalizedAtom[] {
+  const atoms: NormalizedAtom[] = [];
+  const numberPattern = new RegExp(`(?<![\\p{L}\\d])(${NUMBER_SOURCE})(?![\\p{L}\\d])`, "giu");
+  const gapPattern = new RegExp(
+    `^[\\s-]*(?<gap>(?:[\\p{L}][\\p{L}-]*[\\s-]+){0,${COUNT_WINDOW_TOKENS}})(${sortedAlternation(
+      Object.keys(table.countNouns),
+    )})(?![\\p{L}])`,
+    "iu",
+  );
+  for (const match of text.matchAll(numberPattern)) {
+    const start = match.index ?? 0;
+    const end = start + (match[0] ?? "").length;
+    if (overlaps(claimed, start, end)) continue;
+    const gap = gapPattern.exec(text.slice(end));
+    if (!gap) continue;
+    if (/\p{Lu}/u.test(gap.groups?.gap ?? "")) continue;
+    const nounText = gap[2] ?? "";
+    const nounEnd = end + gap[0].length;
+    const nounStart = nounEnd - nounText.length;
+    if (overlaps(claimed, nounStart, nounEnd)) continue;
+    const value = numericValue(match[1] ?? "");
+    const nounClass = table.countNouns[nounText.toLowerCase()];
+    if (!Number.isFinite(value) || !nounClass) continue;
+    claimed.push({ start, end }, { start: nounStart, end: nounEnd });
+    atoms.push({
+      raw: text.slice(start, nounEnd).trim(),
+      canonical: `count:${canonicalNumber(value)}:${nounClass}`,
+      resolved: true,
+    });
+  }
+  return atoms;
+}
+
+interface ExtractedText {
+  categories: Map<NormalizationCategory, NormalizedAtom[]>;
+  /** Numeric values that no atom claimed; their role is outside the table. */
+  bareNumbers: Set<number>;
+  text: string;
+}
+
+function extractAtoms(text: string, locale: string | undefined): ExtractedText {
+  const table = tablesFor(locale);
   const collected = new Map<NormalizationCategory, NormalizedAtom[]>([
     ["dice", []],
     ["time", []],
@@ -308,6 +514,8 @@ function extractAtoms(text: string): Map<NormalizationCategory, NormalizedAtom[]
   const push = (category: NormalizationCategory, atoms: NormalizedAtom[]) => {
     collected.get(category)?.push(...atoms);
   };
+  const factors = (units: Record<string, number>, match: RegExpExecArray): number | undefined =>
+    units[(match[3] ?? "").toLowerCase()];
 
   push(
     "dice",
@@ -332,10 +540,9 @@ function extractAtoms(text: string): Map<NormalizationCategory, NormalizedAtom[]
 
   push(
     "time",
-    collect(TIME_PATTERN, text, claimed, (match, raw) => {
-      const unit = (match[2] ?? "").toLowerCase();
-      const value = numericValue(match[1] ?? "");
-      const factor = TIME_UNITS[unit];
+    collect(table.timePattern, text, claimed, (match, raw) => {
+      const value = numericValue(match[1] ?? match[2] ?? "");
+      const factor = factors(table.timeFactors, match);
       if (factor === undefined || !Number.isFinite(value)) return null;
       return { raw, canonical: `time:${canonicalNumber(value * factor)}`, resolved: true };
     }),
@@ -343,10 +550,9 @@ function extractAtoms(text: string): Map<NormalizationCategory, NormalizedAtom[]
 
   push(
     "distance",
-    collect(DISTANCE_PATTERN, text, claimed, (match, raw) => {
-      const unit = (match[2] ?? "").toLowerCase();
-      const value = numericValue(match[1] ?? "");
-      const factor = DISTANCE_UNITS[unit];
+    collect(table.distancePattern, text, claimed, (match, raw) => {
+      const value = numericValue(match[1] ?? match[2] ?? "");
+      const factor = factors(DISTANCE_UNITS, match);
       if (factor === undefined || !Number.isFinite(value)) return null;
       return { raw, canonical: `distance:${canonicalNumber(value * factor)}`, resolved: true };
     }),
@@ -354,10 +560,9 @@ function extractAtoms(text: string): Map<NormalizationCategory, NormalizedAtom[]
 
   push(
     "weight",
-    collect(WEIGHT_PATTERN, text, claimed, (match, raw) => {
-      const unit = (match[2] ?? "").toLowerCase();
-      const value = numericValue(match[1] ?? "");
-      const factor = WEIGHT_UNITS[unit];
+    collect(table.weightPattern, text, claimed, (match, raw) => {
+      const value = numericValue(match[1] ?? match[2] ?? "");
+      const factor = factors(WEIGHT_UNITS, match);
       if (factor === undefined || !Number.isFinite(value)) return null;
       return { raw, canonical: `weight:${canonicalNumber(value * factor)}`, resolved: true };
     }),
@@ -365,7 +570,7 @@ function extractAtoms(text: string): Map<NormalizationCategory, NormalizedAtom[]
 
   const unresolved = collect(UNRESOLVED_PATTERN, text, claimed, (match, raw) => ({
     raw,
-    canonical: `unresolved:${(match[2] ?? "").toLowerCase()}`,
+    canonical: `unresolved:${(match[3] ?? "").toLowerCase()}`,
     resolved: false,
   }));
   for (const atom of unresolved) {
@@ -375,14 +580,15 @@ function extractAtoms(text: string): Map<NormalizationCategory, NormalizedAtom[]
 
   push(
     "count",
-    collect(COUNT_PATTERN, text, claimed, (match, raw) => {
+    collect(table.countPattern, text, claimed, (match, raw) => {
       const value = numericValue(match[1] ?? "");
       if (!Number.isFinite(value)) return null;
-      const nounClass = COUNT_NOUN_CLASSES[(match[2] ?? "").toLowerCase()];
+      const nounClass = table.countNouns[(match[2] ?? "").toLowerCase()];
       if (!nounClass) return null;
       return { raw, canonical: `count:${canonicalNumber(value)}:${nounClass}`, resolved: true };
     }),
   );
+  push("count", collectSeparatedCounts(table, text, claimed));
 
   push(
     "relative",
@@ -393,38 +599,149 @@ function extractAtoms(text: string): Map<NormalizationCategory, NormalizedAtom[]
     })),
   );
 
-  return collected;
+  const bareNumbers = new Set<number>();
+  const numberPattern = new RegExp(`(?<![\\p{L}\\d])(${NUMBER_SOURCE})(?![\\p{L}\\d])`, "giu");
+  for (const match of text.matchAll(numberPattern)) {
+    const start = match.index ?? 0;
+    const end = start + (match[0] ?? "").length;
+    if (overlaps(claimed, start, end)) continue;
+    const value = numericValue(match[1] ?? "");
+    if (Number.isFinite(value)) bareNumbers.add(value);
+  }
+
+  return { categories: collected, bareNumbers, text };
+}
+
+/** Multiset subtraction over resolved canonical values; keeps concrete atoms. */
+function difference(
+  atoms: readonly NormalizedAtom[],
+  remove: readonly NormalizedAtom[],
+): NormalizedAtom[] {
+  const remaining = new Map<string, number>();
+  for (const atom of remove) {
+    if (!atom.resolved) continue;
+    remaining.set(atom.canonical, (remaining.get(atom.canonical) ?? 0) + 1);
+  }
+  const result: NormalizedAtom[] = [];
+  for (const atom of atoms) {
+    if (!atom.resolved) continue;
+    const count = remaining.get(atom.canonical) ?? 0;
+    if (count > 0) remaining.set(atom.canonical, count - 1);
+    else result.push(atom);
+  }
+  return result;
+}
+
+function resolvedCanonicals(atoms: readonly NormalizedAtom[]): string[] {
+  return atoms
+    .filter((atom) => atom.resolved)
+    .map((atom) => atom.canonical)
+    .sort();
+}
+
+function listValues(atoms: readonly NormalizedAtom[]): string {
+  return atoms.map((atom) => `"${atom.raw}"`).join(", ");
+}
+
+function countClassCorroborated(
+  atom: NormalizedAtom,
+  extracted: ExtractedText,
+  surfaces: ReadonlyMap<string, readonly string[]>,
+): boolean {
+  const [, value, nounClass] = atom.canonical.split(":");
+  if (value === undefined || nounClass === undefined) return false;
+  if (!extracted.bareNumbers.has(Number(value))) return false;
+  const candidates = surfaces.get(nounClass) ?? [];
+  return candidates.some((surface) =>
+    new RegExp(`(?<![\\p{L}])${escapeRegExp(surface)}(?![\\p{L}])`, "iu").test(extracted.text),
+  );
 }
 
 function classify(
   category: NormalizationCategory,
-  sourceAtoms: NormalizedAtom[],
-  candidateAtoms: NormalizedAtom[],
+  sourceAtoms: readonly NormalizedAtom[],
+  candidateAtoms: readonly NormalizedAtom[],
+  metadataAtoms: readonly NormalizedAtom[],
+  candidateText: ExtractedText,
+  countSurfaces: ReadonlyMap<string, readonly string[]>,
 ): CategoryComparison {
-  const sourceResolved = sourceAtoms
-    .filter((atom) => atom.resolved)
-    .map((atom) => atom.canonical)
-    .sort();
-  const candidateResolved = candidateAtoms
-    .filter((atom) => atom.resolved)
-    .map((atom) => atom.canonical)
-    .sort();
+  const sourceResolved = resolvedCanonicals(sourceAtoms);
+  const candidateResolved = resolvedCanonicals(candidateAtoms);
   const unresolvedPresent = [...sourceAtoms, ...candidateAtoms].some((atom) => !atom.resolved);
+  const missing = difference(sourceAtoms, candidateAtoms);
+  const extra = difference(candidateAtoms, sourceAtoms);
+  const residualExtra = difference(extra, metadataAtoms);
+  const metadataRestated = difference(extra, residualExtra);
+  const notes: string[] = [];
+
+  const candidateSet = new Set(candidateResolved);
+  const sourceSet = new Set(sourceResolved);
+  const repetitionOnly =
+    missing.every((atom) => candidateSet.has(atom.canonical)) &&
+    residualExtra.every((atom) => sourceSet.has(atom.canonical));
+  const repeated = missing.length > 0 || residualExtra.length > 0;
+  const corroborated = missing.every((atom) =>
+    countClassCorroborated(atom, candidateText, countSurfaces),
+  );
 
   let classification: EquivalenceClassification;
-  if (sourceResolved.join("|") !== candidateResolved.join("|")) {
-    classification = "mismatch";
-  } else if (unresolvedPresent) {
+  if (!repeated) {
+    classification = unresolvedPresent ? "unresolved" : "equivalent";
+    if (unresolvedPresent) {
+      notes.push("a unit or role is outside the normalization table");
+    }
+  } else if (repetitionOnly) {
     classification = "unresolved";
+    notes.push(
+      `the same ${category} values appear a different number of times (${listValues([
+        ...missing,
+        ...residualExtra,
+      ])}); the table cannot tell whether a repetition denotes a separate rule`,
+    );
+  } else if (corroborated && residualExtra.length === 0) {
+    classification = "unresolved";
+    notes.push(
+      `the candidate states the value of ${listValues(missing)} separately from its count noun; the association needs semantic review`,
+    );
   } else {
-    classification = "equivalent";
+    classification = "mismatch";
   }
-  return { category, classification, source: sourceAtoms, candidate: candidateAtoms };
+
+  if (metadataRestated.length > 0) {
+    const metadataValues = metadataRestated
+      .map((atom) => {
+        const match = metadataAtoms.find((candidate) => candidate.canonical === atom.canonical);
+        return match ? `"${match.raw}"` : `"${atom.raw}"`;
+      })
+      .join(", ");
+    notes.push(`${listValues(metadataRestated)} restates spell metadata (${metadataValues})`);
+  }
+
+  return {
+    category,
+    classification,
+    source: [...sourceAtoms],
+    candidate: [...candidateAtoms],
+    metadata: [...metadataAtoms],
+    metadataRestated,
+    missing,
+    added: residualExtra,
+    notes,
+  };
 }
 
-export function compareNumericAtoms(source: string, candidate: string): NumericComparisonReport {
-  const sourceAtoms = extractAtoms(source);
-  const candidateAtoms = extractAtoms(candidate);
+export function compareNumericAtoms(
+  source: string,
+  candidate: string,
+  options: ComparisonOptions = {},
+): NumericComparisonReport {
+  const sourceExtracted = extractAtoms(source, options.locale);
+  const candidateExtracted = extractAtoms(candidate, options.locale);
+  const metadataExtracted =
+    options.metadata !== undefined && options.metadata.trim() !== ""
+      ? extractAtoms(options.metadata, options.locale)
+      : null;
+  const countSurfaces = tablesFor(options.locale).countSurfaces;
   const categories: NormalizationCategory[] = [
     "dice",
     "time",
@@ -434,7 +751,14 @@ export function compareNumericAtoms(source: string, candidate: string): NumericC
     "relative",
   ];
   const comparisons = categories.map((category) =>
-    classify(category, sourceAtoms.get(category) ?? [], candidateAtoms.get(category) ?? []),
+    classify(
+      category,
+      sourceExtracted.categories.get(category) ?? [],
+      candidateExtracted.categories.get(category) ?? [],
+      metadataExtracted?.categories.get(category) ?? [],
+      candidateExtracted,
+      countSurfaces,
+    ),
   );
   return {
     comparisons,

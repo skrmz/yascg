@@ -41,6 +41,7 @@ export interface CliOptions {
   force: boolean;
   manual: boolean;
   showConfig: boolean;
+  timings: boolean;
   locale?: string;
   ids?: string[];
   limit?: number;
@@ -88,6 +89,7 @@ export function parseCliOptions(argv: readonly string[]): CliOptions {
       force: { type: "boolean" },
       manual: { type: "boolean" },
       "show-config": { type: "boolean" },
+      timings: { type: "boolean" },
       locale: { type: "string" },
       ids: { type: "string" },
       limit: { type: "string" },
@@ -117,6 +119,7 @@ export function parseCliOptions(argv: readonly string[]): CliOptions {
     force: Boolean(values.force),
     manual: Boolean(values.manual),
     showConfig: Boolean(values["show-config"]),
+    timings: Boolean(values.timings),
     ...(values.locale !== undefined ? { locale: values.locale } : {}),
     ...(uniqueIds && uniqueIds.length > 0 ? { ids: uniqueIds } : {}),
     ...(values.limit !== undefined ? { limit: positiveInteger("limit", values.limit) } : {}),

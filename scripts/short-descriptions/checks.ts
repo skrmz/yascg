@@ -4,7 +4,10 @@ import {
   isMateriallyShorter,
   joinField,
 } from "../../src/tools/short-descriptions/material-shortening.ts";
-import { compareNumericAtoms } from "../../src/tools/short-descriptions/normalize.ts";
+import {
+  compareNumericAtoms,
+  type CategoryComparison,
+} from "../../src/tools/short-descriptions/normalize.ts";
 import { abbreviationCatalog } from "../../src/locales/abbreviations.ts";
 import type { SourceText } from "./files.ts";
 import type { Judgement } from "./openrouter.ts";
@@ -79,9 +82,24 @@ function normalise(value: string): string {
   return value.toLocaleLowerCase("en").normalize("NFC");
 }
 
-function occurrences(haystack: string, needle: string): boolean {
-  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?<![\\p{L}])${escaped}(?![\\p{L}])`, "iu").test(haystack);
+/**
+ * Rules-term matching accepts established catalog abbreviations and ordinary
+ * inflection. German compounds carry the rules term as a prefix
+ * ("Schadensvermeidung"), so a trailing word is part of the same term there.
+ */
+function termPattern(term: string, locale: string): RegExp {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (locale === "de") {
+    return new RegExp(`(?<![\\p{L}])${escaped}[\\p{L}]*(?![\\p{L}])`, "iu");
+  }
+  // English drops a final "e" before -ed/-ing ("damage" -> "damaged").
+  const stem = escaped.endsWith("e") ? escaped.slice(0, -1) : escaped;
+  const suffix = escaped.endsWith("e") ? "(?:e|es|ed|ing|s)?" : "(?:s|es|ed|ing)?";
+  return new RegExp(`(?<![\\p{L}])${stem}${suffix}(?![\\p{L}])`, "iu");
+}
+
+function occurrences(haystack: string, needle: string, locale: string): boolean {
+  return termPattern(needle, locale).test(haystack);
 }
 
 function vocabularyForms(term: string, locale: string): string[] {
@@ -106,32 +124,66 @@ function vocabularyFindings(
   const candidateText = `${candidate.description}\n${candidate.higherLevels ?? ""}`;
   const findings: CheckFinding[] = [];
   for (const term of terms) {
-    if (!occurrences(sourceText, term)) continue;
+    if (!occurrences(sourceText, term, locale)) continue;
     const forms = vocabularyForms(term, locale);
-    if (forms.some((form) => occurrences(candidateText, form))) continue;
+    if (forms.some((form) => occurrences(candidateText, form, locale))) continue;
     findings.push({
       category: "vocabulary",
       severity: "medium",
-      evidence: `rules term "${term}" appears in the source but not in the candidate`,
+      evidence: `rules term "${term}" (or an established form such as ${forms
+        .slice(1)
+        .map((form) => `"${form}"`)
+        .join(", ")}) appears in the source but not in the candidate`,
       recommendedAction: "Preserve the term or its established abbreviation; regenerate or review.",
     });
   }
   return findings;
 }
 
+function rawList(atoms: CategoryComparison["source"]): string {
+  return `[${atoms.map((atom) => atom.raw).join(", ")}]`;
+}
+
+function comparisonEvidence(field: string, comparison: CategoryComparison): string {
+  const evidence = `${field} ${comparison.category}: source ${rawList(
+    comparison.source,
+  )} vs candidate ${rawList(comparison.candidate)}`;
+  const details: string[] = [];
+  if (comparison.classification === "mismatch" && comparison.missing.length > 0) {
+    details.push(`the candidate has no value for ${rawList(comparison.missing)}`);
+  }
+  if (comparison.classification === "mismatch" && comparison.added.length > 0) {
+    details.push(
+      `the candidate adds ${rawList(comparison.added)} that the source description does not contain`,
+    );
+  }
+  details.push(...comparison.notes);
+  return details.length > 0 ? `${evidence}; ${details.join("; ")}` : evidence;
+}
+
 function numericFindings(
   sourceText: string,
   candidateText: string,
+  field: string,
+  locale: string,
+  metadata: string,
 ): { findings: CheckFinding[]; unresolvedItems: string[] } {
   const findings: CheckFinding[] = [];
   const unresolvedItems: string[] = [];
-  const report = compareNumericAtoms(sourceText, candidateText);
+  const report = compareNumericAtoms(sourceText, candidateText, {
+    locale,
+    ...(metadata !== "" ? { metadata } : {}),
+  });
   for (const comparison of report.comparisons) {
-    if (comparison.source.length === 0 && comparison.candidate.length === 0) continue;
+    if (
+      comparison.source.length === 0 &&
+      comparison.candidate.length === 0 &&
+      comparison.metadataRestated.length === 0
+    ) {
+      continue;
+    }
     const category: CheckCategory = comparison.category === "dice" ? "dice" : "quantity";
-    const evidence = `${comparison.category}: source [${comparison.source
-      .map((atom) => atom.raw)
-      .join(", ")}] vs candidate [${comparison.candidate.map((atom) => atom.raw).join(", ")}]`;
+    const evidence = comparisonEvidence(field, comparison);
     if (comparison.classification === "mismatch") {
       findings.push({
         category,
@@ -141,12 +193,47 @@ function numericFindings(
       });
     } else if (comparison.classification === "unresolved") {
       unresolvedItems.push(evidence);
+      findings.push({
+        category,
+        severity: "low",
+        evidence: `unresolved ${evidence}`,
+        recommendedAction:
+          "Review the representation against the source; the semantic comparison must clear it.",
+      });
     }
   }
   return { findings, unresolvedItems };
 }
 
-function higherLevelFindings(source: SourceText, candidate: CandidateText): CheckFinding[] {
+/** Casting time, range, and duration are displayed separately by the app. */
+function metadataText(source: SourceText): string {
+  return [source.castingTime, source.range, source.duration]
+    .filter((value): value is string => typeof value === "string" && value.trim() !== "")
+    .join("\n");
+}
+
+/**
+ * Values in candidate higher-level text that also occur in the source
+ * description suggest relocated source text (inline cantrip scaling or a stat
+ * block stored in the source higher-level field) rather than invented rules.
+ */
+function relocatedValues(source: SourceText, candidateHigher: string, locale: string): string[] {
+  const report = compareNumericAtoms(joinField(source.description), candidateHigher, { locale });
+  const values = new Set<string>();
+  for (const comparison of report.comparisons) {
+    const sourceCanonicals = new Set(comparison.source.map((atom) => atom.canonical));
+    for (const atom of comparison.candidate) {
+      if (sourceCanonicals.has(atom.canonical)) values.add(`"${atom.raw}"`);
+    }
+  }
+  return [...values];
+}
+
+function higherLevelFindings(
+  source: SourceText,
+  candidate: CandidateText,
+  locale: string,
+): CheckFinding[] {
   const findings: CheckFinding[] = [];
   const sourceHigher = joinField(source.higherLevels).trim();
   const candidateHigher = (candidate.higherLevels ?? "").trim();
@@ -160,10 +247,15 @@ function higherLevelFindings(source: SourceText, candidate: CandidateText): Chec
     });
   }
   if (sourceHigher === "" && candidateHigher !== "") {
+    const relocated = relocatedValues(source, candidateHigher, locale);
     findings.push({
       category: "higher-levels",
       severity: "high",
-      evidence: "the candidate adds higher-level rules the source does not have",
+      evidence:
+        "the candidate adds higher-level rules the source does not have" +
+        (relocated.length > 0
+          ? `; ${relocated.join(", ")} also ${relocated.length === 1 ? "occurs" : "occur"} in the source description, so the text may be relocated instead of invented`
+          : ""),
       recommendedAction: "Remove the invented scaling; regenerate or withhold.",
     });
   }
@@ -225,19 +317,32 @@ export function runDeterministicChecks(
     }
   }
 
-  const descriptionNumbers = numericFindings(joinField(source.description), candidate.description);
+  const metadata = metadataText(source);
+  const descriptionNumbers = numericFindings(
+    joinField(source.description),
+    candidate.description,
+    "description",
+    locale,
+    metadata,
+  );
   findings.push(...descriptionNumbers.findings);
   const unresolvedItems = [...descriptionNumbers.unresolvedItems];
 
   const sourceHigher = joinField(source.higherLevels);
   if (sourceHigher !== "" && candidate.higherLevels !== undefined) {
-    const higherNumbers = numericFindings(sourceHigher, candidate.higherLevels);
+    const higherNumbers = numericFindings(
+      sourceHigher,
+      candidate.higherLevels,
+      "higherLevels",
+      locale,
+      metadata,
+    );
     findings.push(...higherNumbers.findings);
     unresolvedItems.push(...higherNumbers.unresolvedItems);
   }
 
   findings.push(...vocabularyFindings(source, candidate, locale));
-  findings.push(...higherLevelFindings(source, candidate));
+  findings.push(...higherLevelFindings(source, candidate, locale));
   const length = lengthFinding(source, candidate);
   if (length) findings.push(length);
 

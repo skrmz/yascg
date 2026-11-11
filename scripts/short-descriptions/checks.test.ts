@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { classifyOutcome, runDeterministicChecks, worstSeverity } from "./checks.ts";
 import { HIGHER_LEVELS, LONG_DESCRIPTION } from "./test-helpers.ts";
 import type { Judgement } from "./openrouter.ts";
+import type { SourceText } from "./files.ts";
 
 const SOURCE = { description: LONG_DESCRIPTION, higherLevels: HIGHER_LEVELS };
 
@@ -131,6 +132,141 @@ describe("deterministic checks", () => {
         { category: "vocabulary", severity: "medium", evidence: "", recommendedAction: "" },
       ]),
     ).toBe("high");
+  });
+});
+
+const DE_HAND: SourceText = {
+  description: ["Die Hand bleibt für die Wirkungsdauer bestehen."],
+  castingTime: "Aktion",
+  range: "36 Meter",
+  duration: "bis zu 1 Minute",
+};
+
+function highFindings(result: ReturnType<typeof runDeterministicChecks>) {
+  return result.findings.filter((finding) => finding.severity === "high");
+}
+
+describe("deterministic validation accuracy", () => {
+  it("accepts a candidate that restates the spell metadata duration", () => {
+    const result = runDeterministicChecks(
+      DE_HAND,
+      { description: "Die Hand bleibt bis zu 1 min bestehen." },
+      "de",
+    );
+    expect(highFindings(result)).toEqual([]);
+    expect(result.unresolvedItems).toEqual([]);
+  });
+
+  it("accepts a candidate that restates the spell metadata range next to a description range", () => {
+    const source: SourceText = {
+      description: ["Du kannst Ziele in bis zu 18 Metern befehligen."],
+      range: "3 Meter",
+    };
+    const result = runDeterministicChecks(
+      source,
+      { description: "Befehle Ziele in RWt (3 m) bis 18 m." },
+      "de",
+    );
+    expect(highFindings(result)).toEqual([]);
+  });
+
+  it("keeps a changed numeric value high severity", () => {
+    const source: SourceText = {
+      description: ["Ziele in bis zu 18 Metern."],
+      range: "3 Meter",
+    };
+    const result = runDeterministicChecks(source, { description: "Ziele in bis zu 30 m." }, "de");
+    expect(highFindings(result).some((finding) => finding.category === "quantity")).toBe(true);
+  });
+
+  it("keeps a missing time limit high severity", () => {
+    const result = runDeterministicChecks(
+      { description: ["Das Ziel ist eine Stunde lang betäubt."] },
+      { description: "Das Ziel ist betäubt." },
+      "de",
+    );
+    expect(highFindings(result).some((finding) => finding.category === "quantity")).toBe(true);
+  });
+
+  it("keeps a missing creature count high severity", () => {
+    const result = runDeterministicChecks(
+      { description: ["Du erschaffst bis zu vier Kreaturen."] },
+      { description: "Du erschaffst Kreaturen." },
+      "de",
+    );
+    expect(highFindings(result).some((finding) => finding.category === "quantity")).toBe(true);
+  });
+
+  it("reports repeated values as unresolved instead of a confirmed mismatch", () => {
+    const result = runDeterministicChecks(
+      {
+        description: [
+          "Die Kreatur steht 24 Stunden lang unter deiner Kontrolle. Um für weitere 24 Stunden die Kontrolle zu behalten, musst du den Zauber vor Ablauf der ersten 24 Stunden erneut wirken.",
+        ],
+      },
+      {
+        description:
+          "Die Kreatur steht 24 h unter deiner Kontrolle; für weitere 24 h erneut wirken.",
+      },
+      "de",
+    );
+    expect(highFindings(result)).toEqual([]);
+    expect(result.unresolvedItems.some((item) => item.includes("time"))).toBe(true);
+  });
+
+  it("recognizes German time abbreviations", () => {
+    const result = runDeterministicChecks(
+      { description: ["Der Alarm ertönt zehn Sekunden lang."] },
+      { description: "Der Alarm ertönt 10 Sek. lang." },
+      "de",
+    );
+    expect(highFindings(result)).toEqual([]);
+  });
+
+  it("accepts German compound and English inflected rules vocabulary", () => {
+    const compound = runDeterministicChecks(
+      { description: ["Bewegung nur zur Vermeidung von Schaden."] },
+      { description: "Bewegung nur zur Schadensvermeidung." },
+      "de",
+    );
+    expect(compound.findings.filter((finding) => finding.category === "vocabulary")).toEqual([]);
+
+    const inflected = runDeterministicChecks(
+      { description: ["A target takes 8d6 damage."] },
+      { description: "A target is damaged for 8d6." },
+      "en",
+    );
+    expect(inflected.findings.filter((finding) => finding.category === "vocabulary")).toEqual([]);
+  });
+
+  it("explains relocated higher-level values without lowering severity", () => {
+    const source: SourceText = {
+      description: [
+        "Das Ziel erleidet 1W6 Schaden. Auf höheren Graden steigt der Schaden auf 2W6.",
+      ],
+    };
+    const result = runDeterministicChecks(
+      source,
+      {
+        description: "Das Ziel erleidet 1W6 Schaden.",
+        higherLevels: "Der Schaden steigt auf 2W6.",
+      },
+      "de",
+    );
+    const finding = result.findings.find((entry) => entry.category === "higher-levels");
+    expect(finding?.severity).toBe("high");
+    expect(finding?.evidence).toContain("also occurs in the source description");
+  });
+
+  it("explains metadata restatement and repetition in unresolved diagnostics", () => {
+    const result = runDeterministicChecks(
+      { description: ["24 Stunden lang. Weitere 24 Stunden."], duration: "bis zu 1 Minute" },
+      { description: "24 h lang; sie bleibt bis zu 1 min." },
+      "de",
+    );
+    const evidence = result.unresolvedItems.join(" ");
+    expect(evidence).toContain("restates spell metadata");
+    expect(evidence).toContain("different number of times");
   });
 });
 

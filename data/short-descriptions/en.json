@@ -1,4 +1,14 @@
 {
   "locale": "en",
-  "entries": []
+  "entries": [
+    {
+      "spellId": "srd-fireball",
+      "description": "A streak flashes from you to a chosen point within rng. and bursts into a fiery explosion. Each creature in a 20-ft rad. sphere centered there makes a DEX save, taking 8d6 FIRE dmg FAIL, or ½ dmg PASS. Flammable obj. in the area not worn or carried ignite.",
+      "higherLevels": "Dmg increases by 1d6 per slot level above 3.",
+      "sourceHash": "sha256:796234b29e477bb4cd5f961b74c592fcea3dbff94543777489341c1124b2df90",
+      "status": "accepted",
+      "acceptance": "auto",
+      "origin": "generated"
+    }
+  ]
 }

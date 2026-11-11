@@ -65,6 +65,13 @@ import {
   type ReportStatus,
   type ReviewReport,
 } from "./report.ts";
+import {
+  formatEntryTimings,
+  formatTimingLine,
+  monotonicClock,
+  type Clock,
+  type EntryTimings,
+} from "./timing.ts";
 
 /**
  * Generation pipeline: deterministic selection, candidate generation, local
@@ -208,6 +215,8 @@ export interface ProcessedItem {
   generationUsage: Usage | null;
   judgementUsage: Usage | null;
   estimatedCostUsd: number | "unavailable";
+  /** Populated only for `--timings` diagnostics. */
+  timings?: EntryTimings;
 }
 
 export interface GenerationDependencies {
@@ -218,6 +227,7 @@ export interface GenerationDependencies {
   writeAuthoring?: (filePath: string, text: string) => Promise<void>;
   env?: NodeJS.ProcessEnv;
   configPath?: string;
+  clock?: Clock;
 }
 
 export interface GenerationResult {
@@ -269,6 +279,7 @@ async function generateEntry(
   item: SelectionItem,
   currentHash: string,
   costContext: CostContext,
+  clock: Clock,
 ): Promise<ProcessedItem> {
   const base: ProcessedItem = {
     locale: item.locale,
@@ -285,18 +296,33 @@ async function generateEntry(
     estimatedCostUsd: "unavailable",
   };
 
+  const started = clock();
+  let generationMs: number | undefined;
+  let checksMs: number | undefined;
+  let judgementMs: number | undefined;
+  const timings = (): EntryTimings => ({
+    ...(generationMs !== undefined ? { generation: generationMs } : {}),
+    ...(checksMs !== undefined ? { checks: checksMs } : {}),
+    ...(judgementMs !== undefined ? { judgement: judgementMs } : {}),
+    total: clock() - started,
+  });
+
   let generated: CallResult<GeneratedCandidate>;
+  const generationStarted = clock();
   try {
     generated = await adapter.generateCandidate(item.locale, { id: item.spellId, ...item.source });
   } catch (error) {
-    return { ...base, reasons: [redactError(error)] };
+    generationMs = clock() - generationStarted;
+    return { ...base, timings: timings(), reasons: [redactError(error)] };
   }
+  generationMs = clock() - generationStarted;
   const genUsage = generated.usage;
 
   const candidate = generated.value;
   if (candidate.spellId !== item.spellId) {
     return {
       ...base,
+      timings: timings(),
       generationUsage: genUsage,
       reasons: [
         `generation returned spellId "${candidate.spellId}" for requested "${item.spellId}"; treated as invalid output.`,
@@ -308,11 +334,14 @@ async function generateEntry(
     description: candidate.description,
     higherLevels: normalizeHigherLevels(candidate.higherLevels),
   };
+  const checksStarted = clock();
   const checks = runDeterministicChecks(item.source, text, item.locale);
+  checksMs = clock() - checksStarted;
   if (checks.invalid) {
     return {
       ...base,
       status: "invalid",
+      timings: timings(),
       findings: checks.findings,
       reasons: ["Candidate failed structural or Markdown checks; not written."],
       generationUsage: genUsage,
@@ -322,6 +351,7 @@ async function generateEntry(
 
   let judgement: Judgement | null = null;
   let judgementUsage: Usage | null = null;
+  const judgementStarted = clock();
   try {
     const compared = await adapter.compareCandidate({
       locale: item.locale,
@@ -333,14 +363,17 @@ async function generateEntry(
     judgement = compared.value;
     judgementUsage = compared.usage;
   } catch (error) {
+    judgementMs = clock() - judgementStarted;
     return {
       ...base,
+      timings: timings(),
       findings: checks.findings,
       reasons: [`semantic comparison failed: ${redactError(error)}`],
       generationUsage: genUsage,
       estimatedCostUsd: entryCost(genUsage, null, costContext.pricing, costContext.models),
     };
   }
+  judgementMs = clock() - judgementStarted;
 
   const classification = classifyOutcome({
     findings: checks.findings,
@@ -362,6 +395,7 @@ async function generateEntry(
     return {
       ...base,
       status: "invalid",
+      timings: timings(),
       findings: classification.findings,
       reasons: ["candidate failed authoring schema validation; not written."],
       generationUsage: genUsage,
@@ -373,6 +407,7 @@ async function generateEntry(
   return {
     ...base,
     status: classification.status,
+    timings: timings(),
     acceptance: "auto",
     origin: "generated",
     severity: classification.severity,
@@ -391,6 +426,7 @@ async function revalidateEntry(
   currentHash: string,
   adapter: ShortDescriptionAdapter | undefined,
   costContext: CostContext,
+  clock: Clock,
 ): Promise<ProcessedItem> {
   const base: ProcessedItem = {
     locale: item.locale,
@@ -406,15 +442,26 @@ async function revalidateEntry(
     judgementUsage: null,
     estimatedCostUsd: "unavailable",
   };
+  const started = clock();
+  let checksMs: number | undefined;
+  let judgementMs: number | undefined;
+  const timings = (): EntryTimings => ({
+    ...(checksMs !== undefined ? { checks: checksMs } : {}),
+    ...(judgementMs !== undefined ? { judgement: judgementMs } : {}),
+    total: clock() - started,
+  });
   const existing = item.entry;
   if (!existing) {
     return { ...base, reasons: ["revalidation requires an existing authoring entry."] };
   }
 
+  const checksStarted = clock();
   const checks = runDeterministicChecks(item.source, existing, item.locale);
+  checksMs = clock() - checksStarted;
   if (checks.invalid) {
     return {
       ...base,
+      timings: timings(),
       findings: checks.findings,
       reasons: ["The existing entry has unsafe Markdown; the text was not rewritten."],
     };
@@ -426,12 +473,14 @@ async function revalidateEntry(
     if (!adapter) {
       return {
         ...base,
+        timings: timings(),
         findings: checks.findings,
         reasons: [
           "Unresolved items require the semantic comparison, but no adapter is configured.",
         ],
       };
     }
+    const judgementStarted = clock();
     try {
       const compared = await adapter.compareCandidate({
         locale: item.locale,
@@ -443,12 +492,15 @@ async function revalidateEntry(
       judgement = compared.value;
       judgementUsage = compared.usage;
     } catch (error) {
+      judgementMs = clock() - judgementStarted;
       return {
         ...base,
+        timings: timings(),
         findings: checks.findings,
         reasons: [`revalidation comparison failed: ${redactError(error)}`],
       };
     }
+    judgementMs = clock() - judgementStarted;
   }
 
   const classification = classifyOutcome({
@@ -467,6 +519,7 @@ async function revalidateEntry(
   if (!parsed.success) {
     return {
       ...base,
+      timings: timings(),
       findings: classification.findings,
       reasons: ["The existing entry failed schema validation; the text was not rewritten."],
     };
@@ -482,6 +535,7 @@ async function revalidateEntry(
   return {
     ...base,
     status,
+    timings: timings(),
     acceptance: existing.acceptance,
     origin: existing.origin,
     severity: classification.severity,
@@ -496,7 +550,12 @@ async function revalidateEntry(
     ),
   };
 }
-function approveEntry(item: SelectionItem, currentHash: string, locale: string): ProcessedItem {
+function approveEntry(
+  item: SelectionItem,
+  currentHash: string,
+  locale: string,
+  clock: Clock,
+): ProcessedItem {
   const base: ProcessedItem = {
     locale,
     spellId: item.spellId,
@@ -511,15 +570,24 @@ function approveEntry(item: SelectionItem, currentHash: string, locale: string):
     judgementUsage: null,
     estimatedCostUsd: "unavailable",
   };
+  const started = clock();
+  let checksMs: number | undefined;
+  const timings = (): EntryTimings => ({
+    ...(checksMs !== undefined ? { checks: checksMs } : {}),
+    total: clock() - started,
+  });
   if (!item.entry) {
     return { ...base, reasons: ["--approve requires an existing authoring entry."] };
   }
+  const checksStarted = clock();
   const checks = runDeterministicChecks(item.source, item.entry, locale);
+  checksMs = clock() - checksStarted;
   const findings = [...checks.findings];
   const blocked = checks.invalid || findings.some((finding) => finding.severity === "high");
   if (blocked) {
     return {
       ...base,
+      timings: timings(),
       findings,
       reasons: ["entry has blocking deterministic findings; approval refused."],
     };
@@ -527,6 +595,7 @@ function approveEntry(item: SelectionItem, currentHash: string, locale: string):
   if (!isRuntimeEligible(item.entry, item.source)) {
     return {
       ...base,
+      timings: timings(),
       findings,
       reasons: ["entry is not materially shorter; approval refused."],
     };
@@ -539,11 +608,17 @@ function approveEntry(item: SelectionItem, currentHash: string, locale: string):
     origin: "manual",
   });
   if (!parsed.success) {
-    return { ...base, findings, reasons: ["entry failed schema validation; approval refused."] };
+    return {
+      ...base,
+      timings: timings(),
+      findings,
+      reasons: ["entry failed schema validation; approval refused."],
+    };
   }
   return {
     ...base,
     status: "accepted",
+    timings: timings(),
     acceptance: "human",
     origin: "manual",
     severity: worstSeverity(findings),
@@ -554,7 +629,8 @@ function approveEntry(item: SelectionItem, currentHash: string, locale: string):
   };
 }
 
-function manualEntry(item: SelectionItem, currentHash: string): ProcessedItem {
+function manualEntry(item: SelectionItem, currentHash: string, clock: Clock): ProcessedItem {
+  const started = clock();
   const parsed = authoringEntrySchema.safeParse({
     spellId: item.spellId,
     description: MANUAL_PLACEHOLDER(item.locale),
@@ -579,6 +655,7 @@ function manualEntry(item: SelectionItem, currentHash: string): ProcessedItem {
     generationUsage: null,
     judgementUsage: null,
     estimatedCostUsd: "unavailable",
+    timings: { total: clock() - started },
   };
 }
 
@@ -771,6 +848,8 @@ export async function runGeneration(
   const workspace = deps.workspace ?? defaultWorkspace();
   const log = deps.log ?? info;
   const now = deps.now ?? (() => new Date());
+  const clock = deps.clock ?? monotonicClock();
+  const runStarted = clock();
   const settings = resolveOpenRouterConfig(options, deps.env, deps.configPath);
 
   if (options.manual && options.approve) {
@@ -883,23 +962,27 @@ export async function runGeneration(
         });
         continue;
       }
-      result = manualEntry(item, currentHash);
+      result = manualEntry(item, currentHash, clock);
     } else if (options.approve) {
-      result = approveEntry(item, currentHash, item.locale);
+      result = approveEntry(item, currentHash, item.locale, clock);
     } else if (item.mode === "stale") {
-      result = await revalidateEntry(item, currentHash, adapter, costContext);
+      result = await revalidateEntry(item, currentHash, adapter, costContext, clock);
       if (result.estimatedCostUsd !== "unavailable") cumulativeCost += result.estimatedCostUsd;
     } else {
       if (!adapter) throw new CliError("model adapter is not configured.");
-      result = await generateEntry(adapter, item, currentHash, costContext);
+      result = await generateEntry(adapter, item, currentHash, costContext, clock);
       if (result.estimatedCostUsd !== "unavailable") cumulativeCost += result.estimatedCostUsd;
     }
     processed.push(result);
     log(
       `${item.locale} ${item.spellId}: ${result.status}${result.reasons.length > 0 ? ` (${result.reasons[0]})` : ""}`,
     );
+    if (options.timings && result.timings) {
+      for (const line of formatEntryTimings(result.timings)) log(line);
+    }
   }
 
+  const commitStarted = clock();
   const commitResult = await commit(
     workspace,
     processed,
@@ -907,6 +990,7 @@ export async function runGeneration(
     manifestLocales,
     deps.writeAuthoring ?? writeFileAtomic,
   );
+  const commitMs = clock() - commitStarted;
   const committed = commitResult.committed;
 
   const report = buildReport({
@@ -923,6 +1007,7 @@ export async function runGeneration(
   });
 
   let exitCode = report.exitCode;
+  const reportStarted = clock();
   try {
     await writeFileAtomic(workspace.reportFile, serializeReport(report));
   } catch (error) {
@@ -931,7 +1016,13 @@ export async function runGeneration(
     );
     exitCode = EXIT_PARTIAL;
   }
+  const reportMs = clock() - reportStarted;
   printSummary(log, report);
+  if (options.timings) {
+    log(formatTimingLine("authoring files", commitMs));
+    log(formatTimingLine("review report", reportMs));
+    log(formatTimingLine("total run", clock() - runStarted));
+  }
   return { exitCode, selection, report };
 }
 

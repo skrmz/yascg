@@ -84,6 +84,16 @@ export function buildJudgePrompt(input: JudgePromptInput): string {
     input.unresolvedItems.length > 0
       ? input.unresolvedItems.map((item) => `- ${item}`).join("\n")
       : "(none)";
+  const metadata = [
+    input.source.name ? `Name: ${input.source.name}` : null,
+    input.source.level !== undefined ? `Level: ${input.source.level}` : null,
+    input.source.school ? `School: ${input.source.school}` : null,
+    input.source.castingTime ? `Casting time: ${input.source.castingTime}` : null,
+    input.source.range ? `Range: ${input.source.range}` : null,
+    input.source.duration ? `Duration: ${input.source.duration}` : null,
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
 
   return [
     `You compare a source spell description with a shortened candidate in locale "${input.locale}".`,
@@ -93,6 +103,10 @@ export function buildJudgePrompt(input: JudgePromptInput): string {
     "- high: damage, dice or quantities, targets or areas, range, duration or timing, action economy, conditions, saves, scaling, restrictions, exceptions, or component requirements change, or uncertainty about a serious rule change.",
     "- medium: possible ambiguity or omission, incomplete higher-level text, or significant compression with uncertain effect.",
     "- low: wording, style, readability, or non-mechanical formatting.",
+    "",
+    "Spell metadata (the app displays these fields separately from the description):",
+    metadata || "(none)",
+    "A value that only restates this metadata is not a mechanical change. A candidate value that contradicts the metadata, or that drops or changes a value stated in the source description, is.",
     "",
     "The following deterministic items are unresolved and require an explicit finding (or no finding only when you are certain the representations are equivalent):",
     unresolved,

@@ -141,10 +141,10 @@ Paths are relative to the repository root.
   deck reference resolution. `load.ts` also loads and validates the short-description sidecar
   per locale; failures degrade to an empty or partially filtered map and never break startup.
 - `src/domain/short-descriptions.ts` — runtime sidecar schema and canonical SRD id rules.
-- `src/tools/short-descriptions/` — pure, dependency-free authoring tooling shared by the CLI
-  and tests: strict authoring schema, Markdown safety, numeric/dice normalization, the
-  material-shortening rule, the authoring-to-runtime transform, and deterministic
-  serialization. No Node built-ins and no network access.
+- `src/tools/short-descriptions/` — pure authoring tooling shared by the CLI and tests: strict
+  authoring schema, Markdown safety, numeric/dice normalization (including the locale abbreviation
+  catalog as static data), the material-shortening rule, the authoring-to-runtime transform, and
+  deterministic serialization. No Node built-ins, filesystem, or network access.
 - `scripts/short-descriptions/` — authoring CLI (`build`, `validate`, `generate`, `smoke`),
   fingerprints, filesystem/atomic-write helpers, checks and classification, the review report,
   and the OpenRouter adapter. Never imported by `src/`.

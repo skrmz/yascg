@@ -371,4 +371,24 @@ describe("prompt construction", () => {
     expect(prompt).toContain("1 mile");
     expect(prompt).toContain("mechanicallyEquivalent");
   });
+
+  it("gives the judge the spell metadata that the app displays separately", () => {
+    const prompt = buildJudgePrompt({
+      locale: "de",
+      spellId: "srd-animate-dead",
+      source: {
+        ...SPELL,
+        castingTime: "1 Minute",
+        range: "3 Meter",
+        duration: "Unmittelbar",
+      },
+      candidate: { description: "Kurz." },
+      unresolvedItems: [],
+    });
+    expect(prompt).toContain("Spell metadata");
+    expect(prompt).toContain("Casting time: 1 Minute");
+    expect(prompt).toContain("Range: 3 Meter");
+    expect(prompt).toContain("Duration: Unmittelbar");
+    expect(prompt).toContain("restates this metadata is not a mechanical change");
+  });
 });

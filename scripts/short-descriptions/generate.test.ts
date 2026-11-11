@@ -275,6 +275,38 @@ describe("generation pipeline", () => {
     expect(report.usage).toEqual({ promptTokens: 20, completionTokens: 10, totalTokens: 30 });
   });
 
+  it("prints per-entry and pipeline timings only when requested", async () => {
+    let tick = 0;
+    const clock = () => (tick += 25);
+
+    const workspace = await seedWorkspace(await createTempWorkspace());
+    const messages: string[] = [];
+    await runGeneration(options({ ids: ["srd-fireball"], timings: true }), {
+      workspace,
+      adapter: stubAdapter({ calls: [] }),
+      clock,
+      log: (message) => messages.push(message),
+    });
+    const output = messages.join("\n");
+    expect(output).toContain("generation API:");
+    expect(output).toContain("deterministic checks:");
+    expect(output).toContain("judge API:");
+    expect(output).toContain("authoring files:");
+    expect(output).toContain("review report:");
+    expect(output).toContain("total run:");
+    expect(output).not.toContain("You write a short form");
+
+    const quietWorkspace = await seedWorkspace(await createTempWorkspace());
+    const quiet: string[] = [];
+    await runGeneration(options({ ids: ["srd-fireball"] }), {
+      workspace: quietWorkspace,
+      adapter: stubAdapter({ calls: [] }),
+      clock,
+      log: (message) => quiet.push(message),
+    });
+    expect(quiet.join("\n")).not.toContain("generation API:");
+  });
+
   it("commits withheld review items for confirmed mismatches", async () => {
     const workspace = await seedWorkspace(await createTempWorkspace());
     const calls: string[] = [];
