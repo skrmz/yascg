@@ -9,11 +9,11 @@ import {
   isDirectRun,
   parseCliOptions,
   resolveCredentials,
-  resolveModels,
   runCli,
   info,
   warn,
 } from "./cli.ts";
+import { resolveOpenRouterConfig } from "./config.ts";
 import { buildSidecars } from "./build.ts";
 import {
   createStagingWorkspace,
@@ -53,8 +53,21 @@ async function stageInputs(source: Workspace, staging: Workspace): Promise<void>
   }
 }
 
-export async function runSmoke(argv: readonly string[]): Promise<number> {
+export interface SmokeDependencies {
+  env?: NodeJS.ProcessEnv;
+  configPath?: string;
+}
+
+export async function runSmoke(
+  argv: readonly string[],
+  deps: SmokeDependencies = {},
+): Promise<number> {
   const options = parseCliOptions(argv);
+  if (options.showConfig) {
+    throw new CliError(
+      "show-config is only supported by the generation command: pnpm run short-descriptions:generate -- --show-config",
+    );
+  }
   if (options.all) {
     throw new CliError("short-descriptions:smoke refuses --all; pass an explicit --ids list.");
   }
@@ -67,6 +80,12 @@ export async function runSmoke(argv: readonly string[]): Promise<number> {
     );
   }
 
+  const settings = resolveOpenRouterConfig(options, deps.env, deps.configPath);
+  const credentials = resolveCredentials(deps.env, settings.baseUrl.value);
+  info(`generation model: ${settings.model.value}`);
+  info(`judge model: ${settings.judgeModel.value}`);
+  info(`base URL: ${settings.baseUrl.value}`);
+
   const real = defaultWorkspace();
   const staging = options.outputDir
     ? createWorkspace(path.resolve(options.outputDir))
@@ -74,13 +93,11 @@ export async function runSmoke(argv: readonly string[]): Promise<number> {
   await stageInputs(real, staging);
   info(`staging: ${staging.root}`);
 
-  const credentials = resolveCredentials();
-  const models = resolveModels(options);
   const adapter = new OpenRouterAdapter({
     apiKey: credentials.apiKey,
     baseUrl: credentials.baseUrl,
-    model: models.model,
-    judgeModel: models.judgeModel,
+    model: settings.model.value,
+    judgeModel: settings.judgeModel.value,
     maxOutputTokens: options.maxOutputTokens,
     timeoutMs: options.timeoutMs,
     maxAttempts: options.maxAttempts,
@@ -97,7 +114,7 @@ export async function runSmoke(argv: readonly string[]): Promise<number> {
       write: false,
       limit: options.ids.length,
     },
-    { workspace: staging, adapter, log: info },
+    { workspace: staging, adapter, log: info, env: deps.env, configPath: deps.configPath },
   );
 
   const built = await buildSidecars(staging);

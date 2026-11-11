@@ -40,6 +40,7 @@ export interface CliOptions {
   approve: boolean;
   force: boolean;
   manual: boolean;
+  showConfig: boolean;
   locale?: string;
   ids?: string[];
   limit?: number;
@@ -72,8 +73,10 @@ function positiveNumber(name: string, value: string | undefined): number | undef
 }
 
 export function parseCliOptions(argv: readonly string[]): CliOptions {
+  const args = [...argv];
+  if (args[0] === "--") args.shift();
   const { values } = parseArgs({
-    args: [...argv],
+    args,
     allowPositionals: false,
     strict: true,
     options: {
@@ -84,6 +87,7 @@ export function parseCliOptions(argv: readonly string[]): CliOptions {
       approve: { type: "boolean" },
       force: { type: "boolean" },
       manual: { type: "boolean" },
+      "show-config": { type: "boolean" },
       locale: { type: "string" },
       ids: { type: "string" },
       limit: { type: "string" },
@@ -112,6 +116,7 @@ export function parseCliOptions(argv: readonly string[]): CliOptions {
     approve: Boolean(values.approve),
     force: Boolean(values.force),
     manual: Boolean(values.manual),
+    showConfig: Boolean(values["show-config"]),
     ...(values.locale !== undefined ? { locale: values.locale } : {}),
     ...(uniqueIds && uniqueIds.length > 0 ? { ids: uniqueIds } : {}),
     ...(values.limit !== undefined ? { limit: positiveInteger("limit", values.limit) } : {}),
@@ -130,22 +135,6 @@ export function parseCliOptions(argv: readonly string[]): CliOptions {
   };
 }
 
-export interface ModelSelection {
-  model: string;
-  judgeModel: string;
-}
-
-/** Flag > environment variable > documented shared default. */
-export function resolveModels(
-  options: Pick<CliOptions, "model" | "judgeModel">,
-  env: NodeJS.ProcessEnv = process.env,
-): ModelSelection {
-  const model = options.model ?? env.OPENROUTER_MODEL?.trim() ?? DEFAULT_MODEL;
-  const judgeModel =
-    options.judgeModel ?? env.OPENROUTER_JUDGE_MODEL?.trim() ?? DEFAULT_JUDGE_MODEL;
-  return { model, judgeModel };
-}
-
 export interface Credentials {
   apiKey: string;
   baseUrl: string;
@@ -155,24 +144,27 @@ export interface Credentials {
  * Reads the key from `process.env.OPENROUTER_API_KEY` only when a model call is
  * about to happen. There is no `.env` file and no flag for the key.
  */
-export function resolveCredentials(env: NodeJS.ProcessEnv = process.env): Credentials {
+export function resolveCredentials(
+  env: NodeJS.ProcessEnv = process.env,
+  baseUrl: string = DEFAULT_BASE_URL,
+): Credentials {
   const apiKey = env.OPENROUTER_API_KEY?.trim();
   if (!apiKey) {
     throw new CliError(
       "OPENROUTER_API_KEY is not set. Set it for the current PowerShell session (see docs/short-descriptions.md) and retry.",
     );
   }
-  return { apiKey, baseUrl: resolveBaseUrl(env.OPENROUTER_BASE_URL) };
+  return { apiKey, baseUrl };
 }
 
 /** Sanitizes the base URL: credentials, query, and fragment are dropped. */
-export function resolveBaseUrl(raw: string | undefined): string {
+export function resolveBaseUrl(raw: string | undefined, label = "OPENROUTER_BASE_URL"): string {
   const candidate = raw?.trim() || DEFAULT_BASE_URL;
   let url: URL;
   try {
     url = new URL(candidate);
   } catch {
-    throw new CliError("OPENROUTER_BASE_URL is not a valid absolute URL.");
+    throw new CliError(`${label} is not a valid absolute URL.`);
   }
   url.username = "";
   url.password = "";

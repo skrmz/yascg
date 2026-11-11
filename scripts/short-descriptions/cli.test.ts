@@ -1,14 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
-  DEFAULT_JUDGE_MODEL,
   DEFAULT_MAX_ENTRIES,
-  DEFAULT_MODEL,
   CliError,
   parseCliOptions,
   redact,
   resolveBaseUrl,
   resolveCredentials,
-  resolveModels,
 } from "./cli.ts";
 
 describe("short-descriptions CLI options", () => {
@@ -18,6 +15,7 @@ describe("short-descriptions CLI options", () => {
     expect(options.maxEntries).toBe(DEFAULT_MAX_ENTRIES);
     expect(options.ids).toBeUndefined();
     expect(options.locale).toBeUndefined();
+    expect(options.showConfig).toBe(false);
   });
 
   it("parses ids, locale, limits, and numeric options", () => {
@@ -57,25 +55,23 @@ describe("short-descriptions CLI options", () => {
     expect(() => parseCliOptions(["--unknown"])).toThrow();
   });
 
-  it("resolves models with flag > env > default precedence", () => {
-    expect(resolveModels({}, {})).toEqual({
-      model: DEFAULT_MODEL,
-      judgeModel: DEFAULT_JUDGE_MODEL,
-    });
-    expect(
-      resolveModels({}, { OPENROUTER_MODEL: "env/model", OPENROUTER_JUDGE_MODEL: "env/judge" }),
-    ).toEqual({ model: "env/model", judgeModel: "env/judge" });
-    expect(
-      resolveModels(
-        { model: "flag/model", judgeModel: "flag/judge" },
-        { OPENROUTER_MODEL: "env/model" },
-      ),
-    ).toEqual({ model: "flag/model", judgeModel: "flag/judge" });
+  it("parses --show-config", () => {
+    expect(parseCliOptions(["--show-config"]).showConfig).toBe(true);
+    expect(parseCliOptions(["--", "--show-config"]).showConfig).toBe(true);
   });
 
   it("requires the API key from the environment only", () => {
     expect(() => resolveCredentials({})).toThrow(/OPENROUTER_API_KEY/);
     expect(resolveCredentials({ OPENROUTER_API_KEY: "secret" }).apiKey).toBe("secret");
+  });
+
+  it("returns the already-resolved base URL with the key", () => {
+    expect(resolveCredentials({ OPENROUTER_API_KEY: "secret" }).baseUrl).toBe(
+      "https://openrouter.ai/api/v1",
+    );
+    expect(
+      resolveCredentials({ OPENROUTER_API_KEY: "secret" }, "https://proxy.example/api/v1").baseUrl,
+    ).toBe("https://proxy.example/api/v1");
   });
 
   it("strips credentials, query, and fragment from the base URL", () => {
@@ -84,6 +80,7 @@ describe("short-descriptions CLI options", () => {
     );
     expect(resolveBaseUrl(undefined)).toBe("https://openrouter.ai/api/v1");
     expect(() => resolveBaseUrl("not a url")).toThrow(/OPENROUTER_BASE_URL/);
+    expect(() => resolveBaseUrl("not a url", "config baseUrl")).toThrow(/config baseUrl/);
   });
 
   it("redacts keys and bearer tokens", () => {

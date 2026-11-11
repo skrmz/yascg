@@ -39,7 +39,7 @@ The repository root `.nvmrc` (containing `24`) is the source of truth for that v
 | `pnpm run normalize:srd`                | Normalize `data/srd/` into the committed `src/data/` artifacts.         |
 | `pnpm run short-descriptions:build`     | Regenerate the committed short-description sidecars from authoring files. |
 | `pnpm run short-descriptions:validate`  | Validate authoring files, check sidecar drift, write the review report.  |
-| `pnpm run short-descriptions:generate`  | Generate short descriptions (offline authoring; needs a key).            |
+| `pnpm run short-descriptions:generate`  | Generate short descriptions (offline authoring; needs a key for model calls; `--show-config` prints the effective non-secret configuration). |
 | `pnpm run short-descriptions:smoke`     | Tiny staged integration check for the authoring pipeline (needs a key).  |
 | `pnpm run dev` (`vp dev`)               | Start the development server in the local Workers runtime.              |
 | `pnpm run check` (`vp check`)           | Format, lint, and type-check.                                           |

@@ -14,6 +14,7 @@ const FORBIDDEN = [
   "OPENROUTER_API_KEY",
   "VITE_OPENROUTER",
   "short-descriptions/openrouter",
+  "short-descriptions/config",
   "short-descriptions/generate",
   "short-descriptions/smoke",
 ];

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-11T20:50:27.238Z",
+  "provider": "openrouter",
+  "baseUrl": "https://openrouter.ai/api/v1",
+  "generationModel": "openai/gpt-4o-mini",
+  "judgeModel": "deepseek/deepseek-v4.1-flash-1017",
+  "command": "short-descriptions:generate",
+  "dryRun": false,
+  "outcome": "failed",
+  "counts": {
+    "selected": 1,
+    "accepted": 0,
+    "autoAccepted": 0,
+    "humanAccepted": 0,
+    "withheld": 0,
+    "invalid": 0,
+    "failed": 1,
+    "skipped": 0
+  },
+  "countsByLocale": {
+    "en": {
+      "accepted": 0,
+      "withheld": 0,
+      "invalid": 0,
+      "failed": 1
+    }
+  },
+  "autoAcceptanceRatio": "unavailable",
+  "exitCode": 2,
+  "entries": [
+    {
+      "locale": "en",
+      "spellId": "srd-fireball",
+      "status": "failed",
+      "acceptance": null,
+      "origin": null,
+      "severity": "high",
+      "findings": [],
+      "reasons": [
+        "generation request failed (HTTP 400): {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid schema for response_format 'short_description': In context=(), 'required' i..."
+      ],
+      "written": false,
+      "usage": "unavailable",
+      "estimatedCostUsd": "unavailable"
+    }
+  ],
+  "failures": [
+    {
+      "locale": "en",
+      "spellId": "srd-fireball",
+      "status": "failed",
+      "reason": "generation request failed (HTTP 400): {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid schema for response_format 'short_description': In context=(), 'required' i...",
+      "committed": false
+    }
+  ],
+  "skipped": [],
+  "generationUsage": "unavailable",
+  "judgementUsage": "unavailable",
+  "usage": "unavailable",
+  "estimatedCostUsd": "unavailable",
+  "notes": []
+}

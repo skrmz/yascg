@@ -19,20 +19,19 @@ import {
 } from "./checks.ts";
 import {
   CliError,
-  DEFAULT_BASE_URL,
   EXIT_FAILURE,
   EXIT_OK,
   EXIT_PARTIAL,
   isDirectRun,
   parseCliOptions,
   resolveCredentials,
-  resolveModels,
   redact,
   runCli,
   type CliOptions,
   info,
   warn,
 } from "./cli.ts";
+import { formatOpenRouterConfiguration, resolveOpenRouterConfig } from "./config.ts";
 import {
   computeFingerprints,
   defaultWorkspace,
@@ -217,6 +216,8 @@ export interface GenerationDependencies {
   now?: () => Date;
   log?: (message: string) => void;
   writeAuthoring?: (filePath: string, text: string) => Promise<void>;
+  env?: NodeJS.ProcessEnv;
+  configPath?: string;
 }
 
 export interface GenerationResult {
@@ -770,7 +771,7 @@ export async function runGeneration(
   const workspace = deps.workspace ?? defaultWorkspace();
   const log = deps.log ?? info;
   const now = deps.now ?? (() => new Date());
-  const models = resolveModels(options);
+  const settings = resolveOpenRouterConfig(options, deps.env, deps.configPath);
 
   if (options.manual && options.approve) {
     throw new CliError("--manual and --approve cannot be combined.");
@@ -817,19 +818,22 @@ export async function runGeneration(
 
   const needsModel = !options.approve && !options.manual;
   let adapter = deps.adapter;
-  let baseUrl = needsModel ? DEFAULT_BASE_URL : "none";
+  let baseUrl = needsModel ? settings.baseUrl.value : "none";
   let pricing: Map<string, ModelPricing> | null = null;
-  let activeModels = { model: models.model, judgeModel: models.judgeModel };
+  let activeModels = {
+    model: settings.model.value,
+    judgeModel: settings.judgeModel.value,
+  };
 
   if (needsModel) {
     if (!adapter) {
-      const credentials = resolveCredentials();
+      const credentials = resolveCredentials(deps.env, settings.baseUrl.value);
       baseUrl = credentials.baseUrl;
       adapter = new OpenRouterAdapter({
         apiKey: credentials.apiKey,
         baseUrl: credentials.baseUrl,
-        model: models.model,
-        judgeModel: models.judgeModel,
+        model: settings.model.value,
+        judgeModel: settings.judgeModel.value,
         maxOutputTokens: options.maxOutputTokens,
         timeoutMs: options.timeoutMs,
         maxAttempts: options.maxAttempts,
@@ -933,6 +937,10 @@ export async function runGeneration(
 
 async function main(argv: readonly string[]): Promise<number> {
   const options = parseCliOptions(argv);
+  if (options.showConfig) {
+    info(formatOpenRouterConfiguration(resolveOpenRouterConfig(options)));
+    return EXIT_OK;
+  }
   const result = await runGeneration(options);
   if (result.report) {
     for (const skipped of result.report.skipped) {
