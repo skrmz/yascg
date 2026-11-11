@@ -20,6 +20,7 @@ export type FailureKind =
   | "response-format"
   | "request"
   | "invalid-output"
+  | "incomplete"
   | "rate-limit"
   | "server"
   | "timeout"
@@ -108,7 +109,9 @@ const CANDIDATE_JSON_SCHEMA: ChatSchema = {
   schema: {
     type: "object",
     additionalProperties: false,
-    required: ["spellId", "description"],
+    // OpenAI strict structured outputs require every property to be listed in
+    // `required`; the optional higher-level text is modelled as an empty string.
+    required: ["spellId", "description", "higherLevels"],
     properties: {
       spellId: { type: "string" },
       description: { type: "string" },
@@ -146,6 +149,13 @@ const JUDGEMENT_JSON_SCHEMA: ChatSchema = {
   },
 };
 
+/**
+ * Reasoning tokens share the `max_tokens` budget. These calls need a complete
+ * JSON object, so reasoning is disabled to keep the visible output budget
+ * intact. OpenRouter normalizes this field; non-reasoning models ignore it.
+ */
+const STRUCTURED_OUTPUT_REASONING = { effort: "none" } as const;
+
 interface ParsedUsageSource {
   usage?: { prompt_tokens?: unknown; completion_tokens?: unknown; total_tokens?: unknown };
 }
@@ -161,12 +171,108 @@ function parseUsage(body: unknown): Usage | null {
   return { promptTokens: prompt, completionTokens: completion, totalTokens: total };
 }
 
-function contentOf(body: unknown): string | null {
+interface ChatChoice {
+  message?: { content?: unknown; reasoning?: unknown };
+  finish_reason?: unknown;
+}
+
+function firstChoice(body: unknown): ChatChoice | null {
   if (typeof body !== "object" || body === null) return null;
   const choices = (body as { choices?: unknown }).choices;
   if (!Array.isArray(choices) || choices.length === 0) return null;
-  const message = (choices[0] as { message?: { content?: unknown } }).message;
-  return typeof message?.content === "string" ? message.content : null;
+  const choice = choices[0];
+  return typeof choice === "object" && choice !== null ? (choice as ChatChoice) : null;
+}
+
+/** Accepts both a plain string and the OpenAI content-part array shape. */
+function textFromContent(content: unknown): string | null {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return null;
+  const parts: string[] = [];
+  for (const part of content) {
+    if (typeof part === "string") {
+      parts.push(part);
+      continue;
+    }
+    if (typeof part !== "object" || part === null) continue;
+    const record = part as { type?: unknown; text?: unknown };
+    if (
+      typeof record.text === "string" &&
+      (record.type === "text" || record.type === "output_text")
+    ) {
+      parts.push(record.text);
+    }
+  }
+  return parts.length > 0 ? parts.join("") : null;
+}
+
+function contentOf(body: unknown): string | null {
+  const message = firstChoice(body)?.message;
+  return message ? textFromContent(message.content) : null;
+}
+
+function finishReasonOf(body: unknown): string | null {
+  const reason = firstChoice(body)?.finish_reason;
+  return typeof reason === "string" ? reason : null;
+}
+
+function reasoningTokensOf(body: unknown): number | null {
+  if (typeof body !== "object" || body === null) return null;
+  const usage = (body as { usage?: unknown }).usage;
+  if (typeof usage !== "object" || usage === null) return null;
+  const details = (usage as { completion_tokens_details?: unknown }).completion_tokens_details;
+  if (typeof details !== "object" || details === null) return null;
+  const reasoning = (details as { reasoning_tokens?: unknown }).reasoning_tokens;
+  return typeof reasoning === "number" ? reasoning : null;
+}
+
+/** Providers can return a 2xx body that still contains an error object. */
+function providerErrorOf(body: unknown): { message: string; code?: number } | null {
+  if (typeof body !== "object" || body === null) return null;
+  const error = (body as { error?: unknown }).error;
+  if (typeof error === "string") {
+    const message = error.trim();
+    return message === "" ? null : { message: excerpt(message) };
+  }
+  if (typeof error !== "object" || error === null) return null;
+  const record = error as { message?: unknown; code?: unknown };
+  const message = typeof record.message === "string" ? record.message.trim() : "";
+  const code = typeof record.code === "number" ? record.code : undefined;
+  if (message === "" && code === undefined) return null;
+  return {
+    message: message === "" ? "(no message)" : excerpt(message),
+    ...(code !== undefined ? { code } : {}),
+  };
+}
+
+/**
+ * Explains an empty or reasoning-only response without including response text.
+ * Reasoning tokens share the request's output budget on most providers, so an
+ * exhausted budget is reported separately from malformed JSON.
+ */
+function emptyContentFailure(
+  body: unknown,
+  stage: AdapterStage,
+): { kind: FailureKind; message: string } {
+  const finishReason = finishReasonOf(body);
+  const reasoningTokens = reasoningTokensOf(body);
+  const usage = parseUsage(body);
+  const details = [
+    finishReason !== null ? `finish reason: ${finishReason}` : null,
+    usage !== null ? `completion tokens: ${usage.completionTokens}` : null,
+    reasoningTokens !== null ? `reasoning tokens: ${reasoningTokens}` : null,
+  ].filter((part): part is string => part !== null);
+  const suffix = details.length > 0 ? ` (${details.join("; ")})` : "";
+  const exhausted = finishReason === "length" || (reasoningTokens !== null && reasoningTokens > 0);
+  return exhausted
+    ? {
+        kind: "incomplete",
+        message: `${stage} response contained no message content${suffix}; the output budget was exhausted before the JSON was produced.`,
+      }
+    : {
+        kind: "invalid-output",
+        message: `${stage} response contained no message content${suffix}.`,
+      };
 }
 
 function excerpt(text: string): string {
@@ -199,6 +305,8 @@ function nextActionFor(kind: FailureKind, status?: number): string {
       return `The provider rejected the request${status ? ` (HTTP ${status})` : ""}; review the model and request shape.`;
     case "invalid-output":
       return "The model returned text that is not the required JSON schema; the entry was not written.";
+    case "incomplete":
+      return "The model produced no usable JSON before the output budget ran out, usually because reasoning tokens consumed it. Increase --max-output-tokens or use a model/endpoint that does not force reasoning.";
     case "rate-limit":
       return "Rate limited after bounded retries; wait and rerun the selection.";
     case "server":
@@ -281,6 +389,7 @@ export class OpenRouterAdapter {
             model,
             messages: [{ role: "user", content: prompt }],
             max_tokens: this.maxOutputTokens,
+            reasoning: STRUCTURED_OUTPUT_REASONING,
             response_format: {
               type: "json_schema",
               json_schema: { name: chatSchema.name, strict: true, schema: chatSchema.schema },
@@ -334,13 +443,35 @@ export class OpenRouterAdapter {
           response.status,
         );
       }
-      const content = contentOf(parsedBody);
-      if (content === null) {
-        throw new OpenRouterError(
-          "invalid-output",
+      const providerError = providerErrorOf(parsedBody);
+      if (providerError !== null) {
+        const kind =
+          providerError.code !== undefined
+            ? classifyStatus(providerError.code, providerError.message)
+            : "request";
+        lastError = new OpenRouterError(
+          kind,
           stage,
-          `${stage} response contained no message content.`,
-          nextActionFor("invalid-output"),
+          `${stage} response reported a provider error${
+            providerError.code !== undefined ? ` (HTTP ${providerError.code})` : ""
+          }: ${providerError.message}`,
+          nextActionFor(kind, providerError.code),
+          response.status,
+        );
+        if (RETRYABLE.has(kind) && attempt < this.maxAttempts) {
+          await this.sleep(this.backoffDelay(attempt));
+          continue;
+        }
+        throw lastError;
+      }
+      const content = contentOf(parsedBody);
+      if (content === null || content.trim() === "") {
+        const failure = emptyContentFailure(parsedBody, stage);
+        throw new OpenRouterError(
+          failure.kind,
+          stage,
+          failure.message,
+          nextActionFor(failure.kind),
           response.status,
         );
       }
@@ -348,11 +479,15 @@ export class OpenRouterAdapter {
       try {
         json = JSON.parse(content) as unknown;
       } catch {
+        const finishReason = finishReasonOf(parsedBody);
+        const kind: FailureKind = finishReason === "length" ? "incomplete" : "invalid-output";
         throw new OpenRouterError(
-          "invalid-output",
+          kind,
           stage,
-          `${stage} response content was not valid JSON.`,
-          nextActionFor("invalid-output"),
+          `${stage} response content was not valid JSON${
+            finishReason !== null ? ` (finish reason: ${finishReason})` : ""
+          }.`,
+          nextActionFor(kind),
           response.status,
         );
       }

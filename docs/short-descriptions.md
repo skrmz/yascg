@@ -104,6 +104,12 @@ The generation model and judge model are configured independently and never inhe
 - Roles are independent: setting only `judgeModel` does not change the generation model, and vice versa.
 - Model lookup or a successful `GET /models` response only proves that OpenRouter recognizes the identifier. It does not prove structured-output support. The staged [smoke test](#dry-run-versus-smoke-test) is the acceptance gate for request shape and JSON-schema support.
 
+### Structured output and reasoning
+
+Both calls request a strict JSON-schema response and set `reasoning: { effort: "none" }`. On most providers, reasoning tokens share the per-request `max_tokens` budget. A model that reasons by default can spend the entire budget thinking and return an empty message with `finish_reason: "length"`, so the adapter disables reasoning to keep the visible JSON budget intact. Non-reasoning models ignore the field. If a model rejects this request shape, choose a structured-output-capable model that does not require reasoning; the tooling never substitutes a model or provider silently.
+
+The candidate schema lists every declared property in `required`, including `higherLevels` (returned as an empty string when the source has none). OpenAI-style strict structured outputs reject schemas that leave a declared property optional.
+
 ## Secure API-key entry on Windows
 
 Set the key only in the current PowerShell session:
@@ -417,6 +423,7 @@ Check the printed usage and estimated cost and review `data/reference/short-desc
 | `OPENROUTER_API_KEY is not set`                     | Set the temporary session variable, then retry. `--dry-run`, `--approve`, `--manual`, validation, tests, and builds do not need it.   |
 | Configuration error naming the file and a property  | Fix the committed JSON: malformed JSON, unknown property, credential-like property, or empty/non-string value. The command does not fall back. |
 | `response-format` failure                           | The model rejected the JSON-schema response format or returned schema-invalid content. Choose a structured-output-capable model; the tooling never substitutes one silently. |
+| Empty content, `finish reason: length`, or `incomplete` | The model spent the output budget before returning JSON, usually on reasoning tokens. The adapter already requests no reasoning; if it persists, raise `--max-output-tokens` or choose a non-reasoning structured-output model. |
 | `model-not-found` or `404`                           | The identifier is unknown or not accessible to the key. Verify it at the provider's model endpoint and update the flag or config. |
 | `401`/`403` or authentication failure                | The key is invalid, expired, or unauthorized. Re-enter it with the masked prompt; check `GET <baseUrl>/key`.                         |
 | `nothing to do: no missing or stale entries`         | The selection is up to date. Use `--regenerate` or `--force` only when replacement is intended.                                     |

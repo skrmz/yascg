@@ -66,7 +66,7 @@ export function buildGenerationPrompt(locale: string, spell: SourceText & { id: 
       "Return only JSON matching this shape:",
       `{"spellId":"${spell.id}","description":"...","higherLevels":"..."}`,
       "- `spellId` must equal the requested spell ID.",
-      "- Omit `higherLevels` when the source has none.",
+      "- Set `higherLevels` to an empty string when the source has none.",
     ])
     .join("\n");
 }

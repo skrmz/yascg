@@ -35,6 +35,28 @@ function chatBody(
   };
 }
 
+interface JsonSchema {
+  type?: string;
+  properties?: Record<string, JsonSchema>;
+  required?: string[];
+  additionalProperties?: boolean;
+  items?: JsonSchema;
+}
+
+function assertStrictObjectSchemas(schema: JsonSchema): void {
+  if (schema.type === "object") {
+    expect(schema.additionalProperties).toBe(false);
+    const propertyNames = Object.keys(schema.properties ?? {});
+    expect(new Set(schema.required ?? [])).toEqual(new Set(propertyNames));
+    for (const property of Object.values(schema.properties ?? {})) {
+      assertStrictObjectSchemas(property);
+    }
+  }
+  if (schema.type === "array" && schema.items) {
+    assertStrictObjectSchemas(schema.items);
+  }
+}
+
 interface Recorded {
   url: string;
   init: RequestInit;
@@ -82,9 +104,90 @@ describe("OpenRouter adapter generation", () => {
     const body = JSON.parse((calls[0] as Recorded).init.body as string) as Record<string, unknown>;
     expect(body.model).toBe("test/model");
     expect(body.response_format).toMatchObject({ type: "json_schema" });
+    expect(body.reasoning).toEqual({ effort: "none" });
+    const schema = (body.response_format as { json_schema?: { schema?: JsonSchema } }).json_schema
+      ?.schema;
+    expect(schema).toBeDefined();
+    if (schema) assertStrictObjectSchemas(schema);
     expect(((calls[0] as Recorded).init.headers as Record<string, string>).Authorization).toBe(
       "Bearer test-key",
     );
+  });
+
+  it("reads OpenAI content-part arrays", async () => {
+    const { adapter } = makeAdapter(() =>
+      jsonResponse({
+        choices: [
+          {
+            message: {
+              content: [
+                { type: "text", text: '{"spellId":"srd-fireball",' },
+                { type: "text", text: '"description":"Short text."}' },
+              ],
+            },
+            finish_reason: "stop",
+          },
+        ],
+      }),
+    );
+
+    const result = await adapter.generateCandidate("en", SPELL);
+    expect(result.value).toEqual({ spellId: "srd-fireball", description: "Short text." });
+  });
+
+  it("reports an incomplete reasoning-limited response without exposing response text", async () => {
+    const { adapter, calls } = makeAdapter(() =>
+      jsonResponse({
+        choices: [
+          {
+            message: { content: null, reasoning: "private chain of thought" },
+            finish_reason: "length",
+          },
+        ],
+        usage: {
+          prompt_tokens: 100,
+          completion_tokens: 1200,
+          total_tokens: 1300,
+          completion_tokens_details: { reasoning_tokens: 1200 },
+        },
+      }),
+    );
+
+    const error = await adapter.generateCandidate("en", SPELL).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(OpenRouterError);
+    expect(error).toMatchObject({ kind: "incomplete", stage: "generation", status: 200 });
+    const failure = error as OpenRouterError;
+    expect(failure.message).toContain("finish reason: length");
+    expect(failure.message).toContain("reasoning tokens: 1200");
+    expect(failure.nextAction).toContain("--max-output-tokens");
+    expect(failure.message).not.toContain("private chain of thought");
+    expect(calls).toHaveLength(1);
+  });
+
+  it("reports truncated JSON as incomplete when the finish reason is length", async () => {
+    const { adapter } = makeAdapter(() =>
+      jsonResponse({
+        choices: [{ message: { content: '{"spellId":"srd-fireball",' }, finish_reason: "length" }],
+      }),
+    );
+
+    await expect(adapter.generateCandidate("en", SPELL)).rejects.toMatchObject({
+      kind: "incomplete",
+      stage: "generation",
+    });
+  });
+
+  it("surfaces a provider error returned with HTTP 200", async () => {
+    const { adapter } = makeAdapter(() =>
+      jsonResponse({
+        error: { code: 400, message: "Invalid schema for response_format 'short_description'" },
+      }),
+    );
+
+    await expect(adapter.generateCandidate("en", SPELL)).rejects.toMatchObject({
+      kind: "response-format",
+      status: 200,
+    });
   });
 
   it("retries a rate limit and then succeeds", async () => {
@@ -198,6 +301,11 @@ describe("OpenRouter adapter judgement and pricing", () => {
     expect(result.value.mechanicallyEquivalent).toBe(true);
     const body = JSON.parse((calls[0] as Recorded).init.body as string) as Record<string, unknown>;
     expect(body.model).toBe("test/judge");
+    expect(body.reasoning).toEqual({ effort: "none" });
+    const schema = (body.response_format as { json_schema?: { schema?: JsonSchema } }).json_schema
+      ?.schema;
+    expect(schema).toBeDefined();
+    if (schema) assertStrictObjectSchemas(schema);
   });
 
   it("rejects a judgement with an unknown severity", async () => {
@@ -249,6 +357,7 @@ describe("prompt construction", () => {
     expect(prompt).toContain("A bright streak flashes.");
     expect(prompt).toContain('"spellId":"srd-fireball"');
     expect(prompt).toContain("No raw HTML");
+    expect(prompt).toContain("empty string");
   });
 
   it("lists unresolved items in the judge prompt", () => {
