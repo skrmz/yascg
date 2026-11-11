@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vp dev",
     "normalize:srd": "tsx scripts/normalize-srd.ts",
-    "build": "pnpm run normalize:srd && vp build",
+    "short-descriptions:smoke": "tsx scripts/short-descriptions/smoke.ts",
+    "short-descriptions:generate": "tsx scripts/short-descriptions/generate.ts",
+    "short-descriptions:validate": "tsx scripts/short-descriptions/validate.ts",
+    "short-descriptions:build": "tsx scripts/short-descriptions/build.ts",
+    "build": "pnpm run normalize:srd && pnpm run short-descriptions:build && vp build",
     "preview": "vp preview",
     "deploy": "pnpm run build && wrangler deploy",
     "test": "vp test",

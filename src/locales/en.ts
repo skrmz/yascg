@@ -672,7 +672,7 @@ export const en = {
       legend: "Legend",
       legendTitle: "Card legend",
       legendDescription:
-        "Abbreviations and icons used by Compact cards, and abbreviations applied by Abbreviate to editable spell text in either card design.",
+        "Abbreviations and icons used by Compact cards, and abbreviations applied by Abbreviate or by an applied short description to editable spell text in either card design.",
       legendCastingTime: "Casting time",
       legendProperties: "Properties",
       legendComponents: "Components",
@@ -720,6 +720,15 @@ export const en = {
       noMatches: "No abbreviations were applied.",
       unavailable: "No localized abbreviations are available for this language.",
       undone: "Abbreviation undone.",
+    },
+    shortDescription: {
+      action: "Apply short description",
+      undo: "Undo short description",
+      hint: "Not available for this spell or language.",
+      unavailable: "No short description is available for this spell.",
+      applied: "Short description applied.",
+      noChange: "The short description already matches the current text.",
+      undone: "Short description undone.",
     },
     default: {
       castingTime: "1 Action",

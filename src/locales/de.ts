@@ -685,7 +685,7 @@ export const de = {
       legend: "Legende",
       legendTitle: "Kartenlegende",
       legendDescription:
-        "Abkürzungen und Symbole auf Kompaktkarten sowie Abkürzungen, die „Abkürzen“ auf bearbeitbare Zaubertexte in beiden Kartendesigns anwendet.",
+        "Abkürzungen und Symbole auf Kompaktkarten sowie Abkürzungen, die „Abkürzen“ oder eine angewendete Kurzbeschreibung auf bearbeitbare Zaubertexte in beiden Kartendesigns anwendet.",
       legendCastingTime: "Zeitaufwand",
       legendProperties: "Eigenschaften",
       legendComponents: "Komponenten",
@@ -734,6 +734,15 @@ export const de = {
       noMatches: "Es wurden keine Abkürzungen angewendet.",
       unavailable: "Für diese Sprache sind keine lokalisierten Abkürzungen verfügbar.",
       undone: "Abkürzung rückgängig gemacht.",
+    },
+    shortDescription: {
+      action: "Kurzbeschreibung anwenden",
+      undo: "Kurzbeschreibung rückgängig machen",
+      hint: "Für diesen Zauber oder diese Sprache nicht verfügbar.",
+      unavailable: "Für diesen Zauber ist keine Kurzbeschreibung verfügbar.",
+      applied: "Kurzbeschreibung angewendet.",
+      noChange: "Die Kurzbeschreibung entspricht bereits dem aktuellen Text.",
+      undone: "Kurzbeschreibung rückgängig gemacht.",
     },
     default: {
       castingTime: "1 Aktion",

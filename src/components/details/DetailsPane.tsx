@@ -366,6 +366,7 @@ export function DetailsPane() {
         }}
         spell={copyDraft?.draft}
         editableCopy
+        sourceSpellId={copyDraft?.sourceSpellId}
         selectOnSave={false}
         onSaved={onCopySaved}
       />

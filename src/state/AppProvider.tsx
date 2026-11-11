@@ -60,6 +60,7 @@ import {
   clearDataCache,
   loadLanguageDataset,
   loadManifest,
+  loadShortDescriptions,
   type BundledSpellLanguage,
 } from "@/services/data/load.ts";
 import {
@@ -77,6 +78,7 @@ import {
 import type { ActiveDeckRecord, DeckEntry, DeckStatus, SavedDeck } from "@/domain/deck";
 import { getDeckStatus, hasSpellEntry, isDeckDirty } from "@/domain/deck";
 import type { CardFitMode, Spell, SpellSource, SrdSpellOverride } from "@/domain/spells";
+import type { ShortDescriptionMap } from "@/domain/short-descriptions";
 import { DEFAULT_CARD_DESIGN, normalizeCardDesign, type CardDesign } from "@/cards/design.ts";
 import { applyDeckImport, type DeckImportPlan } from "@/io/import-deck.ts";
 import {
@@ -160,6 +162,11 @@ export interface AppContextValue {
   languageSpells: Spell[];
   customSpells: Spell[];
   librarySpells: Spell[];
+  /**
+   * Pre-generated short descriptions per locale. Retained across UI language
+   * switches so an open editor draft keeps resolving its captured language.
+   */
+  shortDescriptionsByLocale: Record<string, ShortDescriptionMap>;
   englishById: ReadonlyMap<string, Spell>;
   languageById: ReadonlyMap<string, Spell>;
   customById: ReadonlyMap<string, Spell>;
@@ -261,6 +268,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [languageStatus, setLanguageStatus] = useState<LanguageStatus>("loading");
   const [languageNotice, setLanguageNotice] = useState<MessageDescriptor | null>(null);
   const [datasets, setDatasets] = useState<Record<string, Spell[]>>({});
+  const [shortDescriptionsByLocale, setShortDescriptionsByLocale] = useState<
+    Record<string, ShortDescriptionMap>
+  >({});
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<MessageDescriptor | null>(null);
   const [retryToken, setRetryToken] = useState(0);
@@ -285,6 +295,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   datasetsRef.current = datasets;
   const languageStatusRef = useRef(languageStatus);
   languageStatusRef.current = languageStatus;
+
+  /**
+   * Merges a locale's pre-generated short descriptions into the per-locale
+   * record. The loader never throws: a missing or broken sidecar leaves the
+   * record unchanged and only disables the editor action.
+   */
+  const ensureShortDescriptions = useCallback(async (code: string) => {
+    const map = await loadShortDescriptions(code);
+    setShortDescriptionsByLocale((previous) => ({ ...previous, [code]: map }));
+  }, []);
 
   const activeDeck = useLiveQuery(
     () => readActiveDeck().catch((error) => reportQueryFailure("active deck", error, null)),
@@ -337,6 +357,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLanguageNotice(null);
       try {
         clearDataCache();
+        setShortDescriptionsByLocale({});
         const loadedManifest = await loadManifest();
         if (!isCurrent()) return;
         setManifest(loadedManifest);
@@ -357,6 +378,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLanguage(resolved.code);
         setLanguageStatus("ready");
         setDataError(null);
+        // Sidecars load in isolation: a failure must not fail the app startup.
+        void ensureShortDescriptions(resolved.code);
+        if (resolved.code !== "en") void ensureShortDescriptions("en");
         if (resolved.fallbackFrom) {
           setLanguageNotice(message("language.fallback", { code: resolved.fallbackFrom }));
         }
@@ -374,7 +398,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [retryToken]);
+  }, [retryToken, ensureShortDescriptions]);
 
   const overridesList = srdOverrides ?? EMPTY_OVERRIDES;
   const overridesByLocale = useMemo(() => indexOverridesByLocale(overridesList), [overridesList]);
@@ -985,9 +1009,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLanguageStatus("ready");
       setPendingLanguageSwitch(null);
       setLanguageNotice(writeResult.persisted ? null : message("language.preferenceFailed"));
+      // Never clear previously loaded maps: an open draft may still need its
+      // captured language after the switch.
+      void ensureShortDescriptions(code);
       return true;
     },
-    [],
+    [ensureShortDescriptions],
   );
 
   const requestLanguageSwitch = useCallback(
@@ -1069,6 +1096,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       languageSpells,
       customSpells: customList,
       librarySpells,
+      shortDescriptionsByLocale,
       englishById,
       languageById,
       customById,
@@ -1133,6 +1161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       languageSpells,
       customList,
       librarySpells,
+      shortDescriptionsByLocale,
       englishById,
       languageById,
       customById,

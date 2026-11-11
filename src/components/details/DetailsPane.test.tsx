@@ -45,6 +45,7 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     language: "en",
     cardDesign: holder.cardDesign,
     manifest: [],
+    shortDescriptionsByLocale: {},
     englishById: new Map(),
     srdSpellOverrides: [],
     addSpellToDeck: holder.addSpellToDeck,
@@ -599,5 +600,36 @@ describe("DetailsPane SRD editing and source", () => {
     holder.spell = makeSpell({ overridden: true });
     render(<DetailsPane />);
     expect(screen.getByText("SRD 5.2.1 *")).not.toBeNull();
+  });
+});
+
+describe("DetailsPane short-description origin", () => {
+  it("offers the short-description action only for the editable-copy form", async () => {
+    const user = userEvent.setup();
+    holder.spell = makeSpell({ id: "srd-test-spell" });
+    holder.activeDeck = {
+      ...createEmptyActiveDeck(),
+      name: "Deck A",
+      revision: 5,
+      entries: [makeEntry("srd-test-spell", "SRD-5.2.1", "Test Spell")],
+    };
+    const copyRender = render(<DetailsPane />);
+
+    await user.click(screen.getByRole("button", { name: "Create editable copy" }));
+    expect(screen.getByRole("dialog", { name: "Create editable copy" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Apply short description" })).not.toBeNull();
+    copyRender.unmount();
+
+    holder.spell = makeCustomSpell({ id: "custom-1" });
+    holder.activeDeck = {
+      ...createEmptyActiveDeck(),
+      name: "Deck A",
+      revision: 5,
+      entries: [makeEntry("custom-1", "Custom", "Custom Spell")],
+    };
+    render(<DetailsPane />);
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getByRole("dialog", { name: "Edit custom spell" })).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Apply short description" })).toBeNull();
   });
 });

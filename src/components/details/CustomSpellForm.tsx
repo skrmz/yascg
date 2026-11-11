@@ -35,6 +35,11 @@ export interface CustomSpellFormProps {
   onOpenChange: (open: boolean) => void;
   spell?: Spell;
   editableCopy?: boolean;
+  /**
+   * Canonical SRD id of the spell this editable copy was created from. Only the
+   * copy flow supplies it; ordinary edits and SRD overrides never do.
+   */
+  sourceSpellId?: string;
   onSaved?: (spell: Spell) => void;
   selectOnSave?: boolean;
 }
@@ -87,13 +92,33 @@ const ABBREVIATION_FIELDS: ReadonlyArray<{
   { key: "materialCost", mode: "plain" },
 ];
 
-type AbbreviationStatus =
-  | { kind: "success"; count: number }
-  | { kind: "noMatches" }
-  | { kind: "unavailable" }
-  | { kind: "undone" };
+type DraftAction = "abbreviation" | "shortDescription";
 
-type UndoSnapshot = Partial<DraftState>;
+interface UndoSnapshot {
+  action: DraftAction;
+  values: Partial<DraftState>;
+}
+
+type ActionStatus =
+  | { kind: "abbreviationSuccess"; count: number }
+  | { kind: "abbreviationNoMatches" }
+  | { kind: "abbreviationUnavailable" }
+  | { kind: "abbreviationUndone" }
+  | { kind: "shortDescriptionApplied" }
+  | { kind: "shortDescriptionNoChange" }
+  | { kind: "shortDescriptionUnavailable" }
+  | { kind: "shortDescriptionUndone" };
+
+const STATUS_KEYS = {
+  abbreviationSuccess: "form.abbreviate.success",
+  abbreviationNoMatches: "form.abbreviate.noMatches",
+  abbreviationUnavailable: "form.abbreviate.unavailable",
+  abbreviationUndone: "form.abbreviate.undone",
+  shortDescriptionApplied: "form.shortDescription.applied",
+  shortDescriptionNoChange: "form.shortDescription.noChange",
+  shortDescriptionUnavailable: "form.shortDescription.unavailable",
+  shortDescriptionUndone: "form.shortDescription.undone",
+} as const;
 
 function toDraft(spell: Spell): DraftState {
   return {
@@ -172,10 +197,18 @@ export function CustomSpellForm({
   onOpenChange,
   spell,
   editableCopy = false,
+  sourceSpellId,
   onSaved,
   selectOnSave = true,
 }: CustomSpellFormProps) {
-  const { saveCustomSpell, selectSpell, saveSrdOverride, resetSrdOverride, language } = useApp();
+  const {
+    saveCustomSpell,
+    selectSpell,
+    saveSrdOverride,
+    resetSrdOverride,
+    language,
+    shortDescriptionsByLocale,
+  } = useApp();
   const { t } = useTranslation();
   const isSrd = spell?.source === "SRD-5.2.1";
 
@@ -195,13 +228,22 @@ export function CustomSpellForm({
   const [draft, setDraft] = useState<DraftState>(() => toDraft(base));
   const [errors, setErrors] = useState<Record<string, MessageDescriptor>>({});
   const [undoStack, setUndoStack] = useState<UndoSnapshot[]>([]);
-  const [abbreviationStatus, setAbbreviationStatus] = useState<AbbreviationStatus | null>(null);
+  const [actionStatus, setActionStatus] = useState<ActionStatus | null>(null);
   const errorText = (field: string): string | undefined =>
     errors[field] ? translateMessage(t, errors[field]) : undefined;
 
+  // Derived on every render (not cached in state) so a sidecar that arrives
+  // after the dialog opened enables the action without reopening it. The
+  // candidate always comes from the captured session language.
+  const shortDescriptionCandidate = useMemo(() => {
+    if (!editableCopy || !sourceSpellId) return undefined;
+    return shortDescriptionsByLocale?.[session.language]?.get(sourceSpellId);
+  }, [editableCopy, sourceSpellId, shortDescriptionsByLocale, session.language]);
+  const showShortDescriptionAction = !isSrd && editableCopy && sourceSpellId !== undefined;
+
   useEffect(() => {
     setUndoStack([]);
-    setAbbreviationStatus(null);
+    setActionStatus(null);
     if (!open) return;
     const nextLanguage = languageRef.current;
     setSession({ language: nextLanguage, spellId: spell?.id });
@@ -216,12 +258,12 @@ export function CustomSpellForm({
   const onAbbreviate = () => {
     const locale = session.language;
     if (!abbreviationCatalog(locale)) {
-      setAbbreviationStatus({ kind: "unavailable" });
+      setActionStatus({ kind: "abbreviationUnavailable" });
       return;
     }
 
     const changedValues: Partial<DraftState> = {};
-    const snapshot: UndoSnapshot = {};
+    const snapshot: Partial<DraftState> = {};
     const skipped: SkippedAbbreviation[] = [];
     let changedFields = 0;
     let appliedCount = 0;
@@ -237,32 +279,74 @@ export function CustomSpellForm({
     }
 
     if (changedFields === 0) {
-      setAbbreviationStatus({ kind: "noMatches" });
+      setActionStatus({ kind: "abbreviationNoMatches" });
       return;
     }
 
     setDraft((previous) => ({ ...previous, ...changedValues }));
-    setUndoStack((previous) => [...previous, snapshot]);
-    setAbbreviationStatus({ kind: "success", count: appliedCount });
+    setUndoStack((previous) => [...previous, { action: "abbreviation", values: snapshot }]);
+    setActionStatus({ kind: "abbreviationSuccess", count: appliedCount });
     if (import.meta.env.DEV && skipped.length > 0) {
       console.debug("[abbreviation]", { skipped });
     }
   };
 
-  const onUndoAbbreviation = () => {
-    const snapshot = undoStack[undoStack.length - 1];
-    if (!snapshot) return;
-    setDraft((previous) => ({ ...previous, ...snapshot }));
-    setUndoStack((previous) => previous.slice(0, -1));
-    setAbbreviationStatus({ kind: "undone" });
+  const onApplyShortDescription = () => {
+    const candidate = shortDescriptionCandidate;
+    if (!candidate) {
+      setActionStatus({ kind: "shortDescriptionUnavailable" });
+      return;
+    }
+
+    const changedValues: Partial<DraftState> = {};
+    const snapshot: Partial<DraftState> = {};
+    if (draft.description !== candidate.description) {
+      changedValues.description = candidate.description;
+      snapshot.description = draft.description;
+    }
+    const higherLevels = candidate.higherLevels;
+    if (
+      higherLevels !== undefined &&
+      higherLevels.trim() !== "" &&
+      draft.higherLevels !== higherLevels
+    ) {
+      changedValues.higherLevels = higherLevels;
+      snapshot.higherLevels = draft.higherLevels;
+    }
+
+    if (Object.keys(changedValues).length === 0) {
+      setActionStatus({ kind: "shortDescriptionNoChange" });
+      return;
+    }
+
+    setDraft((previous) => ({ ...previous, ...changedValues }));
+    setUndoStack((previous) => [...previous, { action: "shortDescription", values: snapshot }]);
+    setActionStatus({ kind: "shortDescriptionApplied" });
   };
 
-  const abbreviationStatusText =
-    abbreviationStatus === null
+  const topSnapshot = undoStack[undoStack.length - 1];
+  const undoLabel =
+    topSnapshot?.action === "shortDescription"
+      ? t("form.shortDescription.undo")
+      : t("form.abbreviate.undo");
+
+  const onUndo = () => {
+    if (!topSnapshot) return;
+    setDraft((previous) => ({ ...previous, ...topSnapshot.values }));
+    setUndoStack((previous) => previous.slice(0, -1));
+    setActionStatus(
+      topSnapshot.action === "shortDescription"
+        ? { kind: "shortDescriptionUndone" }
+        : { kind: "abbreviationUndone" },
+    );
+  };
+
+  const actionStatusText =
+    actionStatus === null
       ? null
-      : abbreviationStatus.kind === "success"
-        ? t("form.abbreviate.success", { count: abbreviationStatus.count })
-        : t(`form.abbreviate.${abbreviationStatus.kind}`);
+      : actionStatus.kind === "abbreviationSuccess"
+        ? t(STATUS_KEYS.abbreviationSuccess, { count: actionStatus.count })
+        : t(STATUS_KEYS[actionStatus.kind]);
 
   const onSubmitSrd = async () => {
     if (!spell) return;
@@ -387,21 +471,39 @@ export function CustomSpellForm({
             <Button type="button" variant="outline" onClick={onAbbreviate}>
               {t("form.abbreviate.action")}
             </Button>
+            {showShortDescriptionAction ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={shortDescriptionCandidate === undefined}
+                {...(shortDescriptionCandidate === undefined
+                  ? { "aria-describedby": "cs-short-description-hint" }
+                  : {})}
+                onClick={onApplyShortDescription}
+              >
+                {t("form.shortDescription.action")}
+              </Button>
+            ) : null}
+            {showShortDescriptionAction && shortDescriptionCandidate === undefined ? (
+              <span id="cs-short-description-hint" className="text-xs text-muted-foreground">
+                {t("form.shortDescription.hint")}
+              </span>
+            ) : null}
             <Button
               type="button"
               variant="outline"
               disabled={undoStack.length === 0}
               aria-describedby="cs-abbreviation-undo-hint"
-              onClick={onUndoAbbreviation}
+              onClick={onUndo}
             >
-              {t("form.abbreviate.undo")}
+              {undoLabel}
             </Button>
             <span id="cs-abbreviation-undo-hint" className="text-xs text-muted-foreground">
               {t("form.abbreviate.undoHint")}
             </span>
-            {abbreviationStatusText ? (
+            {actionStatusText ? (
               <p role="status" aria-live="polite" className="basis-full text-sm">
-                {abbreviationStatusText}
+                {actionStatusText}
               </p>
             ) : null}
           </div>

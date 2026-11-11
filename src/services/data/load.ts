@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { spellSchema, type Spell } from "@/domain/spells";
+import {
+  isCanonicalSrdSpellId,
+  shortDescriptionSchema,
+  type ShortDescription,
+  type ShortDescriptionMap,
+} from "@/domain/short-descriptions";
 import { AppError, message } from "@/locales/messages.ts";
 
 export const MANIFEST_URL = "/spell-languages.json";
@@ -82,10 +88,12 @@ function activeFetch(): FetchLike {
 
 let manifestCache: BundledSpellLanguage[] | null = null;
 const datasetCache = new Map<string, Spell[]>();
+const shortDescriptionCache = new Map<string, ShortDescriptionMap>();
 
 export function clearDataCache(): void {
   manifestCache = null;
   datasetCache.clear();
+  shortDescriptionCache.clear();
 }
 
 export async function loadManifest(): Promise<BundledSpellLanguage[]> {
@@ -139,4 +147,69 @@ export async function loadLanguageDataset(code: string): Promise<Spell[]> {
 
 export function getCachedDataset(code: string): Spell[] | undefined {
   return datasetCache.get(code);
+}
+
+export function shortDescriptionUrl(locale: string): string {
+  return `/spell-short-descriptions.${encodeURIComponent(locale)}.json`;
+}
+
+const EMPTY_SHORT_DESCRIPTIONS: ShortDescriptionMap = new Map();
+
+function shortDescriptionDiagnostic(detail: string): void {
+  if (import.meta.env.DEV) console.debug(`[short-descriptions] ${detail}`);
+}
+
+/**
+ * Loads the short-description sidecar for a locale. Sidecars are untrusted
+ * static assets, so any failure degrades to an empty or partially filtered map
+ * instead of breaking startup, language switching, or the editor.
+ */
+export async function loadShortDescriptions(locale: string): Promise<ShortDescriptionMap> {
+  const cached = shortDescriptionCache.get(locale);
+  if (cached) return cached;
+  const url = shortDescriptionUrl(locale);
+  const fallback = (detail: string): ShortDescriptionMap => {
+    shortDescriptionDiagnostic(`${url}: ${detail}`);
+    shortDescriptionCache.set(locale, EMPTY_SHORT_DESCRIPTIONS);
+    return EMPTY_SHORT_DESCRIPTIONS;
+  };
+
+  let raw: unknown;
+  try {
+    const response = await activeFetch()(url);
+    if (!response.ok) return fallback(`HTTP ${response.status}`);
+    raw = await response.json();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return fallback(`failed to load (${detail})`);
+  }
+
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
+    return fallback("top-level value is not an object");
+  }
+
+  const entries = new Map<string, ShortDescription>();
+  for (const [spellId, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!isCanonicalSrdSpellId(spellId)) {
+      shortDescriptionDiagnostic(`${url}: skipping malformed spell id "${spellId}"`);
+      continue;
+    }
+    const result = shortDescriptionSchema.safeParse(value);
+    if (!result.success) {
+      const issue = result.error.issues[0];
+      shortDescriptionDiagnostic(
+        `${url}: skipping invalid entry "${spellId}" (${issue?.message ?? "unknown error"})`,
+      );
+      continue;
+    }
+    entries.set(spellId, result.data);
+  }
+
+  const map: ShortDescriptionMap = entries;
+  shortDescriptionCache.set(locale, map);
+  return map;
+}
+
+export function getCachedShortDescriptions(locale: string): ShortDescriptionMap | undefined {
+  return shortDescriptionCache.get(locale);
 }

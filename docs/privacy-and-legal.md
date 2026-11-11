@@ -28,6 +28,10 @@ Technical implementation is not a claim of full GDPR compliance.
 ### Network and external resources
 
 - All runtime `fetch` calls target same-origin static assets (`src/services/data/load.ts`).
+- The pre-generated short-description sidecars (`src/data/spell-short-descriptions.<locale>.json`)
+  are same-origin static assets cached by the existing service worker. They are authoring output
+  reviewed and committed by maintainers; the app never sends user data to a language model and has
+  no runtime generation endpoint.
 - After the font migration, the application loads no fonts from `fonts.googleapis.com` or
   `fonts.gstatic.com`; all families are self-hosted WOFF2 files under `src/assets/fonts/`.
 - External links (SRD/CC attribution, guide links, Cloudflare policy) are rendered as anchors and

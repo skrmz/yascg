@@ -12,6 +12,7 @@ and printing settings, see the [README](../README.md).
 | [Product specification](specs/MAIN-spec.md)                   | Current behavioral contract and verification matrix                                                                       |
 | **This guide**                                                | Contributor setup, commands, module map, implementation details, debugging, tests                                         |
 | [SRD data pipeline](srd-data-pipeline.md)                     | Raw source shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection |
+| [Short descriptions](short-descriptions.md)                   | Short-description authoring format, generation workflow, checks, reports, OpenRouter setup and credential handling        |
 | [Cloudflare deployment guide](cloudflare-deployment-guide.md) | Workers Static Assets configuration, Workers Builds, deployment operations, `compatibility_date`                          |
 | [Custom spell import guide](custom-spell-import-guide.md)     | Custom-spell JSON format, examples, collisions, SRD override import/export                                                |
 | [Official subclass catalog](subclasses.md)                    | Canonical official 2024 subclass list                                                                                     |
@@ -36,10 +37,14 @@ The repository root `.nvmrc` (containing `24`) is the source of truth for that v
 | --------------------------------------- | ----------------------------------------------------------------------- |
 | `pnpm install` (or `vp install`)        | Install dependencies.                                                   |
 | `pnpm run normalize:srd`                | Normalize `data/srd/` into the committed `src/data/` artifacts.         |
+| `pnpm run short-descriptions:build`     | Regenerate the committed short-description sidecars from authoring files. |
+| `pnpm run short-descriptions:validate`  | Validate authoring files, check sidecar drift, write the review report.  |
+| `pnpm run short-descriptions:generate`  | Generate short descriptions (offline authoring; needs a key).            |
+| `pnpm run short-descriptions:smoke`     | Tiny staged integration check for the authoring pipeline (needs a key).  |
 | `pnpm run dev` (`vp dev`)               | Start the development server in the local Workers runtime.              |
 | `pnpm run check` (`vp check`)           | Format, lint, and type-check.                                           |
 | `pnpm run test` (`vp test`)             | Run unit and integration tests.                                         |
-| `pnpm run build`                        | Run `normalize:srd`, then `vp build`.                                   |
+| `pnpm run build`                        | Run `normalize:srd`, `short-descriptions:build`, then `vp build`.        |
 | `pnpm run preview` (`vp preview`)       | Preview the production build in the local Workers runtime.              |
 | `pnpm run deploy`                       | Build, then `wrangler deploy` to Cloudflare Workers.                    |
 | `pnpm exec wrangler deploy --dry-run`   | Validate the Wrangler configuration and build output without uploading. |
@@ -133,7 +138,16 @@ Paths are relative to the repository root.
   `srdSpellOverrides`) with compare-and-swap revisions, saved-snapshot revision tokens,
   deck-entry normalization, and advisory `BroadcastChannel` notifications.
 - `src/services/data/` — manifest/dataset loading, language preference, search and filters, and
-  deck reference resolution.
+  deck reference resolution. `load.ts` also loads and validates the short-description sidecar
+  per locale; failures degrade to an empty or partially filtered map and never break startup.
+- `src/domain/short-descriptions.ts` — runtime sidecar schema and canonical SRD id rules.
+- `src/tools/short-descriptions/` — pure, dependency-free authoring tooling shared by the CLI
+  and tests: strict authoring schema, Markdown safety, numeric/dice normalization, the
+  material-shortening rule, the authoring-to-runtime transform, and deterministic
+  serialization. No Node built-ins and no network access.
+- `scripts/short-descriptions/` — authoring CLI (`build`, `validate`, `generate`, `smoke`),
+  fingerprints, filesystem/atomic-write helpers, checks and classification, the review report,
+  and the OpenRouter adapter. Never imported by `src/`.
 - `src/markdown/` — safe `marked` token walker (raw HTML dropped except `<br>`, links as text;
   authored newlines render as line breaks), the shared
   `BlockNode` renderer including structured component-description markers, headings,
@@ -424,6 +438,29 @@ drift protection. Day-to-day integration points:
   unsupported source structures fail the build with a filename and, when available, the
   offending spell index.
 
+## Short description integration
+
+[Short descriptions](short-descriptions.md) is authoritative for the authoring format,
+generation workflow, checks, reports, and OpenRouter handling. Integration points:
+
+- Build order is `normalize:srd` → `short-descriptions:build` → `vp build`. The build never
+  invokes the generator and works with `OPENROUTER_API_KEY` unset. `src/data/spell-short-descriptions.<locale>.json`
+  is a committed generated artifact; never edit it by hand.
+- The runtime transform and validation are pure and runnable without credentials. Only
+  `generate` and `smoke` contact OpenRouter, and only after argument parsing and selection.
+- The editor action is available only through the editable-copy flow: `DetailsPane` passes the
+  captured `sourceSpellId` to `CustomSpellForm`, which looks the candidate up in the locale
+  captured when the editor opened. Custom-spell records store no provenance, so reopening a
+  saved copy never offers the action.
+- Sidecar maps are retained per locale across language switches; they are reset together with
+  the data cache on the initial load and retry path.
+- Vitest collects tooling tests from `scripts/**/*.{test,spec}.ts` as well as `src/`; this keeps
+  the CLI tests next to their modules. `src/test/short-descriptions.test.ts` holds the drift
+  gate, which recomputes artifacts from the Git object store.
+- `src/test/short-descriptions.test.ts` and `scripts/short-descriptions/separation.test.ts`
+  enforce the app/authoring boundary: no app module references credentials or imports the
+  generator.
+
 ## Local verification
 
 ```powershell
@@ -431,6 +468,8 @@ pnpm install
 pnpm run check
 pnpm run test
 pnpm run normalize:srd
+pnpm run short-descriptions:build
+pnpm run short-descriptions:validate
 pnpm run build
 pnpm exec wrangler deploy --dry-run
 pnpm run preview

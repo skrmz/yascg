@@ -21,6 +21,17 @@ The custom-spell editor offers **Abbreviate** and **Undo abbreviation** for new 
 - **Undo abbreviation** restores the fields changed by the latest action until the editor closes. Later manual edits to those changed fields are overwritten by Undo; unrelated fields are untouched.
 - Saving stores the abbreviated text. There is no persisted backup or automatic de-abbreviation, so save the original wording separately if you may need it later.
 
+### Apply a pre-generated short description
+
+When you create an editable copy from a bundled SRD spell, the editor offers **Apply short description** for copies whose spell has a reviewed short text in the language the editor opened in. The text is bundled with the app; nothing is generated in your browser and no data leaves it.
+
+1. Add the SRD spell to the active deck and choose **Create editable copy**.
+2. Choose **Apply short description**. The description and, when available, the higher levels are replaced with the shorter reviewed text. The button is disabled with a short hint when no short text exists for that spell or language.
+3. Choose **Undo short description** to restore the previous text while the editor is open. Undo works last-in-first-out together with **Abbreviate**, so you can mix both actions and undo them in reverse order.
+4. Choose **Save spell** and decide whether to replace the active deck entry. The preview and printed card use the shortened text.
+
+This action is available only for editable copies created in the current session. A saved custom copy stores no link to its SRD origin, so reopening it through **Edit** does not offer **Apply short description**; create a new editable copy from the SRD spell instead.
+
 ## Import and export custom spells
 
 **Import:**

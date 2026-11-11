@@ -456,6 +456,27 @@ introduce a second vertical scroll container or page-level horizontal overflow.
     reopens, or a different spell opens. Saving stores the abbreviated text; no reversible backup,
     diff, conflict detection, or post-save restore exists. UI labels such as **Casting Time**,
     **Range**, and **Duration** (and their German equivalents) are never abbreviated.
+- **Apply short description (editable copies only):** the editor offers **Apply short description**
+  only for the editable-copy flow, which passes the bundled SRD id the copy was created from. New
+  spells, ordinary custom edits, and the restricted SRD override editor do not show it.
+  - The action is available only when the pre-generated sidecar for the language captured when
+    the editor opened contains a fresh entry for that id. Otherwise the button is visible but
+    disabled with one localized hint; it never uses another locale as a fallback and never shows
+    internal failure reasons.
+  - Applying replaces `description` and, when the entry supplies non-empty higher-level text,
+    `higherLevels` with the reviewed text; metadata and all other fields are unchanged. Text that
+    is already identical produces a no-change status and pushes no undo snapshot. One apply pushes
+    exactly one undo snapshot.
+  - **Undo** is shared with **Abbreviate** and remains last-in-first-out. The undo label and status
+    reflect the top snapshot's action, so applying then undoing interleaved actions restores the
+    expected text in reverse order. Saving stores the applied text through the ordinary custom
+    spell path; no new persistence or provenance is written.
+  - **Saved-copy limitation:** custom spells store no provenance, so reopening a saved copy through
+    the ordinary edit path does not offer the action. Create a new editable copy from the SRD
+    spell to apply a short description again.
+  - Sidecars are static same-origin assets. A missing, malformed, or failed sidecar disables only
+    this action; editing, saving, language switching, and the rest of the app continue normally.
+    No user data is sent anywhere; the app never calls a language model.
 - **Delete:** show a confirmation explaining that deleting a custom spell also removes *its
   entry from the active deck*. Confirm or cancel. Delete the spell and matching active entry
   atomically, checking the active-deck revision and incrementing it. **Never** silently rewrite
@@ -721,8 +742,8 @@ for any absent or invalid selection. Compact is an additive selectable layout. T
 design** selector sits in the Active Deck pane after `#deck-controls` and before the deck entries,
 offers exactly Classic and Compact in the active UI language, is not persisted, and resets to
 Classic on reload. A Legend button stays available for both designs and opens a localized
-glossary describing Compact icons/abbreviations and abbreviations applied by **Abbreviate** to
-editable spell text in either design. Neither the selector, its
+glossary describing Compact icons/abbreviations and abbreviations applied by **Abbreviate** or by
+an applied short description to editable spell text in either design. Neither the selector, its
 hint, the Legend trigger, the Legend dialog, nor any tooltip is printed. The selected design is
 part of the fit cache key and is used identically by the preview, hidden measurement card,
 pagination, and print output; switching designs re-measures without changing stored spell or deck
@@ -961,6 +982,7 @@ duplicate these outcomes as a second invariants list.
 | B3  | Build           | New valid language file                                                                             | Discovered without an allowlist; manifest and dataset generated; English remains selectable                                                                                                                    | §2, §11     |
 | B4  | Build           | Translation changes `index`, duplicates an index, uses an unknown ID, or conflicts on mechanics     | Build fails; no fallback parsing and no invalid dataset shipped                                                                                                                                                | §2, §4      |
 | B5  | Build           | Translation omits some spells                                                                       | Incomplete but valid dataset passes; untranslated IDs remain valid deck references                                                                                                                             | §2, §4      |
+| B6  | Build           | Short-description authoring transform and drift                                                     | Sidecars are deterministic and metadata-free; stale, withheld, orphaned, and non-shortening entries are omitted; the drift gate compares against the committed baseline; build, validation, and tests run without credentials | §3, §6      |
 | S1  | Search          | Search/filter matching, OR/AND, components, and ordering                                            | Rules in §5 hold; empty groups impose no restriction; filters never change the deck                                                                                                                            | §5          |
 | S2  | Search          | Language change                                                                                     | A fully covered deck switches immediately; incomplete coverage requires confirmation; Fuse index, results, counts, sorting, details, preview, and print reflect the selected language; custom spells unchanged | §5, §7      |
 | S3  | Search          | Selected spell absent in target language                                                            | Show unavailable message; never silently display English under another language tag                                                                                                                            | §5, §7      |
@@ -976,6 +998,8 @@ duplicate these outcomes as a second invariants list.
 | C3  | Custom spells   | Undo immediately after deletion                                                                     | Original spell and entry ID/position restored; dirty state recalculated                                                                                                                                        | §6          |
 | C4  | Custom spells   | Undo after intervening edit or cross-tab write                                                      | Undo refused with explanation; newer work preserved                                                                                                                                                            | §6          |
 | C5  | Custom spells   | Abbreviate and Undo abbreviation in non-SRD drafts                                                  | Action absent from the SRD override editor; only scoped draft fields change; Markdown code/links/URLs/IDs and UI labels unchanged; captured-language matching with explicitly configured inflected forms and no inferred variants; unsupported language is a no-op; session LIFO undo restores only changed fields; save persists normally and cancel writes nothing | §6, §9      |
+| C6  | Custom spells   | Apply short description to an editable copy                                                         | Action visible only in the copy flow; replaces the description and, when supplied, higher levels; localized status; one shared LIFO undo snapshot restores exactly the replaced fields; saving persists the applied text and the preview and print use it; the bundled SRD spell is unchanged | §6, §9      |
+| C7  | Custom spells   | Short description unavailable, failing sidecar, other locale, or saved copy                         | Disabled with one localized hint and no English fallback when the captured locale has no entry; a 404 or malformed sidecar leaves editing, saving, and language switching working; the captured language's candidate is used; a saved copy reopened through the ordinary edit path has no action | §6, §11     |
 | D1  | Decks           | Reload / ordinary edits                                                                             | Active deck survives reload; every successful mutation is persisted                                                                                                                                            | §7          |
 | D2  | Decks           | Duplicate add and bulk append                                                                       | Individual duplicate rejected with bottom-right notification; Append all skips and reports added/skipped counts                                                                                                | §5, §7      |
 | D3  | Decks           | Status and Save enablement                                                                          | Four statuses remain correct across reload, deletion, Undo, Save As, and unassociated name-only content; Save is enabled only when dirty with a valid association; disabled Save writes nothing                | §7          |
@@ -1021,7 +1045,7 @@ duplicate these outcomes as a second invariants list.
 | U3  | Preview         | Physical / Fit width and continuation rows | Physical is the default; centered visual bounds scale up to 200%; rows wrap without overlap; physical dimensions, fit result, card count, text and print remain unchanged | §5, §9 |
 | U4  | Library filters | Progressive disclosure and live results | Level/Class/Source initially visible; Advanced opens for active advanced filters; sticky polite match count updates immediately; Reset clears query and filters; All/SRD/Custom expose pressed state; specific-source reselection is stable | §5 |
 | U5  | Accessibility   | Selected spell, filter summaries, recovery and targets | Current row has aria-current and a leading cue; two-line names retain accessible full names; multi-select names include values; empty reset restores focus; 44px touch targets in Compact/Split and coarse-pointer Wide | §5 |
-| U6  | Deck UI         | Save vocabulary, Legend and fit help | Unassociated primary action says Save as…; associated says Save; Start new deck differs from empty status; Legend explains both designs; touch/keyboard users can open fit explanations and each selector has an accessible description | §7, §9 |
+| U6  | Deck UI         | Save vocabulary, Legend and fit help | Unassociated primary action says Save as…; associated says Save; Start new deck differs from empty status; Legend explains both designs and covers abbreviations applied by Abbreviate or by an applied short description; touch/keyboard users can open fit explanations and each selector has an accessible description | §7, §9 |
 | H1  | Hosting         | Static production build                                                                             | Static assets plus SPA fallback deploy to Workers; no API/backend/secrets; PWA and client routes intact                                                                                                        | §3, §11     |
 | O1  | Offline/quality | First-load precache and retry                                                                       | Accurate **Setting up offline access**, **Offline ready**, or **Offline setup incomplete** with retry states; status is icon-only with hover/focus/tap text, hidden when ready, and still announced to assistive technology; no premature readiness claim; runtime asset errors show an actionable retry/fallback | §11         |
 | O2  | Offline/quality | Offline language switch after readiness                                                             | No runtime network request; only manifest-listed assets are selectable                                                                                                                                         | §11         |

@@ -86,6 +86,15 @@ compounds and hyphenated forms such as `twenty-one` are not. **Undo abbreviation
 fields changed by the latest action until the editor closes. Saving stores the abbreviated text,
 so there is no automatic way to reverse it afterwards.
 
+Editable copies of bundled SRD spells also offer **Apply short description** when a reviewed short
+text for that spell exists in the language the editor opened in. It replaces the description and,
+when supplied, the higher-level text with the shorter bundled text; **Undo short description**
+shares the same last-in-first-out undo as **Abbreviate**. The action is disabled with a short hint
+when no short text is available, and it is not offered after a saved copy is reopened through the
+ordinary edit path, because saved copies no longer know which SRD spell they came from. Create a
+new editable copy to apply a short description again. No text is generated in your browser and no
+data is sent anywhere.
+
 The active deck is always stored locally as you edit it; "unsaved" never means "unpersisted".
 Named snapshots are independent of the working deck:
 

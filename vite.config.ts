@@ -125,8 +125,8 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     environment: "jsdom",
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["e2e/**", "node_modules/**", "scripts/**"],
+    include: ["src/**/*.{test,spec}.{ts,tsx}", "scripts/**/*.{test,spec}.ts"],
+    exclude: ["e2e/**", "node_modules/**"],
     setupFiles: ["./src/test/setup.ts"],
     restoreMocks: true,
   },

@@ -73,6 +73,7 @@ whole sections.
 | Product overview, features, quick start, usage, printing settings, backup guidance, attribution                        | `README.md`                           | MAIN-spec may state the requirement                                   |
 | Commands, module map, implementation details, debugging, tests                                                         | `docs/DEVELOPMENT.md`                 | README quick start only                                               |
 | Raw SRD shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection | `docs/srd-data-pipeline.md`           | DEVELOPMENT integration note only                                     |
+| Short-description authoring format, generation, checks, reports, OpenRouter setup, credentials                          | `docs/short-descriptions.md`          | MAIN-spec §6 requirements; DEVELOPMENT integration note               |
 | Cloudflare config, Workers Builds, deploy operations, `compatibility_date`                                             | `docs/cloudflare-deployment-guide.md` | MAIN-spec stable hosting constraints; DEVELOPMENT integration gotchas |
 | Custom-spell JSON format, examples, collisions, SRD override import/export                                             | `docs/custom-spell-import-guide.md`   | MAIN-spec §8 semantics                                                |
 | Official 2024 subclass catalog                                                                                         | `docs/subclasses.md`                  | Link from pipeline/spec                                               |
@@ -93,6 +94,7 @@ Consult these files only when relevant to the task:
 - `docs/DEVELOPMENT.md` — toolchain, architecture, deck persistence implementation, localization internals, printing/offline implementation, and testing.
 - `docs/cloudflare-deployment-guide.md` — Workers Static Assets setup, Workers Builds dashboard settings, and framework-specific notes.
 - `docs/srd-data-pipeline.md` — raw SRD source shape, normalization, translations, and the legacy-format migration workflow.
+- `docs/short-descriptions.md` — short-description authoring format, generation and validation commands, checks, reports, and OpenRouter credential handling.
 - `docs/specs/MAIN-spec.md` — current product behavior contract and verification matrix.
 - `docs/custom-spell-import-guide.md` — custom-spell JSON format and import behavior.
 - `docs/subclasses.md` — official subclass catalog.
