@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vite-plus/test";
 import { PrintSheets, type PrintCardData } from "@/print/PrintSheet.tsx";
+import { CARD_BACKGROUNDS } from "@/cards/backgrounds.ts";
 import { parseSpellBody } from "@/markdown/parse.ts";
 import { buildCompactPresentation } from "@/cards/compact.ts";
 import { makeSpell } from "@/test/fixtures/spells.ts";
@@ -40,6 +41,33 @@ describe("PrintSheets component rendering", () => {
     expect(screen.getByLabelText("Verbal").textContent).toBe("V");
     expect(screen.getByLabelText("Somatic").textContent).toBe("S");
     expect(screen.getByText("A ruby (100 gp, consumed)")).not.toBeNull();
+  });
+
+  it("applies the selected background to printed cards", () => {
+    const spell = makeSpell();
+    const cards: PrintCardData[] = [
+      {
+        key: "e1-0",
+        spell,
+        pageBlocks: parseSpellBody(spell, "Higher Levels", markers),
+        fontPt: 8,
+        cardIndex: 1,
+        cardCount: 1,
+        truncated: false,
+      },
+    ];
+    const background = CARD_BACKGROUNDS[0].id;
+    const { container } = render(
+      <PrintSheets
+        cards={cards}
+        paperSize="letter"
+        cuttingBorders={false}
+        background={background}
+      />,
+    );
+    expect(
+      container.querySelector(`.print-card[data-card-background="${background}"]`),
+    ).not.toBeNull();
   });
 
   it("omits repeated metadata and material on printed continuation cards", () => {

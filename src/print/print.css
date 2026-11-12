@@ -38,6 +38,14 @@
   position: relative;
 }
 
+/* Optional card texture. "none" keeps the default paper color. */
+.spell-card[data-card-background] {
+  background-image: var(--card-background-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
 .card-header {
   flex: 0 0 auto;
   position: relative;
@@ -812,7 +820,8 @@
 }
 
 @media print {
-  .spell-card-compact {
+  .spell-card-compact,
+  .spell-card[data-card-background] {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }

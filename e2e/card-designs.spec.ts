@@ -131,6 +131,44 @@ test("switches between Classic and Compact in preview and print", async ({ page 
   await expect(preview).toHaveCount(1);
 });
 
+test("selects and resets a card background for the preview", async ({ page }) => {
+  await page.goto("/");
+  await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");
+
+  const background = page.getByLabel("Card background");
+  const preview = page.locator(".card-preview-page").first();
+  const backgroundValue = await background.locator("option").nth(1).getAttribute("value");
+  expect(backgroundValue).toBeTruthy();
+  if (!backgroundValue) throw new Error("No bundled card background was discovered");
+  await expect(background).toHaveValue("none");
+  await expect(page.locator(".card-preview-page[data-card-background]")).toHaveCount(0);
+  expect(await preview.evaluate((element) => getComputedStyle(element).backgroundImage)).toBe(
+    "none",
+  );
+
+  await background.selectOption(backgroundValue);
+  await expect(
+    page.locator(`.card-preview-page[data-card-background="${backgroundValue}"]`),
+  ).toHaveCount(1);
+  expect(await preview.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain(
+    ".jpg",
+  );
+
+  await page.reload();
+  await page.getByLabel("Search spells").fill("Fireball");
+  await page.getByRole("list", { name: "Spell results" }).getByRole("button").first().click();
+  await expect(page.locator(".card-preview-page").first()).toBeVisible();
+
+  await expect(page.getByLabel("Card background")).toHaveValue("none");
+  await expect(page.locator(".card-preview-page[data-card-background]")).toHaveCount(0);
+  expect(
+    await page
+      .locator(".card-preview-page")
+      .first()
+      .evaluate((element) => getComputedStyle(element).backgroundImage),
+  ).toBe("none");
+});
+
 test("defaults to Classic after a reload", async ({ page }) => {
   await page.goto("/");
   await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");

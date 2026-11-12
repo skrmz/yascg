@@ -16,7 +16,7 @@ Technical implementation is not a claim of full GDPR compliance.
 | --- | --- | --- | --- |
 | IndexedDB (Dexie) | `spell-cards-generator`, version 5 | `customSpells`, `savedDecks`, `activeDeck`, `srdSpellOverrides` | Individual deletion actions in the app, or browser settings |
 | `localStorage` | `spellCards.language` | Selected spell-data/UI language preference | Language switching, or browser settings |
-| Cache Storage | Workbox precache | App shell, JS/CSS, local WOFF2 fonts, language manifest, bundled spell datasets | Browser settings or service-worker cache eviction |
+| Cache Storage | Workbox precache | App shell, JS/CSS, local WOFF2 fonts, bundled card-background JPGs, language manifest, bundled spell datasets | Browser settings or service-worker cache eviction |
 | `BroadcastChannel` | In-memory channel | Local cross-tab notifications | Page/tab lifetime |
 
 - The app creates no additional IndexedDB databases and uses no `sessionStorage`.
@@ -30,6 +30,8 @@ Technical implementation is not a claim of full GDPR compliance.
 - All runtime `fetch` calls target same-origin static assets (`src/services/data/load.ts`).
 - After the font migration, the application loads no fonts from `fonts.googleapis.com` or
   `fonts.gstatic.com`; all families are self-hosted WOFF2 files under `src/assets/fonts/`.
+- Card background textures are bundled same-origin JPG assets under
+  `src/assets/images/card-backgrounds/`; no external image host is used.
 - External links (SRD/CC attribution, guide links, Cloudflare policy) are rendered as anchors and
   open only on user action.
 - Custom-spell Markdown links are rendered as safe anchors only where anchor rendering is

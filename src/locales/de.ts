@@ -273,6 +273,8 @@ export const de = {
     scale: "Skalierung: 100 % / Tatsächliche Größe — nicht „An Seite anpassen“ verwenden.",
     margins: "Ränder: Keine oder Minimal.",
     headers: "Browser-Kopf- und -Fußzeilen deaktivieren.",
+    backgroundGraphics:
+      "Aktiviere „Hintergrundgrafiken“ im Druckdialog, damit Kartenhintergründe gedruckt werden.",
     hardware:
       "Nicht druckbare Hardware-Ränder oder Treiberskalierung können die physischen Maße dennoch verschieben; prüfe dies mit einem Testblatt.",
     overflow:
@@ -681,7 +683,6 @@ export const de = {
       label: "Kartendesign",
       classic: "Klassisch",
       compact: "Kompakt",
-      hint: "Gilt für Vorschau und Druck.",
       legend: "Legende",
       legendTitle: "Kartenlegende",
       legendDescription:
@@ -692,6 +693,11 @@ export const de = {
       legendRangeDuration: "Reichweite und Wirkungsdauer",
       legendSchools: "Schulen",
       legendClasses: "Klassen",
+    },
+    background: {
+      label: "Kartenhintergrund",
+      hint: "Gilt für Vorschau und Druck.",
+      none: "Kein Hintergrund",
     },
   },
   form: {

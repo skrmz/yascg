@@ -109,6 +109,12 @@ optional higher-level sections, and a three-part Source | School | Classes foote
 measurement, pagination, and print output; it is kept for the session and resets to Classic after
 a reload.
 
+The **Card background** selector next to the design chooses **None** (the default) or one of the
+JPEG images bundled in `src/assets/images/card-backgrounds/`, listed by file name. The choice
+applies to the preview and print output in both designs; it is kept for the session and resets to
+None after a reload. New images are picked up at build time, so they appear after a development
+reload or a rebuild and redeploy.
+
 **Import / export deck** in the deck actions menu exports the current active deck as unversioned
 JSON: its name, ordered spell references, and display settings. Spell bodies and SRD edits are
 not included; import replaces only the active deck and does not create or modify named snapshots
@@ -137,6 +143,7 @@ Before printing, configure your browser/printer:
 - Scale: **100% / Actual Size** — do not use "Fit to page".
 - Margins: **None** or **Minimum**.
 - Disable browser **headers and footers**.
+- Background graphics: **Enabled** (required for textured card backgrounds).
 
 Cards whose spell body is unavailable in the selected language, or whose reference is missing,
 are omitted from printing without changing the deck; the app shows separate counts and asks for

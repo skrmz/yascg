@@ -36,6 +36,7 @@ The repository root `.nvmrc` (containing `24`) is the source of truth for that v
 | --------------------------------------- | ----------------------------------------------------------------------- |
 | `pnpm install` (or `vp install`)        | Install dependencies.                                                   |
 | `pnpm run normalize:srd`                | Normalize `data/srd/` into the committed `src/data/` artifacts.         |
+| `pnpm run backgrounds:prepare`          | Normalize card-background source images to JPEG; `--dry-run` reports.   |
 | `pnpm run dev` (`vp dev`)               | Start the development server in the local Workers runtime.              |
 | `pnpm run check` (`vp check`)           | Format, lint, and type-check.                                           |
 | `pnpm run test` (`vp test`)             | Run unit and integration tests.                                         |
@@ -374,6 +375,18 @@ settings are in the [README](../README.md#printing). Implementation details:
 - `src/cards/design.ts` owns `CardDesign` and `DEFAULT_CARD_DESIGN`. `AppProvider` exposes
   in-memory `cardDesign`/`setCardDesign`; the Deck pane selector is the only writer, and nothing
   is persisted.
+- `src/cards/backgrounds.ts` owns `CardBackground` (a file-name string), the build-time
+  `import.meta.glob` discovery of `src/assets/images/card-backgrounds/*.{jpg,jpeg}`,
+  `CARD_BACKGROUNDS` option objects, `DEFAULT_CARD_BACKGROUND`, label truncation, URL/style
+  helpers, normalization, and `loadCardBackground`. `AppProvider` exposes in-memory
+  `cardBackground`/`setCardBackground`; nothing is persisted. `CardView` applies
+  `data-card-background` plus the `--card-background-image` custom property, `PrintDialog` awaits
+  `loadCardBackground` before `window.print()`, and backgrounds are excluded from fit inputs, the
+  hidden measurement card, and cache keys. A development file add/remove reloads through Vite's
+  glob watcher; production requires a rebuild. `scripts/prepare-card-backgrounds.ts`
+  (`pnpm run backgrounds:prepare`, `--dry-run`) normalizes source images to JPEG and is not invoked
+  by the build. Workbox precaches the bundled card JPGs, and the offline E2E asserts every
+  discovered option by its resolved, fingerprinted URL.
 - `src/cards/compact.ts` runs `buildCompactPresentation` before fitting. It parses casting-time
   bases/qualifiers and duration carets, attaches notes only for the conservative
   one-field/one-paragraph caret case or an absent inline qualifier, numbers notes in metadata

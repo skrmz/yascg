@@ -3,6 +3,7 @@ import type { BlockNode } from "@/markdown/parse.ts";
 import { CardView } from "@/cards/Card.tsx";
 import type { CompactPresentation } from "@/cards/compact.ts";
 import { DEFAULT_CARD_DESIGN, type CardDesign } from "@/cards/design.ts";
+import { DEFAULT_CARD_BACKGROUND, type CardBackground } from "@/cards/backgrounds.ts";
 import { resolveContentLanguage } from "@/content-language.ts";
 
 export type PaperSize = "letter" | "A4";
@@ -41,6 +42,7 @@ export interface PrintSheetsProps {
   sheetPrefix?: string;
   datasetLanguage?: string;
   design?: CardDesign;
+  background?: CardBackground;
 }
 
 /** Renders 3x3 physical sheets. Geometry is governed entirely by print.css. */
@@ -51,6 +53,7 @@ export function PrintSheets({
   sheetPrefix = "sheet",
   datasetLanguage,
   design = DEFAULT_CARD_DESIGN,
+  background = DEFAULT_CARD_BACKGROUND,
 }: PrintSheetsProps) {
   const sheets = buildSheets(cards);
   return (
@@ -74,6 +77,7 @@ export function PrintSheets({
                     cardCount={card.cardCount}
                     fontPt={card.fontPt}
                     design={design}
+                    background={background}
                     presentation={card.presentation}
                     contentLanguage={
                       datasetLanguage

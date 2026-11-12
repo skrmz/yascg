@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vp dev",
     "normalize:srd": "tsx scripts/normalize-srd.ts",
+    "backgrounds:prepare": "tsx scripts/prepare-card-backgrounds.ts",
     "build": "pnpm run normalize:srd && vp build",
     "preview": "vp preview",
     "deploy": "pnpm run build && wrangler deploy",
@@ -58,6 +59,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "fake-indexeddb": "^6.2.6",
     "jsdom": "^30.1.3",
+    "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "catalog:",

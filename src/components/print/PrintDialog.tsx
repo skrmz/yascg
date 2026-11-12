@@ -6,6 +6,8 @@ import { useApp } from "@/state/AppProvider.tsx";
 import { LIMITS } from "@/domain/spells";
 import { useDeckCardFits, type DeckFitItem } from "@/cards/fit.tsx";
 import { waitForCardFonts } from "@/cards/fonts.ts";
+import { loadCardBackground, type CardBackground } from "@/cards/backgrounds.ts";
+import type { CardDesign } from "@/cards/design.ts";
 import { PrintSheets, type PaperSize, type PrintCardData } from "@/print/PrintSheet.tsx";
 import { printDocumentTitle } from "@/print/document-title.ts";
 import { Button } from "@/ui/Button.tsx";
@@ -20,12 +22,17 @@ export function PrintDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { resolvedEntries, language, activeDeck, cardDesign } = useApp();
+  const { resolvedEntries, language, activeDeck, cardDesign, cardBackground } = useApp();
   const { t } = useTranslation();
   const [paperSize, setPaperSize] = useState<PaperSize>(language === "de" ? "A4" : "letter");
   const [cuttingBorders, setCuttingBorders] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [job, setJob] = useState<{ cards: PrintCardData[]; title: string } | null>(null);
+  const [job, setJob] = useState<{
+    cards: PrintCardData[];
+    title: string;
+    background: CardBackground;
+    design: CardDesign;
+  } | null>(null);
 
   useEffect(() => {
     setPaperSize(language === "de" ? "A4" : "letter");
@@ -102,7 +109,7 @@ export function PrintDialog({
     };
     window.addEventListener("afterprint", restoreTitle);
     const run = async () => {
-      await waitForCardFonts();
+      await Promise.all([waitForCardFonts(), loadCardBackground(job.background)]);
       if (cancelled) return;
       document.title = job.title;
       frame = window.requestAnimationFrame(() => window.print());
@@ -117,7 +124,12 @@ export function PrintDialog({
   }, [job]);
 
   const startPrint = () => {
-    setJob({ cards: printCards, title: printDocumentTitle(activeDeck?.name) });
+    setJob({
+      cards: printCards,
+      title: printDocumentTitle(activeDeck?.name),
+      background: cardBackground,
+      design: cardDesign,
+    });
     onOpenChange(false);
   };
 
@@ -168,6 +180,7 @@ export function PrintDialog({
                 <li>{t("print.scale")}</li>
                 <li>{t("print.margins")}</li>
                 <li>{t("print.headers")}</li>
+                <li>{t("print.backgroundGraphics")}</li>
                 <li>{t("print.hardware")}</li>
               </ul>
             </div>
@@ -226,7 +239,8 @@ export function PrintDialog({
               paperSize={paperSize}
               cuttingBorders={cuttingBorders}
               datasetLanguage={language}
-              design={cardDesign}
+              design={job.design}
+              background={job.background}
             />,
             document.body,
           )

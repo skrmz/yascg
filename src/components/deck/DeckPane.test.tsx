@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { message } from "@/locales/messages.ts";
+import { CARD_BACKGROUNDS, cardBackgroundLabel } from "@/cards/backgrounds.ts";
 import { DeckPane } from "./DeckPane.tsx";
 import { WorkspaceLayoutContext } from "../workspace-layout.ts";
 
@@ -28,6 +29,8 @@ const holder = vi.hoisted(() => ({
   selectSpell: vi.fn(),
   cardDesign: "classic" as "classic" | "compact",
   setCardDesign: vi.fn(),
+  cardBackground: "none" as string,
+  setCardBackground: vi.fn(),
 }));
 
 const toastMock = vi.hoisted(() => ({
@@ -66,6 +69,8 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     selectSpell: holder.selectSpell,
     cardDesign: holder.cardDesign,
     setCardDesign: holder.setCardDesign,
+    cardBackground: holder.cardBackground,
+    setCardBackground: holder.setCardBackground,
   }),
 }));
 
@@ -101,6 +106,8 @@ beforeEach(() => {
   holder.importDeck.mockReset().mockResolvedValue({ status: "ok" });
   holder.cardDesign = "classic";
   holder.setCardDesign.mockReset();
+  holder.cardBackground = "none";
+  holder.setCardBackground.mockReset();
   toastMock.success.mockReset();
   toastMock.info.mockReset();
   toastMock.error.mockReset();
@@ -472,4 +479,26 @@ describe("DeckPane card design selector", () => {
       expect(within(dialog).getByText("WIZ")).not.toBeNull();
     },
   );
+});
+
+describe("DeckPane card background selector", () => {
+  it("offers None followed by the discovered images", () => {
+    render(<DeckPane />);
+    const select = screen.getByLabelText("Card background") as HTMLSelectElement;
+    expect(Array.from(select.options, (option) => option.textContent)).toEqual([
+      "None",
+      ...CARD_BACKGROUNDS.map((option) => cardBackgroundLabel(option.id)),
+    ]);
+    expect(select.options).toHaveLength(CARD_BACKGROUNDS.length + 1);
+    expect(select.options[1]?.value).toBe(CARD_BACKGROUNDS[0].id);
+    expect(select.value).toBe("none");
+  });
+
+  it("calls setCardBackground when an image is selected", async () => {
+    const user = userEvent.setup();
+    const id = CARD_BACKGROUNDS[0].id;
+    render(<DeckPane />);
+    await user.selectOptions(screen.getByLabelText("Card background"), id);
+    expect(holder.setCardBackground).toHaveBeenCalledWith(id);
+  });
 });

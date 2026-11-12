@@ -271,6 +271,8 @@ export const en = {
     scale: "Scale: 100% / Actual Size — do not use “Fit to page”.",
     margins: "Margins: None or Minimum.",
     headers: "Disable browser headers and footers.",
+    backgroundGraphics:
+      "Enable “Background graphics” in the browser print dialog to print card backgrounds.",
     hardware:
       "Hardware non-printable margins or driver scaling can still shift physical dimensions; verify with a test sheet.",
     overflow:
@@ -668,7 +670,6 @@ export const en = {
       label: "Card design",
       classic: "Classic",
       compact: "Compact",
-      hint: "Applies to preview and print.",
       legend: "Legend",
       legendTitle: "Card legend",
       legendDescription:
@@ -679,6 +680,11 @@ export const en = {
       legendRangeDuration: "Range and duration",
       legendSchools: "Schools",
       legendClasses: "Classes",
+    },
+    background: {
+      label: "Card background",
+      hint: "Applies to preview and print.",
+      none: "None",
     },
   },
   form: {

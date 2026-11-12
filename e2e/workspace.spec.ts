@@ -96,11 +96,13 @@ for (const language of ["en", "de"]) {
         });
         await expect(settings).toHaveAttribute("aria-expanded", "false");
         await expect(page.locator("#deck-design-select")).toBeHidden();
+        await expect(page.locator("#deck-background-select")).toBeHidden();
         const listHeight = (await page.locator("#deck-entries").boundingBox())!.height;
         const paneHeight = (await page.locator("#deck-panel").boundingBox())!.height;
         expect(listHeight / paneHeight).toBeGreaterThan(0.65);
         await settings.click();
         await expect(page.locator("#deck-name")).toBeVisible();
+        await expect(page.locator("#deck-background-select")).toBeVisible();
         await page.locator("#deck-design-select").selectOption("compact");
         const expandedListHeight = (await page.locator("#deck-entries").boundingBox())!.height;
         expect(listHeight - expandedListHeight).toBeGreaterThan(100);

@@ -298,7 +298,8 @@ At short viewport heights (including browser zoom), the Deck uses a single whole
 region so pinned controls cannot squeeze its entries out of reach. The page remains fixed.
 In Compact mode, deck settings start collapsed. The deck name, entry count, status,
 persistence help, and Save/Print/Open actions stay visible; a **Deck settings** disclosure
-reveals name editing, card design, and legend. Split/Wide always show these settings. Expanding
+reveals name editing, card design, card background, and legend. Split/Wide always show these
+settings. Expanding
 or collapsing settings preserves their values, and validation/action errors remain visible.
 Deck entry names wrap without truncation. Narrow deck entries use two aligned rows: name
 above, fit selector and actions below. When the entry list's content width reaches 36rem,
@@ -729,6 +730,17 @@ pagination, and print output; switching designs re-measures without changing sto
 data. Preview scale is a screen-only view setting as specified in §5; it is excluded from fit
 cache inputs and print rendering. The Deck exposes a touch/keyboard-operable fit-mode help
 disclosure and an accessible description on each fit selector.
+
+**Card backgrounds:** A **Card background** selector in the Active Deck pane offers exactly
+**None**, the default for every session and for any absent or invalid selection, plus every JPEG
+discovered in the bundled background folder, listed by file name. The selector sits with the other
+Deck settings next to the card design, is not persisted, and resets to None on reload. The selection
+applies identically to the preview and the print output for both Classic and Compact, is clipped by
+the card's rounded border, and is excluded from the fit cache because it has no layout effect; the
+hidden measurement card stays untextured. Images are discovered at build time: a newly added image
+appears after a development reload or a production rebuild, and the deployed static app cannot scan
+the folder at runtime. Neither the selector nor its hint is printed, and the choice never changes
+stored spell or deck data.
 
 Compact keeps the same 2.5 × 3.5 in card, safe Markdown pipeline, truncation, continuation, and
 print rules. Its first card shows a single-outline level circle with the numeric level only, a

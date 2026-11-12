@@ -41,6 +41,7 @@ export function DetailsPane() {
     activeDeck,
     language,
     cardDesign,
+    cardBackground,
     addSpellToDeck,
     duplicateSpell,
     deleteSpell,
@@ -338,6 +339,7 @@ export function DetailsPane() {
                 fontPt={fit.result!.fontPt}
                 contentLanguage={contentLanguage}
                 design={cardDesign}
+                background={cardBackground}
                 presentation={fit.presentation ?? undefined}
                 className="card-preview-page animate-reveal-subtle"
               />

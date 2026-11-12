@@ -6,6 +6,7 @@ import type { Spell } from "@/domain/spells";
 import { createEmptyActiveDeck, type ActiveDeckRecord } from "@/domain/deck";
 import { makeEntry } from "@/db/active-deck.ts";
 import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
+import { CARD_BACKGROUNDS } from "@/cards/backgrounds.ts";
 import { TooltipProvider } from "@/ui/Tooltip.tsx";
 import { DetailsPane } from "./DetailsPane.tsx";
 
@@ -26,6 +27,7 @@ const holder = vi.hoisted(() => ({
   fit: null as FitResultStub | null,
   presentation: null as unknown,
   cardDesign: "classic" as "classic" | "compact",
+  cardBackground: "none" as string,
   selectSpell: vi.fn(),
   saveCustomSpell: vi.fn(),
   replaceDeckEntryWithCopy: vi.fn(),
@@ -44,6 +46,7 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     activeDeck: holder.activeDeck,
     language: "en",
     cardDesign: holder.cardDesign,
+    cardBackground: holder.cardBackground,
     manifest: [],
     englishById: new Map(),
     srdSpellOverrides: [],
@@ -78,6 +81,7 @@ beforeEach(() => {
   holder.fit = null;
   holder.presentation = null;
   holder.cardDesign = "classic";
+  holder.cardBackground = "none";
   holder.activeDeck = null;
   holder.selectSpell.mockReset();
   holder.saveCustomSpell.mockReset().mockResolvedValue(null);
@@ -139,6 +143,21 @@ describe("DetailsPane preview-only default layout", () => {
     expect(container.querySelector(".spell-details-content")).toBeNull();
     expect(screen.queryByText("Subclasses")).toBeNull();
     expect(screen.queryByText("A test spell.")).toBeNull();
+  });
+
+  it("applies the selected card background to the preview", () => {
+    const background = CARD_BACKGROUNDS[0].id;
+    holder.cardBackground = background;
+    holder.fit = {
+      pages: [[]],
+      fontPt: 8.5,
+      truncated: false,
+      overflow: false,
+    };
+    const { container } = render(<DetailsPane />);
+    expect(
+      container.querySelector(`.card-preview-page[data-card-background="${background}"]`),
+    ).not.toBeNull();
   });
 
   it("remounts the card preview when the selected spell changes so the reveal animation restarts", () => {

@@ -78,6 +78,11 @@ import type { ActiveDeckRecord, DeckEntry, DeckStatus, SavedDeck } from "@/domai
 import { getDeckStatus, hasSpellEntry, isDeckDirty } from "@/domain/deck";
 import type { CardFitMode, Spell, SpellSource, SrdSpellOverride } from "@/domain/spells";
 import { DEFAULT_CARD_DESIGN, normalizeCardDesign, type CardDesign } from "@/cards/design.ts";
+import {
+  DEFAULT_CARD_BACKGROUND,
+  normalizeCardBackground,
+  type CardBackground,
+} from "@/cards/backgrounds.ts";
 import { applyDeckImport, type DeckImportPlan } from "@/io/import-deck.ts";
 import {
   AppError,
@@ -175,6 +180,9 @@ export interface AppContextValue {
   cardDesign: CardDesign;
   setCardDesign: (design: CardDesign) => void;
 
+  cardBackground: CardBackground;
+  setCardBackground: (background: CardBackground) => void;
+
   activeDeck: ActiveDeckRecord | null;
   savedDecks: SavedDeck[];
   dirty: boolean;
@@ -270,6 +278,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setCardDesign = useCallback((design: CardDesign) => {
     setCardDesignState(normalizeCardDesign(design));
+  }, []);
+
+  const [cardBackground, setCardBackgroundState] =
+    useState<CardBackground>(DEFAULT_CARD_BACKGROUND);
+
+  const setCardBackground = useCallback((background: CardBackground) => {
+    setCardBackgroundState(normalizeCardBackground(background));
   }, []);
 
   const [deckError, setDeckError] = useState<MessageDescriptor | null>(null);
@@ -1081,6 +1096,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       selectedSpell,
       cardDesign,
       setCardDesign,
+      cardBackground,
+      setCardBackground,
       activeDeck: activeDeck ?? null,
       savedDecks: savedList,
       dirty,
@@ -1142,6 +1159,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       selectedSpell,
       cardDesign,
       setCardDesign,
+      cardBackground,
+      setCardBackground,
       activeDeck,
       savedList,
       dirty,

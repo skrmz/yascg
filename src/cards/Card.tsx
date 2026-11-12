@@ -6,6 +6,11 @@ import { BlockList } from "@/markdown/render.tsx";
 import { levelLabelKey, schoolKey, sourceLabelText } from "@/locales/labels.ts";
 import { classSummary, materialDetailText, metadataRows } from "./format.ts";
 import type { CardDesign } from "./design.ts";
+import {
+  DEFAULT_CARD_BACKGROUND,
+  cardBackgroundStyle,
+  type CardBackground,
+} from "./backgrounds.ts";
 import type { CompactPresentation } from "./compact.ts";
 import { CompactCardView, type CompactCardViewProps } from "./CompactCard.tsx";
 
@@ -23,6 +28,7 @@ export interface CardViewProps {
   continuation?: boolean;
   contentLanguage?: string;
   design?: CardDesign;
+  background?: CardBackground;
   presentation?: CompactPresentation;
 }
 
@@ -37,6 +43,7 @@ export function ClassicCardView({
   bodyRef,
   continuation,
   contentLanguage,
+  background = DEFAULT_CARD_BACKGROUND,
 }: CardViewProps) {
   const { t } = useTranslation();
   const levelLabel = t(levelLabelKey(spell.level), { level: spell.level });
@@ -53,7 +60,11 @@ export function ClassicCardView({
       className={`spell-card${isContinuation ? " spell-card-continuation" : ""}${
         className ? ` ${className}` : ""
       }`}
-      style={{ ["--body-font-pt" as string]: `${fontPt}pt` }}
+      data-card-background={background === "none" ? undefined : background}
+      style={{
+        ["--body-font-pt" as string]: `${fontPt}pt`,
+        ...cardBackgroundStyle(background),
+      }}
     >
       <header className="card-header">
         {isContinuation ? (
