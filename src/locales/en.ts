@@ -482,6 +482,16 @@ export const en = {
     copySavedDeckUnchanged: "The custom copy was saved. The active deck was not changed.",
   },
   error: {
+    boundary: {
+      sectionTitle: "This section could not be displayed",
+      sectionDescription:
+        "Something went wrong while showing this part of the app. Other sections still work.",
+      appTitle: "The app could not be displayed",
+      appDescription:
+        "An unexpected error occurred while showing the app. Your locally stored spells and decks were not changed.",
+      retry: "Try again",
+      reload: "Reload app",
+    },
     generic: "Something went wrong. Please try again.",
     dataLoad: "Spell data could not be loaded. Please try again.",
     storageUnavailable:

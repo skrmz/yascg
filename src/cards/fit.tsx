@@ -390,6 +390,15 @@ export interface UseCardFitResult {
   measureLayer: ReactNode;
 }
 
+interface FitState {
+  key: string | null;
+  result: FitResult | null;
+  ready: boolean;
+  error: boolean;
+}
+
+const EMPTY_FIT_STATE: FitState = { key: null, result: null, ready: false, error: false };
+
 export function useCardFit({
   spell,
   fitMode,
@@ -400,9 +409,7 @@ export function useCardFit({
   const higherLevelsHeading = t("spell.higherLevels");
   const resolvedLanguage = i18n.resolvedLanguage;
   const { measure, layer } = useMeasurer();
-  const [result, setResult] = useState<FitResult | null>(null);
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState(false);
+  const [fitState, setFitState] = useState<FitState>(EMPTY_FIT_STATE);
 
   const markers = useMemo(
     () => ({
@@ -441,19 +448,16 @@ export function useCardFit({
 
   useEffect(() => {
     if (!spell || !cacheKey) {
-      setResult(null);
-      setReady(false);
+      setFitState(EMPTY_FIT_STATE);
       return;
     }
     const cached = fitCache.get(cacheKey);
     if (cached) {
-      setResult(cached);
-      setReady(true);
-      setError(false);
+      setFitState({ key: cacheKey, result: cached, ready: true, error: false });
       return;
     }
     let cancelled = false;
-    setReady(false);
+    setFitState({ key: cacheKey, result: null, ready: false, error: false });
     const run = async () => {
       try {
         await waitForCardFonts();
@@ -466,14 +470,11 @@ export function useCardFit({
         );
         if (cancelled) return;
         fitCache.set(cacheKey, computed);
-        setResult(computed);
-        setReady(true);
-        setError(false);
+        setFitState({ key: cacheKey, result: computed, ready: true, error: false });
       } catch (cause) {
         if (!cancelled) {
-          setReady(true);
           console.error("Failed to measure card layout:", cause);
-          setError(true);
+          setFitState({ key: cacheKey, result: null, ready: true, error: true });
         }
       }
     };
@@ -494,7 +495,14 @@ export function useCardFit({
     markers,
   ]);
 
-  return { result, presentation, ready, error, measureLayer: layer };
+  const currentState = fitState.key === cacheKey ? fitState : EMPTY_FIT_STATE;
+  return {
+    result: currentState.result,
+    presentation,
+    ready: currentState.ready,
+    error: currentState.error,
+    measureLayer: layer,
+  };
 }
 
 export interface DeckFitItem {
@@ -515,6 +523,20 @@ export interface UseDeckCardFitsResult {
   measureLayer: ReactNode;
 }
 
+interface DeckFitsState {
+  signature: string | null;
+  results: Map<string, DeckFitEntry>;
+  ready: boolean;
+  error: boolean;
+}
+
+const EMPTY_DECK_FITS_STATE: DeckFitsState = {
+  signature: null,
+  results: new Map(),
+  ready: false,
+  error: false,
+};
+
 /** Fits every distinct deck entry sequentially with one hidden measuring card. */
 export function useDeckCardFits(
   items: readonly DeckFitItem[],
@@ -526,9 +548,7 @@ export function useDeckCardFits(
   const higherLevelsHeading = t("spell.higherLevels");
   const resolvedLanguage = i18n.resolvedLanguage;
   const { measure, layer } = useMeasurer();
-  const [results, setResults] = useState<Map<string, DeckFitEntry>>(new Map());
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState(false);
+  const [fitsState, setFitsState] = useState<DeckFitsState>(EMPTY_DECK_FITS_STATE);
   const itemsRef = useRef(items);
   itemsRef.current = items;
 
@@ -555,14 +575,11 @@ export function useDeckCardFits(
   useEffect(() => {
     const current = itemsRef.current;
     if (!enabled || current.length === 0) {
-      setResults(new Map());
-      setReady(false);
-      setError(false);
+      setFitsState({ signature, results: new Map(), ready: false, error: false });
       return;
     }
     let cancelled = false;
-    setReady(false);
-    setError(false);
+    setFitsState({ signature, results: new Map(), ready: false, error: false });
     const run = async () => {
       try {
         await waitForCardFonts();
@@ -605,15 +622,12 @@ export function useDeckCardFits(
           if (cancelled) return;
         }
         if (!cancelled) {
-          setResults(next);
-          setReady(true);
+          setFitsState({ signature, results: next, ready: true, error: false });
         }
       } catch (cause) {
         if (!cancelled) {
           console.error("Failed to measure deck card layouts:", cause);
-          setResults(new Map());
-          setError(true);
-          setReady(true);
+          setFitsState({ signature, results: new Map(), ready: true, error: true });
         }
       }
     };
@@ -632,5 +646,11 @@ export function useDeckCardFits(
     markers,
   ]);
 
-  return { results, ready, error, measureLayer: enabled ? layer : null };
+  const currentState = fitsState.signature === signature ? fitsState : EMPTY_DECK_FITS_STATE;
+  return {
+    results: currentState.results,
+    ready: currentState.ready,
+    error: currentState.error,
+    measureLayer: enabled ? layer : null,
+  };
 }

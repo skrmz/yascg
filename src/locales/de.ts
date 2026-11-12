@@ -491,6 +491,16 @@ export const de = {
       "Die eigene Kopie wurde gespeichert. Das aktive Deck wurde nicht geändert.",
   },
   error: {
+    boundary: {
+      sectionTitle: "Dieser Bereich konnte nicht angezeigt werden",
+      sectionDescription:
+        "Beim Anzeigen dieses Bereichs ist ein Fehler aufgetreten. Die anderen Bereiche sind weiterhin verfügbar.",
+      appTitle: "Die App konnte nicht angezeigt werden",
+      appDescription:
+        "Beim Anzeigen der App ist ein unerwarteter Fehler aufgetreten. Deine lokal gespeicherten Zauber und Decks wurden nicht verändert.",
+      retry: "Erneut versuchen",
+      reload: "App neu laden",
+    },
     generic: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     dataLoad: "Die Zauberdaten konnten nicht geladen werden. Bitte versuche es erneut.",
     storageUnavailable:

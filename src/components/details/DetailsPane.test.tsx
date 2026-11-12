@@ -401,6 +401,24 @@ describe("DetailsPane fit notices", () => {
     );
     expect(container.querySelector(".spell-card-compact")).not.toBeNull();
   });
+
+  it("defers the compact preview until its presentation is ready", () => {
+    holder.cardDesign = "compact";
+    holder.presentation = null;
+    holder.fit = {
+      pages: [[]],
+      fontPt: 8.5,
+      truncated: false,
+      overflow: false,
+    };
+    const { container } = render(
+      <TooltipProvider>
+        <DetailsPane />
+      </TooltipProvider>,
+    );
+    expect(screen.getByText("Measuring card layout…")).not.toBeNull();
+    expect(container.querySelector(".spell-card")).toBeNull();
+  });
 });
 
 describe("DetailsPane editable SRD copies", () => {

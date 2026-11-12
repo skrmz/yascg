@@ -4,6 +4,7 @@ import { BookOpen, Eye, Layers, X } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
 import { translateMessage } from "@/locales/messages.ts";
 import { Header } from "./Header.tsx";
+import { SectionErrorBoundary } from "./ErrorBoundary.tsx";
 import { LibraryPane } from "./library/LibraryPane.tsx";
 import { DetailsPane } from "./details/DetailsPane.tsx";
 import { DeckPane } from "./deck/DeckPane.tsx";
@@ -25,6 +26,10 @@ const PANE_CONTENT =
 export function AppShell() {
   const {
     selectedSpellId,
+    language,
+    activeDeck,
+    cardDesign,
+    cardBackground,
     languageNotice,
     dismissLanguageNotice,
     deckError,
@@ -204,7 +209,9 @@ export function AppShell() {
                   !paneVisible("library") && "hidden",
                 )}
               >
-                <LibraryPane active={paneVisible("library")} />
+                <SectionErrorBoundary name="library" resetKeys={[language]}>
+                  <LibraryPane active={paneVisible("library")} />
+                </SectionErrorBoundary>
               </TabsContent>
               <TabsContent
                 value="details"
@@ -221,7 +228,18 @@ export function AppShell() {
                   !paneVisible("details") && "hidden",
                 )}
               >
-                <DetailsPane />
+                <SectionErrorBoundary
+                  name="details"
+                  resetKeys={[
+                    selectedSpellId,
+                    language,
+                    cardDesign,
+                    cardBackground,
+                    activeDeck?.revision,
+                  ]}
+                >
+                  <DetailsPane />
+                </SectionErrorBoundary>
               </TabsContent>
               <TabsContent
                 value="deck"
@@ -239,7 +257,9 @@ export function AppShell() {
                   !paneVisible("deck") && "hidden",
                 )}
               >
-                <DeckPane />
+                <SectionErrorBoundary name="deck" resetKeys={[language, activeDeck?.revision]}>
+                  <DeckPane />
+                </SectionErrorBoundary>
               </TabsContent>
             </Tabs>
           </main>

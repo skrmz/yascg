@@ -69,6 +69,8 @@ export function DetailsPane() {
     language,
     design: cardDesign,
   });
+  const previewReady =
+    fit.result !== null && (cardDesign !== "compact" || fit.presentation !== null);
 
   useEffect(() => {
     setDetailsSpellId(null);
@@ -327,7 +329,7 @@ export function DetailsPane() {
           ) : null}
         </div>
 
-        {fit.result ? (
+        {previewReady && fit.result ? (
           <PreviewFrame>
             {fit.result.pages.map((pageBlocks, index) => (
               <CardView

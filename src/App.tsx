@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AppProvider, useApp } from "./state/AppProvider.tsx";
+import { AppErrorBoundary } from "./components/ErrorBoundary.tsx";
 import { AppShell } from "./components/AppShell.tsx";
 import { Toaster } from "./ui/Sonner.tsx";
 import { TooltipProvider } from "./ui/Tooltip.tsx";
@@ -55,13 +56,15 @@ function StorageNotice() {
 
 export function App() {
   return (
-    <AppProvider>
-      <TooltipProvider delayDuration={200}>
-        <UiLocaleBridge />
-        <StorageNotice />
-        <AppShell />
-        <Toaster />
-      </TooltipProvider>
-    </AppProvider>
+    <AppErrorBoundary>
+      <AppProvider>
+        <TooltipProvider delayDuration={200}>
+          <UiLocaleBridge />
+          <StorageNotice />
+          <AppShell />
+          <Toaster />
+        </TooltipProvider>
+      </AppProvider>
+    </AppErrorBoundary>
   );
 }
