@@ -49,21 +49,49 @@ export function clearLanguagePreference(): void {
   }
 }
 
+function readBrowserLanguages(): readonly string[] {
+  try {
+    const nav = globalThis.navigator;
+    if (!nav) return [];
+    if (nav.languages && nav.languages.length > 0) return nav.languages;
+    return nav.language ? [nav.language] : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Picks the first browser language tag backed by a UI catalog, ignoring region and
+ * script subtags. Unsupported languages fall back to English.
+ */
+export function detectBrowserLanguage(
+  candidates: readonly string[] = readBrowserLanguages(),
+): "en" | "de" {
+  for (const tag of candidates) {
+    const base = tag.trim().toLowerCase().split(/[-_]/)[0];
+    if (base === "en" || base === "de") return base;
+  }
+  return "en";
+}
+
 /**
  * Resolves the language to use at startup. A persisted tag is restored only when
- * it exists in the current manifest; otherwise we fall back to English and report
- * the stale value so the UI can explain the change.
+ * it exists in the current manifest; otherwise the browser language is used when
+ * it is English or German, falling back to English. A stale preference is reported
+ * so the UI can explain the change.
  */
 export function resolveInitialLanguage(
   manifest: readonly BundledSpellLanguage[],
   preference: string | null = readLanguagePreference(),
+  browserLanguages: readonly string[] = readBrowserLanguages(),
 ): LanguagePreferenceResult {
   const available = new Set(manifest.map((entry) => entry.code));
   if (preference && available.has(preference)) {
     return { code: preference, fallbackFrom: null, storageFailed: false };
   }
+  const detected = detectBrowserLanguage(browserLanguages);
   return {
-    code: "en",
+    code: available.has(detected) ? detected : "en",
     fallbackFrom: preference,
     storageFailed: false,
   };

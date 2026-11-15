@@ -77,8 +77,7 @@ export const en = {
   language: {
     pickerTrigger: "Spell data language: {{language}}",
     pickerList: "Spell data languages",
-    fallback:
-      'The previously selected language "{{code}}" is no longer available. Switched to English.',
+    fallback: 'The previously selected language "{{code}}" is no longer available.',
     loadFailed: 'Failed to load language "{{code}}". Staying on the current language.',
     preferenceFailed:
       "Language changed for this session, but the preference could not be saved and will not survive a reload.",

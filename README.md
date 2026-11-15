@@ -22,7 +22,8 @@ paper. All data stays in your browser unless you export it as JSON.
   stored across reloads.
 - Work offline after the app shell and bundled data are cached. The interface is localized in
   English and German and follows the selected spell-data language; a language without a UI
-  catalog keeps its spell data and uses the English interface.
+  catalog keeps its spell data and uses the English interface. On first visit the spell-data
+  language follows the browser when it is English or German and otherwise starts in English.
 
 ## Quick start
 

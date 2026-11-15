@@ -64,6 +64,7 @@ import {
 } from "@/services/data/load.ts";
 import {
   clearLanguagePreference,
+  detectBrowserLanguage,
   readLanguagePreference,
   resolveInitialLanguage,
   writeLanguagePreference,
@@ -265,7 +266,9 @@ function reportQueryFailure<T>(label: string, error: unknown, fallback: T): T {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [manifest, setManifest] = useState<BundledSpellLanguage[]>([]);
-  const [language, setLanguage] = useState<string>("en");
+  const [language, setLanguage] = useState<string>(
+    () => readLanguagePreference() ?? detectBrowserLanguage(),
+  );
   const [languageStatus, setLanguageStatus] = useState<LanguageStatus>("loading");
   const [languageNotice, setLanguageNotice] = useState<MessageDescriptor | null>(null);
   const [datasets, setDatasets] = useState<Record<string, Spell[]>>({});

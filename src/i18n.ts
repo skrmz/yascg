@@ -2,7 +2,7 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { en } from "./locales/en.ts";
 import { de } from "./locales/de.ts";
-import { readLanguagePreference } from "./services/data/language.ts";
+import { detectBrowserLanguage, readLanguagePreference } from "./services/data/language.ts";
 
 export const UI_LOCALES = ["en", "de"] as const;
 
@@ -25,7 +25,7 @@ const resources = {
   de: { translation: de },
 } as const;
 
-const initialUiLocale = toUiLocale(readLanguagePreference() ?? "en");
+const initialUiLocale = toUiLocale(readLanguagePreference() ?? detectBrowserLanguage());
 
 void i18n.use(initReactI18next).init({
   resources,

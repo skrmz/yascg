@@ -62,6 +62,34 @@ test("a persisted German preference initializes the document and full chrome in 
   await expect(page.getByText("339 Ergebnisse")).toBeVisible();
 });
 
+test.describe("browser language default", () => {
+  test.use({ locale: "de-DE" });
+
+  test("starts in German when the browser prefers German and no preference is stored", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "de");
+    await expect(page.getByRole("region", { name: "Zauberbibliothek" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Sprache der Zauber/ })).toBeVisible();
+  });
+});
+
+test.describe("unsupported browser language default", () => {
+  test.use({ locale: "fr-FR" });
+
+  test("starts in English when the browser language is neither English nor German", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.getByRole("region", { name: "Spell library" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Spell data language/ })).toBeVisible();
+  });
+});
+
 test("German localizes about, import/export and print dialogs", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("spellCards.language", "de"));
   await page.goto("/");

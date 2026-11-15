@@ -76,8 +76,7 @@ export const de = {
   language: {
     pickerTrigger: "Sprache der Zauber: {{language}}",
     pickerList: "Sprachen der Zauber",
-    fallback:
-      'Die zuvor ausgewählte Sprache "{{code}}" ist nicht mehr verfügbar. Auf Englisch umgestellt.',
+    fallback: 'Die zuvor ausgewählte Sprache "{{code}}" ist nicht mehr verfügbar.',
     loadFailed:
       'Die Sprache "{{code}}" konnte nicht geladen werden. Die aktuelle Sprache bleibt aktiv.',
     preferenceFailed:

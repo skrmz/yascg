@@ -315,8 +315,11 @@ Product-level switching and confirmation behavior is owned by
   replaced with a generic localized message. Import validation may expose deliberately selected
   field paths and constraints within localized framing, but never raw exception text.
 - The initial locale is seeded synchronously from the stored preference
-  (`spellCards.language`) before first paint. Initial data loading, unsupported preferences,
-  retry, and interactive switches keep the last committed language until a new dataset is ready.
+  (`spellCards.language`) before first paint. Without a stored preference, the browser's
+  preferred language selects `de` or `en`; unsupported browser languages use `en`
+  (`detectBrowserLanguage` in `src/services/data/language.ts`). Initial data loading,
+  unsupported preferences, retry, and interactive switches keep the last committed language
+  until a new dataset is ready.
   `document.documentElement.lang` follows the resolved UI locale (`applyDocumentLanguage` in
   `src/i18n.ts`).
 - Bundled, unmodified SRD content carries its actual dataset language via
