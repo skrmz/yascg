@@ -320,6 +320,7 @@
   --card-ink: #211e1a;
   --card-rule: #c2b9aa;
   gap: 0;
+  padding: 0.6rem;
   color: var(--card-ink);
   border: 0.75pt solid #625b50;
   border-radius: 0.045in;
@@ -327,7 +328,7 @@
 }
 
 /* Fine inset border: decorative only, does not affect layout. */
-.spell-card-compact::before {
+/* .spell-card-compact::before {
   content: "";
   position: absolute;
   inset: 0.035in;
@@ -335,7 +336,7 @@
   border-radius: 0.015in;
   pointer-events: none;
   z-index: -1;
-}
+} */
 
 .spell-card-compact[data-school="abjuration"] {
   --compact-accent: #3f5d8a;
@@ -400,20 +401,49 @@
 }
 
 .compact-level {
-  display: inline-flex;
+  position: relative;
+  display: grid;
+  place-items: center;
+
   flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
   width: 0.24in;
   height: 0.24in;
+  box-sizing: border-box;
+
+  padding: 0;
   border: 0;
   border-radius: 50%;
-  color: #fff;
-  font-size: 12pt;
-  font-weight: 700;
-  line-height: 1;
+
   background: var(--compact-accent);
+  color: #fff;
+}
+
+.compact-level::after {
+  content: "";
+  position: absolute;
+  inset: 0.024in;
+
+  border: 0.7pt solid currentColor;
+  border-radius: 50%;
+
+  pointer-events: none;
+}
+
+.compact-level-digit {
+  display: block;
+
   font-family: var(--font-card-title);
+  font-size: 10.5pt;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+
+  /*
+   * Optical correction: Vollkorn's ascent/descent place the line-box center
+   * ~0.08em above the digit ink center, so grid centering leaves the glyph
+   * visibly high. Nudge the glyph down to center its cap-height ink.
+   */
+  transform: translateY(1.25pt);
 }
 
 .compact-name {
@@ -504,7 +534,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.05in;
+  gap: 0.1in;
   margin-top: 0.03in;
   font-size: 7pt;
 }
@@ -512,6 +542,7 @@
 .compact-component-group {
   display: inline-flex;
   flex: 0 0 auto;
+  gap: 0.02in;
 }
 
 .compact-component-box,

@@ -15,7 +15,7 @@ import { SourceBadge } from "@/ui/Badge.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { CustomSpellForm } from "./CustomSpellForm.tsx";
 import { SpellDetailsDialog } from "./SpellDetailsDialog.tsx";
-import { PreviewFrame } from "./PreviewFrame.tsx";
+import { PreviewFrame, type PreviewScaleMode } from "./PreviewFrame.tsx";
 
 interface CopyDraftFlow {
   draft: Spell;
@@ -57,6 +57,9 @@ export function DetailsPane() {
   const [copyDraft, setCopyDraft] = useState<CopyDraftFlow | null>(null);
   const [copyConfirmation, setCopyConfirmation] = useState<CopyConfirmationFlow | null>(null);
   const [replacing, setReplacing] = useState(false);
+  // Owned here so switching spells, which briefly unmounts the preview while
+  // the card is measured, keeps the chosen scale mode.
+  const [previewMode, setPreviewMode] = useState<PreviewScaleMode>("physical");
   const copyDraftRef = useRef<CopyDraftFlow | null>(null);
   const replacingRef = useRef(false);
 
@@ -330,7 +333,7 @@ export function DetailsPane() {
         </div>
 
         {previewReady && fit.result ? (
-          <PreviewFrame>
+          <PreviewFrame mode={previewMode} onModeChange={setPreviewMode}>
             {fit.result.pages.map((pageBlocks, index) => (
               <CardView
                 key={`${spell.id}-${index}`}

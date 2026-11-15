@@ -2,10 +2,17 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { NativeSelect } from "@/ui/Field.tsx";
 
+export type PreviewScaleMode = "physical" | "fit";
+
+interface PreviewFrameProps {
+  mode: PreviewScaleMode;
+  onModeChange: (mode: PreviewScaleMode) => void;
+  children: ReactNode[];
+}
+
 /** Transform only screen cards; the inner physical card and fit inputs stay unchanged. */
-export function PreviewFrame({ children }: { children: ReactNode[] }) {
+export function PreviewFrame({ mode, onModeChange, children }: PreviewFrameProps) {
   const { t } = useTranslation();
-  const [mode, setMode] = useState("physical");
   const [width, setWidth] = useState(240);
   const frame = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -31,7 +38,7 @@ export function PreviewFrame({ children }: { children: ReactNode[] }) {
         <NativeSelect
           className="h-8 w-auto"
           value={mode}
-          onChange={(event) => setMode(event.target.value)}
+          onChange={(event) => onModeChange(event.target.value as PreviewScaleMode)}
         >
           <option value="physical">{t("details.previewPhysical")}</option>
           <option value="fit">{t("details.previewFit")}</option>

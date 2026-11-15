@@ -198,7 +198,7 @@ export function CompactCardView({
         <header className="compact-header">
           <div className="compact-title-row">
             <span className="compact-level" aria-label={levelLabel} title={levelLabel}>
-              {spell.level}
+              <span className="compact-level-digit">{spell.level}</span>
             </span>
             <h2 className="compact-name" title={spell.name}>
               {spell.name}

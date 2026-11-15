@@ -180,6 +180,33 @@ describe("DetailsPane preview-only default layout", () => {
     expect(second).not.toBe(first);
   });
 
+  it("keeps the preview scale mode when the selected spell changes", () => {
+    holder.spell = makeSpell({ id: "srd-fireball", name: "Fireball" });
+    holder.fit = {
+      pages: [[]],
+      fontPt: 8.5,
+      truncated: false,
+      overflow: false,
+    };
+    const { rerender } = render(<DetailsPane />);
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "fit" } });
+    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("fit");
+
+    holder.spell = makeSpell({ id: "srd-light", name: "Light" });
+    holder.fit = null;
+    rerender(<DetailsPane />);
+    expect(screen.queryByRole("combobox")).toBeNull();
+
+    holder.fit = {
+      pages: [[]],
+      fontPt: 8.5,
+      truncated: false,
+      overflow: false,
+    };
+    rerender(<DetailsPane />);
+    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("fit");
+  });
+
   it("opens the details dialog without mutating deck state", async () => {
     holder.spell = makeSpell({
       id: "srd-fireball",
