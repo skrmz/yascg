@@ -1882,7 +1882,7 @@
     "components": ["V"],
     "duration": "Unmittelbar",
     "concentration": false,
-    "description": "Du sprichst ein Wort, das von der Macht der Oberen Ebenen erfüllt ist. Jede Kreatur deiner Wahl in Reichweite führt einen Charismarettungswurf aus. Misslingt der Wurf, so erleidet ein Ziel mit höchstens 50 Trefferpunkten einen Effekt gemäß seiner aktuellen Trefferpunkte wie in der Tabelle „Effekte von Göttliches Wort“ gezeigt. Unabhängig von ihren Trefferpunkten werden Ziele, die celestische Wesen, Elementare, Feenwesen oder Unholde sind und deren Rettungswurf misslingt, auf ihre Heimatebene verbannt, sofern sie sich nicht bereits dort befinden. In den nächsten 24 Stunden"
+    "description": "Du sprichst ein Wort, das von der Macht der Oberen Ebenen erfüllt ist. Jede Kreatur deiner Wahl in Reichweite führt einen Charismarettungswurf aus. Misslingt der Wurf, so erleidet ein Ziel mit höchstens 50 Trefferpunkten einen Effekt gemäß seiner aktuellen Trefferpunkte wie in der Tabelle „Effekte von Göttliches Wort“ gezeigt. Unabhängig von ihren Trefferpunkten werden Ziele, die celestische Wesen, Elementare, Feenwesen oder Unholde sind und deren Rettungswurf misslingt, auf ihre Heimatebene verbannt, sofern sie sich nicht bereits dort befinden. In den nächsten 24 Stunden können sie nur mit dem Zauber Wunsch auf die aktuelle Ebene zurückkehren.\nEffekte von Göttliches Wort | Trefferpunkte Effekt\n0-20 | Das Ziel stirbt.\n21-30 | Das Ziel ist eine Stunde lang betäubt, blind und taub.\n31-40 | Das Ziel ist zehn Minuten lang blind und taub.\n41-50 | Das Ziel ist eine Minute lang taub."
   },
   {
     "index": "dominate-beast",
