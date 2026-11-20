@@ -461,13 +461,13 @@ introduce a second vertical scroll container or page-level horizontal overflow.
   only for the editable-copy flow, which passes the bundled SRD id the copy was created from. New
   spells, ordinary custom edits, and the restricted SRD override editor do not show it.
   - The action is available only when the pre-generated sidecar for the language captured when
-    the editor opened contains a fresh entry for that id. Otherwise the button is visible but
+    the editor opened contains an entry for that ID. Otherwise the button is visible but
     disabled with one localized hint; it never uses another locale as a fallback and never shows
     internal failure reasons.
   - Applying replaces `description` and, when the entry supplies non-empty higher-level text,
     `higherLevels` with the reviewed text; metadata and all other fields are unchanged. Text that
-    is already identical produces a no-change status and pushes no undo snapshot. One apply pushes
-    exactly one undo snapshot.
+    is already identical produces a no-change status and pushes no undo snapshot. An apply that changes text
+    pushes one snapshot of the changed fields.
   - **Undo** is shared with **Abbreviate** and remains last-in-first-out. The undo label and status
     reflect the top snapshot's action, so applying then undoing interleaved actions restores the
     expected text in reverse order. Saving stores the applied text through the ordinary custom
