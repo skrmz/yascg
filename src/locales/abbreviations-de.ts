@@ -10,6 +10,7 @@ export const abbreviationsDe = {
   wisdom: { full: "Weisheit", short: "WE" },
   charisma: { full: "Charisma", short: "CH" },
   difficultyClass: { full: "Schwierigkeitsgrad", short: "SG" },
+  challengeRating: { full: "Herausforderungsgrad", short: "HG" },
   savingThrow: { full: "Rettungswurf", short: "RW" },
   strengthCheck: { full: "Stärkewurf", short: "ST-Wurf" },
   strengthSavingThrow: { full: "Stärkerettungswurf", short: "ST-RW" },

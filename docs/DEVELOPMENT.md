@@ -12,6 +12,7 @@ and printing settings, see the [README](../README.md).
 | [Product specification](specs/MAIN-spec.md)                   | Current behavioral contract and verification matrix                                                                       |
 | **This guide**                                                | Contributor setup, commands, module map, implementation details, debugging, tests                                         |
 | [SRD data pipeline](srd-data-pipeline.md)                     | Raw source shape, normalization, translations, generated artifacts, migrations, subclass reconciliation, drift protection |
+| [Short-description import guide](short-descriptions-import.md) | Artifact validation, SRD snapshot refresh, and reviewed JSON imports |
 | [Cloudflare deployment guide](cloudflare-deployment-guide.md) | Workers Static Assets configuration, Workers Builds, deployment operations, `compatibility_date`                          |
 | [Custom spell import guide](custom-spell-import-guide.md)     | Custom-spell JSON format, examples, collisions, SRD override import/export                                                |
 | [Official subclass catalog](subclasses.md)                    | Canonical official 2024 subclass list                                                                                     |
@@ -134,7 +135,9 @@ Paths are relative to the repository root.
   `srdSpellOverrides`) with compare-and-swap revisions, saved-snapshot revision tokens,
   deck-entry normalization, and advisory `BroadcastChannel` notifications.
 - `src/services/data/` — manifest/dataset loading, language preference, search and filters, and
-  deck reference resolution.
+  deck reference resolution. The loader also fetches and validates the optional short-description
+  sidecar per locale. A failed fetch produces an empty map.
+- `src/domain/short-descriptions.ts` — runtime entry schema and canonical SRD ID rules.
 - `src/markdown/` — safe `marked` token walker (raw HTML dropped except `<br>`, links as text;
   authored newlines render as line breaks), the shared
   `BlockNode` renderer including structured component-description markers, headings,
@@ -439,6 +442,14 @@ drift protection. Day-to-day integration points:
   `src/services/data/load.ts`. Do not add language-specific adapters or weaken the raw schema;
   unsupported source structures fail the build with a filename and, when available, the
   offending spell index.
+
+## Short-description integration
+
+The editable-copy flow in DetailsPane passes the original canonical ID and captured editor language
+for candidate lookup. The provider loads each locale map asynchronously after committing its dataset
+and clears the maps on data-cache recovery. Production builds serve the committed sidecars from
+Vite's public directory and include both files in the Workbox JSON precache. See the
+[import guide](short-descriptions-import.md) for maintenance and verification.
 
 ## Local verification
 

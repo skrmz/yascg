@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
 async function cachedPaths(page: import("@playwright/test").Page): Promise<string[]> {
@@ -23,7 +25,7 @@ async function cardBackgroundPath(
   });
 }
 
-test("precaches shell, manifest, datasets, fonts, and card backgrounds, then works offline", async ({
+test("precaches shell, datasets, sidecars, fonts, and card backgrounds, then works offline", async ({
   page,
   context,
 }) => {
@@ -65,13 +67,16 @@ test("precaches shell, manifest, datasets, fonts, and card backgrounds, then wor
           en: paths.includes("/spells.srd.json"),
           de: paths.includes("/spells.srd.de.json"),
           manifest: paths.includes("/spell-languages.json"),
+          sidecars: ["en", "de"].every((locale) =>
+            paths.includes("/spell-short-descriptions." + locale + ".json"),
+          ),
           font: paths.some((path) => path.endsWith(".woff2")),
           backgrounds: backgroundPaths.every((path) => paths.includes(path)),
         };
       },
       { timeout: 30_000 },
     )
-    .toEqual({ en: true, de: true, manifest: true, font: true, backgrounds: true });
+    .toEqual({ en: true, de: true, manifest: true, sidecars: true, font: true, backgrounds: true });
 
   await expect(page.getByRole("banner").getByRole("status")).toHaveText("Offline ready");
   await expect(page.getByRole("banner").getByRole("button", { name: "Offline ready" })).toHaveCount(
@@ -104,4 +109,36 @@ test("precaches shell, manifest, datasets, fonts, and card backgrounds, then wor
     .getByRole("option", { name: /Deutsch/ })
     .click();
   await expect(page.getByRole("button", { name: /Deutsch/ })).toBeVisible();
+
+  await page.getByLabel("Zauber suchen").fill("Feuerball");
+  await page
+    .getByRole("button", { name: "Feuerball zum aktiven Deck hinzufügen", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Bearbeitbare Kopie erstellen" }).click();
+  const editor = page.getByRole("dialog", { name: "Bearbeitbare Kopie erstellen" });
+  const apply = editor.getByRole("button", { name: "Kurzbeschreibung anwenden" });
+  await expect(apply).toBeEnabled();
+  await apply.focus();
+  await page.keyboard.press("Enter");
+  const sidecar = JSON.parse(
+    readFileSync("src/data/spell-short-descriptions.de.json", "utf8"),
+  ) as Record<string, { description: string }>;
+  await expect(editor.getByLabel("Beschreibung (Markdown)")).toHaveValue(
+    sidecar["srd-fireball"].description,
+  );
+  await expect(editor.getByRole("status")).toHaveText("Kurzbeschreibung angewendet.");
 });
+
+for (const locale of ["en", "de"]) {
+  test(
+    "Workers preview serves the " + locale + " sidecar with exact bytes",
+    async ({ request }) => {
+      const file = "spell-short-descriptions." + locale + ".json";
+      const response = await request.get("/" + file);
+      expect(response.ok()).toBe(true);
+      expect(response.headers()["content-type"]).toMatch(/^application\/json\b/);
+      const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
+      expect(hash(await response.body())).toBe(hash(readFileSync("src/data/" + file)));
+    },
+  );
+}

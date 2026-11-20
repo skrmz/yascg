@@ -10,6 +10,7 @@ export const abbreviationsEn = {
   wisdom: { full: "wisdom", short: "WIS" },
   charisma: { full: "charisma", short: "CHA" },
   difficultyClass: { full: "difficulty class", short: "DC" },
+  challengeRating: { full: "challenge rating", short: "CR" },
   savingThrow: { full: "saving throw", short: "SAVE" },
   strengthCheck: { full: "strength check", short: "STR check" },
   strengthSavingThrow: { full: "strength saving throw", short: "STR save" },

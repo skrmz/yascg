@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n.ts";
 import { CORE_CLASSES, spellSchema, type Spell } from "@/domain/spells";
+import type { ShortDescription, ShortDescriptionMap } from "@/domain/short-descriptions";
 import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
 import { CustomSpellForm } from "./CustomSpellForm.tsx";
 
@@ -12,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   saveSrdOverride: vi.fn(),
   resetSrdOverride: vi.fn(),
   language: { value: "en" },
+  shortDescriptions: { value: {} as Record<string, ShortDescriptionMap> },
 }));
 
 vi.mock("@/state/AppProvider.tsx", () => ({
@@ -23,8 +25,18 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     get language() {
       return mocks.language.value;
     },
+    get shortDescriptionsByLocale() {
+      return mocks.shortDescriptions.value;
+    },
   }),
 }));
+
+function shortDescriptions(
+  entries: Record<string, ShortDescription>,
+  locale = "en",
+): Record<string, ShortDescriptionMap> {
+  return { [locale]: new Map(Object.entries(entries)) };
+}
 
 function renderForm(spell?: Spell) {
   return render(<CustomSpellForm open onOpenChange={() => {}} spell={spell} />);
@@ -40,6 +52,7 @@ beforeEach(async () => {
   mocks.saveSrdOverride.mockReset();
   mocks.resetSrdOverride.mockReset();
   mocks.language.value = "en";
+  mocks.shortDescriptions.value = {};
   await i18n.changeLanguage("en");
 });
 
@@ -670,5 +683,258 @@ describe("CustomSpellForm abbreviation", () => {
     expect(screen.getByLabelText("Casting Time")).not.toBeNull();
     expect(screen.getByLabelText("Range")).not.toBeNull();
     expect(screen.getByLabelText("Duration")).not.toBeNull();
+  });
+});
+
+describe("CustomSpellForm short descriptions", () => {
+  const SOURCE_ID = "srd-fireball";
+  const applyButton = () => screen.getByRole("button", { name: "Apply short description" });
+  const undoShortButton = () => screen.getByRole("button", { name: "Undo short description" });
+  const undoAbbreviationButton = () => screen.getByRole("button", { name: "Undo abbreviation" });
+  const descriptionInput = () => screen.getByLabelText("Description (Markdown)");
+  const higherLevelsInput = () => screen.getByLabelText("Higher levels (Markdown, optional)");
+
+  function renderCopyForm(
+    sourceSpellId: string | null = SOURCE_ID,
+    description = "Original description.",
+  ) {
+    return render(
+      <CustomSpellForm
+        open
+        onOpenChange={() => {}}
+        spell={makeCustomSpell({
+          id: "copy-1",
+          name: "Fireball",
+          description: [description],
+          higherLevels: ["Original higher levels."],
+        })}
+        editableCopy
+        sourceSpellId={sourceSpellId ?? undefined}
+      />,
+    );
+  }
+
+  it("is absent for new spells, ordinary edits, SRD overrides, and copies without an origin", () => {
+    const fresh = renderForm();
+    expect(screen.queryByRole("button", { name: "Apply short description" })).toBeNull();
+    fresh.unmount();
+
+    const custom = renderForm(makeCustomSpell());
+    expect(screen.queryByRole("button", { name: "Apply short description" })).toBeNull();
+    custom.unmount();
+
+    const srd = renderForm(makeSpell());
+    expect(screen.queryByRole("button", { name: "Apply short description" })).toBeNull();
+    srd.unmount();
+
+    renderCopyForm(null);
+    expect(screen.queryByRole("button", { name: "Apply short description" })).toBeNull();
+  });
+
+  it("is visible but disabled with a localized hint when no entry exists", () => {
+    renderCopyForm();
+    const button = applyButton() as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute("aria-describedby")).toBe("cs-short-description-hint");
+    expect(document.getElementById("cs-short-description-hint")?.textContent).toBe(
+      "Not available for this spell or language.",
+    );
+  });
+
+  it("stays unavailable when the captured language has no sidecar or the entry", () => {
+    mocks.shortDescriptions.value = shortDescriptions({ "srd-other": { description: "Other." } });
+    renderCopyForm();
+    expect((applyButton() as HTMLButtonElement).disabled).toBe(true);
+
+    mocks.shortDescriptions.value = shortDescriptions(
+      { [SOURCE_ID]: { description: "German text." } },
+      "de",
+    );
+    expect((applyButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("is enabled for a known entry", () => {
+    mocks.shortDescriptions.value = shortDescriptions({ [SOURCE_ID]: { description: "Short." } });
+    renderCopyForm();
+    expect((applyButton() as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("replaces only the description and preserves the draft higher levels", async () => {
+    const user = userEvent.setup();
+    mocks.shortDescriptions.value = shortDescriptions({
+      [SOURCE_ID]: { description: "Short description." },
+    });
+    renderCopyForm();
+
+    await user.click(applyButton());
+
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("Short description.");
+    expect((higherLevelsInput() as HTMLTextAreaElement).value).toBe("Original higher levels.");
+    expect(screen.getByRole("status").textContent).toBe("Short description applied.");
+    expect((undoShortButton() as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("replaces both fields when the entry supplies higher levels", async () => {
+    const user = userEvent.setup();
+    mocks.shortDescriptions.value = shortDescriptions({
+      [SOURCE_ID]: { description: "Short description.", higherLevels: "Short higher levels." },
+    });
+    renderCopyForm();
+
+    await user.click(applyButton());
+
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("Short description.");
+    expect((higherLevelsInput() as HTMLTextAreaElement).value).toBe("Short higher levels.");
+  });
+
+  it("pushes no snapshot when applying changes nothing", async () => {
+    const user = userEvent.setup();
+    mocks.shortDescriptions.value = shortDescriptions({
+      [SOURCE_ID]: {
+        description: "Original description.",
+        higherLevels: "Original higher levels.",
+      },
+    });
+    renderCopyForm();
+
+    await user.click(applyButton());
+
+    expect(screen.getByRole("status").textContent).toBe(
+      "The short description already matches the current text.",
+    );
+    expect((undoAbbreviationButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("pushes exactly one snapshot per apply, restorable by a single undo", async () => {
+    const user = userEvent.setup();
+    mocks.shortDescriptions.value = shortDescriptions({
+      [SOURCE_ID]: { description: "Short description.", higherLevels: "Short higher levels." },
+    });
+    renderCopyForm();
+
+    await user.click(applyButton());
+    await user.click(undoShortButton());
+
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("Original description.");
+    expect((higherLevelsInput() as HTMLTextAreaElement).value).toBe("Original higher levels.");
+    expect(screen.getByRole("status").textContent).toBe("Short description undone.");
+    expect((undoAbbreviationButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("undoes abbreviation then short description in LIFO order", async () => {
+    const user = userEvent.setup();
+    mocks.shortDescriptions.value = shortDescriptions({
+      [SOURCE_ID]: { description: "Short description." },
+    });
+    renderCopyForm(SOURCE_ID, "bonus action");
+
+    await user.click(screen.getByRole("button", { name: "Abbreviate" }));
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("BA");
+
+    await user.click(applyButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("Short description.");
+    expect(screen.getByRole("button", { name: "Undo short description" })).not.toBeNull();
+
+    await user.click(undoShortButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("BA");
+    expect(screen.getByRole("status").textContent).toBe("Short description undone.");
+    expect(screen.getByRole("button", { name: "Undo abbreviation" })).not.toBeNull();
+
+    await user.click(undoAbbreviationButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("bonus action");
+    expect(screen.getByRole("status").textContent).toBe("Abbreviation undone.");
+    expect((undoAbbreviationButton() as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("undoes short description then abbreviation in LIFO order", async () => {
+    const user = userEvent.setup();
+    mocks.shortDescriptions.value = shortDescriptions({
+      [SOURCE_ID]: { description: "Short description." },
+    });
+    renderCopyForm(SOURCE_ID, "bonus action");
+
+    await user.click(applyButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("Short description.");
+
+    await user.click(screen.getByRole("button", { name: "Abbreviate" }));
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("Short description.");
+
+    await user.click(undoAbbreviationButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("Short description.");
+
+    await user.click(undoShortButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("bonus action");
+  });
+
+  it("saves the applied text and leaves metadata unchanged", async () => {
+    const user = userEvent.setup();
+    mocks.saveCustomSpell.mockResolvedValue(makeCustomSpell());
+    mocks.shortDescriptions.value = shortDescriptions({
+      [SOURCE_ID]: { description: "Short description.", higherLevels: "Short higher levels." },
+    });
+    renderCopyForm();
+
+    await user.click(applyButton());
+    await user.click(screen.getByRole("button", { name: "Save spell" }));
+
+    const saved = mocks.saveCustomSpell.mock.calls[0][0] as Spell;
+    expect(saved.description).toEqual(["Short description."]);
+    expect(saved.higherLevels).toEqual(["Short higher levels."]);
+    expect(saved.name).toBe("Fireball");
+    expect(saved.level).toBe(1);
+    expect(saved.school).toBe("Evocation");
+    expect(saved.source).toBe("Custom");
+    expect(spellSchema.safeParse(saved).success).toBe(true);
+  });
+
+  it("enables the action when the sidecar arrives after the dialog opened", () => {
+    const { rerender } = renderCopyForm();
+    expect((applyButton() as HTMLButtonElement).disabled).toBe(true);
+
+    mocks.shortDescriptions.value = shortDescriptions({ [SOURCE_ID]: { description: "Short." } });
+    rerender(
+      <CustomSpellForm
+        open
+        onOpenChange={() => {}}
+        spell={makeCustomSpell({ id: "copy-1", name: "Fireball" })}
+        editableCopy
+        sourceSpellId={SOURCE_ID}
+      />,
+    );
+
+    expect((applyButton() as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("keeps using the captured language after the live language changes", async () => {
+    const user = userEvent.setup();
+    mocks.shortDescriptions.value = {
+      ...shortDescriptions({ [SOURCE_ID]: { description: "English short text." } }, "en"),
+      ...shortDescriptions({ [SOURCE_ID]: { description: "Deutscher Kurztext." } }, "de"),
+    };
+    const copy = makeCustomSpell({ id: "copy-1", name: "Fireball", description: ["Original."] });
+    const { rerender } = render(
+      <CustomSpellForm
+        open
+        onOpenChange={() => {}}
+        spell={copy}
+        editableCopy
+        sourceSpellId={SOURCE_ID}
+      />,
+    );
+    expect((applyButton() as HTMLButtonElement).disabled).toBe(false);
+
+    mocks.language.value = "de";
+    rerender(
+      <CustomSpellForm
+        open
+        onOpenChange={() => {}}
+        spell={copy}
+        editableCopy
+        sourceSpellId={SOURCE_ID}
+      />,
+    );
+
+    await user.click(applyButton());
+    expect((descriptionInput() as HTMLTextAreaElement).value).toBe("English short text.");
   });
 });

@@ -156,13 +156,17 @@ describe("parseMarkdown safety", () => {
     expect(markup).toContain("quoted item");
   });
 
-  it("parses tables", () => {
+  it("parses and renders GFM tables", () => {
     const blocks = parseMarkdown("| A | B |\n| --- | --- |\n| 1 | 2 |");
     expect(blocks[0].type).toBe("table");
     if (blocks[0].type === "table") {
       expect(blocks[0].header).toHaveLength(2);
       expect(blocks[0].rows).toHaveLength(1);
     }
+    const markup = renderToStaticMarkup(<BlockList blocks={blocks} />);
+    expect(markup).toContain('<table class="card-table">');
+    expect(markup).toContain("<th>A</th>");
+    expect(markup).toContain("<td>2</td>");
   });
 
   it("keeps emphasis structure", () => {

@@ -155,8 +155,7 @@ test("selects and resets a card background for the preview", async ({ page }) =>
   );
 
   await page.reload();
-  await page.getByLabel("Search spells").fill("Fireball");
-  await page.getByRole("list", { name: "Spell results" }).getByRole("button").first().click();
+  await page.getByRole("button", { name: "Show Fireball in details" }).click();
   await expect(page.locator(".card-preview-page").first()).toBeVisible();
 
   await expect(page.getByLabel("Card background")).toHaveValue("none");

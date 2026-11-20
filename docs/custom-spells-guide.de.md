@@ -21,6 +21,17 @@ Der Editor für eigene Zauber bietet **Abkürzen** und **Abkürzung rückgängig
 - **Abkürzung rückgängig machen** stellt die vom letzten Vorgang geänderten Felder wieder her, solange der Editor geöffnet ist. Spätere manuelle Änderungen an diesen Feldern werden dabei überschrieben; andere Felder bleiben unberührt.
 - Beim Speichern wird der abgekürzte Text gespeichert. Es gibt keine gespeicherte Sicherung und keine automatische Rückabkürzung; bewahre den ursprünglichen Wortlaut bei Bedarf separat auf.
 
+### Eine vorbereitete Kurzbeschreibung anwenden
+
+Wenn du aus einem mitgelieferten SRD-Zauber eine bearbeitbare Kopie erstellst, bietet der Editor **Kurzbeschreibung anwenden** für Kopien an, deren Zauber in der beim Öffnen erfassten Sprache einen geprüften Kurztext besitzt. Der Text ist in der App enthalten; im Browser wird nichts erzeugt, und es verlassen keine Daten den Browser.
+
+1. Füge den SRD-Zauber zum aktiven Deck hinzu und wähle **Bearbeitbare Kopie erstellen**.
+2. Wähle **Kurzbeschreibung anwenden**. Beschreibung und, sofern vorhanden, höhere Grade werden durch den kürzeren geprüften Text ersetzt. Ist für diesen Zauber oder diese Sprache kein Kurztext vorhanden, ist die Schaltfläche deaktiviert und zeigt einen kurzen Hinweis.
+3. Wähle **Kurzbeschreibung rückgängig machen**, um den vorherigen Text wiederherzustellen, solange der Editor geöffnet ist. Die Rückgängig-Funktion arbeitet gemeinsam mit **Abkürzen** nach dem LIFO-Prinzip; du kannst beide Aktionen mischen und in umgekehrter Reihenfolge zurücknehmen.
+4. Wähle **Zauber speichern** und entscheide, ob der Eintrag im aktiven Deck ersetzt wird. Vorschau und gedruckte Karte verwenden den gekürzten Text.
+
+Diese Aktion gibt es nur für bearbeitbare Kopien, die in der aktuellen Sitzung erstellt wurden. Eine gespeicherte eigene Kopie enthält keinen Verweis auf ihren SRD-Ursprung; beim erneuten Öffnen über **Bearbeiten** wird **Kurzbeschreibung anwenden** daher nicht angeboten. Erstelle stattdessen eine neue bearbeitbare Kopie aus dem SRD-Zauber.
+
 ## Eigene Zauber importieren und exportieren
 
 **Import:**
