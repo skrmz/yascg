@@ -275,10 +275,10 @@ This section maps those contracts to the implementation.
   mutation dialogs and drafts when it observes a replacement. IndexedDB checks the generation
   before each mutation. Successful collection writes rotate a separate review change token in
   the same transaction.
-- `src/io/complete-backup.ts` owns the versioned JSON contract and the restore review. V1
+- `src/io/complete-backup.ts` owns the versioned JSON contract and the restore review. The wire format
   encodes an explicitly stored `undefined` optional property as JSON `null`, and leaves
   absent properties absent. Confirmation compares the reviewed change token and atomically
-  replaces all four stores and both tokens.
+  replaces all collection stores, the selected personal image ID, and both tokens.
 - Database upgrades 6 and 7 move existing records to guarded stores and reserve the old store
   names with incompatible key paths. Older Dexie clients can reopen with a versionless
   connection, so the old store names must stay isolated from the current collection.
@@ -402,8 +402,9 @@ settings are in the [README](../README.md#printing). Implementation details:
 - `src/cards/backgrounds.ts` owns `CardBackground` (a file-name string), the build-time
   `import.meta.glob` discovery of `src/assets/images/card-backgrounds/*.{jpg,jpeg}`,
   `CARD_BACKGROUNDS` option objects, `DEFAULT_CARD_BACKGROUND`, label truncation, URL/style
-  helpers, normalization, and `loadCardBackground`. `AppProvider` exposes in-memory
-  `cardBackground`/`setCardBackground`; nothing is persisted. `CardView` applies
+  helpers, normalization, and `loadCardBackground`. `src/cards/personal-backgrounds.ts` prepares
+  personal JPEGs locally. The collection snapshot resolves the saved image ID to a data URL for
+  preview and print. `CardView` applies
   `data-card-background` plus the `--card-background-image` custom property, `PrintDialog` awaits
   `loadCardBackground` before `window.print()`, and backgrounds are excluded from fit inputs, the
   hidden measurement card, and cache keys. A development file add/remove reloads through Vite's

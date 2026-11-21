@@ -3,6 +3,7 @@ export type ChangeKind =
   | "saved-decks"
   | "custom-spells"
   | "srd-overrides"
+  | "personal-backgrounds"
   | "collection";
 
 export interface ChangeMessage {

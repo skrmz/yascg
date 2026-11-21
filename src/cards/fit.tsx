@@ -520,6 +520,7 @@ export interface UseDeckCardFitsResult {
   results: Map<string, DeckFitEntry>;
   ready: boolean;
   error: boolean;
+  failedKeys: ReadonlySet<string>;
   measureLayer: ReactNode;
 }
 
@@ -528,13 +529,16 @@ interface DeckFitsState {
   results: Map<string, DeckFitEntry>;
   ready: boolean;
   error: boolean;
+  failedKeys: ReadonlySet<string>;
 }
 
+const NO_FAILED_KEYS: ReadonlySet<string> = new Set();
 const EMPTY_DECK_FITS_STATE: DeckFitsState = {
   signature: null,
   results: new Map(),
   ready: false,
   error: false,
+  failedKeys: NO_FAILED_KEYS,
 };
 
 /** Fits every distinct deck entry sequentially with one hidden measuring card. */
@@ -575,59 +579,65 @@ export function useDeckCardFits(
   useEffect(() => {
     const current = itemsRef.current;
     if (!enabled || current.length === 0) {
-      setFitsState({ signature, results: new Map(), ready: false, error: false });
+      setFitsState({ ...EMPTY_DECK_FITS_STATE, signature });
       return;
     }
     let cancelled = false;
-    setFitsState({ signature, results: new Map(), ready: false, error: false });
+    setFitsState({ ...EMPTY_DECK_FITS_STATE, signature });
     const run = async () => {
       try {
         await waitForCardFonts();
         if (cancelled) return;
         const next = new Map<string, DeckFitEntry>();
+        const failedKeys = new Set<string>();
         for (const item of current) {
-          const parsedBlocks = parseSpellBody(item.spell, higherLevelsHeading, markers, {
-            markSections: design === "compact",
-          });
-          const presentation =
-            design === "compact" ? buildCompactPresentation(item.spell, parsedBlocks, t) : null;
-          const blocks = presentation ? presentation.blocks : parsedBlocks;
-          const cacheKey = fitCacheKey({
-            spellId: item.spell.id,
-            language,
-            fitMode: item.fitMode,
-            design,
-            contentFingerprint: contentFingerprint(item.spell),
-            blocksFingerprint: blocksFingerprint(blocks),
-          });
-          let computed = fitCache.get(cacheKey);
-          if (!computed) {
-            computed = computeFit(
-              blocks,
-              (candidate, fontPt, continuation, cardCount) =>
-                measure(
-                  item.spell,
-                  design,
-                  presentation,
-                  candidate,
-                  fontPt,
-                  continuation,
-                  cardCount,
-                ),
-              item.fitMode,
-            );
-            fitCache.set(cacheKey, computed);
+          try {
+            const parsedBlocks = parseSpellBody(item.spell, higherLevelsHeading, markers, {
+              markSections: design === "compact",
+            });
+            const presentation =
+              design === "compact" ? buildCompactPresentation(item.spell, parsedBlocks, t) : null;
+            const blocks = presentation ? presentation.blocks : parsedBlocks;
+            const cacheKey = fitCacheKey({
+              spellId: item.spell.id,
+              language,
+              fitMode: item.fitMode,
+              design,
+              contentFingerprint: contentFingerprint(item.spell),
+              blocksFingerprint: blocksFingerprint(blocks),
+            });
+            let computed = fitCache.get(cacheKey);
+            if (!computed) {
+              computed = computeFit(
+                blocks,
+                (candidate, fontPt, continuation, cardCount) =>
+                  measure(
+                    item.spell,
+                    design,
+                    presentation,
+                    candidate,
+                    fontPt,
+                    continuation,
+                    cardCount,
+                  ),
+                item.fitMode,
+              );
+              fitCache.set(cacheKey, computed);
+            }
+            next.set(item.key, { fit: computed, presentation });
+          } catch (cause) {
+            console.error("Failed to measure deck card layout:", cause);
+            failedKeys.add(item.key);
           }
-          next.set(item.key, { fit: computed, presentation });
           if (cancelled) return;
         }
         if (!cancelled) {
-          setFitsState({ signature, results: next, ready: true, error: false });
+          setFitsState({ signature, results: next, ready: true, error: false, failedKeys });
         }
       } catch (cause) {
         if (!cancelled) {
           console.error("Failed to measure deck card layouts:", cause);
-          setFitsState({ signature, results: new Map(), ready: true, error: true });
+          setFitsState({ ...EMPTY_DECK_FITS_STATE, signature, ready: true, error: true });
         }
       }
     };
@@ -651,6 +661,7 @@ export function useDeckCardFits(
     results: currentState.results,
     ready: currentState.ready,
     error: currentState.error,
+    failedKeys: currentState.failedKeys,
     measureLayer: enabled ? layer : null,
   };
 }

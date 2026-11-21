@@ -70,6 +70,8 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     cardDesign: holder.cardDesign,
     setCardDesign: holder.setCardDesign,
     cardBackground: holder.cardBackground,
+    personalBackgrounds: [],
+    collectionGeneration: "initial",
     setCardBackground: holder.setCardBackground,
   }),
 }));

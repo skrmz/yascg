@@ -6,7 +6,11 @@ import type { CharacterClass, SpellComponentKey } from "@/domain/spells";
 import type { BlockNode } from "@/markdown/parse.ts";
 import { Block, Inline } from "@/markdown/render.tsx";
 import type { CardViewProps } from "@/cards/Card.tsx";
-import { DEFAULT_CARD_BACKGROUND, cardBackgroundStyle } from "@/cards/backgrounds.ts";
+import {
+  DEFAULT_CARD_BACKGROUND,
+  cardBackgroundId,
+  cardBackgroundStyle,
+} from "@/cards/backgrounds.ts";
 import type { CompactNote, CompactPresentation } from "@/cards/compact.ts";
 import {
   compactNoteId,
@@ -188,7 +192,7 @@ export function CompactCardView({
       className={`spell-card spell-card-compact${
         isContinuation ? " spell-card-continuation" : ""
       }${className ? ` ${className}` : ""}`}
-      data-card-background={background === "none" ? undefined : background}
+      data-card-background={background === "none" ? undefined : cardBackgroundId(background)}
       style={{
         ["--body-font-pt" as string]: `${fontPt}pt`,
         ...cardBackgroundStyle(background),

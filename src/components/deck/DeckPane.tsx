@@ -20,12 +20,13 @@ import { CARD_DESIGN_LABEL_KEYS, CARD_DESIGNS, type CardDesign } from "@/cards/d
 import {
   CARD_BACKGROUND_NONE,
   CARD_BACKGROUNDS,
+  cardBackgroundId,
   cardBackgroundLabel,
 } from "@/cards/backgrounds.ts";
 import { isValidDeckName, normalizeDeckName, type DeckEntry } from "@/domain/deck";
 import type { CardFitMode } from "@/domain/spells";
 import type { EntryResolution } from "@/services/data/resolution.ts";
-import { translateMessage } from "@/locales/messages.ts";
+import { AppError, translateMessage } from "@/locales/messages.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Input, Label, NativeSelect } from "@/ui/Field.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
@@ -42,6 +43,7 @@ import { DeckImportExportDialog } from "@/components/import-export/DeckImportExp
 import { OpenDeckDialog } from "./OpenDeckDialog.tsx";
 import { SaveAsDialog } from "./SaveAsDialog.tsx";
 import { CardLegendDialog } from "./CardLegendDialog.tsx";
+import { PersonalBackgroundsDialog } from "./PersonalBackgroundsDialog.tsx";
 
 interface FlushResult {
   ok: boolean;
@@ -77,6 +79,8 @@ export function DeckPane() {
     setCardDesign,
     cardBackground,
     setCardBackground,
+    personalBackgrounds,
+    collectionGeneration,
   } = useApp();
   const { t } = useTranslation();
 
@@ -96,6 +100,25 @@ export function DeckPane() {
   const [ioOpen, setIoOpen] = useState(false);
   const [ioDirty, setIoDirty] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
+  const [backgroundsOpen, setBackgroundsOpen] = useState(false);
+  const [backgroundBusy, setBackgroundBusy] = useState(false);
+  const [backgroundError, setBackgroundError] = useState<string | null>(null);
+
+  const chooseBackground = async (id: string) => {
+    setBackgroundError(null);
+    setBackgroundBusy(true);
+    try {
+      await setCardBackground(id);
+    } catch (error) {
+      setBackgroundError(
+        error instanceof AppError
+          ? translateMessage(t, error.descriptor)
+          : t("card.background.storageFailed"),
+      );
+    } finally {
+      setBackgroundBusy(false);
+    }
+  };
 
   const editingRef = useRef(false);
   const editSessionRef = useRef<{ revision: number; name: string } | null>(null);
@@ -460,20 +483,47 @@ export function DeckPane() {
           </Button>
         </div>
         <div className="min-w-0">
-          <Label htmlFor="deck-background-select">{t("card.background.label")}</Label>
-          <NativeSelect
-            id="deck-background-select"
-            value={cardBackground}
-            className="mt-1 h-8"
-            onChange={(event) => setCardBackground(event.target.value)}
-          >
-            <option value={CARD_BACKGROUND_NONE}>{t("card.background.none")}</option>
-            {CARD_BACKGROUNDS.map((option) => (
-              <option key={option.id} value={option.id} title={option.id}>
-                {cardBackgroundLabel(option.id)}
-              </option>
-            ))}
-          </NativeSelect>
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1">
+              <Label htmlFor="deck-background-select">{t("card.background.label")}</Label>
+              <NativeSelect
+                id="deck-background-select"
+                value={cardBackgroundId(cardBackground)}
+                className="mt-1 h-8"
+                disabled={backgroundBusy || !collectionGeneration}
+                onChange={(event) => void chooseBackground(event.target.value)}
+              >
+                <option value={CARD_BACKGROUND_NONE}>{t("card.background.none")}</option>
+                {CARD_BACKGROUNDS.map((option) => (
+                  <option key={option.id} value={option.id} title={option.id}>
+                    {cardBackgroundLabel(option.id)}
+                  </option>
+                ))}
+                {personalBackgrounds.length > 0 && (
+                  <optgroup label={t("card.background.personal")}>
+                    {personalBackgrounds.map(({ id, name }) => (
+                      <option key={id} value={id} title={name}>
+                        {t("card.background.personalOption", { name: cardBackgroundLabel(name) })}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </NativeSelect>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={backgroundBusy || !collectionGeneration}
+              onClick={() => setBackgroundsOpen(true)}
+            >
+              {t("card.background.useOwn")}
+            </Button>
+          </div>
+          {backgroundError && (
+            <p role="alert" className="mt-1 text-xs text-red-300">
+              {backgroundError}
+            </p>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">{t("card.background.hint")}</p>
       </div>
@@ -764,6 +814,7 @@ export function DeckPane() {
       </Dialog>
 
       <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
+      {backgroundsOpen && <PersonalBackgroundsDialog onClose={() => setBackgroundsOpen(false)} />}
       <CardLegendDialog open={legendOpen} onOpenChange={setLegendOpen} />
     </section>
   );

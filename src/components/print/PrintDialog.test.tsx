@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { makeEntry } from "@/db/active-deck.ts";
@@ -11,6 +12,7 @@ const holder = vi.hoisted(() => ({
   cardDesign: "classic" as "classic" | "compact",
   cardBackground: "none" as string,
   results: new Map<string, unknown>(),
+  failedKeys: new Set<string>(),
 }));
 
 vi.mock("@/state/AppProvider.tsx", () => ({
@@ -28,6 +30,7 @@ vi.mock("@/cards/fit.tsx", () => ({
     results: holder.results,
     ready: true,
     error: false,
+    failedKeys: holder.failedKeys,
     measureLayer: null,
   }),
 }));
@@ -48,6 +51,7 @@ beforeEach(() => {
   holder.activeDeck = { entries: [entry] };
   holder.cardDesign = "classic";
   holder.cardBackground = "none";
+  holder.failedKeys = new Set();
   holder.results = new Map([
     [
       entry.entryId,
@@ -58,6 +62,39 @@ beforeEach(() => {
     ],
   ]);
   vi.spyOn(window, "print").mockImplementation(() => undefined);
+});
+
+it("gates printing on selected omissions, overflow and measurement failures", async () => {
+  const user = userEvent.setup();
+  for (const [name, status] of [
+    ["Missing spell", "missing"],
+    ["Untranslated spell", "translation-unavailable"],
+    ["Overflowing spell", "resolved"],
+    ["Broken layout", "resolved"],
+  ] as const) {
+    const spell = makeSpell({ name });
+    const entry = makeEntry(spell.id, "SRD-5.2.1", name);
+    holder.resolvedEntries.push({ entry, resolution: { status, spell } });
+    if (name === "Overflowing spell")
+      holder.results.set(entry.entryId, { fit: { overflow: true } });
+    if (name === "Broken layout") holder.failedKeys.add(entry.entryId);
+  }
+  render(<PrintDialog open onOpenChange={() => undefined} />);
+  const print = screen.getByRole("button", { name: /^Print 1 card/ });
+  expect(print).toBeDisabled();
+  expect(screen.getByText(/1 entry not available.*1 missing reference/)).toBeVisible();
+  await user.click(screen.getByRole("checkbox", { name: "Omit these cards and continue" }));
+  expect(print).toBeDisabled();
+  await user.click(screen.getByRole("checkbox", { name: "Overflowing spell" }));
+  await user.click(screen.getByRole("checkbox", { name: "Broken layout" }));
+  expect(print).toBeDisabled();
+  await user.click(screen.getByRole("checkbox", { name: "Missing spell" }));
+  await user.click(screen.getByRole("checkbox", { name: "Untranslated spell" }));
+  expect(print).toBeEnabled();
+  await user.click(screen.getByRole("checkbox", { name: "Missing spell" }));
+  expect(print).toBeDisabled();
+  await user.click(screen.getByRole("checkbox", { name: "Omit these cards and continue" }));
+  expect(print).toBeEnabled();
 });
 
 afterEach(() => {

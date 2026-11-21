@@ -1,7 +1,13 @@
 import Dexie from "dexie";
+import { Blob as NodeBlob } from "node:buffer";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { db, DATABASE_NAME } from "@/db/database.ts";
 import { CollectionChangedError, readCollectionSnapshot } from "@/db/collection-state.ts";
+import {
+  addPersonalBackground,
+  removePersonalBackground,
+  savePersonalBackgroundSelection,
+} from "@/db/personal-backgrounds.ts";
 import { getActiveDeck, makeEntry, mutateActiveDeck } from "@/db/active-deck.ts";
 import {
   deleteCustomSpell,
@@ -55,6 +61,11 @@ const encode = (backup: unknown) =>
   JSON.stringify(backup, (_, value: unknown) => (value === undefined ? null : value));
 const review = (backup: CompleteBackup = emptyBackup()) =>
   reviewCompleteBackup(encode(backup), loadContext);
+const personalImage = {
+  id: "personal-12345678-1234-1234-1234-123456789abc",
+  name: "Paper.jpg",
+  image: new NodeBlob(["image fixture"], { type: "image/jpeg" }) as unknown as Blob,
+};
 
 beforeEach(async () => {
   await db.delete();
@@ -108,7 +119,12 @@ describe("complete backup fidelity", () => {
     await exportCompleteBackup();
     expect(download).toHaveBeenCalledTimes(1);
     const text = download.mock.calls[0][1];
-    expect(parseCompleteBackup(text)).toStrictEqual(backup);
+    expect(parseCompleteBackup(text)).toStrictEqual({
+      ...backup,
+      version: 2,
+      personalBackgrounds: [],
+      personalBackgroundId: null,
+    });
     expect(analyzeDeckImport(text).ok).toBe(false);
     expect(analyzeCustomImport(text, []).ok).toBe(false);
 
@@ -123,6 +139,8 @@ describe("complete backup fidelity", () => {
       savedDecks: backup.savedDecks,
       customSpells: backup.customSpells,
       srdSpellOverrides: backup.srdSpellOverrides,
+      personalBackgrounds: [],
+      personalBackgroundId: null,
     });
     expect((await listSavedDecks()).map(({ id }) => id)).toEqual(["a", "b"]);
     expect(isDeckDirty(collection.activeDeck)).toBe(true);
@@ -203,7 +221,7 @@ describe("complete backup validation", () => {
     ["spell format", encode({ type: "custom-spells" })],
     ["missing version", encode({ ...emptyBackup(), version: undefined })],
     ["fractional version", encode({ ...emptyBackup(), version: 1.5 })],
-    ["newer version", encode({ ...emptyBackup(), version: 2 })],
+    ["newer version", encode({ ...emptyBackup(), version: 3 })],
     ["missing section", encode({ ...emptyBackup(), customSpells: undefined })],
     ["unknown field", encode({ ...emptyBackup(), generation: "invalid" })],
     [
@@ -346,6 +364,8 @@ describe("complete backup transactions", () => {
       savedDecks: [],
       customSpells: [replacement],
       srdSpellOverrides: [],
+      personalBackgrounds: [],
+      personalBackgroundId: null,
     });
   });
 
@@ -355,6 +375,9 @@ describe("complete backup transactions", () => {
       await putCustomSpell(makeCustomSpell());
       await saveNewDeck(0, "Previous deck");
       await putSrdOverride(override, context);
+      const { metadata } = await readCollectionSnapshot();
+      await addPersonalBackground(personalImage, metadata.generation);
+      await savePersonalBackgroundSelection(personalImage.id, metadata.generation);
       const before = await readCollectionSnapshot();
       const backup = emptyBackup();
       backup.customSpells = [makeCustomSpell({ id: "replacement" })];
@@ -362,14 +385,14 @@ describe("complete backup transactions", () => {
       const failWrite = () => {
         throw new DOMException("Injected write failure", name);
       };
-      db.srdSpellOverrides.hook("creating", failWrite);
+      db.collectionMetadata.hook("updating", failWrite);
       backup.srdSpellOverrides = [{ ...override, updatedAt: 9 }];
       const withOverride = await review(backup);
       const error = await withOverride.commit().catch((error: unknown) => error);
       expect(backupFailure(error, "backup.restoreFailed").key).toBe(
         name === "QuotaExceededError" ? "backup.quotaExceeded" : "backup.restoreFailed",
       );
-      db.srdSpellOverrides.hook.creating.unsubscribe(failWrite);
+      db.collectionMetadata.hook.updating.unsubscribe(failWrite);
       db.close();
       expect(await readCollectionSnapshot()).toStrictEqual(before);
       // The earlier confirmation's token is still valid after the failed transaction.
@@ -380,6 +403,31 @@ describe("complete backup transactions", () => {
       });
     },
   );
+
+  it("invalidates reviews on personal image additions, selection changes, and removal", async () => {
+    const {
+      metadata: { generation },
+    } = await readCollectionSnapshot();
+    for (const mutate of [
+      () => addPersonalBackground(personalImage, generation),
+      () => savePersonalBackgroundSelection(personalImage.id, generation),
+      () => savePersonalBackgroundSelection(null, generation),
+      () => savePersonalBackgroundSelection(personalImage.id, generation),
+      () => removePersonalBackground(personalImage.id, generation),
+    ]) {
+      const pending = await review();
+      await mutate();
+      const changed = await readCollectionSnapshot();
+      await expect(pending.commit()).rejects.toMatchObject({
+        descriptor: { key: "backup.staleReview" },
+      });
+      expect(await readCollectionSnapshot()).toStrictEqual(changed);
+    }
+    expect((await readCollectionSnapshot()).collection).toMatchObject({
+      personalBackgrounds: [],
+      personalBackgroundId: null,
+    });
+  });
 
   it("never downloads a partial backup when reading or serializing fails", async () => {
     const download = vi.spyOn(downloads, "downloadText").mockImplementation(() => {});
@@ -455,7 +503,8 @@ describe("complete backup transactions", () => {
     const { metadata, collection } = await readCollectionSnapshot();
     const generation = metadata.generation;
     const revision = collection.activeDeck.revision;
-    const backup = { ...emptyBackup(), ...collection };
+    const { activeDeck, savedDecks, customSpells, srdSpellOverrides } = collection;
+    const backup = { ...emptyBackup(), activeDeck, savedDecks, customSpells, srdSpellOverrides };
     const waitingRestore = await review(backup);
     await waitingRestore.commit();
     const deckPlan = { name: "Import", entries: [], removedDuplicates: 0 };

@@ -724,11 +724,14 @@ contents and behavior regardless of the selected SRD language.
 ### Complete backup and restore
 
 The header menu offers collection-level backup export and restore. Export captures one consistent
-snapshot of the committed working deck, saved decks, custom spells, and every locale's SRD
-overrides in a versioned JSON file. Restore validates compatibility locally and requires explicit
-confirmation of the reviewed file and destination state before replacing all four collections
-atomically. Record identities, order, baselines, historical revisions, and unresolved references
-survive. The destination language preference is independent of the collection.
+snapshot of the committed working deck, saved decks, custom spells, SRD overrides, personal
+background library, and saved personal selection. Version 2 JSON embeds each normalized JPEG once
+as Base64 with its stable ID and name, and records the selection by ID. Restore validates the
+entire file, including JPEG bytes and the selection reference, before offering confirmation. It
+replaces all collection records and the saved selection atomically. Version 1 contains an empty
+personal library and selection, and review warns when restoring it will remove personal images.
+Record identities, order, baselines, historical revisions, and unresolved references survive.
+The receiving browser keeps its language preference.
 
 Every committed collection change invalidates an earlier restore review. Every successful restore
 invalidates stale collection mutations across open tabs. See the
@@ -765,16 +768,16 @@ data. Preview scale is a screen-only view setting as specified in §5; it is exc
 cache inputs and print rendering. The Deck exposes a touch/keyboard-operable fit-mode help
 disclosure and an accessible description on each fit selector.
 
-**Card backgrounds:** A **Card background** selector in the Active Deck pane offers exactly
-**None**, the default for every session and for any absent or invalid selection, plus every JPEG
-discovered in the bundled background folder, listed by file name. The selector sits with the other
-Deck settings next to the card design, is not persisted, and resets to None on reload. The selection
-applies identically to the preview and the print output for both Classic and Compact, is clipped by
-the card's rounded border, and is excluded from the fit cache because it has no layout effect; the
-hidden measurement card stays untextured. Images are discovered at build time: a newly added image
-appears after a development reload or a production rebuild, and the deployed static app cannot scan
-the folder at runtime. Neither the selector nor its hint is printed, and the choice never changes
-stored spell or deck data.
+**Card backgrounds:** The Active Deck selector offers **None**, bundled JPEGs discovered at build
+time, and a distinct group of personal images. **Use own** imports JPEG, PNG, or WebP locally and
+allows removal of personal images. Import corrects orientation, center-crops to the card ratio,
+flattens transparency onto the paper color, and encodes a JPEG up to 900 × 1260 pixels and 1 MiB
+without enlarging the source. Mixed batches retain successful images and report individual failures.
+Personal images are stored as IndexedDB blobs. Classic starts with the saved personal image or
+None. Choosing None or a bundled background clears the saved personal reference, as does removing
+the selected personal image. Both designs share the selection for preview and print. Personal
+images render with a paper-colored overlay for text contrast. Backgrounds have no effect on
+fitting or stored spell and deck data.
 
 Compact keeps the same 2.5 × 3.5 in card, safe Markdown pipeline, truncation, continuation, and
 print rules. Its first card shows a single-outline level circle with the numeric level only, a
@@ -922,12 +925,20 @@ must print.
   None or Minimum. Warn that hardware non-printable margins or driver scaling can still alter
   physical dimensions.
 - Printing never changes the deck or the selected language.
-- Print only entries whose spell bodies are available in the current language, including
+- The print dialog starts with the whole active deck selected. Users can select spells and expand
+  multi-card spells to select individual cards. Printed continuations preserve their content and
+  numbering from the full measured expansion.
+- The first sheet can start at any position in row order and skip additional positions. Unavailable
+  positions have no cutting guides. Subsequent sheets have all nine positions. **Keep each spell’s
+  cards together** is off by default. When on, a selected group of up to nine cards moves to the
+  next sheet if it cannot fit on the current one. Larger groups continue in order across sheets.
+  If the partial first sheet receives no cards, omit it and tell the user to load fresh paper.
+- Print only selected entries whose spell bodies are available in the current language, including
   resolvable custom spells. Omit translation-unavailable placeholders and genuinely missing
   references without modifying deck entries. Before print, show separate counts for omitted
   missing translations and missing references, and require confirmation if either is nonzero.
-  Disable print if no printable entries remain. Keep the 100-continuation-card error and print
-  geometry rules.
+  Disable print if no printable cards remain. Measurement failures and blocking continuation,
+  notes, or table overflow prevent printing when their entry is selected.
 - **Verification status:** physical print geometry is verified in Chromium to date. Current
   Chrome, Firefox, and Safari are the cross-browser target; Firefox/Safari and physical printers
   remain to be validated. Measure a printed or 100%-scale PDF test grid: target card dimensions

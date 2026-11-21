@@ -11,6 +11,7 @@ import {
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database.ts";
 import { CollectionChangedError, readCollectionSnapshot } from "@/db/collection-state.ts";
+import { savePersonalBackgroundSelection } from "@/db/personal-backgrounds.ts";
 import {
   addEntry,
   clearEntries,
@@ -82,6 +83,7 @@ import {
   normalizeCardBackground,
   type CardBackground,
 } from "@/cards/backgrounds.ts";
+import { backgroundDataUrl, type PersonalBackground } from "@/cards/personal-backgrounds.ts";
 import { applyDeckImport, type DeckImportPlan } from "@/io/import-deck.ts";
 import {
   AppError,
@@ -91,6 +93,7 @@ import {
 } from "@/locales/messages.ts";
 
 export type AddSpellResult = "added" | "duplicate" | "error";
+const EMPTY_PERSONAL_BACKGROUNDS: PersonalBackground[] = [];
 
 export interface AddSpellsResult {
   added: number;
@@ -185,7 +188,8 @@ export interface AppContextValue {
   setCardDesign: (design: CardDesign) => void;
 
   cardBackground: CardBackground;
-  setCardBackground: (background: CardBackground) => void;
+  setCardBackground: (id: string) => Promise<void>;
+  personalBackgrounds: PersonalBackground[];
 
   activeDeck: ActiveDeckRecord | null;
   savedDecks: SavedDeck[];
@@ -285,12 +289,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCardDesignState(normalizeCardDesign(design));
   }, []);
 
-  const [cardBackground, setCardBackgroundState] =
-    useState<CardBackground>(DEFAULT_CARD_BACKGROUND);
-
-  const setCardBackground = useCallback((background: CardBackground) => {
-    setCardBackgroundState(normalizeCardBackground(background));
-  }, []);
+  const [sessionBackground, setSessionBackground] = useState<{
+    id: string;
+    generation: string;
+  } | null>(null);
+  const cachedBackground = useRef<{ id: string; url: string; generation: string } | null>(null);
 
   const [deckError, setDeckError] = useState<MessageDescriptor | null>(null);
   const [conflict, setConflict] = useState<DeckConflictState | null>(null);
@@ -318,16 +321,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const collectionResult = useLiveQuery(async () => {
     try {
-      return { snapshot: await readCollectionSnapshot(), error: null };
+      const snapshot = await readCollectionSnapshot();
+      const { personalBackgroundId, personalBackgrounds } = snapshot.collection;
+      const { generation } = snapshot.metadata;
+      const selected = personalBackgrounds.find(({ id }) => id === personalBackgroundId);
+      let background = cachedBackground.current;
+      // An image ID is immutable within a generation. A restore can reuse IDs.
+      if (selected && (background?.id !== selected.id || background.generation !== generation)) {
+        background = { id: selected.id, generation, url: await backgroundDataUrl(selected.image) };
+      }
+      if (!selected) background = null;
+      cachedBackground.current = background;
+      return { snapshot, background, error: null };
     } catch (error) {
       return {
         snapshot: null,
+        background: null,
         error: error instanceof AppError ? error.descriptor : message("error.storageUnavailable"),
       };
     }
   }, [refreshToken]);
   const collection = collectionResult?.snapshot?.collection;
   const collectionGeneration = collectionResult?.snapshot?.metadata.generation ?? "";
+  const personalBackgrounds = collection?.personalBackgrounds ?? EMPTY_PERSONAL_BACKGROUNDS;
+  const savedBackground = collectionResult?.background;
+  const cardBackground =
+    savedBackground ??
+    (sessionBackground?.generation === collectionGeneration
+      ? sessionBackground.id
+      : DEFAULT_CARD_BACKGROUND);
+  useEffect(() => {
+    if (savedBackground) setSessionBackground(null);
+  }, [savedBackground]);
   const activeDeck = collection?.activeDeck;
   const srdOverrides = collection?.srdSpellOverrides;
   const customSpells = useMemo(
@@ -345,6 +370,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshAll = useCallback(() => {
     setRefreshToken((token) => token + 1);
   }, []);
+
+  const setCardBackground = useCallback(
+    async (id: string) => {
+      const bundled = normalizeCardBackground(id);
+      const personal = personalBackgrounds.some((background) => background.id === id);
+      if (!personal && bundled !== id) throw new AppError(message("card.background.notFound"));
+      await savePersonalBackgroundSelection(personal ? id : null, collectionGeneration);
+      setSessionBackground(personal ? null : { id: bundled, generation: collectionGeneration });
+      refreshAll();
+    },
+    [collectionGeneration, personalBackgrounds, refreshAll],
+  );
 
   const seenGeneration = useRef("");
   useEffect(() => {
@@ -1173,6 +1210,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCardDesign,
       cardBackground,
       setCardBackground,
+      personalBackgrounds,
       activeDeck: activeDeck ?? null,
       savedDecks: savedList,
       dirty,
@@ -1239,6 +1277,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCardDesign,
       cardBackground,
       setCardBackground,
+      personalBackgrounds,
       activeDeck,
       savedList,
       dirty,
@@ -1281,7 +1320,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshAll,
       collectionGeneration,
       collectionResult?.error,
-    ],
+    ] as const,
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

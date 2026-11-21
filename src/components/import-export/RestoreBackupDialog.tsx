@@ -140,9 +140,11 @@ export function RestoreBackupDialog({ onClose }: { onClose: () => void }) {
                 <li>{t("backup.savedDecks", { count: review.savedDecks })}</li>
                 <li>{t("backup.customSpells", { count: review.customSpells })}</li>
                 <li>{t("backup.overrides", { count: review.overrides })}</li>
+                <li>{t("backup.personalBackgrounds", { count: review.personalBackgrounds })}</li>
               </ul>
               <p role="alert" className="rounded border border-amber-400/30 bg-amber-400/10 p-2">
                 {t("backup.replacementWarning")}
+                {review.removesPersonalBackgrounds && <> {t("backup.legacyBackgroundWarning")}</>}
               </p>
             </>
           ) : null}

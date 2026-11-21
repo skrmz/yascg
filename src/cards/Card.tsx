@@ -8,6 +8,7 @@ import { classSummary, materialDetailText, metadataRows } from "./format.ts";
 import type { CardDesign } from "./design.ts";
 import {
   DEFAULT_CARD_BACKGROUND,
+  cardBackgroundId,
   cardBackgroundStyle,
   type CardBackground,
 } from "./backgrounds.ts";
@@ -60,7 +61,7 @@ export function ClassicCardView({
       className={`spell-card${isContinuation ? " spell-card-continuation" : ""}${
         className ? ` ${className}` : ""
       }`}
-      data-card-background={background === "none" ? undefined : background}
+      data-card-background={background === "none" ? undefined : cardBackgroundId(background)}
       style={{
         ["--body-font-pt" as string]: `${fontPt}pt`,
         ...cardBackgroundStyle(background),

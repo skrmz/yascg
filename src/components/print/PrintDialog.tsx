@@ -8,12 +8,20 @@ import { useDeckCardFits, type DeckFitItem } from "@/cards/fit.tsx";
 import { waitForCardFonts } from "@/cards/fonts.ts";
 import { loadCardBackground, type CardBackground } from "@/cards/backgrounds.ts";
 import type { CardDesign } from "@/cards/design.ts";
-import { PrintSheets, type PaperSize, type PrintCardData } from "@/print/PrintSheet.tsx";
+import {
+  buildSheets,
+  CARDS_PER_SHEET,
+  PrintSheets,
+  type PaperSize,
+  type PrintCardData,
+} from "@/print/PrintSheet.tsx";
 import { printDocumentTitle } from "@/print/document-title.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Checkbox } from "@/ui/Checkbox.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { NativeSelect } from "@/ui/Field.tsx";
+
+const slots = Array.from({ length: CARDS_PER_SHEET }, (_, index) => index + 1);
 
 export function PrintDialog({
   open,
@@ -26,31 +34,58 @@ export function PrintDialog({
   const { t } = useTranslation();
   const [paperSize, setPaperSize] = useState<PaperSize>(language === "de" ? "A4" : "letter");
   const [cuttingBorders, setCuttingBorders] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
+  // An absent entry is fully selected, including entries without a printable expansion.
+  const [selection, setSelection] = useState<Map<string, number[]>>(new Map());
+  const [confirmedOmissions, setConfirmedOmissions] = useState<string | null>(null);
+  const [startSlot, setStartSlot] = useState(1);
+  const [skippedSlots, setSkippedSlots] = useState<number[]>([]);
+  const [keepTogether, setKeepTogether] = useState(false);
   const [job, setJob] = useState<{
-    cards: PrintCardData[];
+    sheets: ReturnType<typeof buildSheets>["sheets"];
     title: string;
     background: CardBackground;
     design: CardDesign;
+    paperSize: PaperSize;
+    cuttingBorders: boolean;
+    language: string;
   } | null>(null);
 
   useEffect(() => {
     setPaperSize(language === "de" ? "A4" : "letter");
   }, [language]);
 
-  const resolvedSpells = resolvedEntries.flatMap((item) =>
-    item.resolution.status === "resolved"
-      ? [{ entry: item.entry, spell: item.resolution.spell }]
-      : [],
-  );
+  useEffect(() => {
+    if (!open) {
+      setSelection(new Map());
+      setConfirmedOmissions(null);
+      setStartSlot(1);
+      setSkippedSlots([]);
+      setKeepTogether(false);
+    }
+  }, [open]);
 
-  const unavailableCount = resolvedEntries.filter(
+  const resolvedSpells = useMemo(
+    () =>
+      resolvedEntries.flatMap((item) =>
+        item.resolution.status === "resolved"
+          ? [{ entry: item.entry, spell: item.resolution.spell }]
+          : [],
+      ),
+    [resolvedEntries],
+  );
+  const isSelected = (entryId: string) => selection.get(entryId)?.length !== 0;
+  const allSpellsSelected = resolvedEntries.every(({ entry }) => !selection.has(entry.entryId));
+  const anySpellSelected = resolvedEntries.some(({ entry }) => isSelected(entry.entryId));
+  const omitted = resolvedEntries.filter(
+    (item) => item.resolution.status !== "resolved" && isSelected(item.entry.entryId),
+  );
+  const unavailableCount = omitted.filter(
     (item) => item.resolution.status === "translation-unavailable",
   ).length;
-  const missingCount = resolvedEntries.filter(
-    (item) => item.resolution.status === "missing",
-  ).length;
-  const omissionTotal = unavailableCount + missingCount;
+  const missingCount = omitted.length - unavailableCount;
+  const omissionKey = JSON.stringify(
+    omitted.map(({ entry, resolution }) => [entry.entryId, resolution.status, language]),
+  );
 
   const fitItems = useMemo<DeckFitItem[]>(
     () =>
@@ -64,7 +99,11 @@ export function PrintDialog({
 
   const fits = useDeckCardFits(fitItems, language, open, cardDesign);
 
-  const overflowEntries = resolvedSpells.filter(
+  const selectedSpells = resolvedSpells.filter(({ entry }) => isSelected(entry.entryId));
+  const fitError =
+    selectedSpells.length > 0 &&
+    (fits.error || selectedSpells.some(({ entry }) => fits.failedKeys.has(entry.entryId)));
+  const overflowEntries = selectedSpells.filter(
     (item) => fits.results.get(item.entry.entryId)?.fit.overflow,
   );
   const notesOverflow = overflowEntries.some(
@@ -75,29 +114,45 @@ export function PrintDialog({
   );
   const blocked = overflowEntries.length > 0;
 
-  const printCards = useMemo<PrintCardData[]>(() => {
+  const groups = selectedSpells.flatMap((item) => {
+    const entry = fits.results.get(item.entry.entryId);
+    if (!entry || entry.fit.overflow) return [];
     const cards: PrintCardData[] = [];
-    for (const item of resolvedSpells) {
-      const entry = fits.results.get(item.entry.entryId);
-      if (!entry || entry.fit.overflow) continue;
-      entry.fit.pages.forEach((pageBlocks, index) => {
-        cards.push({
-          key: `${item.entry.entryId}-${index}`,
-          spell: item.spell,
-          pageBlocks,
-          fontPt: entry.fit.fontPt,
-          cardIndex: index + 1,
-          cardCount: entry.fit.pages.length,
-          truncated: entry.fit.truncated,
-          presentation: entry.presentation ?? undefined,
-        });
+    const chosen = selection.get(item.entry.entryId);
+    entry.fit.pages.forEach((pageBlocks, index) => {
+      if (chosen && !chosen.includes(index)) return;
+      cards.push({
+        key: `${item.entry.entryId}-${index}`,
+        spell: item.spell,
+        pageBlocks,
+        fontPt: entry.fit.fontPt,
+        cardIndex: index + 1,
+        cardCount: entry.fit.pages.length,
+        truncated: entry.fit.truncated,
+        presentation: entry.presentation ?? undefined,
       });
-    }
-    return cards;
-  }, [resolvedSpells, fits.results]);
+    });
+    return cards.length ? [cards] : [];
+  });
+  const cardCount = groups.reduce((total, group) => total + group.length, 0);
+  const { sheets, firstSheetUnused } = buildSheets(groups, startSlot, skippedSlots, keepTogether);
 
   const canPrint =
-    printCards.length > 0 && !blocked && !fits.error && fits.ready && (!omissionTotal || confirmed);
+    cardCount > 0 &&
+    !blocked &&
+    !fitError &&
+    fits.ready &&
+    (!omitted.length || confirmedOmissions === omissionKey);
+
+  const selectCards = (entryId: string, cards?: number[]) => {
+    setSelection((previous) => {
+      const next = new Map(previous);
+      if (cards) next.set(entryId, cards);
+      else next.delete(entryId);
+      return next;
+    });
+    setConfirmedOmissions(null);
+  };
 
   useEffect(() => {
     if (!job) return;
@@ -125,10 +180,13 @@ export function PrintDialog({
 
   const startPrint = () => {
     setJob({
-      cards: printCards,
+      sheets,
       title: printDocumentTitle(activeDeck?.name),
       background: cardBackground,
       design: cardDesign,
+      paperSize,
+      cuttingBorders,
+      language,
     });
     onOpenChange(false);
   };
@@ -146,8 +204,8 @@ export function PrintDialog({
               </Button>
               <Button disabled={!canPrint} onClick={startPrint}>
                 <Printer size={14} aria-hidden="true" />
-                {printCards.length > 0
-                  ? t("print.printCards", { count: printCards.length })
+                {cardCount > 0
+                  ? t("print.printCards", { count: cardCount })
                   : t("print.printAction")}
               </Button>
             </>
@@ -174,6 +232,134 @@ export function PrintDialog({
               />
             </div>
 
+            <fieldset className="space-y-2 rounded border border-border p-3">
+              <legend className="px-1 font-semibold">{t("print.firstSheet")}</legend>
+              <label className="flex items-center gap-2">
+                {t("print.startSlot")}
+                <NativeSelect
+                  className="h-8 w-20"
+                  value={startSlot}
+                  onChange={(event) => setStartSlot(Number(event.target.value))}
+                >
+                  {slots.map((slot) => (
+                    <option key={slot}>{slot}</option>
+                  ))}
+                </NativeSelect>
+              </label>
+              <fieldset>
+                <legend className="mb-1 text-muted-foreground">{t("print.skipSlots")}</legend>
+                <div className="grid w-fit grid-cols-3 gap-x-4 gap-y-1">
+                  {slots.map((slot) => (
+                    <Checkbox
+                      key={slot}
+                      label={slot}
+                      aria-label={t("print.skipSlot", { slot })}
+                      disabled={slot < startSlot}
+                      checked={slot < startSlot || skippedSlots.includes(slot)}
+                      onChange={(event) =>
+                        setSkippedSlots(
+                          event.target.checked
+                            ? [...skippedSlots, slot]
+                            : skippedSlots.filter((value) => value !== slot),
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </fieldset>
+            </fieldset>
+            <div>
+              <Checkbox
+                label={t("print.keepTogether")}
+                checked={keepTogether}
+                onChange={(event) => setKeepTogether(event.target.checked)}
+              />
+              <p className="text-xs text-muted-foreground">{t("print.keepTogetherHelp")}</p>
+            </div>
+            {firstSheetUnused && (
+              <p
+                role="status"
+                className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-xs text-amber-200"
+              >
+                {t("print.freshPaper")}
+              </p>
+            )}
+            <fieldset className="rounded border border-border p-3">
+              <legend className="px-1 font-semibold">{t("print.selection")}</legend>
+              {resolvedEntries.length > 0 && (
+                <div className="mb-2 border-b border-border pb-2">
+                  <Checkbox
+                    label={t("print.selectAllSpells")}
+                    checked={allSpellsSelected}
+                    ref={(input) => {
+                      if (input) input.indeterminate = anySpellSelected && !allSpellsSelected;
+                    }}
+                    onChange={(event) => {
+                      setSelection(
+                        new Map(
+                          event.target.checked
+                            ? []
+                            : resolvedEntries.map(({ entry }) => [entry.entryId, []]),
+                        ),
+                      );
+                      setConfirmedOmissions(null);
+                    }}
+                  />
+                </div>
+              )}
+              <ul className="max-h-48 space-y-2 overflow-auto">
+                {resolvedEntries.map(({ entry, resolution }) => {
+                  const name =
+                    resolution.status === "resolved" ? resolution.spell.name : entry.reference.name;
+                  const fit = fits.results.get(entry.entryId)?.fit;
+                  const count = fit && !fit.overflow ? fit.pages.length : 0;
+                  const chosen = selection.get(entry.entryId);
+                  const indexes = Array.from({ length: count }, (_, index) => index);
+                  const selected = indexes.filter((index) => !chosen || chosen.includes(index));
+                  const partial = selected.length > 0 && selected.length < count;
+                  return (
+                    <li key={entry.entryId}>
+                      <Checkbox
+                        label={name}
+                        checked={!chosen || (count > 0 && selected.length === count)}
+                        ref={(input) => {
+                          if (input) input.indeterminate = partial;
+                        }}
+                        onChange={(event) =>
+                          selectCards(entry.entryId, event.target.checked ? undefined : [])
+                        }
+                      />
+                      {count > 1 && (
+                        <details className="ml-6">
+                          <summary className="cursor-pointer text-xs text-muted-foreground">
+                            {t("print.expandCards", { name })}
+                          </summary>
+                          <div className="flex flex-col items-start pl-3">
+                            {indexes.map((index) => (
+                              <Checkbox
+                                key={index}
+                                label={t("print.physicalCard", { index: index + 1, count })}
+                                checked={selected.includes(index)}
+                                onChange={(event) => {
+                                  const next = event.target.checked
+                                    ? [...selected, index]
+                                    : selected.filter((value) => value !== index);
+                                  selectCards(
+                                    entry.entryId,
+                                    next.length === count ? undefined : next,
+                                  );
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </fieldset>
+
             <div className="rounded border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
               <p className="font-semibold text-foreground">{t("print.settings")}</p>
               <ul className="mt-1 list-disc pl-4">
@@ -185,7 +371,7 @@ export function PrintDialog({
               </ul>
             </div>
 
-            {fits.error ? (
+            {fitError ? (
               <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
                 {t("print.fitError")}
               </p>
@@ -204,7 +390,7 @@ export function PrintDialog({
               </p>
             ) : null}
 
-            {omissionTotal > 0 ? (
+            {omitted.length > 0 ? (
               <div className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-xs text-amber-200">
                 <p>
                   {t("print.notAvailable", {
@@ -216,14 +402,16 @@ export function PrintDialog({
                 <div className="mt-2">
                   <Checkbox
                     label={t("print.omitConfirm")}
-                    checked={confirmed}
-                    onChange={(event) => setConfirmed(event.target.checked)}
+                    checked={confirmedOmissions === omissionKey}
+                    onChange={(event) =>
+                      setConfirmedOmissions(event.target.checked ? omissionKey : null)
+                    }
                   />
                 </div>
               </div>
             ) : null}
 
-            {!fits.ready && printCards.length > 0 ? (
+            {!fits.ready && resolvedSpells.length > 0 ? (
               <p className="text-xs text-muted-foreground">{t("print.preparing")}</p>
             ) : null}
             {activeDeck && activeDeck.entries.length === 0 ? (
@@ -235,10 +423,10 @@ export function PrintDialog({
       {job
         ? createPortal(
             <PrintSheets
-              cards={job.cards}
-              paperSize={paperSize}
-              cuttingBorders={cuttingBorders}
-              datasetLanguage={language}
+              sheets={job.sheets}
+              paperSize={job.paperSize}
+              cuttingBorders={job.cuttingBorders}
+              datasetLanguage={job.language}
               design={job.design}
               background={job.background}
             />,

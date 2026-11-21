@@ -80,6 +80,10 @@ export const de = {
     savedDecks: "Gespeicherte Decks: {{count}}",
     customSpells: "Eigene Zauber: {{count}}",
     overrides: "SRD-Anpassungen: {{count}}",
+    personalBackgrounds: "Eigene Hintergründe: {{count}}",
+    legacyBackgroundWarning:
+      "Dieses Backup der Version 1 enthält keine eigenen Hintergründe. Beim Wiederherstellen werden alle vorhandenen eigenen Hintergründe und die gespeicherte Auswahl entfernt.",
+    invalidBackground: "Das Backup enthält ungültige JPEG-Daten für „{{name}}“.",
     replacementWarning:
       "Die Wiederherstellung ersetzt die gesamte Sammlung einschließlich des aktiven Decks. Lokale Decks, eigene Zauber und SRD-Anpassungen, die im Backup fehlen, werden entfernt.",
     confirmRestore: "Gesamte Sammlung ersetzen",
@@ -312,6 +316,19 @@ export const de = {
     paper: "Papier",
     paperSize: "Papierformat",
     cuttingBorders: "Schnittlinien",
+    selection: "Karten zum Drucken",
+    selectAllSpells: "Alle Zauber auswählen",
+    expandCards: "Einzelkarten für {{name}} auswählen",
+    physicalCard: "Karte {{index}} von {{count}}",
+    firstSheet: "Erstes Blatt",
+    startSlot: "Startposition",
+    skipSlots: "Zu überspringende Positionen",
+    skipSlot: "Position {{slot}} überspringen",
+    keepTogether: "Karten eines Zaubers zusammenhalten",
+    keepTogetherHelp:
+      "Das kann mehr Papier verbrauchen. Gruppen mit mehr als neun Karten werden auf mehrere Blätter verteilt.",
+    freshPaper:
+      "Entferne das teilweise belegte Blatt und lege vor dem Drucken frisches Papier ein.",
     settings: "Druckeinstellungen",
     scale: "Skalierung: 100 % / Tatsächliche Größe — nicht „An Seite anpassen“ verwenden.",
     margins: "Ränder: Keine oder Minimal.",
@@ -755,6 +772,23 @@ export const de = {
       label: "Kartenhintergrund",
       hint: "Gilt für Vorschau und Druck.",
       none: "Kein Hintergrund",
+      useOwn: "Eigene verwenden",
+      manage: "Eigene Kartenhintergründe",
+      importHelp:
+        "Wähle JPEG-, PNG- oder WebP-Bilder. Die App schneidet sie zu und speichert sie auf diesem Gerät.",
+      chooseImages: "Bilder auswählen",
+      processing: "Eigene Hintergründe werden aktualisiert…",
+      personal: "Eigene Hintergründe",
+      personalOption: "Eigenes Bild · {{name}}",
+      remove: "Entfernen",
+      removeImage: "{{name}} entfernen",
+      unsupported: "Wähle ein JPEG-, PNG- oder WebP-Bild.",
+      corrupt: "Das Bild konnte nicht geöffnet werden. Exportiere es erneut.",
+      unsuitable:
+        "Wähle ein Bild mit mindestens 150 × 210 Pixeln im Kartenausschnitt, höchstens 40 Megapixeln und einer Dateigröße von maximal 25 MB.",
+      storageFailed:
+        "Die Hintergrundänderung konnte nicht gespeichert werden. Prüfe den verfügbaren Speicher und versuche es erneut.",
+      notFound: "Dieser eigene Hintergrund ist nicht mehr verfügbar. Wähle ein anderes Bild.",
     },
   },
   form: {

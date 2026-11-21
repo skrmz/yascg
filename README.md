@@ -119,11 +119,9 @@ optional higher-level sections, and a three-part Source | School | Classes foote
 measurement, pagination, and print output; it is kept for the session and resets to Classic after
 a reload.
 
-The **Card background** selector next to the design chooses **None** (the default) or one of the
-JPEG images bundled in `src/assets/images/card-backgrounds/`, listed by file name. The choice
-applies to the preview and print output in both designs; it is kept for the session and resets to
-None after a reload. New images are picked up at build time, so they appear after a development
-reload or a rebuild and redeploy.
+Use **Card background** to choose a texture for both designs. **Use own** imports JPEG, PNG, and
+WebP files and lets you remove personal images. A selected personal image is remembered on reload.
+Bundled backgrounds apply for the current session.
 
 **Import / export deck** in the deck actions menu exports the current active deck as unversioned
 JSON: its name, ordered spell references, and display settings. Spell bodies and SRD edits are
@@ -138,9 +136,9 @@ collection. The exact deck and import edge-case rules are in the
 ## Back up or restore the entire collection
 
 Choose **Export complete backup** from the header menu to download one JSON file. It includes the
-last committed working deck, every saved deck, all custom spells, and local SRD notes for every
-language. Keep the file outside browser storage so you can recover after clearing site data or
-move your collection to another browser.
+last committed working deck, every saved deck, all custom spells, local SRD notes, and personal
+backgrounds with their saved selection. Keep the file outside browser storage so you can recover
+after clearing site data or move your collection to another browser.
 
 In the receiving browser, choose **Restore complete backup** from the header menu and select
 the file. Review the working deck and record counts, then choose **Replace entire collection**
@@ -160,6 +158,10 @@ continuation layout: the first card keeps the full header and metadata block; co
 use a compact header with a localized `contd.`/`Forts.` label and omit repeated metadata so more
 description fits.
 
+The dialog opens with all spells selected. Expand a multi-card spell to pick individual cards.
+To reuse a sheet, set the starting position and skip any other occupied slots. Enable **Keep each
+spell’s cards together** to move a group to a fresh sheet when it can fit there.
+
 Before printing, configure your browser/printer:
 
 - Paper: **US Letter** or **ISO A4** (matching the dialog selection).
@@ -168,7 +170,7 @@ Before printing, configure your browser/printer:
 - Disable browser **headers and footers**.
 - Background graphics: **Enabled** (required for textured card backgrounds).
 
-Cards whose spell body is unavailable in the selected language, or whose reference is missing,
+Selected cards whose spell body is unavailable in the selected language, or whose reference is missing,
 are omitted from printing without changing the deck; the app shows separate counts and asks for
 confirmation. Entries that would exceed the 100-continuation-card limit block printing with an
 actionable error.

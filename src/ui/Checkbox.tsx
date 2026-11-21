@@ -1,7 +1,7 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { ComponentPropsWithRef, ReactNode } from "react";
 import { cn } from "./cn.ts";
 
-export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+export interface CheckboxProps extends Omit<ComponentPropsWithRef<"input">, "type"> {
   label: ReactNode;
 }
 

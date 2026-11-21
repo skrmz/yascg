@@ -21,22 +21,43 @@ export interface PrintCardData {
   presentation?: CompactPresentation;
 }
 
+// undefined is an unavailable position. null is an unused position with guides.
+type PrintSheet = Array<PrintCardData | null | undefined>;
+
 export function buildSheets(
-  cards: readonly PrintCardData[],
-  perSheet: number = CARDS_PER_SHEET,
-): Array<Array<PrintCardData | null>> {
-  const sheets: Array<Array<PrintCardData | null>> = [];
-  for (let index = 0; index < cards.length; index += perSheet) {
-    const slice = cards.slice(index, index + perSheet);
-    const cells: Array<PrintCardData | null> = [...slice];
-    while (cells.length < perSheet) cells.push(null);
-    sheets.push(cells);
+  groups: readonly PrintCardData[][],
+  startSlot = 1,
+  skippedSlots: readonly number[] = [],
+  keepTogether = false,
+) {
+  let sheet: PrintSheet = Array.from({ length: CARDS_PER_SHEET }, (_, index) =>
+    index + 1 < startSlot || skippedSlots.includes(index + 1) ? undefined : null,
+  );
+  const sheets = [sheet];
+  const freshSheet = () => {
+    sheet = Array<null>(CARDS_PER_SHEET).fill(null);
+    sheets.push(sheet);
+  };
+  for (const group of groups) {
+    if (
+      keepTogether &&
+      group.length <= CARDS_PER_SHEET &&
+      group.length > sheet.filter((cell) => cell === null).length
+    ) {
+      freshSheet();
+    }
+    for (const card of group) {
+      if (!sheet.includes(null)) freshSheet();
+      sheet[sheet.indexOf(null)] = card;
+    }
   }
-  return sheets;
+  const firstSheet = sheets[0];
+  const firstSheetUnused = sheets.length > 1 && !firstSheet.some(Boolean);
+  return { sheets: sheets.filter((cells) => cells.some(Boolean)), firstSheetUnused };
 }
 
 export interface PrintSheetsProps {
-  cards: readonly PrintCardData[];
+  sheets: readonly PrintSheet[];
   paperSize: PaperSize;
   cuttingBorders: boolean;
   sheetPrefix?: string;
@@ -47,7 +68,7 @@ export interface PrintSheetsProps {
 
 /** Renders 3x3 physical sheets. Geometry is governed entirely by print.css. */
 export function PrintSheets({
-  cards,
+  sheets,
   paperSize,
   cuttingBorders,
   sheetPrefix = "sheet",
@@ -55,7 +76,6 @@ export function PrintSheets({
   design = DEFAULT_CARD_DESIGN,
   background = DEFAULT_CARD_BACKGROUND,
 }: PrintSheetsProps) {
-  const sheets = buildSheets(cards);
   return (
     <div className="print-root" data-paper={paperSize}>
       <style>{`@page { size: ${paperSize === "letter" ? "letter" : "A4"}; margin: 0; }`}</style>
@@ -88,7 +108,10 @@ export function PrintSheets({
                   />
                 </div>
               ) : (
-                <div className="print-cell print-cell-empty" key={`empty-${cellIndex}`} />
+                <div
+                  className={`print-cell print-cell-empty${card === undefined ? " print-cell-unavailable" : ""}`}
+                  key={`empty-${cellIndex}`}
+                />
               ),
             )}
           </div>

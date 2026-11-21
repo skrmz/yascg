@@ -47,14 +47,14 @@ export async function openCollectionStorage(): Promise<void> {
 }
 
 export async function readCollectionMetadata(): Promise<CollectionMetadata> {
-  return (await db.collectionMetadata.get("collection")) ?? initialMetadata;
+  return (await db.collectionMetadata.get("collection")) ?? { ...initialMetadata };
 }
 
 /** All user mutations serialize on metadata along with their own stores. */
 export async function writeCollection<T>(
   expectedGeneration: string,
   tables: Table[],
-  write: (markChanged: () => void) => Promise<T>,
+  write: (markChanged: () => void, metadata: CollectionMetadata) => Promise<T>,
 ): Promise<T> {
   await openCollectionStorage();
   return db.transaction("rw", [db.collectionMetadata, ...tables], async () => {
@@ -63,7 +63,7 @@ export async function writeCollection<T>(
     let changed = false;
     const result = await write(() => {
       changed = true;
-    });
+    }, metadata);
     if (changed) {
       await db.collectionMetadata.put({ ...metadata, changeToken: newUuid() });
     }
@@ -72,20 +72,28 @@ export async function writeCollection<T>(
 }
 
 export function collectionTables() {
-  return [db.activeDeck, db.savedDecks, db.customSpells, db.srdSpellOverrides];
+  return [
+    db.activeDeck,
+    db.savedDecks,
+    db.customSpells,
+    db.srdSpellOverrides,
+    db.personalBackgrounds,
+  ];
 }
 
 /** Read data and its generation together, for both the workspace and export. */
 export async function readCollectionSnapshot() {
   await openCollectionStorage();
   return db.transaction("r", [db.collectionMetadata, ...collectionTables()], async () => {
-    const [metadata, activeDeck, savedDecks, customSpells, srdSpellOverrides] = await Promise.all([
-      readCollectionMetadata(),
-      db.activeDeck.get(ACTIVE_DECK_ID),
-      db.savedDecks.toArray(),
-      db.customSpells.toArray(),
-      db.srdSpellOverrides.toArray(),
-    ]);
+    const [metadata, activeDeck, savedDecks, customSpells, srdSpellOverrides, personalBackgrounds] =
+      await Promise.all([
+        readCollectionMetadata(),
+        db.activeDeck.get(ACTIVE_DECK_ID),
+        db.savedDecks.toArray(),
+        db.customSpells.toArray(),
+        db.srdSpellOverrides.toArray(),
+        db.personalBackgrounds.toArray(),
+      ]);
     return {
       metadata,
       collection: {
@@ -93,6 +101,8 @@ export async function readCollectionSnapshot() {
         savedDecks,
         customSpells,
         srdSpellOverrides,
+        personalBackgrounds,
+        personalBackgroundId: metadata.personalBackgroundId ?? null,
       },
     };
   });

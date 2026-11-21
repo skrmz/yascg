@@ -1,4 +1,12 @@
 import { z } from "zod";
+import {
+  BACKGROUND_JPEG_MAX_BYTES,
+  BACKGROUND_NAME_MAX,
+  PERSONAL_BACKGROUND_ID,
+  backgroundDataUrl,
+  decodeBackgroundJpeg,
+  type PersonalBackground,
+} from "@/cards/personal-backgrounds.ts";
 import { db } from "@/db/database.ts";
 import {
   collectionTables,
@@ -27,7 +35,7 @@ import { loadLanguageDataset, loadManifest } from "@/services/data/load.ts";
 import { downloadText, exportDateStamp } from "./export.ts";
 
 export const COMPLETE_BACKUP_TYPE = "yascg-complete-backup";
-export const COMPLETE_BACKUP_VERSION = 1;
+export const COMPLETE_BACKUP_VERSION = 2;
 
 // IndexedDB distinguishes an absent optional field from an own property set
 // to undefined. V1 uses JSON null for the latter on known optional fields.
@@ -118,9 +126,9 @@ const overrideSchema = srdSpellOverrideSchema.strict().extend({
   somaticDescription: optional(metadataText),
 });
 
-const backupSchema = z.strictObject({
+const backupV1Schema = z.strictObject({
   type: z.literal(COMPLETE_BACKUP_TYPE),
-  version: z.literal(COMPLETE_BACKUP_VERSION),
+  version: z.literal(1),
   activeDeck: activeSchema,
   savedDecks: z.array(savedSchema).refine((records) => unique(records, (record) => record.id)),
   customSpells: z.array(customSchema).refine((records) => unique(records, (record) => record.id)),
@@ -131,10 +139,44 @@ const backupSchema = z.strictObject({
     ),
 });
 
-export type CompleteBackup = Awaited<ReturnType<typeof readCollectionSnapshot>>["collection"] & {
+const backupV2Schema = backupV1Schema
+  .extend({
+    version: z.literal(COMPLETE_BACKUP_VERSION),
+    personalBackgrounds: z
+      .array(
+        z.strictObject({
+          id: z.string().regex(PERSONAL_BACKGROUND_ID),
+          name: nonblank(BACKGROUND_NAME_MAX),
+          jpeg: z
+            .string()
+            .min(1)
+            .max(Math.ceil(BACKGROUND_JPEG_MAX_BYTES / 3) * 4),
+        }),
+      )
+      .refine((images) => unique(images, (image) => image.id)),
+    personalBackgroundId: z.string().regex(PERSONAL_BACKGROUND_ID).nullable().default(null),
+  })
+  .refine(
+    ({ personalBackgrounds, personalBackgroundId }) =>
+      personalBackgroundId === null ||
+      personalBackgrounds.some(({ id }) => id === personalBackgroundId),
+    { path: ["personalBackgroundId"] },
+  );
+
+const backupSchema = z.discriminatedUnion("version", [backupV1Schema, backupV2Schema]);
+
+export type CompleteBackup = Omit<
+  Awaited<ReturnType<typeof readCollectionSnapshot>>["collection"],
+  "personalBackgrounds" | "personalBackgroundId"
+> & {
   type: typeof COMPLETE_BACKUP_TYPE;
-  version: typeof COMPLETE_BACKUP_VERSION;
-};
+} & (
+    | { version: 1 }
+    | Pick<
+        z.infer<typeof backupV2Schema>,
+        "version" | "personalBackgrounds" | "personalBackgroundId"
+      >
+  );
 
 export class BackupCompatibilityError extends AppError {
   constructor(readonly issues: MessageDescriptor[]) {
@@ -188,7 +230,7 @@ export function parseCompleteBackup(text: string): CompleteBackup {
   if (!("version" in raw) || typeof raw.version !== "number" || !Number.isInteger(raw.version)) {
     throw new AppError(message("backup.invalidVersion"));
   }
-  if (raw.version !== COMPLETE_BACKUP_VERSION) {
+  if (raw.version !== 1 && raw.version !== COMPLETE_BACKUP_VERSION) {
     throw new AppError(message("backup.unsupportedVersion", { version: raw.version }));
   }
   const result = backupSchema.safeParse(raw);
@@ -272,11 +314,19 @@ async function loadOverrideContext(): Promise<SrdOverrideValidationContext> {
 }
 
 export async function exportCompleteBackup(): Promise<void> {
-  const { collection } = await readCollectionSnapshot();
+  const {
+    collection: { personalBackgrounds, ...collection },
+  } = await readCollectionSnapshot();
+  const encodedImages = [];
+  for (const { image, ...metadata } of personalBackgrounds) {
+    const url = await backgroundDataUrl(image);
+    encodedImages.push({ ...metadata, jpeg: url.slice(url.indexOf(",") + 1) });
+  }
   const backup: CompleteBackup = {
     type: COMPLETE_BACKUP_TYPE,
     version: COMPLETE_BACKUP_VERSION,
     ...collection,
+    personalBackgrounds: encodedImages,
   };
   let hasNegativeZero = false;
   const text = JSON.stringify(backup, (_, value: unknown) => {
@@ -309,6 +359,8 @@ export interface RestoreReview {
   savedDecks: number;
   customSpells: number;
   overrides: number;
+  personalBackgrounds: number;
+  removesPersonalBackgrounds: boolean;
   commit: () => Promise<void>;
 }
 
@@ -317,22 +369,45 @@ export async function reviewCompleteBackup(
   loadContext = loadOverrideContext,
 ): Promise<RestoreReview> {
   const backup = parseCompleteBackup(text);
+  const images: PersonalBackground[] = [];
+  if (backup.version === COMPLETE_BACKUP_VERSION) {
+    for (const { id, name, jpeg } of backup.personalBackgrounds) {
+      try {
+        images.push({ id, name, image: await decodeBackgroundJpeg(jpeg) });
+      } catch {
+        throw new AppError(message("backup.invalidBackground", { name }));
+      }
+    }
+  }
   if (backup.srdSpellOverrides.length > 0) {
     validateBackupOverrides(backup, await loadContext());
   }
   await openCollectionStorage();
-  const { changeToken } = await readCollectionMetadata();
+  const { changeToken, existingImages } = await db.transaction(
+    "r",
+    [db.collectionMetadata, db.personalBackgrounds],
+    async () => ({
+      changeToken: (await readCollectionMetadata()).changeToken,
+      existingImages: await db.personalBackgrounds.count(),
+    }),
+  );
   return {
     activeName: backup.activeDeck.name,
     activeEntries: backup.activeDeck.entries.length,
     savedDecks: backup.savedDecks.length,
     customSpells: backup.customSpells.length,
     overrides: backup.srdSpellOverrides.length,
-    commit: () => replaceCollection(backup, changeToken),
+    personalBackgrounds: images.length,
+    removesPersonalBackgrounds: backup.version === 1 && existingImages > 0,
+    commit: () => replaceCollection(backup, images, changeToken),
   };
 }
 
-async function replaceCollection(backup: CompleteBackup, reviewedToken: string): Promise<void> {
+async function replaceCollection(
+  backup: CompleteBackup,
+  images: PersonalBackground[],
+  reviewedToken: string,
+): Promise<void> {
   await openCollectionStorage();
   const tables = collectionTables();
   await db.transaction("rw", [db.collectionMetadata, ...tables], async () => {
@@ -343,10 +418,14 @@ async function replaceCollection(backup: CompleteBackup, reviewedToken: string):
     await db.savedDecks.bulkAdd(backup.savedDecks);
     await db.customSpells.bulkAdd(backup.customSpells);
     await db.srdSpellOverrides.bulkAdd(backup.srdSpellOverrides);
+    await db.personalBackgrounds.bulkAdd(images);
+    const selected =
+      backup.version === COMPLETE_BACKUP_VERSION ? backup.personalBackgroundId : null;
     await db.collectionMetadata.put({
-      ...metadata,
+      id: "collection",
       generation: newUuid(),
       changeToken: newUuid(),
+      ...(selected ? { personalBackgroundId: selected } : {}),
     });
   });
 }

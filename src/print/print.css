@@ -46,6 +46,20 @@
   background-size: cover;
 }
 
+.spell-card[data-card-background^="personal-"] {
+  isolation: isolate;
+}
+
+.spell-card[data-card-background^="personal-"]::before {
+  /* Keep near-black card text readable over even the darkest source image. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: rgb(255 253 248 / 60%);
+  pointer-events: none;
+}
+
 .card-header {
   flex: 0 0 auto;
   position: relative;
@@ -1099,7 +1113,7 @@
   overflow: hidden;
 }
 
-.print-cutting .print-cell {
+.print-cutting .print-cell:not(.print-cell-unavailable) {
   outline: 0.4pt dashed #9b9b9b;
   outline-offset: -0.4pt;
 }

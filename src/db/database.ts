@@ -2,6 +2,7 @@ import Dexie, { type Table } from "dexie";
 import type { Spell, SrdSpellOverride } from "@/domain/spells";
 import { dedupeDeckEntries, deckEntriesEqual } from "@/domain/deck";
 import type { ActiveDeckRecord, DeckEntry, SavedDeck } from "@/domain/deck";
+import type { PersonalBackground } from "@/cards/personal-backgrounds.ts";
 
 export const DATABASE_NAME = "spell-cards-generator";
 
@@ -24,10 +25,12 @@ export interface CollectionMetadata {
   id: "collection";
   generation: string;
   changeToken: string;
+  personalBackgroundId?: string;
 }
 
 export class SpellCardsDatabase extends Dexie {
   collectionMetadata!: Table<CollectionMetadata, "collection">;
+  personalBackgrounds!: Table<PersonalBackground, string>;
 
   get customSpells(): Table<Spell, string> {
     return this.table("collectionCustomSpells");
@@ -175,6 +178,7 @@ export class SpellCardsDatabase extends Dexie {
       activeDeck: "collectionWriteGuard",
       srdSpellOverrides: "collectionWriteGuard, spellId, locale",
     });
+    this.version(8).stores({ personalBackgrounds: "id" });
   }
 }
 

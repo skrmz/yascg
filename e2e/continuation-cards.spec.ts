@@ -131,6 +131,7 @@ test("multi-card previews arrange cards in responsive rows", async ({ page }) =>
   const cards = details.locator(".card-preview-page");
 
   await fitMode.selectOption("multi-card");
+  await expect(fitMode).toHaveValue("multi-card");
   await expect
     .poll(async () => cards.count(), { message: "Multi-card should paginate Wunsch" })
     .toBeGreaterThan(1);
@@ -168,10 +169,13 @@ test("Wunsch multi-card keeps the full description across cards", async ({ page 
   const cards = details.locator(".card-preview-page");
 
   await fitMode.selectOption("multi-card");
+  await expect(fitMode).toHaveValue("multi-card");
+  let cardCount = 0;
   await expect
-    .poll(async () => cards.count(), { message: "Multi-card should paginate Wunsch" })
+    .poll(async () => (cardCount = await cards.count()), {
+      message: "Multi-card should paginate Wunsch",
+    })
     .toBeGreaterThan(1);
-  const cardCount = await cards.count();
 
   await expect(details.getByText(/Die Beschreibung wurde gekürzt/)).toHaveCount(0);
   await expectContinuationLayout(cards, cardCount);
@@ -186,7 +190,18 @@ test("Wunsch multi-card keeps the full description across cards", async ({ page 
   expect(Math.abs(previewBox!.width - 240)).toBeLessThan(2);
   expect(Math.abs(previewBox!.height - 336)).toBeLessThan(2);
 
-  const printCards = await expectPrintedCards(page, cardCount);
+  await page.getByRole("button", { name: "Drucken", exact: true }).first().click();
+  const firstJob = page.getByRole("dialog");
+  await firstJob.getByLabel("Startposition").selectOption("8");
+  await firstJob.getByRole("checkbox", { name: "Karten eines Zaubers zusammenhalten" }).check();
+  await expect(firstJob.getByRole("status")).toContainText(
+    "lege vor dem Drucken frisches Papier ein",
+  );
+  await firstJob.getByRole("button", { name: /drucken/i }).click();
+  const printCards = page.locator(".print-cell .spell-card");
+  await expect(page.locator(".print-sheet")).toHaveCount(1);
+  await expect(page.locator(".print-cell").first().locator(".spell-card")).toHaveCount(1);
+  await expect(printCards).toHaveCount(cardCount);
   await expectContinuationLayout(printCards, cardCount);
 
   const printText = (await printCards.locator(".card-body").allTextContents()).join(" ");
@@ -200,4 +215,19 @@ test("Wunsch multi-card keeps the full description across cards", async ({ page 
   expect(printBox).not.toBeNull();
   expect(Math.abs(printBox!.width - 240)).toBeLessThan(2);
   expect(Math.abs(printBox!.height - 336)).toBeLessThan(2);
+
+  await page.emulateMedia({ media: "screen" });
+  await page.getByRole("button", { name: "Drucken", exact: true }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("checkbox", { name: "Alle Zauber auswählen" }).uncheck();
+  await expect(dialog.getByRole("button", { name: "Drucken", exact: true })).toBeDisabled();
+  await dialog.getByText("Einzelkarten für Wunsch auswählen").click();
+  await dialog.getByRole("checkbox", { name: `Karte 2 von ${cardCount}` }).check();
+  await dialog.getByRole("button", { name: /drucken/i }).click();
+  await expect(printCards).toHaveCount(1);
+  await expect(printCards.locator(".card-continuation")).toHaveText(`2/${cardCount}`);
+  await expect(printCards.locator(".card-body")).toHaveText(
+    (await cards.nth(1).locator(".card-body").textContent())!,
+  );
+  await expect(cards).toHaveCount(cardCount);
 });
