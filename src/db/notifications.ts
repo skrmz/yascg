@@ -1,4 +1,9 @@
-export type ChangeKind = "active-deck" | "saved-decks" | "custom-spells" | "srd-overrides";
+export type ChangeKind =
+  | "active-deck"
+  | "saved-decks"
+  | "custom-spells"
+  | "srd-overrides"
+  | "collection";
 
 export interface ChangeMessage {
   kind: ChangeKind;

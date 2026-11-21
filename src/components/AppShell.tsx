@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookOpen, Eye, Layers, X } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
+import { INITIAL_COLLECTION_GENERATION } from "@/db/collection-state.ts";
 import { translateMessage } from "@/locales/messages.ts";
 import { Header } from "./Header.tsx";
 import { SectionErrorBoundary } from "./ErrorBoundary.tsx";
@@ -43,6 +44,9 @@ export function AppShell() {
     conflict,
     reloadLatest,
     dismissConflict,
+    collectionGeneration,
+    collectionError,
+    refreshAll,
   } = useApp();
   const { t } = useTranslation();
 
@@ -107,7 +111,7 @@ export function AppShell() {
     previousSelectedSpell.current = selectedSpellId;
   }, [selectedSpellId]);
 
-  const notice = languageNotice ?? deckError ?? dataError;
+  const notice = collectionError ?? languageNotice ?? deckError ?? dataError;
 
   return (
     <div
@@ -118,25 +122,33 @@ export function AppShell() {
       <Header />
       {notice ? (
         <div className="app-no-print flex flex-wrap items-center justify-between gap-2 border-b border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs text-amber-200">
-          <span className="min-w-0 break-words">{translateMessage(t, notice)}</span>
+          <span className="min-w-0 break-words" role="status">
+            {translateMessage(t, notice)}
+          </span>
           <div className="flex items-center gap-1">
-            {dataError && notice === dataError ? (
+            {collectionError ? (
+              <Button variant="ghost" size="sm" onClick={refreshAll}>
+                {t("common.retry")}
+              </Button>
+            ) : dataError && notice === dataError ? (
               <Button variant="ghost" size="sm" onClick={retryData}>
                 {t("common.retry")}
               </Button>
             ) : null}
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("app.notice.dismiss")}
-              onClick={() => {
-                if (languageNotice) dismissLanguageNotice();
-                if (deckError) clearDeckError();
-                if (dataError) dismissDataError();
-              }}
-            >
-              <X size={14} aria-hidden="true" />
-            </Button>
+            {!collectionError ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("app.notice.dismiss")}
+                onClick={() => {
+                  if (languageNotice) dismissLanguageNotice();
+                  if (deckError) clearDeckError();
+                  if (dataError) dismissDataError();
+                }}
+              >
+                <X size={14} aria-hidden="true" />
+              </Button>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -148,6 +160,7 @@ export function AppShell() {
             className="min-h-0 flex-1 overflow-hidden"
           >
             <Tabs
+              key={collectionGeneration || INITIAL_COLLECTION_GENERATION}
               value={activeTab}
               onValueChange={changeTab}
               className={cn(

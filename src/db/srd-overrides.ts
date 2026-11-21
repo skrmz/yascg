@@ -1,4 +1,5 @@
 import { db } from "./database.ts";
+import { INITIAL_COLLECTION_GENERATION, writeCollection } from "./collection-state.ts";
 import { type Spell, type SrdSpellOverride } from "@/domain/spells";
 import {
   validateSrdOverride,
@@ -21,8 +22,16 @@ export async function getSrdOverride(
   return record ?? null;
 }
 
-export async function deleteSrdOverride(spellId: string, locale: string): Promise<void> {
-  await db.srdSpellOverrides.delete([spellId, locale]);
+export async function deleteSrdOverride(
+  spellId: string,
+  locale: string,
+  generation = INITIAL_COLLECTION_GENERATION,
+): Promise<void> {
+  await writeCollection(generation, [db.srdSpellOverrides], async (markChanged) => {
+    if (!(await db.srdSpellOverrides.get([spellId, locale]))) return;
+    await db.srdSpellOverrides.delete([spellId, locale]);
+    markChanged();
+  });
 }
 
 /**
@@ -33,6 +42,7 @@ export async function deleteSrdOverride(spellId: string, locale: string): Promis
 export async function putSrdOverride(
   input: SrdOverrideInput,
   context: SrdOverrideValidationContext,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<SrdSpellOverride | null> {
   const result = validateSrdOverride(input, context);
   if (!result.ok) {
@@ -43,11 +53,14 @@ export async function putSrdOverride(
   }
   const { value } = result;
   if (!value.verbalDescription && !value.somaticDescription) {
-    await deleteSrdOverride(value.spellId, value.locale);
+    await deleteSrdOverride(value.spellId, value.locale, generation);
     return null;
   }
   const record: SrdSpellOverride = { ...value, updatedAt: Date.now() };
-  await db.srdSpellOverrides.put(record);
+  await writeCollection(generation, [db.srdSpellOverrides], async (markChanged) => {
+    await db.srdSpellOverrides.put(record);
+    markChanged();
+  });
   return record;
 }
 

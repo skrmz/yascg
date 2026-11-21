@@ -1,4 +1,11 @@
 import { db } from "./database.ts";
+import {
+  CollectionChangedError,
+  INITIAL_COLLECTION_GENERATION,
+  openCollectionStorage,
+  readCollectionMetadata,
+  writeCollection,
+} from "./collection-state.ts";
 import { type Table } from "dexie";
 import {
   ACTIVE_DECK_ID,
@@ -34,12 +41,15 @@ export class DeckConflictError extends AppError {
 
 export type ActiveDeckMutator = (current: ActiveDeckRecord) => ActiveDeckRecord;
 
-export async function getActiveDeck(): Promise<ActiveDeckRecord> {
-  return db.transaction("rw", db.activeDeck, async () => {
+export async function getActiveDeck(
+  generation = INITIAL_COLLECTION_GENERATION,
+): Promise<ActiveDeckRecord> {
+  return writeCollection(generation, [db.activeDeck], async (markChanged) => {
     const existing = await db.activeDeck.get(ACTIVE_DECK_ID);
     if (existing) return existing;
     const created = createEmptyActiveDeck();
     await db.activeDeck.put(created);
+    markChanged();
     return created;
   });
 }
@@ -49,9 +59,21 @@ export async function readActiveDeck(): Promise<ActiveDeckRecord | undefined> {
   return db.activeDeck.get(ACTIVE_DECK_ID);
 }
 
+export async function readCurrentDeck(generation?: string): Promise<ActiveDeckRecord> {
+  await openCollectionStorage();
+  return db.transaction("r", db.activeDeck, db.collectionMetadata, async () => {
+    if (generation !== undefined && (await readCollectionMetadata()).generation !== generation) {
+      throw new CollectionChangedError();
+    }
+    return (await readActiveDeck()) ?? createEmptyActiveDeck();
+  });
+}
+
 /** Ensures the singleton row exists; safe to call from a mount effect. */
-export async function ensureActiveDeck(): Promise<ActiveDeckRecord> {
-  return getActiveDeck();
+export async function ensureActiveDeck(
+  generation = INITIAL_COLLECTION_GENERATION,
+): Promise<ActiveDeckRecord> {
+  return getActiveDeck(generation);
 }
 
 /**
@@ -62,8 +84,9 @@ export async function mutateActiveDeck(
   expectedRevision: number,
   mutator: ActiveDeckMutator,
   extraTables: Table[] = [],
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<ActiveDeckRecord> {
-  return db.transaction("rw", [db.activeDeck, ...extraTables], async () => {
+  return writeCollection(generation, [db.activeDeck, ...extraTables], async (markChanged) => {
     const current = (await db.activeDeck.get(ACTIVE_DECK_ID)) ?? createEmptyActiveDeck();
     if (current.revision !== expectedRevision) {
       throw new DeckConflictError(expectedRevision, current.revision);
@@ -94,6 +117,7 @@ export async function mutateActiveDeck(
     };
     const validated = activeDeckRecordSchema.parse(next);
     await db.activeDeck.put(validated);
+    markChanged();
     return validated;
   });
 }

@@ -1,4 +1,5 @@
 import { db } from "./database.ts";
+import { INITIAL_COLLECTION_GENERATION, writeCollection } from "./collection-state.ts";
 import {
   ACTIVE_DECK_ID,
   createEmptyActiveDeck,
@@ -97,11 +98,12 @@ function persisted(active: ActiveDeckRecord): ActiveDeckRecord {
 export async function saveNewDeck(
   activeExpectedRevision: number,
   name: string,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<SavedDeckWriteResult> {
   const trimmed = assertDeckName(name, true);
   const id = newUuid();
   const now = Date.now();
-  return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
+  return writeCollection(generation, [db.activeDeck, db.savedDecks], async (markChanged) => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
     const entries = dedupeDeckEntries(cloneEntries(current.entries));
     const savedDeck = savedDeckSchema.parse({
@@ -125,6 +127,7 @@ export async function saveNewDeck(
     });
     await db.savedDecks.put(savedDeck);
     await db.activeDeck.put(active);
+    markChanged();
     return { savedDeck, active };
   });
 }
@@ -135,8 +138,9 @@ export async function saveNewDeck(
  */
 export async function saveAssociatedDeck(
   activeExpectedRevision: number,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<SaveAssociatedResult> {
-  return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
+  return writeCollection(generation, [db.activeDeck, db.savedDecks], async (markChanged) => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
     const savedDeckId = current.savedDeckId;
     const baseline = current.baseline;
@@ -175,6 +179,7 @@ export async function saveAssociatedDeck(
     });
     await db.savedDecks.put(savedDeck);
     await db.activeDeck.put(active);
+    markChanged();
     return { active, savedDeck, changed: true };
   });
 }
@@ -183,8 +188,9 @@ export async function saveAssociatedDeck(
 export async function loadSavedDeck(
   activeExpectedRevision: number,
   savedId: string,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<ActiveDeckWriteResult> {
-  return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
+  return writeCollection(generation, [db.activeDeck, db.savedDecks], async (markChanged) => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
     const saved = await db.savedDecks.get(savedId);
     if (!saved) {
@@ -218,6 +224,7 @@ export async function loadSavedDeck(
       revision: current.revision + 1,
     });
     await db.activeDeck.put(active);
+    markChanged();
     return { active, changed: true };
   });
 }
@@ -227,8 +234,9 @@ export async function deleteSavedDeck(
   activeExpectedRevision: number,
   savedId: string,
   expectedSavedRevision: number,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<ActiveDeckWriteResult> {
-  return db.transaction("rw", db.activeDeck, db.savedDecks, async () => {
+  return writeCollection(generation, [db.activeDeck, db.savedDecks], async (markChanged) => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
     const existing = await db.savedDecks.get(savedId);
     if (!existing) {
@@ -238,6 +246,7 @@ export async function deleteSavedDeck(
       throw new SavedDeckConflictError(savedId, expectedSavedRevision, existing.revision);
     }
     await db.savedDecks.delete(savedId);
+    markChanged();
     if (current.savedDeckId !== savedId) {
       return { active: current, changed: false };
     }
@@ -256,8 +265,9 @@ export async function deleteSavedDeck(
 /** New deck: blanks the active singleton without touching any saved snapshot. */
 export async function newActiveDeck(
   activeExpectedRevision: number,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<ActiveDeckWriteResult> {
-  return db.transaction("rw", db.activeDeck, async () => {
+  return writeCollection(generation, [db.activeDeck], async (markChanged) => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
     if (
       current.name === "" &&
@@ -275,6 +285,7 @@ export async function newActiveDeck(
       revision: current.revision + 1,
     });
     await db.activeDeck.put(active);
+    markChanged();
     return { active, changed: true };
   });
 }
@@ -283,8 +294,9 @@ export async function newActiveDeck(
 export async function renameActiveDeck(
   activeExpectedRevision: number,
   rawName: string,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<ActiveDeckWriteResult> {
-  return db.transaction("rw", db.activeDeck, async () => {
+  return writeCollection(generation, [db.activeDeck], async (markChanged) => {
     const current = assertActiveRevision(await readActiveOrEmpty(), activeExpectedRevision);
     const name = assertDeckName(rawName, current.savedDeckId !== undefined);
     if (name === current.name) {
@@ -292,6 +304,7 @@ export async function renameActiveDeck(
     }
     const active = persisted({ ...current, name, revision: current.revision + 1 });
     await db.activeDeck.put(active);
+    markChanged();
     return { active, changed: true };
   });
 }

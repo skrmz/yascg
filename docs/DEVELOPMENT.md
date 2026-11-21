@@ -244,7 +244,7 @@ This section maps those contracts to the implementation.
 - `SaveAsDialog` and `OpenDeckDialog` perform their own validation/confirmation through provider
   actions; the deck actions menu holds Save As, New deck, deck import/export, and Clear entries.
   A saved-snapshot Save conflict offers Save As or Open.
-- `src/db/database.ts` defines `version(5)`. `version(4)` normalizes saved-deck revisions below
+- In `src/db/database.ts`, `version(4)` normalizes saved-deck revisions below
   `1` to `1`, and sets `baseline.savedRevision` only when the stored baseline name and ordered
   deduplicated entries exactly match the associated saved snapshot. Unverifiable associations
   keep the token absent (no fabricated token, association preserved, no active revision bump);
@@ -267,6 +267,24 @@ This section maps those contracts to the implementation.
   `CustomSpellForm` gains `editableCopy`, `onSaved`, and `selectOnSave`; it saves from the
   existing record, preserves unexposed component fields, and uses `LIMITS.FREETEXT_MAX` for
   authoring so copied SRD metadata over 120 characters stays editable.
+
+### Complete backup and restore
+
+- `src/db/collection-state.ts` reads the collection and its generation in a single read
+  transaction. The workspace binds mutation callbacks to that generation and discards open
+  mutation dialogs and drafts when it observes a replacement. IndexedDB checks the generation
+  before each mutation. Successful collection writes rotate a separate review change token in
+  the same transaction.
+- `src/io/complete-backup.ts` owns the versioned JSON contract and the restore review. V1
+  encodes an explicitly stored `undefined` optional property as JSON `null`, and leaves
+  absent properties absent. Confirmation compares the reviewed change token and atomically
+  replaces all four stores and both tokens.
+- Database upgrades 6 and 7 move existing records to guarded stores and reserve the old store
+  names with incompatible key paths. Older Dexie clients can reopen with a versionless
+  connection, so the old store names must stay isolated from the current collection.
+- The backup integration tests exercise file validation, round-trip fidelity, transaction
+  rollback, and all mutation entry points. The browser tests exercise offline and cross-tab
+  restore. See the [product specification](specs/MAIN-spec.md#complete-backup-and-restore).
 
 ## Import and export routing
 

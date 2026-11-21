@@ -7,6 +7,7 @@ import {
 } from "@/domain/payloads";
 import { newEntryId } from "@/domain/ids";
 import { type ActiveDeckRecord, type DeckEntry, dedupeDeckEntries } from "@/domain/deck";
+import { INITIAL_COLLECTION_GENERATION } from "@/db/collection-state.ts";
 import { mutateActiveDeck, replaceDeck } from "@/db/active-deck.ts";
 import { message, type MessageDescriptor } from "@/locales/messages.ts";
 
@@ -85,14 +86,19 @@ export function planToEntries(plan: DeckImportPlan): DeckEntry[] {
 export async function applyDeckImport(
   plan: DeckImportPlan,
   activeExpectedRevision: number,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<ActiveDeckRecord> {
   const entries = planToEntries(plan);
-  return mutateActiveDeck(activeExpectedRevision, (current) =>
-    replaceDeck(current, {
-      name: plan.name,
-      entries,
-      baseline: null,
-      savedDeckId: undefined,
-    }),
+  return mutateActiveDeck(
+    activeExpectedRevision,
+    (current) =>
+      replaceDeck(current, {
+        name: plan.name,
+        entries,
+        baseline: null,
+        savedDeckId: undefined,
+      }),
+    [],
+    generation,
   );
 }

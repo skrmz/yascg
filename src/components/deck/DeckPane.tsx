@@ -240,9 +240,15 @@ export function DeckPane() {
     }
   }, [activeDeck, nameDraft, renameActiveDeck, t]);
 
-  const onNameBlur = () => {
+  const onNameBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     if (skipBlurRef.current) {
       skipBlurRef.current = false;
+      return;
+    }
+    if (
+      event.relatedTarget instanceof Element &&
+      event.relatedTarget.closest("[data-collection-menu]")
+    ) {
       return;
     }
     if (editingRef.current) void flushNameCommit();

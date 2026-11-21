@@ -1,4 +1,5 @@
 import { db } from "@/db/database.ts";
+import { INITIAL_COLLECTION_GENERATION, writeCollection } from "@/db/collection-state.ts";
 import { LIMITS, spellSchema, type Spell } from "@/domain/spells";
 import { validateSrdOverride, type SrdOverrideInput } from "@/domain/srd-overrides.ts";
 import { CUSTOM_SPELLS_TYPE, customSpellImportPayloadSchema, readType } from "@/domain/payloads";
@@ -249,6 +250,7 @@ export async function applyCustomImport(
   plan: CustomImportPlan,
   strategy: CollisionStrategy,
   reviewedFingerprints: ReadonlyMap<string, string>,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<CustomImportCounts> {
   const counts: CustomImportCounts = {
     imported: 0,
@@ -258,41 +260,47 @@ export async function applyCustomImport(
     remapped: plan.remaps.length,
     overrides: 0,
   };
-  return db.transaction("rw", db.customSpells, db.srdSpellOverrides, async () => {
-    const finalRecords: Spell[] = [];
-    for (const entry of plan.entries) {
-      if (entry.collision) {
-        const reviewed = reviewedFingerprints.get(entry.collision.id);
-        const current = await db.customSpells.get(entry.collision.id);
-        if (!current || !reviewed || fingerprint(current) !== reviewed) {
-          throw new ImportConflictError(
-            message("importExport.error.collisionChanged", { id: entry.collision.id }),
-            `Custom spell "${entry.collision.id}" changed since collision review; re-run the import review.`,
-          );
-        }
-        if (strategy === "skip") {
-          counts.skipped += 1;
+  return writeCollection(
+    generation,
+    [db.customSpells, db.srdSpellOverrides],
+    async (markChanged) => {
+      const finalRecords: Spell[] = [];
+      for (const entry of plan.entries) {
+        if (entry.collision) {
+          const reviewed = reviewedFingerprints.get(entry.collision.id);
+          const current = await db.customSpells.get(entry.collision.id);
+          if (!current || !reviewed || fingerprint(current) !== reviewed) {
+            throw new ImportConflictError(
+              message("importExport.error.collisionChanged", { id: entry.collision.id }),
+              `Custom spell "${entry.collision.id}" changed since collision review; re-run the import review.`,
+            );
+          }
+          if (strategy === "skip") {
+            counts.skipped += 1;
+            continue;
+          }
+          if (strategy === "keep-both") {
+            finalRecords.push(spellSchema.parse({ ...entry.record, id: newUuid() }));
+            counts.copied += 1;
+            continue;
+          }
+          finalRecords.push(spellSchema.parse({ ...entry.record, id: entry.collision.id }));
+          counts.overwritten += 1;
           continue;
         }
-        if (strategy === "keep-both") {
-          finalRecords.push(spellSchema.parse({ ...entry.record, id: newUuid() }));
-          counts.copied += 1;
-          continue;
-        }
-        finalRecords.push(spellSchema.parse({ ...entry.record, id: entry.collision.id }));
-        counts.overwritten += 1;
-        continue;
+        finalRecords.push(spellSchema.parse(entry.record));
+        counts.imported += 1;
       }
-      finalRecords.push(spellSchema.parse(entry.record));
-      counts.imported += 1;
-    }
-    for (const record of finalRecords) {
-      await db.customSpells.put(record);
-    }
-    for (const override of plan.overrides) {
-      await db.srdSpellOverrides.put({ ...override, updatedAt: Date.now() });
-      counts.overrides += 1;
-    }
-    return counts;
-  });
+      for (const record of finalRecords) {
+        await db.customSpells.put(record);
+        markChanged();
+      }
+      for (const override of plan.overrides) {
+        await db.srdSpellOverrides.put({ ...override, updatedAt: Date.now() });
+        counts.overrides += 1;
+        markChanged();
+      }
+      return counts;
+    },
+  );
 }

@@ -64,6 +64,49 @@ export const en = {
     customSpellsGuide: "Custom Spells Guide",
     privacyPolicy: "Privacy Policy",
   },
+  backup: {
+    export: "Export complete backup",
+    restore: "Restore complete backup",
+    exported: "Complete backup downloaded.",
+    restoreDescription:
+      "Choose a YASCG complete backup file to review before replacing this browser’s collection.",
+    chooseFile: "Choose backup file",
+    reviewAgain: "Review file again",
+    validating: "Validating the backup…",
+    restoring: "Restoring the collection…",
+    unnamedDeck: "Unnamed deck",
+    activeDeck: "Working deck: {{name}} ({{count}} entries)",
+    activeDeck_one: "Working deck: {{name}} ({{count}} entry)",
+    activeDeck_other: "Working deck: {{name}} ({{count}} entries)",
+    savedDecks: "Saved decks: {{count}}",
+    customSpells: "Custom spells: {{count}}",
+    overrides: "SRD overrides: {{count}}",
+    replacementWarning:
+      "Restoring replaces this entire collection, including the current working deck. Any local decks, custom spells, or SRD overrides absent from the backup will be removed.",
+    confirmRestore: "Replace entire collection",
+    restored: "Complete backup restored.",
+    reloadAfterCommit:
+      "The backup was restored, but the workspace could not refresh. Reload to see the restored collection.",
+    workspaceUpdated:
+      "The collection was restored. Reopen any editor or action to work with the restored collection.",
+    wrongType: "Choose a YASCG complete backup file.",
+    invalidVersion: "The backup has a missing or invalid format version.",
+    unsupportedVersion:
+      "Backup format version {{version}} is unsupported. Open the file with a compatible YASCG build.",
+    invalidData: "Invalid or duplicate backup data at {{path}}.",
+    incompatibleOverrides:
+      "The backup contains incompatible SRD overrides. Open the file with a compatible YASCG build.",
+    overrideIdentity: "Spell {{spellId}} (locale {{locale}}).",
+    catalogUnavailable:
+      "The bundled spell catalog could not load for validation. Review the file again when the catalog is available.",
+    staleReview:
+      "The collection changed after this review. Review the file again and confirm the replacement.",
+    exportFailed: "The complete backup could not be exported.",
+    readFailed: "The backup file could not be read or reviewed.",
+    restoreFailed: "The replacement failed. Your previous collection is still stored.",
+    resourceLimit: "The backup exceeds this browser’s processing limits.",
+    quotaExceeded: "The browser ran out of storage space. The collection was not changed.",
+  },
   privacy: {
     title: "Privacy Policy",
   },
@@ -308,7 +351,7 @@ export const en = {
       "Exports the active deck's spell references, name, and display settings. Spell definitions and SRD edits are not included. Import replaces the active deck but preserves saved decks and existing spell definitions.",
     customTitle: "Import / export custom spells",
     customDescription:
-      "Exports custom spell definitions and edits to SRD spells, including component descriptions. Use this together with deck exports for a complete backup of your spell content and deck references.",
+      "Exports custom spell definitions and edits to SRD spells, including component descriptions. To back up the whole collection, use Export complete backup in the header menu.",
     deckBackupNotice: "Deck JSON is not a backup of custom spells or SRD overrides.",
     customBackupNotice:
       "This export backs up custom spell definitions and edits to SRD spells, including component descriptions.",
@@ -493,6 +536,10 @@ export const en = {
     },
     generic: "Something went wrong. Please try again.",
     dataLoad: "Spell data could not be loaded. Please try again.",
+    storageUpgradeBlocked:
+      "A previous version of YASCG is blocking the storage upgrade. Close its tabs and retry.",
+    collectionChanged:
+      "The collection was restored after this action started. Reopen the action and try again.",
     storageUnavailable:
       "Local storage is unavailable, so spells and decks cannot be saved. Export your data as JSON when storage is working.",
     deckConflict: "The active deck changed (expected revision {{expected}}, found {{actual}}).",

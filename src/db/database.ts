@@ -12,11 +12,38 @@ const DECK_STORES = {
   srdSpellOverrides: "[spellId+locale], spellId, locale",
 };
 
+const COLLECTION_STORES = {
+  collectionCustomSpells: DECK_STORES.customSpells,
+  collectionSavedDecks: DECK_STORES.savedDecks,
+  collectionActiveDeck: DECK_STORES.activeDeck,
+  collectionSrdSpellOverrides: DECK_STORES.srdSpellOverrides,
+  collectionMetadata: "id",
+};
+
+export interface CollectionMetadata {
+  id: "collection";
+  generation: string;
+  changeToken: string;
+}
+
 export class SpellCardsDatabase extends Dexie {
-  customSpells!: Table<Spell, string>;
-  savedDecks!: Table<SavedDeck, string>;
-  activeDeck!: Table<ActiveDeckRecord, string>;
-  srdSpellOverrides!: Table<SrdSpellOverride, [string, string]>;
+  collectionMetadata!: Table<CollectionMetadata, "collection">;
+
+  get customSpells(): Table<Spell, string> {
+    return this.table("collectionCustomSpells");
+  }
+
+  get savedDecks(): Table<SavedDeck, string> {
+    return this.table("collectionSavedDecks");
+  }
+
+  get activeDeck(): Table<ActiveDeckRecord, string> {
+    return this.table("collectionActiveDeck");
+  }
+
+  get srdSpellOverrides(): Table<SrdSpellOverride, [string, string]> {
+    return this.table("collectionSrdSpellOverrides");
+  }
 
   constructor(name: string = DATABASE_NAME) {
     super(name);
@@ -121,6 +148,33 @@ export class SpellCardsDatabase extends Dexie {
           }
         }
       });
+    this.version(6)
+      .stores({
+        ...COLLECTION_STORES,
+        customSpells: null,
+        savedDecks: null,
+        activeDeck: null,
+        srdSpellOverrides: null,
+      })
+      .upgrade(async (tx) => {
+        for (const [oldStore, newStore] of [
+          ["customSpells", "collectionCustomSpells"],
+          ["savedDecks", "collectionSavedDecks"],
+          ["activeDeck", "collectionActiveDeck"],
+          ["srdSpellOverrides", "collectionSrdSpellOverrides"],
+        ]) {
+          await tx.table(newStore).bulkAdd(await tx.table(oldStore).toArray());
+        }
+      });
+    // Dexie can retry an older schema with a versionless open, and patch missing
+    // stores. Keep the old names and indexes, but reject old puts at the IDB key path.
+    this.version(7).stores({
+      ...COLLECTION_STORES,
+      customSpells: "collectionWriteGuard, name, updatedAt",
+      savedDecks: "collectionWriteGuard, updatedAt",
+      activeDeck: "collectionWriteGuard",
+      srdSpellOverrides: "collectionWriteGuard, spellId, locale",
+    });
   }
 }
 

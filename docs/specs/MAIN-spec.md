@@ -721,6 +721,19 @@ be English or translated and is never used for matching. A missing translation y
 placeholder, not a missing-reference repair suggestion. Imported custom spells retain their
 contents and behavior regardless of the selected SRD language.
 
+### Complete backup and restore
+
+The header menu offers collection-level backup export and restore. Export captures one consistent
+snapshot of the committed working deck, saved decks, custom spells, and every locale's SRD
+overrides in a versioned JSON file. Restore validates compatibility locally and requires explicit
+confirmation of the reviewed file and destination state before replacing all four collections
+atomically. Record identities, order, baselines, historical revisions, and unresolved references
+survive. The destination language preference is independent of the collection.
+
+Every committed collection change invalidates an earlier restore review. Every successful restore
+invalidates stale collection mutations across open tabs. See the
+[complete requirements and acceptance criteria](requests/complete-backup-restore-spec.md).
+
 ## 9. Card Layout and Text Fitting
 
 **Physical size:** 2.5in × 3.5in (63.5 × 88.9 mm), `box-sizing: border-box`. Application-shell
@@ -967,7 +980,8 @@ must print.
   preserve user data or fail visibly; failed writes must not be reported as saved. Use
   transactions for linked operations.
 - If IndexedDB is unavailable or quota is exceeded, show an error and explain that local data
-  cannot be safely saved. Export is the user backup path; storage may be evicted or cleared.
+  cannot be safely saved. Use [complete backup](#complete-backup-and-restore) in case storage
+  is evicted or cleared.
 - For concurrent tabs, enforce the transactional revision checks in §7. Notifications refresh
   other tabs but must not replace compare-and-swap checks. Apply equivalent stale-write
   prevention to associated saved-snapshot updates and custom-spell conflict overwrites.

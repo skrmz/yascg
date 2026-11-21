@@ -1,4 +1,5 @@
 import { db } from "./database.ts";
+import { INITIAL_COLLECTION_GENERATION, writeCollection } from "./collection-state.ts";
 import { DeckConflictError } from "./active-deck.ts";
 import {
   ACTIVE_DECK_ID,
@@ -14,6 +15,7 @@ import { AppError, message } from "@/locales/messages.ts";
 
 export interface CustomSpellDeletion {
   spell: Spell;
+  generation: string;
   spellId: string;
   activeEntries: Array<{ index: number; entry: DeckEntry }>;
   activeRevisionAfter: number;
@@ -85,40 +87,59 @@ export async function listCustomSpells(): Promise<Spell[]> {
   return spells.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function putCustomSpell(spell: Spell): Promise<Spell> {
+export async function putCustomSpell(
+  spell: Spell,
+  generation = INITIAL_COLLECTION_GENERATION,
+): Promise<Spell> {
   const validated = validateCustomSpell(spell);
-  await db.customSpells.put(validated);
-  return validated;
+  return writeCollection(generation, [db.customSpells], async (markChanged) => {
+    await db.customSpells.put(validated);
+    markChanged();
+    return validated;
+  });
 }
 
-export async function updateCustomSpell(spell: Spell): Promise<Spell> {
-  const existing = await db.customSpells.get(spell.id);
-  if (!existing) {
-    throw new AppError(
-      message("error.customSpellNotFound", { id: spell.id }),
-      `Custom spell "${spell.id}" was not found.`,
-    );
-  }
-  return putCustomSpell({ ...spell, id: existing.id });
+export async function updateCustomSpell(
+  spell: Spell,
+  generation = INITIAL_COLLECTION_GENERATION,
+): Promise<Spell> {
+  return writeCollection(generation, [db.customSpells], async (markChanged) => {
+    const existing = await db.customSpells.get(spell.id);
+    if (!existing) {
+      throw new AppError(
+        message("error.customSpellNotFound", { id: spell.id }),
+        `Custom spell "${spell.id}" was not found.`,
+      );
+    }
+    const validated = validateCustomSpell(spell);
+    await db.customSpells.put(validated);
+    markChanged();
+    return validated;
+  });
 }
 
-export async function duplicateCustomSpell(id: string): Promise<Spell> {
-  const existing = await db.customSpells.get(id);
-  if (!existing) {
-    throw new AppError(
-      message("error.customSpellNotFound", { id }),
-      `Custom spell "${id}" was not found.`,
-    );
-  }
-  const copy: Spell = {
-    ...existing,
-    id: newUuid(),
-    name: `${existing.name} (Copy)`.slice(0, 120),
-    updatedAt: Date.now(),
-  };
-  const validated = spellSchema.parse(copy);
-  await db.customSpells.put(validated);
-  return validated;
+export async function duplicateCustomSpell(
+  id: string,
+  generation = INITIAL_COLLECTION_GENERATION,
+): Promise<Spell> {
+  return writeCollection(generation, [db.customSpells], async (markChanged) => {
+    const existing = await db.customSpells.get(id);
+    if (!existing) {
+      throw new AppError(
+        message("error.customSpellNotFound", { id }),
+        `Custom spell "${id}" was not found.`,
+      );
+    }
+    const validated = spellSchema.parse({
+      ...existing,
+      id: newUuid(),
+      name: `${existing.name} (Copy)`.slice(0, 120),
+      updatedAt: Date.now(),
+    });
+    await db.customSpells.put(validated);
+    markChanged();
+    return validated;
+  });
 }
 
 /**
@@ -129,8 +150,9 @@ export async function duplicateCustomSpell(id: string): Promise<Spell> {
 export async function deleteCustomSpell(
   activeExpectedRevision: number,
   spellId: string,
+  generation = INITIAL_COLLECTION_GENERATION,
 ): Promise<CustomSpellDeletion | null> {
-  return db.transaction("rw", db.customSpells, db.activeDeck, async () => {
+  return writeCollection(generation, [db.customSpells, db.activeDeck], async (markChanged) => {
     const spell = await db.customSpells.get(spellId);
     if (!spell) return null;
     const active = (await db.activeDeck.get(ACTIVE_DECK_ID)) ?? createEmptyActiveDeck();
@@ -149,8 +171,10 @@ export async function deleteCustomSpell(
     };
     await db.customSpells.delete(spellId);
     await db.activeDeck.put(next);
+    markChanged();
     return {
       spell,
+      generation,
       spellId,
       activeEntries,
       activeRevisionAfter: next.revision,
@@ -168,30 +192,35 @@ export async function restoreDeletedSpell(
   deletion: CustomSpellDeletion,
   activeExpectedRevision: number,
 ): Promise<ActiveDeckRecord> {
-  return db.transaction("rw", db.customSpells, db.activeDeck, async () => {
-    const existing = await db.customSpells.get(deletion.spellId);
-    if (existing) {
-      throw new AppError(
-        message("error.undoIdInUse", { id: deletion.spellId }),
-        `Cannot undo: the spell ID "${deletion.spellId}" is already in use.`,
-      );
-    }
-    const active = (await db.activeDeck.get(ACTIVE_DECK_ID)) ?? createEmptyActiveDeck();
-    if (active.revision !== activeExpectedRevision) {
-      throw new DeckConflictError(activeExpectedRevision, active.revision);
-    }
-    await db.customSpells.put(deletion.spell);
-    const entries = [...active.entries];
-    for (const { index, entry } of deletion.activeEntries) {
-      const bounded = Math.min(index, entries.length);
-      entries.splice(bounded, 0, entry);
-    }
-    const next: ActiveDeckRecord = {
-      ...active,
-      entries: dedupeDeckEntries(entries),
-      revision: active.revision + 1,
-    };
-    await db.activeDeck.put(next);
-    return next;
-  });
+  return writeCollection(
+    deletion.generation,
+    [db.customSpells, db.activeDeck],
+    async (markChanged) => {
+      const existing = await db.customSpells.get(deletion.spellId);
+      if (existing) {
+        throw new AppError(
+          message("error.undoIdInUse", { id: deletion.spellId }),
+          `Cannot undo: the spell ID "${deletion.spellId}" is already in use.`,
+        );
+      }
+      const active = (await db.activeDeck.get(ACTIVE_DECK_ID)) ?? createEmptyActiveDeck();
+      if (active.revision !== activeExpectedRevision) {
+        throw new DeckConflictError(activeExpectedRevision, active.revision);
+      }
+      await db.customSpells.put(deletion.spell);
+      const entries = [...active.entries];
+      for (const { index, entry } of deletion.activeEntries) {
+        const bounded = Math.min(index, entries.length);
+        entries.splice(bounded, 0, entry);
+      }
+      const next: ActiveDeckRecord = {
+        ...active,
+        entries: dedupeDeckEntries(entries),
+        revision: active.revision + 1,
+      };
+      await db.activeDeck.put(next);
+      markChanged();
+      return next;
+    },
+  );
 }

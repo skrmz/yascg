@@ -63,6 +63,50 @@ export const de = {
     customSpellsGuide: "Leitfaden für eigene Zauber",
     privacyPolicy: "Datenschutzerklärung",
   },
+  backup: {
+    export: "Vollständiges Backup exportieren",
+    restore: "Vollständiges Backup wiederherstellen",
+    exported: "Das vollständige Backup wurde heruntergeladen.",
+    restoreDescription:
+      "Wähle ein vollständiges YASCG-Backup und prüfe es, bevor du die Sammlung in diesem Browser ersetzt.",
+    chooseFile: "Backup-Datei auswählen",
+    reviewAgain: "Datei erneut prüfen",
+    validating: "Das Backup wird geprüft …",
+    restoring: "Die Sammlung wird wiederhergestellt …",
+    unnamedDeck: "Unbenanntes Deck",
+    activeDeck: "Aktives Deck: {{name}} ({{count}} Einträge)",
+    activeDeck_one: "Aktives Deck: {{name}} ({{count}} Eintrag)",
+    activeDeck_other: "Aktives Deck: {{name}} ({{count}} Einträge)",
+    savedDecks: "Gespeicherte Decks: {{count}}",
+    customSpells: "Eigene Zauber: {{count}}",
+    overrides: "SRD-Anpassungen: {{count}}",
+    replacementWarning:
+      "Die Wiederherstellung ersetzt die gesamte Sammlung einschließlich des aktiven Decks. Lokale Decks, eigene Zauber und SRD-Anpassungen, die im Backup fehlen, werden entfernt.",
+    confirmRestore: "Gesamte Sammlung ersetzen",
+    restored: "Das vollständige Backup wurde wiederhergestellt.",
+    reloadAfterCommit:
+      "Das Backup wurde wiederhergestellt, aber die Ansicht konnte nicht aktualisiert werden. Lade die Seite neu, um die wiederhergestellte Sammlung zu sehen.",
+    workspaceUpdated:
+      "Die Sammlung wurde wiederhergestellt. Öffne die gewünschte Bearbeitung oder Aktion erneut, um mit der wiederhergestellten Sammlung zu arbeiten.",
+    wrongType: "Wähle ein vollständiges YASCG-Backup.",
+    invalidVersion: "Die Formatversion des Backups fehlt oder ist ungültig.",
+    unsupportedVersion:
+      "Die Backup-Formatversion {{version}} wird nicht unterstützt. Öffne die Datei mit einer kompatiblen YASCG-Version.",
+    invalidData: "Ungültige oder doppelte Backup-Daten bei {{path}}.",
+    incompatibleOverrides:
+      "Das Backup enthält inkompatible SRD-Anpassungen. Öffne die Datei mit einer kompatiblen YASCG-Version.",
+    overrideIdentity: "Zauber {{spellId}} (Sprache {{locale}}).",
+    catalogUnavailable:
+      "Der mitgelieferte Zauberkatalog konnte für die Prüfung nicht geladen werden. Prüfe die Datei erneut, sobald der Katalog verfügbar ist.",
+    staleReview:
+      "Die Sammlung hat sich seit der Prüfung geändert. Prüfe die Datei erneut und bestätige das Ersetzen.",
+    exportFailed: "Das vollständige Backup konnte nicht exportiert werden.",
+    readFailed: "Die Backup-Datei konnte nicht gelesen oder geprüft werden.",
+    restoreFailed:
+      "Das Ersetzen ist fehlgeschlagen. Deine bisherige Sammlung ist weiterhin gespeichert.",
+    resourceLimit: "Das Backup überschreitet die Verarbeitungsgrenzen dieses Browsers.",
+    quotaExceeded: "Der Browserspeicher ist voll. Die Sammlung wurde nicht geändert.",
+  },
   privacy: {
     title: "Datenschutzerklärung",
   },
@@ -311,7 +355,7 @@ export const de = {
       "Exportiert die Zauberverweise, den Namen und die Anzeigeeinstellungen des aktiven Decks. Zauberdefinitionen und SRD-Änderungen sind nicht enthalten. Der Import ersetzt das aktive Deck, behält aber gespeicherte Decks und vorhandene Zauberdefinitionen bei.",
     customTitle: "Eigene Zauber importieren/exportieren",
     customDescription:
-      "Exportiert eigene Zauberdefinitionen und Änderungen an SRD-Zaubern, einschließlich Komponentenbeschreibungen. Verwende diesen Export zusammen mit Deck-Exporten für eine vollständige Sicherung deiner Zauberinhalte und Deckverweise.",
+      "Exportiert eigene Zauberdefinitionen und Änderungen an SRD-Zaubern, einschließlich Komponentenbeschreibungen. Sichere die ganze Sammlung über „Vollständiges Backup exportieren“ im Kopfmenü.",
     deckBackupNotice:
       "Deck-JSON ist keine Sicherung von eigenen Zaubern oder SRD-Überschreibungen.",
     customBackupNotice:
@@ -502,6 +546,10 @@ export const de = {
     },
     generic: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     dataLoad: "Die Zauberdaten konnten nicht geladen werden. Bitte versuche es erneut.",
+    storageUpgradeBlocked:
+      "Eine ältere YASCG-Version blockiert die Speicheraktualisierung. Schließe deren Tabs und versuche es erneut.",
+    collectionChanged:
+      "Die Sammlung wurde nach Beginn dieser Aktion wiederhergestellt. Öffne die Aktion erneut und versuche es noch einmal.",
     storageUnavailable:
       "Der lokale Speicher ist nicht verfügbar, daher können Zauber und Decks nicht gespeichert werden. Exportiere deine Daten als JSON, sobald der Speicher funktioniert.",
     deckConflict:

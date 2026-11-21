@@ -131,10 +131,23 @@ not included; import replaces only the active deck and does not create or modify
 or spell definitions. **Custom spell import/export** in the Library pane (next to **Create custom
 spell** on desktop, in the **Library actions** menu on narrow screens) exports complete custom
 spell definitions and SRD component-text overrides (including
-your edited verbal/somatic notes). The two formats are separate: deck export is **not** a backup
-of custom spells or SRD overrides. For a complete backup, export custom spells first, then the
-deck. The exact deck and import edge-case rules are in the
+your edited verbal/somatic notes). Use these exports to share or transfer individual parts of a
+collection. The exact deck and import edge-case rules are in the
 [product specification](docs/specs/MAIN-spec.md#7-active-and-saved-decks).
+
+## Back up or restore the entire collection
+
+Choose **Export complete backup** from the header menu to download one JSON file. It includes the
+last committed working deck, every saved deck, all custom spells, and local SRD notes for every
+language. Keep the file outside browser storage so you can recover after clearing site data or
+move your collection to another browser.
+
+In the receiving browser, choose **Restore complete backup** from the header menu and select
+the file. Review the working deck and record counts, then choose **Replace entire collection**
+to apply it. This removes local records absent from the file, including any working deck changes.
+Cancel to keep the current collection. If another tab updates the collection after review, review
+the file again before confirming. The receiving browser keeps its selected language. Both
+actions work offline when the app and bundled catalog are cached.
 
 ## Printing
 
@@ -176,10 +189,8 @@ switching after precache performs no network requests.
 Spells, decks, and local SRD notes are stored in the browser's IndexedDB; the language
 preference is stored separately in `localStorage`. The active deck is written automatically;
 named snapshots change only through Save or Save As. IndexedDB is not guaranteed permanent. If
-local storage is unavailable or quota is exceeded, the app shows an actionable banner. Because
-browser storage may be cleared, use the export tools to keep backups: export custom spells
-(including SRD component-text edits) from the Library and the active deck JSON from the deck
-actions menu. To restore, import both files; the two exports cover different data.
+local storage is unavailable or quota is exceeded, the app shows an actionable message. Keep a
+[complete backup](#back-up-or-restore-the-entire-collection) in case browser storage is cleared.
 
 The header menu includes a bilingual **Privacy Policy** entry. All UI and card fonts are
 self-hosted; the app makes no Google Fonts or other third-party font requests. Existing deletion
@@ -194,7 +205,7 @@ IndexedDB, `localStorage`, and Cache Storage. The app intentionally provides no 
 - Verbal/somatic notes added to an SRD spell are stored locally, scoped to that spell **and**
   the current language, and never modify the bundled SRD data. An edited SRD spell is marked
   `*` on its source badge; **Reset to original** removes only that local note. These notes are
-  included only in custom-spell exports and are not part of deck exports.
+  included in complete backups and custom-spell exports.
 - No accounts, cloud sync, backend, PDF engine, card backs, or third-party formats.
 - Editable copies of SRD spells keep the text and language captured when they were created.
   Changing the app language does not translate a custom copy; edit its text or create a new copy

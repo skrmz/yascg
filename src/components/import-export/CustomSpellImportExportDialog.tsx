@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { CollectionChangedError } from "@/db/collection-state.ts";
 import { useApp } from "@/state/AppProvider.tsx";
 import { buildCustomSpellsPayload, customSpellsExportFilename, downloadJson } from "@/io/export.ts";
 import {
@@ -35,6 +36,7 @@ export function CustomSpellImportExportDialog({
     manifest,
     dataLoading,
     dataError,
+    collectionGeneration,
   } = useApp();
   const { t } = useTranslation();
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -141,7 +143,7 @@ export function CustomSpellImportExportDialog({
       plan.collisions.map((collision) => [collision.id, collision.fingerprint]),
     );
     try {
-      const counts = await applyCustomImport(plan, strategies, fingerprints);
+      const counts = await applyCustomImport(plan, strategies, fingerprints, collectionGeneration);
       const texts: MessageDescriptor[] = [
         message("importExport.importedCounts", {
           imported: counts.imported,
@@ -199,6 +201,10 @@ export function CustomSpellImportExportDialog({
         });
       }
     } catch (error) {
+      if (error instanceof CollectionChangedError) {
+        setPlan(null);
+        refreshAll();
+      }
       console.error("Failed to apply custom-spell import:", error);
       const descriptor = toMessageDescriptor(error);
       toast.error(t("importExport.customImportFailedTitle"), {
