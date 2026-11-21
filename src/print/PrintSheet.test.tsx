@@ -60,7 +60,14 @@ describe("PrintSheets component rendering", () => {
         truncated: false,
       },
     ];
-    render(<PrintSheets sheets={buildSheets([cards])} paperSize="letter" cuttingBorders={false} />);
+    render(
+      <PrintSheets
+        sheets={buildSheets([cards])}
+        paperSize="letter"
+        cuttingBorders={false}
+        design="classic"
+      />,
+    );
     expect(screen.getByText("Speak the word")).not.toBeNull();
     expect(screen.getByText("Trace a sigil")).not.toBeNull();
     expect(screen.getByLabelText("Verbal").textContent).toBe("V");
@@ -87,6 +94,7 @@ describe("PrintSheets component rendering", () => {
         sheets={buildSheets([cards])}
         paperSize="letter"
         cuttingBorders={false}
+        design="classic"
         background={background}
       />,
     );
@@ -124,7 +132,14 @@ describe("PrintSheets component rendering", () => {
         truncated: false,
       },
     ];
-    render(<PrintSheets sheets={buildSheets([cards])} paperSize="letter" cuttingBorders={false} />);
+    render(
+      <PrintSheets
+        sheets={buildSheets([cards])}
+        paperSize="letter"
+        cuttingBorders={false}
+        design="classic"
+      />,
+    );
     expect(screen.getAllByText("Casting Time")).toHaveLength(1);
     expect(screen.getAllByText("A ruby")).toHaveLength(1);
     expect(screen.getByText("contd.")).not.toBeNull();

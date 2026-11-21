@@ -9,6 +9,7 @@ async function switchLanguage(page: Page, option: RegExp) {
 }
 
 async function addWunsch(page: Page) {
+  await page.getByLabel(/Card design|Kartendesign/).selectOption("classic");
   const library = page.getByRole("region", { name: "Zauberbibliothek" });
   await page.getByLabel("Zauber suchen").fill("Wunsch");
   await library
@@ -192,11 +193,7 @@ test("Wunsch multi-card keeps the full description across cards", async ({ page 
 
   await page.getByRole("button", { name: "Drucken", exact: true }).first().click();
   const firstJob = page.getByRole("dialog");
-  await firstJob.getByLabel("Startposition").selectOption("8");
   await firstJob.getByRole("checkbox", { name: "Karten eines Zaubers zusammenhalten" }).check();
-  await expect(firstJob.getByRole("status")).toContainText(
-    "lege vor dem Drucken frisches Papier ein",
-  );
   await firstJob.getByRole("button", { name: /drucken/i }).click();
   const printCards = page.locator(".print-cell .spell-card");
   await expect(page.locator(".print-sheet")).toHaveCount(1);

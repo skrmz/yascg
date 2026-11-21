@@ -311,6 +311,7 @@ test("matches bundled JPEG framing and color before CSS, and preserves print art
   const selection = page.getByLabel("Card background");
   const personal = backup.personalBackgrounds.find(({ name }) => name === fixtures[0].name)!;
   await selection.selectOption(personal.id);
+  await page.getByLabel("Card design").selectOption("classic");
   await printWithBackground(page, personal.id, false);
   await page.emulateMedia({ media: "print" });
   const card = page.locator(".print-root .spell-card").first();
@@ -487,9 +488,9 @@ test("normalizes mixed imports and shares the saved background across designs an
     await printWithBackground(page, id, variant === "compact");
   }
   await expectBackgroundPdf(page);
-  await design.selectOption("compact");
+  await design.selectOption("classic");
   await page.reload();
-  await expect(design).toHaveValue("classic");
+  await expect(design).toHaveValue("compact");
   await expect(background).toHaveValue(id);
   await background.selectOption("none");
   await expect(background).toHaveValue("none");

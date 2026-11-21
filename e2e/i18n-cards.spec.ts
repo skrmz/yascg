@@ -29,6 +29,7 @@ test("cycles card terminology EN to DE and back without stale fit or overflow", 
 }) => {
   await page.goto("/");
   await selectFireball(page);
+  await page.getByLabel("Card design").selectOption("classic");
 
   const card = page.locator(".card-preview-page").first();
   await expect(card).toBeVisible();

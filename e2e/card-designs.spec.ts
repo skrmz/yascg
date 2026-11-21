@@ -108,15 +108,19 @@ test("switches between Classic and Compact in preview and print", async ({ page 
 
   const design = page.getByLabel("Card design");
   const preview = page.locator(".card-preview-page");
-  await expect(design).toHaveValue("classic");
+  await expect(design).toHaveValue("compact");
+  await expect(page.locator(".card-preview-page.spell-card-compact")).toHaveCount(1);
+  await expect(preview).toHaveCount(1);
+  await expect(preview.locator(".compact-level")).toBeVisible();
+  await expect(preview.locator(".compact-footer")).toBeVisible();
+
+  await design.selectOption("classic");
   await expect(page.locator(".card-preview-page.spell-card-compact")).toHaveCount(0);
   await expect(page.locator(".card-preview-page.spell-card")).toHaveCount(1);
   await expect(preview).toHaveCount(1);
 
   await design.selectOption("compact");
   await expect(page.locator(".card-preview-page.spell-card-compact")).toHaveCount(1);
-  await expect(preview.locator(".compact-level")).toBeVisible();
-  await expect(preview.locator(".compact-footer")).toBeVisible();
 
   await page.getByRole("button", { name: "Print" }).first().click();
   await page
@@ -168,17 +172,16 @@ test("selects and resets a card background for the preview", async ({ page }) =>
   ).toBe("none");
 });
 
-test("defaults to Classic after a reload", async ({ page }) => {
+test("defaults to Compact after a reload", async ({ page }) => {
   await page.goto("/");
   await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");
-  await page.getByLabel("Card design").selectOption("compact");
-  await expect(page.locator(".card-preview-page.spell-card-compact")).toHaveCount(1);
+  await page.getByLabel("Card design").selectOption("classic");
+  await expect(page.locator(".card-preview-page.spell-card")).toHaveCount(1);
 
   await page.reload();
   await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");
-  await expect(page.getByLabel("Card design")).toHaveValue("classic");
-  await expect(page.locator(".card-preview-page.spell-card-compact")).toHaveCount(0);
-  await expect(page.locator(".card-preview-page.spell-card")).toHaveCount(1);
+  await expect(page.getByLabel("Card design")).toHaveValue("compact");
+  await expect(page.locator(".card-preview-page.spell-card-compact")).toHaveCount(1);
   await expect(page.locator(".card-preview-page")).toHaveCount(1);
 });
 
