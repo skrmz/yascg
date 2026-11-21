@@ -1,4 +1,4 @@
-import { readdir, stat, writeFile } from "node:fs/promises";
+import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -62,9 +62,10 @@ function orientedDimensions(
 }
 
 async function encodeJpeg(source: string): Promise<Buffer> {
+  const input = await readFile(source);
   let buffer = Buffer.alloc(0);
   for (const quality of JPEG_QUALITIES) {
-    buffer = await sharp(source)
+    buffer = await sharp(input)
       .rotate()
       .flatten({ background: FLATTEN_COLOR })
       .resize({
