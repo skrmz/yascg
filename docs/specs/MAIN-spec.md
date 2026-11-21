@@ -770,14 +770,16 @@ disclosure and an accessible description on each fit selector.
 
 **Card backgrounds:** The Active Deck selector offers **None**, bundled JPEGs discovered at build
 time, and a distinct group of personal images. **Use own** imports JPEG, PNG, or WebP locally and
-allows removal of personal images. Import corrects orientation, center-crops to the card ratio,
-flattens transparency onto the paper color, and encodes a JPEG up to 900 × 1260 pixels and 1 MiB
-without enlarging the source. Mixed batches retain successful images and report individual failures.
+allows removal of personal images. Both image pipelines apply EXIF orientation, center-crop to
+exactly 5:7 without stretching or upscaling, and flatten transparency onto the paper color in
+sRGB. They accept sources up to 25 MiB and 40 megapixels and require at least 150 × 210 pixels
+in the crop. The resulting JPEG may be at most 900 × 1260 pixels and 1 MiB. Mixed batches retain
+successful images and report individual failures.
 Personal images are stored as IndexedDB blobs. Classic starts with the saved personal image or
 None. Choosing None or a bundled background clears the saved personal reference, as does removing
-the selected personal image. Both designs share the selection for preview and print. Personal
-images render with a paper-colored overlay for text contrast. Backgrounds have no effect on
-fitting or stored spell and deck data.
+the selected personal image. Both designs share the selection for preview and print. Bundled and
+personal textures use the same rendering, with a paper-colored outline around exposed text for
+contrast. Backgrounds have no effect on fitting or stored spell and deck data.
 
 Compact keeps the same 2.5 × 3.5 in card, safe Markdown pipeline, truncation, continuation, and
 print rules. Its first card shows a single-outline level circle with the numeric level only, a
@@ -928,11 +930,9 @@ must print.
 - The print dialog starts with the whole active deck selected. Users can select spells and expand
   multi-card spells to select individual cards. Printed continuations preserve their content and
   numbering from the full measured expansion.
-- The first sheet can start at any position in row order and skip additional positions. Unavailable
-  positions have no cutting guides. Subsequent sheets have all nine positions. **Keep each spell’s
-  cards together** is off by default. When on, a selected group of up to nine cards moves to the
-  next sheet if it cannot fit on the current one. Larger groups continue in order across sheets.
-  If the partial first sheet receives no cards, omit it and tell the user to load fresh paper.
+- **Keep each spell’s cards together** is off by default. When on, a selected group of up to nine
+  cards moves to the next sheet if it cannot fit on the current one. Larger groups continue in
+  order across sheets.
 - Print only selected entries whose spell bodies are available in the current language, including
   resolvable custom spells. Omit translation-unavailable placeholders and genuinely missing
   references without modifying deck entries. Before print, show separate counts for omitted

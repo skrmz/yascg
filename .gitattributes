@@ -1,3 +1,4 @@
+* text=auto eol=lf
 data/** text eol=lf
 src/data/** text eol=lf
 src/data/*.png -text

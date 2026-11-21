@@ -14,6 +14,7 @@
     "test:quiet": "vp test --reporter=dot --silent=passed-only",
     "test:agent": "vp test --reporter=agent --silent=passed-only",
     "check": "vp check",
+    "fix": "vp check --fix",
     "test:e2e": "playwright test"
   },
   "dependencies": {
