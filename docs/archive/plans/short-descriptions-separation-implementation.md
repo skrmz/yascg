@@ -1,7 +1,5 @@
 # Spell short descriptions separation implementation plan
 
-The [migration record](short-descriptions-migration-record.md) contains the executed revisions, artifact hashes, and verification results.
-
 The application owns and ships approved JSON sidecars. A sibling Git repository, initially `C:/dev/spell-short-descriptions-toolkit`, owns the authoring pipeline, working data and review history. The toolkit builds from a pinned snapshot of application inputs and exports files for explicit review and import. Both repositories install, test and build independently. All checkboxes are mandatory unless marked optional. Execute this plan only after approval.
 
 ## Phase 1 — Repository audit and preparation
