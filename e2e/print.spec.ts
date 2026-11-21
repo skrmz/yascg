@@ -17,12 +17,13 @@ test("print dialog explains settings and renders a 9-up sheet", async ({ page })
 
   await page.getByRole("button", { name: "Print" }).first().click();
   await expect(page.getByText("Print settings")).toBeVisible();
+  await page.getByRole("button", { name: "Print settings" }).click();
   await expect(page.getByText(/100% \/ Actual Size/)).toBeVisible();
   await expect(page.getByLabel("Paper size")).toHaveValue("letter");
 
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /^Print/ })
+    .getByRole("button", { name: /^Print \d+ cards?$/ })
     .click();
 
   await expect(page).toHaveTitle(/^spell-cards-deck-\d{4}-\d{2}-\d{2}$/);
@@ -78,7 +79,7 @@ test("prints the selected card background", async ({ page }) => {
   await page.getByRole("button", { name: "Print" }).first().click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /^Print/ })
+    .getByRole("button", { name: /^Print \d+ cards?$/ })
     .click();
   await page.emulateMedia({ media: "print" });
 
@@ -104,7 +105,7 @@ test("A4 sheets use ISO A4 geometry", async ({ page }) => {
   await page.getByLabel("Paper size").selectOption("A4");
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /^Print/ })
+    .getByRole("button", { name: /^Print \d+ cards?$/ })
     .click();
   await page.emulateMedia({ media: "print" });
 
@@ -116,70 +117,3 @@ test("A4 sheets use ISO A4 geometry", async ({ page }) => {
   // 210mm at 96dpi ~= 793.7px
   expect(Math.abs(box.width - 793.7)).toBeLessThan(6);
 });
-
-for (const paper of ["letter", "A4"] as const) {
-  test(`partially used ${paper} sheets preserve unmarked slots and centered physical geometry`, async ({
-    page,
-  }) => {
-    await page.addInitScript(() => {
-      window.print = () => undefined;
-    });
-    await page.goto("/");
-    for (const spell of ["Fireball", "Shield", "Aid"]) {
-      await page.getByLabel("Search spells").fill(spell);
-      await page
-        .getByRole("button", { name: `Add ${spell} to active deck`, exact: true })
-        .first()
-        .click();
-    }
-    await page.getByRole("button", { name: "Print", exact: true }).first().click();
-    const dialog = page.getByRole("dialog");
-    await dialog.getByRole("checkbox", { name: "Aid", exact: true }).uncheck();
-    await dialog.getByLabel("Paper size").selectOption(paper);
-    await dialog.getByLabel("Starting position").selectOption("4");
-    await dialog.getByLabel("Skip position 5").check();
-    await dialog.getByLabel("Cutting borders").check();
-    await dialog.getByRole("button", { name: "Print 2 cards" }).click();
-    await expect(page.getByText("Aid", { exact: true }).first()).toBeVisible();
-    await page.emulateMedia({ media: "print" });
-
-    const sheet = page.locator(".print-sheet");
-    const positions = await sheet.locator(".print-cell").evaluateAll((cells) =>
-      cells.map((cell) => ({
-        name: cell.querySelector(".card-name")?.textContent ?? null,
-        outline: getComputedStyle(cell).outlineStyle,
-      })),
-    );
-    expect(positions.map(({ name }) => name)).toEqual([
-      null,
-      null,
-      null,
-      "Fireball",
-      null,
-      "Shield",
-      null,
-      null,
-      null,
-    ]);
-    expect(positions.map(({ outline }) => outline)).toEqual([
-      "none",
-      "none",
-      "none",
-      "dashed",
-      "none",
-      "dashed",
-      "dashed",
-      "dashed",
-      "dashed",
-    ]);
-    const pageBox = (await sheet.boundingBox())!;
-    const grid = (await sheet.locator(".print-grid").boundingBox())!;
-    const card = (await sheet.locator(".print-card").first().boundingBox())!;
-    expect(card.width).toBeCloseTo(240, 1);
-    expect(card.height).toBeCloseTo(336, 1);
-    expect(grid.width).toBeCloseTo(720, 1);
-    expect(grid.height).toBeCloseTo(1008, 1);
-    expect(grid.x - pageBox.x).toBeCloseTo((pageBox.width - grid.width) / 2, 1);
-    expect(grid.y - pageBox.y).toBeCloseTo((pageBox.height - grid.height) / 2, 1);
-  });
-}

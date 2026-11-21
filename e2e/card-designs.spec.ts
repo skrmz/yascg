@@ -121,7 +121,7 @@ test("switches between Classic and Compact in preview and print", async ({ page 
   await page.getByRole("button", { name: "Print" }).first().click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /^Print/ })
+    .getByRole("button", { name: /^Print \d+ cards?$/ })
     .click();
   await expect(page.locator(".print-root .spell-card-compact")).toHaveCount(1);
 

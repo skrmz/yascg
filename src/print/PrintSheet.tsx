@@ -21,18 +21,11 @@ export interface PrintCardData {
   presentation?: CompactPresentation;
 }
 
-// undefined is an unavailable position. null is an unused position with guides.
-type PrintSheet = Array<PrintCardData | null | undefined>;
+// null is an unused position.
+type PrintSheet = Array<PrintCardData | null>;
 
-export function buildSheets(
-  groups: readonly PrintCardData[][],
-  startSlot = 1,
-  skippedSlots: readonly number[] = [],
-  keepTogether = false,
-) {
-  let sheet: PrintSheet = Array.from({ length: CARDS_PER_SHEET }, (_, index) =>
-    index + 1 < startSlot || skippedSlots.includes(index + 1) ? undefined : null,
-  );
+export function buildSheets(groups: readonly PrintCardData[][], keepTogether = false) {
+  let sheet: PrintSheet = Array<null>(CARDS_PER_SHEET).fill(null);
   const sheets = [sheet];
   const freshSheet = () => {
     sheet = Array<null>(CARDS_PER_SHEET).fill(null);
@@ -51,9 +44,7 @@ export function buildSheets(
       sheet[sheet.indexOf(null)] = card;
     }
   }
-  const firstSheet = sheets[0];
-  const firstSheetUnused = sheets.length > 1 && !firstSheet.some(Boolean);
-  return { sheets: sheets.filter((cells) => cells.some(Boolean)), firstSheetUnused };
+  return sheets.filter((cells) => cells.some(Boolean));
 }
 
 export interface PrintSheetsProps {
@@ -108,10 +99,7 @@ export function PrintSheets({
                   />
                 </div>
               ) : (
-                <div
-                  className={`print-cell print-cell-empty${card === undefined ? " print-cell-unavailable" : ""}`}
-                  key={`empty-${cellIndex}`}
-                />
+                <div className="print-cell print-cell-empty" key={`empty-${cellIndex}`} />
               ),
             )}
           </div>

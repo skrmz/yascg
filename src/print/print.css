@@ -1113,7 +1113,7 @@
   overflow: hidden;
 }
 
-.print-cutting .print-cell:not(.print-cell-unavailable) {
+.print-cutting .print-cell {
   outline: 0.4pt dashed #9b9b9b;
   outline-offset: -0.4pt;
 }

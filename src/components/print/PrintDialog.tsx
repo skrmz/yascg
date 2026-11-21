@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { Printer } from "lucide-react";
+import { ChevronDown, Printer } from "lucide-react";
 import { useApp } from "@/state/AppProvider.tsx";
 import { LIMITS } from "@/domain/spells";
 import { useDeckCardFits, type DeckFitItem } from "@/cards/fit.tsx";
@@ -10,7 +10,6 @@ import { loadCardBackground, type CardBackground } from "@/cards/backgrounds.ts"
 import type { CardDesign } from "@/cards/design.ts";
 import {
   buildSheets,
-  CARDS_PER_SHEET,
   PrintSheets,
   type PaperSize,
   type PrintCardData,
@@ -18,10 +17,9 @@ import {
 import { printDocumentTitle } from "@/print/document-title.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Checkbox } from "@/ui/Checkbox.tsx";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/Collapsible.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { NativeSelect } from "@/ui/Field.tsx";
-
-const slots = Array.from({ length: CARDS_PER_SHEET }, (_, index) => index + 1);
 
 export function PrintDialog({
   open,
@@ -37,11 +35,9 @@ export function PrintDialog({
   // An absent entry is fully selected, including entries without a printable expansion.
   const [selection, setSelection] = useState<Map<string, number[]>>(new Map());
   const [confirmedOmissions, setConfirmedOmissions] = useState<string | null>(null);
-  const [startSlot, setStartSlot] = useState(1);
-  const [skippedSlots, setSkippedSlots] = useState<number[]>([]);
   const [keepTogether, setKeepTogether] = useState(false);
   const [job, setJob] = useState<{
-    sheets: ReturnType<typeof buildSheets>["sheets"];
+    sheets: ReturnType<typeof buildSheets>;
     title: string;
     background: CardBackground;
     design: CardDesign;
@@ -58,8 +54,6 @@ export function PrintDialog({
     if (!open) {
       setSelection(new Map());
       setConfirmedOmissions(null);
-      setStartSlot(1);
-      setSkippedSlots([]);
       setKeepTogether(false);
     }
   }, [open]);
@@ -135,7 +129,7 @@ export function PrintDialog({
     return cards.length ? [cards] : [];
   });
   const cardCount = groups.reduce((total, group) => total + group.length, 0);
-  const { sheets, firstSheetUnused } = buildSheets(groups, startSlot, skippedSlots, keepTogether);
+  const sheets = buildSheets(groups, keepTogether);
 
   const canPrint =
     cardCount > 0 &&
@@ -196,7 +190,6 @@ export function PrintDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           title={t("print.title")}
-          description={t("print.description")}
           footer={
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -232,42 +225,6 @@ export function PrintDialog({
               />
             </div>
 
-            <fieldset className="space-y-2 rounded border border-border p-3">
-              <legend className="px-1 font-semibold">{t("print.firstSheet")}</legend>
-              <label className="flex items-center gap-2">
-                {t("print.startSlot")}
-                <NativeSelect
-                  className="h-8 w-20"
-                  value={startSlot}
-                  onChange={(event) => setStartSlot(Number(event.target.value))}
-                >
-                  {slots.map((slot) => (
-                    <option key={slot}>{slot}</option>
-                  ))}
-                </NativeSelect>
-              </label>
-              <fieldset>
-                <legend className="mb-1 text-muted-foreground">{t("print.skipSlots")}</legend>
-                <div className="grid w-fit grid-cols-3 gap-x-4 gap-y-1">
-                  {slots.map((slot) => (
-                    <Checkbox
-                      key={slot}
-                      label={slot}
-                      aria-label={t("print.skipSlot", { slot })}
-                      disabled={slot < startSlot}
-                      checked={slot < startSlot || skippedSlots.includes(slot)}
-                      onChange={(event) =>
-                        setSkippedSlots(
-                          event.target.checked
-                            ? [...skippedSlots, slot]
-                            : skippedSlots.filter((value) => value !== slot),
-                        )
-                      }
-                    />
-                  ))}
-                </div>
-              </fieldset>
-            </fieldset>
             <div>
               <Checkbox
                 label={t("print.keepTogether")}
@@ -276,14 +233,6 @@ export function PrintDialog({
               />
               <p className="text-xs text-muted-foreground">{t("print.keepTogetherHelp")}</p>
             </div>
-            {firstSheetUnused && (
-              <p
-                role="status"
-                className="rounded border border-amber-400/30 bg-amber-400/10 p-2 text-xs text-amber-200"
-              >
-                {t("print.freshPaper")}
-              </p>
-            )}
             <fieldset className="rounded border border-border p-3">
               <legend className="px-1 font-semibold">{t("print.selection")}</legend>
               {resolvedEntries.length > 0 && (
@@ -360,16 +309,33 @@ export function PrintDialog({
               </ul>
             </fieldset>
 
-            <div className="rounded border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
-              <p className="font-semibold text-foreground">{t("print.settings")}</p>
-              <ul className="mt-1 list-disc pl-4">
-                <li>{t("print.scale")}</li>
-                <li>{t("print.margins")}</li>
-                <li>{t("print.headers")}</li>
-                <li>{t("print.backgroundGraphics")}</li>
-                <li>{t("print.hardware")}</li>
-              </ul>
-            </div>
+            <Collapsible className="rounded border border-border bg-muted/40 px-3 py-2">
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="group w-full justify-between px-0"
+                >
+                  <span className="font-semibold text-foreground">{t("print.settings")}</span>
+                  <ChevronDown
+                    size={15}
+                    aria-hidden="true"
+                    className="transition-transform group-data-[state=open]:rotate-180"
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="text-xs leading-relaxed text-muted-foreground">
+                <p>{t("print.description")}</p>
+                <ul className="mt-1 list-disc pl-4">
+                  <li>{t("print.scale")}</li>
+                  <li>{t("print.margins")}</li>
+                  <li>{t("print.headers")}</li>
+                  <li>{t("print.backgroundGraphics")}</li>
+                  <li>{t("print.hardware")}</li>
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
 
             {fitError ? (
               <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">

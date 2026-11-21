@@ -320,15 +320,9 @@ export const de = {
     selectAllSpells: "Alle Zauber auswählen",
     expandCards: "Einzelkarten für {{name}} auswählen",
     physicalCard: "Karte {{index}} von {{count}}",
-    firstSheet: "Erstes Blatt",
-    startSlot: "Startposition",
-    skipSlots: "Zu überspringende Positionen",
-    skipSlot: "Position {{slot}} überspringen",
     keepTogether: "Karten eines Zaubers zusammenhalten",
     keepTogetherHelp:
       "Das kann mehr Papier verbrauchen. Gruppen mit mehr als neun Karten werden auf mehrere Blätter verteilt.",
-    freshPaper:
-      "Entferne das teilweise belegte Blatt und lege vor dem Drucken frisches Papier ein.",
     settings: "Druckeinstellungen",
     scale: "Skalierung: 100 % / Tatsächliche Größe — nicht „An Seite anpassen“ verwenden.",
     margins: "Ränder: Keine oder Minimal.",

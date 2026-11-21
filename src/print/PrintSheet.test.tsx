@@ -11,48 +11,25 @@ import { TooltipProvider } from "@/ui/Tooltip.tsx";
 describe("print placement", () => {
   const group = (count: number) =>
     Array.from({ length: count }, (_, index) => ({ key: String(index + 1) }) as PrintCardData);
-  const positions = (sheet: ReturnType<typeof buildSheets>["sheets"][number]) =>
+  const positions = (sheet: ReturnType<typeof buildSheets>[number]) =>
     sheet.map((card) => card?.key ?? card);
 
-  it("uses all nine positions in deck order with the default settings", () => {
+  it("uses all nine positions in deck order", () => {
     const cards = group(11);
-    const { sheets, firstSheetUnused } = buildSheets([cards.slice(0, 8), cards.slice(8)]);
-    expect(firstSheetUnused).toBe(false);
+    const sheets = buildSheets([cards.slice(0, 8), cards.slice(8)]);
     expect(positions(sheets[0])).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
     expect(positions(sheets[1])).toEqual(["10", "11", null, null, null, null, null, null, null]);
   });
 
-  it("skips only the unavailable first-sheet positions and resumes at slot one", () => {
-    const { sheets } = buildSheets([group(8)], 4, [5]);
-    expect(positions(sheets[0])).toEqual([
-      undefined,
-      undefined,
-      undefined,
-      "1",
-      undefined,
-      "2",
-      "3",
-      "4",
-      "5",
-    ]);
-    expect(positions(sheets[1])).toEqual(["6", "7", "8", null, null, null, null, null, null]);
-  });
-
-  it("keeps selected groups together, dropping an unused partial sheet", () => {
-    const together = buildSheets([group(3)], 8, [], true);
-    expect(together.firstSheetUnused).toBe(true);
-    expect(together.sheets).toHaveLength(1);
-    expect(positions(together.sheets[0]).slice(0, 3)).toEqual(["1", "2", "3"]);
-    expect(buildSheets([group(3)], 8).sheets.map((sheet) => sheet.filter(Boolean).length)).toEqual([
-      2, 1,
-    ]);
-    const smallSelection = group(10).slice(7, 9);
+  it("keeps selected groups together and lets larger groups span sheets", () => {
+    expect(buildSheets([group(3)], true)).toHaveLength(1);
+    expect(positions(buildSheets([group(3)], true)[0]).slice(0, 3)).toEqual(["1", "2", "3"]);
     expect(
-      positions(buildSheets([group(8), smallSelection], 1, [], true).sheets[1]).slice(0, 2),
-    ).toEqual(["8", "9"]);
-    expect(
-      buildSheets([group(10)], 8, [], true).sheets.map((sheet) => sheet.filter(Boolean).length),
-    ).toEqual([2, 8]);
+      buildSheets([group(8), group(3)], true).map((sheet) => sheet.filter(Boolean).length),
+    ).toEqual([8, 3]);
+    expect(buildSheets([group(10)], true).map((sheet) => sheet.filter(Boolean).length)).toEqual([
+      9, 1,
+    ]);
   });
 });
 
@@ -83,13 +60,7 @@ describe("PrintSheets component rendering", () => {
         truncated: false,
       },
     ];
-    render(
-      <PrintSheets
-        sheets={buildSheets([cards]).sheets}
-        paperSize="letter"
-        cuttingBorders={false}
-      />,
-    );
+    render(<PrintSheets sheets={buildSheets([cards])} paperSize="letter" cuttingBorders={false} />);
     expect(screen.getByText("Speak the word")).not.toBeNull();
     expect(screen.getByText("Trace a sigil")).not.toBeNull();
     expect(screen.getByLabelText("Verbal").textContent).toBe("V");
@@ -113,7 +84,7 @@ describe("PrintSheets component rendering", () => {
     const background = CARD_BACKGROUNDS[0].id;
     const { container } = render(
       <PrintSheets
-        sheets={buildSheets([cards]).sheets}
+        sheets={buildSheets([cards])}
         paperSize="letter"
         cuttingBorders={false}
         background={background}
@@ -153,13 +124,7 @@ describe("PrintSheets component rendering", () => {
         truncated: false,
       },
     ];
-    render(
-      <PrintSheets
-        sheets={buildSheets([cards]).sheets}
-        paperSize="letter"
-        cuttingBorders={false}
-      />,
-    );
+    render(<PrintSheets sheets={buildSheets([cards])} paperSize="letter" cuttingBorders={false} />);
     expect(screen.getAllByText("Casting Time")).toHaveLength(1);
     expect(screen.getAllByText("A ruby")).toHaveLength(1);
     expect(screen.getByText("contd.")).not.toBeNull();
@@ -195,7 +160,7 @@ describe("PrintSheets compact design", () => {
     const { container } = render(
       <TooltipProvider>
         <PrintSheets
-          sheets={buildSheets([cards]).sheets}
+          sheets={buildSheets([cards])}
           paperSize="letter"
           cuttingBorders={false}
           design="compact"
@@ -245,7 +210,7 @@ describe("PrintSheets compact design", () => {
     const { container } = render(
       <TooltipProvider>
         <PrintSheets
-          sheets={buildSheets([cards]).sheets}
+          sheets={buildSheets([cards])}
           paperSize="letter"
           cuttingBorders={false}
           design="compact"

@@ -159,8 +159,7 @@ use a compact header with a localized `contd.`/`Forts.` label and omit repeated 
 description fits.
 
 The dialog opens with all spells selected. Expand a multi-card spell to pick individual cards.
-To reuse a sheet, set the starting position and skip any other occupied slots. Enable **Keep each
-spell’s cards together** to move a group to a fresh sheet when it can fit there.
+Enable **Keep each spell’s cards together** to move a group to a fresh sheet when it can fit there.
 
 Before printing, configure your browser/printer:
 
