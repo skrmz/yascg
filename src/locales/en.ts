@@ -473,9 +473,27 @@ export const en = {
   about: {
     title: "About YASCG - Yet Another Spell Card Generator",
     description:
-      "An offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards. Bundled spells are limited to the SRD 5.2.1. Custom spells are labeled Custom; bundled spells are labeled SRD 5.2.1.",
+      "YASCG is an offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards, built to help you find, customize, organize, and print the cards your table needs.",
+    features: {
+      library:
+        "Search the bundled SRD 5.2.1 library in English or German and filter by level, class, school, components, and more.",
+      customSpells:
+        "Create your own spells or editable copies of SRD spells, with tools to abbreviate text and apply bundled short descriptions.",
+      decks:
+        "Assemble one active deck, reorder entries freely, and save named decks to reopen later.",
+      cardDesigns:
+        "Choose the Classic or Compact card design, set a bundled or personal background, and preview cards at physical size.",
+      printing:
+        "Print nine cards per sheet on US Letter or A4, with automatic fitting and continuation cards for long descriptions.",
+      offline:
+        "Work offline after the first load, keep your collection in your browser, and move it with JSON import/export or a complete backup.",
+    },
+    contentNotice:
+      "Bundled spells are limited to the SRD 5.2.1 and labeled SRD 5.2.1; custom spells are labeled Custom.",
     localData:
-      "This application is not affiliated with, endorsed by, or sponsored by Wizards of the Coast. Data is stored locally in your browser; export your spells and decks as JSON to keep a backup.",
+      "Data is stored locally in your browser; export your spells and decks as JSON to keep a backup.",
+    disclaimer:
+      "This application is not affiliated with, endorsed by, or sponsored by Wizards of the Coast.",
   },
   offline: {
     ready: "Offline ready",

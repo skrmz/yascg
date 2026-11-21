@@ -4,6 +4,15 @@ import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 export const SRD_ATTRIBUTION =
   "This work includes material from the System Reference Document 5.2.1 (\u201cSRD 5.2.1\u201d) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/.";
 
+const FEATURE_KEYS = [
+  "about.features.library",
+  "about.features.customSpells",
+  "about.features.decks",
+  "about.features.cardDesigns",
+  "about.features.printing",
+  "about.features.offline",
+] as const;
+
 export function AboutDialog({
   open,
   onOpenChange,
@@ -17,6 +26,12 @@ export function AboutDialog({
       <DialogContent title={t("about.title")}>
         <div className="space-y-3">
           <p>{t("about.description")}</p>
+          <ul className="list-disc space-y-1 pl-5">
+            {FEATURE_KEYS.map((key) => (
+              <li key={key}>{t(key)}</li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted-foreground">{t("about.contentNotice")}</p>
           <p
             lang="en"
             className="rounded border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground"
@@ -24,6 +39,7 @@ export function AboutDialog({
             {SRD_ATTRIBUTION}
           </p>
           <p className="text-xs text-muted-foreground">{t("about.localData")}</p>
+          <p className="text-xs text-muted-foreground">{t("about.disclaimer")}</p>
 
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span>© skaramuz</span>

@@ -61,6 +61,11 @@ release. Add a tool name to select part of the graph. For example, run
   Workers-runtime preview).
 - Maintain offline-first behavior, safe Markdown rendering, and accessible UI interactions.
 - Preserve licensing notices and attribution requirements.
+- When adding, significantly changing, or removing a major user-facing feature, review the
+  About section in both `src/locales/de.ts` and `src/locales/en.ts` alongside the relevant
+  project documentation. Update the About section whenever the change affects the application's
+  key capabilities or value proposition. Do not add minor features merely for completeness, and
+  remove or revise descriptions of capabilities that are no longer available.
 
 ## Documentation ownership
 

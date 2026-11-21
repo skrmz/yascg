@@ -482,9 +482,27 @@ export const de = {
   about: {
     title: "Über YASCG - Yet Another Spell Card Generator",
     description:
-      "Ein offline-fähiger Generator für Zauberkarten für Dungeons & Dragons 5.5e (2024). Mitgelieferte Zauber beschränken sich auf das SRD 5.2.1. Eigene Zauber sind als Eigen gekennzeichnet; mitgelieferte Zauber als SRD 5.2.1.",
+      "YASCG ist ein offline-fähiger Generator für Zauberkarten für Dungeons & Dragons 5.5e (2024), mit dem du die Karten für deine Runde finden, anpassen, ordnen und drucken kannst.",
+    features: {
+      library:
+        "Durchsuche die mitgelieferte SRD-5.2.1-Bibliothek auf Deutsch oder Englisch und filtere nach Grad, Klasse, Schule, Komponenten und mehr.",
+      customSpells:
+        "Erstelle eigene Zauber oder bearbeitbare Kopien von SRD-Zaubern, mit Werkzeugen zum Abkürzen von Texten und zum Anwenden mitgelieferter Kurzbeschreibungen.",
+      decks:
+        "Stelle ein aktives Deck zusammen, sortiere Einträge frei und speichere benannte Decks, um sie später wieder zu öffnen.",
+      cardDesigns:
+        "Wähle das klassische oder das kompakte Kartendesign, lege einen mitgelieferten oder eigenen Hintergrund fest und sieh dir die Karten in Originalgröße an.",
+      printing:
+        "Drucke neun Karten pro Blatt auf US Letter oder A4, mit automatischer Anpassung und Fortsetzungskarten für lange Beschreibungen.",
+      offline:
+        "Arbeite nach dem ersten Laden offline, behalte deine Sammlung im Browser und sichere oder übertrage sie per JSON-Import und -Export oder als vollständige Sicherung.",
+    },
+    contentNotice:
+      "Mitgelieferte Zauber beschränken sich auf das SRD 5.2.1; eigene Zauber sind als Eigen gekennzeichnet, mitgelieferte als SRD 5.2.1.",
     localData:
-      "Diese Anwendung steht in keiner Verbindung zu Wizards of the Coast und wird von Wizards of the Coast weder unterstützt noch gesponsert. Die Daten werden lokal in deinem Browser gespeichert; exportiere deine Zauber und Decks als JSON, um eine Sicherung zu behalten.",
+      "Die Daten werden lokal in deinem Browser gespeichert; exportiere deine Zauber und Decks als JSON, um eine Sicherung zu behalten.",
+    disclaimer:
+      "Diese Anwendung steht in keiner Verbindung zu Wizards of the Coast und wird von Wizards of the Coast weder unterstützt noch gesponsert.",
   },
   offline: {
     ready: "Offline bereit",
