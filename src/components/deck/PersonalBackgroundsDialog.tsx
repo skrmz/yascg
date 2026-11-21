@@ -76,7 +76,7 @@ export function PersonalBackgroundsDialog({ onClose }: { onClose: () => void }) 
           <input
             ref={input}
             type="file"
-            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.jfif,.png,.webp"
             multiple
             className="hidden"
             onChange={(event) => {

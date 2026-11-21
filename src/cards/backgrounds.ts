@@ -5,11 +5,14 @@ import type { CSSProperties } from "react";
  * bundle and cannot read the asset folder at runtime, so a new image requires
  * a rebuild; Vite's glob watcher reloads a running dev server on changes.
  */
-const BACKGROUND_MODULES = import.meta.glob("../assets/images/card-backgrounds/*.{jpg,jpeg}", {
-  eager: true,
-  query: "?url",
-  import: "default",
-}) as Record<string, string>;
+const BACKGROUND_MODULES = import.meta.glob(
+  "../assets/images/card-backgrounds/*.[jJ][pP]{[gG],[eE][gG]}",
+  {
+    eager: true,
+    query: "?url",
+    import: "default",
+  },
+) as Record<string, string>;
 
 export const CARD_BACKGROUND_NONE = "none";
 

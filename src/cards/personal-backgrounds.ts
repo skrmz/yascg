@@ -1,4 +1,15 @@
 import { newUuid } from "@/domain/ids";
+import {
+  BACKGROUND_JPEG_MAX_BYTES,
+  BACKGROUND_MIN_WIDTH,
+  BACKGROUND_PAPER_COLOR,
+  BACKGROUND_SOURCE_MAX_BYTES,
+  BACKGROUND_SOURCE_MAX_PIXELS,
+  backgroundGeometry,
+  backgroundSourceFormat,
+  isBackgroundSize,
+} from "./background-contract";
+export { BACKGROUND_JPEG_MAX_BYTES } from "./background-contract";
 
 export interface PersonalBackground {
   id: string;
@@ -8,83 +19,68 @@ export interface PersonalBackground {
 
 export const PERSONAL_BACKGROUND_ID = /^personal-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
 export const BACKGROUND_NAME_MAX = 200;
-export const BACKGROUND_JPEG_MAX_BYTES = 1024 * 1024;
-const MIN_WIDTH = 150;
-const MAX_WIDTH = 900;
-const MAX_HEIGHT = 1260;
-const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
-const MAX_SOURCE_PIXELS = 40_000_000;
 
 export class BackgroundImageError extends Error {
-  constructor(readonly reason: "unsupported" | "corrupt" | "unsuitable") {
+  constructor(readonly reason: "unsupported" | "corrupt" | "unsuitable" | "outputTooLarge") {
     super(reason);
   }
 }
 
 export async function preparePersonalBackground(file: File): Promise<PersonalBackground> {
-  if (file.size > MAX_SOURCE_BYTES) throw new BackgroundImageError("unsuitable");
+  if (file.size > BACKGROUND_SOURCE_MAX_BYTES) throw new BackgroundImageError("unsuitable");
   const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
-  const format = String.fromCharCode(...header);
-  if (
-    !(header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff) &&
-    !format.startsWith("\u0089PNG\r\n\u001a\n") &&
-    !(format.startsWith("RIFF") && format.slice(8) === "WEBP")
-  ) {
+  const format = backgroundSourceFormat(header);
+  if (!format) {
     throw new BackgroundImageError(
-      /\.(jpe?g|png|webp)$/i.test(file.name) || /^image\/(jpeg|png|webp)$/.test(file.type)
+      /\.(jpe?g|jfif|png|webp)$/i.test(file.name) || /^image\/(jpeg|png|webp)$/.test(file.type)
         ? "corrupt"
         : "unsupported",
     );
   }
   let source: ImageBitmap;
   try {
-    source = await createImageBitmap(file, { imageOrientation: "from-image" });
+    source = await createImageBitmap(file.slice(0, file.size, `image/${format}`), {
+      imageOrientation: "from-image",
+      colorSpaceConversion: "default",
+    });
   } catch {
     throw new BackgroundImageError("corrupt");
   }
 
   try {
-    // Whole 5:7 units preserve the exact aspect ratio without enlarging the crop.
-    const units = Math.floor(Math.min(source.width / 5, source.height / 7, MAX_WIDTH / 5));
-    const width = units * 5;
-    const height = units * 7;
-    if (width < MIN_WIDTH || source.width * source.height > MAX_SOURCE_PIXELS) {
+    const { crop, width, height } = backgroundGeometry(source.width, source.height);
+    if (
+      width < BACKGROUND_MIN_WIDTH ||
+      source.width * source.height > BACKGROUND_SOURCE_MAX_PIXELS
+    ) {
       throw new BackgroundImageError("unsuitable");
     }
-    const cropWidth = Math.min(source.width, (source.height * 5) / 7);
-    const cropHeight = (cropWidth * 7) / 5;
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: false, colorSpace: "srgb" });
     if (!ctx) throw new BackgroundImageError("unsuitable");
-    ctx.fillStyle = "#fffdf8";
+    ctx.fillStyle = BACKGROUND_PAPER_COLOR;
     ctx.fillRect(0, 0, width, height);
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(
-      source,
-      (source.width - cropWidth) / 2,
-      (source.height - cropHeight) / 2,
-      cropWidth,
-      cropHeight,
-      0,
-      0,
-      width,
-      height,
-    );
+    ctx.drawImage(source, crop.left, crop.top, crop.width, crop.height, 0, 0, width, height);
+    let exceedsOutputLimit = false;
     for (const quality of [0.92, 0.85, 0.75, 0.65]) {
       const image = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/jpeg", quality),
       );
-      if (image?.type === "image/jpeg" && image.size <= BACKGROUND_JPEG_MAX_BYTES) {
-        return {
-          id: `personal-${newUuid()}`,
-          name: file.name.trim().slice(0, BACKGROUND_NAME_MAX).trim() || "Image",
-          image,
-        };
+      if (image?.type !== "image/jpeg") continue;
+      if (image.size > BACKGROUND_JPEG_MAX_BYTES) {
+        exceedsOutputLimit = true;
+        continue;
       }
+      return {
+        id: `personal-${newUuid()}`,
+        name: file.name.trim().slice(0, BACKGROUND_NAME_MAX).trim() || "Image",
+        image,
+      };
     }
-    throw new BackgroundImageError("unsuitable");
+    throw new BackgroundImageError(exceedsOutputLimit ? "outputTooLarge" : "corrupt");
   } finally {
     source.close();
   }
@@ -105,7 +101,7 @@ export async function decodeBackgroundJpeg(base64: string): Promise<Blob> {
     throw new BackgroundImageError("corrupt");
   }
   const { width, height } = jpegDimensions(bytes);
-  if (width < MIN_WIDTH || width > MAX_WIDTH || height > MAX_HEIGHT || width * 7 !== height * 5) {
+  if (!isBackgroundSize(width, height)) {
     throw new BackgroundImageError("unsuitable");
   }
   const image = new Blob([bytes], { type: "image/jpeg" });

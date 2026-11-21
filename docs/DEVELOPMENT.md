@@ -399,8 +399,8 @@ settings are in the [README](../README.md#printing). Implementation details:
 - `src/cards/design.ts` owns `CardDesign` and `DEFAULT_CARD_DESIGN`. `AppProvider` exposes
   in-memory `cardDesign`/`setCardDesign`; the Deck pane selector is the only writer, and nothing
   is persisted.
-- `src/cards/backgrounds.ts` owns `CardBackground` (a file-name string), the build-time
-  `import.meta.glob` discovery of `src/assets/images/card-backgrounds/*.{jpg,jpeg}`,
+- `src/cards/backgrounds.ts` owns `CardBackground` (a file-name string), build-time
+  discovery of JPG and JPEG files in `src/assets/images/card-backgrounds/`,
   `CARD_BACKGROUNDS` option objects, `DEFAULT_CARD_BACKGROUND`, label truncation, URL/style
   helpers, normalization, and `loadCardBackground`. `src/cards/personal-backgrounds.ts` prepares
   personal JPEGs locally. The collection snapshot resolves the saved image ID to a data URL for
@@ -409,9 +409,17 @@ settings are in the [README](../README.md#printing). Implementation details:
   `loadCardBackground` before `window.print()`, and backgrounds are excluded from fit inputs, the
   hidden measurement card, and cache keys. A development file add/remove reloads through Vite's
   glob watcher; production requires a rebuild. `scripts/prepare-card-backgrounds.ts`
-  (`pnpm run backgrounds:prepare`, `--dry-run`) normalizes source images to JPEG and is not invoked
-  by the build. Workbox precaches the bundled card JPGs, and the offline E2E asserts every
-  discovered option by its resolved, fingerprinted URL.
+  (`pnpm run backgrounds:prepare`, `--dry-run`) uses the same framing and limits as personal
+  uploads via `src/cards/background-contract.ts`. The script also accepts AVIF and uses
+  progressive mozjpeg for smaller precache assets. It treats untagged RGB JPEGs as sRGB and
+  processes embedded ICC profiles during conversion, emitting untagged sRGB JPEGs. It preserves
+  conforming JPEGs and their filenames, and writes converted sources to sibling JPGs without
+  overwriting an existing destination. If a sibling JPG already exists, the script skips it only when it
+  matches the proposed output byte for byte. To compare a new conversion with an existing
+  asset, copy the source to a separate directory and pass `--input-dir`. Use `--dry-run` to
+  audit the bundled assets. The build does not invoke the converter. Workbox precaches the
+  bundled JPEGs, and the offline E2E asserts every discovered option by its resolved,
+  fingerprinted URL.
 - `src/cards/compact.ts` runs `buildCompactPresentation` before fitting. It parses casting-time
   bases/qualifiers and duration carets, attaches notes only for the conservative
   one-field/one-paragraph caret case or an absent inline qualifier, numbers notes in metadata

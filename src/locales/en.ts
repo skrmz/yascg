@@ -763,7 +763,8 @@ export const en = {
       unsupported: "Choose a JPEG, PNG, or WebP image.",
       corrupt: "This image could not be opened. Try exporting it again.",
       unsuitable:
-        "Choose a source image with at least 150 × 210 pixels in the card crop, at most 40 megapixels, and a file size of 25 MB or less.",
+        "Choose a source image with at least 150 × 210 pixels in the card crop, at most 40 megapixels, and a file size of 25 MiB or less.",
+      outputTooLarge: "The processed JPEG exceeds 1 MiB. Try a smaller or less detailed image.",
       storageFailed:
         "The background change could not be saved. Check available storage and try again.",
       notFound: "This personal background is no longer available. Choose another image.",

@@ -41,23 +41,21 @@
 /* Optional card texture. "none" keeps the default paper color. */
 .spell-card[data-card-background] {
   background-image: var(--card-background-image);
+  background-origin: border-box;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+  /* Keep the paper-colored contrast protection at the edges of the glyphs. */
+  -webkit-text-stroke: 1pt #fffdf8;
+  paint-order: stroke fill;
 }
 
-.spell-card[data-card-background^="personal-"] {
-  isolation: isolate;
+.spell-card[data-card-background] :is(.compact-level, .card-overflow-badge) {
+  -webkit-text-stroke-width: 0;
 }
 
-.spell-card[data-card-background^="personal-"]::before {
-  /* Keep near-black card text readable over even the darkest source image. */
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-color: rgb(255 253 248 / 60%);
-  pointer-events: none;
+.spell-card[data-card-background] .compact-meta-icon {
+  filter: drop-shadow(0 0 0.55pt #fffdf8) drop-shadow(0 0 0.55pt #fffdf8);
 }
 
 .card-header {

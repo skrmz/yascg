@@ -779,7 +779,9 @@ export const de = {
       unsupported: "Wähle ein JPEG-, PNG- oder WebP-Bild.",
       corrupt: "Das Bild konnte nicht geöffnet werden. Exportiere es erneut.",
       unsuitable:
-        "Wähle ein Bild mit mindestens 150 × 210 Pixeln im Kartenausschnitt, höchstens 40 Megapixeln und einer Dateigröße von maximal 25 MB.",
+        "Wähle ein Bild mit mindestens 150 × 210 Pixeln im Kartenausschnitt, höchstens 40 Megapixeln und einer Dateigröße von maximal 25 MiB.",
+      outputTooLarge:
+        "Das erzeugte JPEG überschreitet 1 MiB. Versuche es mit einem kleineren oder weniger detailreichen Bild.",
       storageFailed:
         "Die Hintergrundänderung konnte nicht gespeichert werden. Prüfe den verfügbaren Speicher und versuche es erneut.",
       notFound: "Dieser eigene Hintergrund ist nicht mehr verfügbar. Wähle ein anderes Bild.",

@@ -1,6 +1,12 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import sharp from "sharp";
+import { DEFAULT_INPUT_DIR, prepareCardBackgrounds } from "../scripts/prepare-card-backgrounds";
+import {
+  BACKGROUND_JPEG_MAX_BYTES,
+  BACKGROUND_SOURCE_MAX_BYTES,
+} from "../src/cards/background-contract";
 
 const emptyBackup = {
   type: "yascg-complete-backup",
@@ -136,10 +142,14 @@ async function printWithBackground(page: Page, id: string, compact: boolean) {
   const printed = await card.evaluate((element) => ({
     color: getComputedStyle(element).color,
     image: getComputedStyle(element).backgroundImage,
-    overlay: getComputedStyle(element, "::before").backgroundColor,
+    origin: getComputedStyle(element).backgroundOrigin,
+    outline: getComputedStyle(element).webkitTextStrokeColor,
+    paintOrder: getComputedStyle(element).paintOrder,
   }));
   expect(printed.image).toContain("data:image/jpeg;base64,");
-  expect(printed.overlay).toBe("rgba(255, 253, 248, 0.6)");
+  expect(printed.origin).toBe("border-box");
+  expect(printed.outline).toBe("rgb(255, 253, 248)");
+  expect(printed.paintOrder).toBe("stroke");
   expect(printed.color).toBe(compact ? "rgb(33, 30, 26)" : "rgb(17, 17, 17)");
   await page.emulateMedia({ media: "print" });
   const box = (await card.boundingBox())!;
@@ -167,6 +177,273 @@ async function expectBackgroundPdf(page: Page) {
   ).toBe(true);
   expect(pdf).toMatch(/\/BaseFont \/[A-Z]+\+AlegreyaSans/);
 }
+
+async function compareImages(first: Buffer, second: Buffer) {
+  const decode = (image: Buffer) =>
+    sharp(image).removeAlpha().raw().toBuffer({
+      resolveWithObject: true,
+    });
+  const [a, b] = await Promise.all([decode(first), decode(second)]);
+  expect(a.info).toMatchObject({ width: b.info.width, height: b.info.height, channels: 3 });
+  const { width, height } = a.info;
+  let error = 0;
+  const describePixels = (data: Buffer) => {
+    const rgb = [0, 0, 0];
+    let luma = 0;
+    let squaredLuma = 0;
+    let chroma = 0;
+    let detail = 0;
+    let previousLuma = 0;
+    for (let i = 0; i < data.length; i += 3) {
+      const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+      rgb[0] += r;
+      rgb[1] += g;
+      rgb[2] += b;
+      const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      luma += y;
+      squaredLuma += y * y;
+      chroma += Math.max(r, g, b) - Math.min(r, g, b);
+      if (i % (3 * width) !== 0) detail += Math.abs(y - previousLuma);
+      previousLuma = y;
+    }
+    const count = width * height;
+    return {
+      rgb: rgb.map((sum) => sum / count),
+      brightness: luma / count,
+      contrast: Math.sqrt(Math.max(0, squaredLuma / count - (luma / count) ** 2)),
+      chroma: chroma / count,
+      horizontalDetail: detail / (count - height),
+    };
+  };
+  for (let i = 0; i < a.data.length; i++) error += Math.abs(a.data[i] - b.data[i]);
+  return {
+    meanAbsoluteChannelError: error / a.data.length,
+    first: describePixels(a.data),
+    second: describePixels(b.data),
+  };
+}
+
+test("matches bundled JPEG framing and color before CSS, and preserves print artwork around the text", async ({
+  page,
+}, testInfo) => {
+  await page.addInitScript(() => {
+    window.print = () => {
+      document.documentElement.dataset.testPrinted = "true";
+    };
+  });
+  await page.goto("/");
+  await addFireball(page);
+  const inputDir = testInfo.outputPath();
+  await mkdir(inputDir, { recursive: true });
+  const parchmentName = "Aged Parchment framed with Separators";
+  const parchment = await readFile(path.join(DEFAULT_INPUT_DIR, `${parchmentName}.png`));
+  // Asymmetric color bands detect shifts in either axis. Transparency, P3 and
+  // odd source dimensions exercise the shared crop and color conversions.
+  const profile = await sharp(
+    Buffer.from(
+      '<svg width="409" height="403"><rect width="310" height="403" fill="#12151a"/><rect x="74" y="13" width="157" height="203" fill="#d06342"/><rect x="185" y="219" width="125" height="181" fill="#6d9cd2"/><rect x="290" y="52" width="110" height="96" fill="#eee" fill-opacity=".4"/><rect x="88" y="241" width="73" height="97" fill="#ccc" fill-opacity=".5"/></svg>',
+    ),
+  )
+    .withIccProfile("p3")
+    .png()
+    .toBuffer();
+  const fixtures = [
+    {
+      name: `${parchmentName}.png`,
+      mimeType: "image/png",
+      buffer: parchment,
+      width: 900,
+      height: 1260,
+    },
+    { name: "Profile.png", mimeType: "image/png", buffer: profile, width: 285, height: 399 },
+  ];
+  for (const fixture of fixtures)
+    await writeFile(path.join(inputDir, fixture.name), fixture.buffer);
+  expect(await prepareCardBackgrounds({ inputDir, dryRun: false })).toMatchObject({
+    converted: 2,
+    failed: 0,
+  });
+  await page.getByRole("button", { name: "Use own" }).click();
+  const dialog = page.getByRole("dialog", { name: "Personal card backgrounds" });
+  await dialog.locator('input[type="file"]').setInputFiles([
+    ...fixtures,
+    // The browser accepts valid image bytes independently of the filename and MIME type.
+    { name: "Mislabeled.jpg", mimeType: "image/jpeg", buffer: profile },
+  ]);
+  for (const { name } of fixtures)
+    await expect(dialog.getByRole("button", { name: `Remove ${name}` })).toBeEnabled();
+  await expect(dialog.getByRole("button", { name: "Remove Mislabeled.jpg" })).toBeEnabled();
+  await dialog.getByRole("button", { name: "Close", exact: true }).last().click();
+  const backup = await exportBackup(page);
+  const jpeg = (name: string) =>
+    Buffer.from(backup.personalBackgrounds.find((image) => image.name === name)!.jpeg, "base64");
+  expect(jpeg("Mislabeled.jpg")).toEqual(jpeg("Profile.png"));
+  const comparisons: Record<string, unknown> = {};
+  for (const { name, width, height } of fixtures) {
+    const browser = jpeg(name);
+    const bundled = await readFile(path.join(inputDir, name.replace(/\.png$/, ".jpg")));
+    for (const image of [browser, bundled]) {
+      expect(image.length).toBeLessThanOrEqual(BACKGROUND_JPEG_MAX_BYTES);
+      const metadata = await sharp(image).metadata();
+      expect(metadata).toMatchObject({ width, height, space: "srgb" });
+      expect(metadata.exif).toBeUndefined();
+      expect(metadata.xmp).toBeUndefined();
+    }
+    const fileComparison = await compareImages(bundled, browser);
+    comparisons[name] = {
+      ...fileComparison,
+      nodeBytes: bundled.length,
+      browserBytes: browser.length,
+    };
+    expect(fileComparison.meanAbsoluteChannelError).toBeLessThan(5);
+    if (name === "Profile.png") {
+      for (const image of [browser, bundled]) {
+        // At this row the dark field ends at source x=310. The crop starts at x=62.
+        const edge = await sharp(image)
+          .extract({ left: 240, top: 200, width: 16, height: 1 })
+          .greyscale()
+          .raw()
+          .toBuffer();
+        expect(edge.findIndex((value) => value > 128)).toBe(8);
+      }
+    }
+  }
+  const selection = page.getByLabel("Card background");
+  const personal = backup.personalBackgrounds.find(({ name }) => name === fixtures[0].name)!;
+  await selection.selectOption(personal.id);
+  await printWithBackground(page, personal.id, false);
+  await page.emulateMedia({ media: "print" });
+  const card = page.locator(".print-root .spell-card").first();
+  const personalScreen = await card.screenshot();
+
+  const applyImage = async (name: string, buffer: Buffer) => {
+    await card.evaluate(
+      async (element, { name, base64 }) => {
+        const url = `data:image/jpeg;base64,${base64}`;
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        element.setAttribute("data-card-background", name);
+        (element as HTMLElement).style.setProperty("--card-background-image", `url("${url}")`);
+      },
+      { name, base64: buffer.toString("base64") },
+    );
+  };
+  await applyImage(
+    `${parchmentName}.jpg`,
+    await readFile(path.join(inputDir, `${parchmentName}.jpg`)),
+  );
+  const bundledScreen = await card.screenshot();
+  const printComparison = await compareImages(bundledScreen, personalScreen);
+  expect(printComparison.meanAbsoluteChannelError).toBeLessThan(5);
+  const previousBundled = await readFile(path.join(DEFAULT_INPUT_DIR, `${parchmentName}.jpg`));
+  const bundledJpeg = await readFile(path.join(inputDir, `${parchmentName}.jpg`));
+  const bundledBeforeAfter = await compareImages(previousBundled, bundledJpeg);
+
+  // Keep the browser JPEG, layout and outline fixed while adding back the former wash.
+  await applyImage(personal.id, jpeg(fixtures[0].name));
+  const oldOverlay = await page.addStyleTag({
+    content: `
+    .spell-card[data-card-background^="personal-"] { isolation: isolate }
+    .spell-card[data-card-background^="personal-"]::before {
+      content: ""; position: absolute; inset: 0; z-index: -1;
+      background-color: rgb(255 253 248 / 60%);
+    }
+  `,
+  });
+  const overlayComparison = await compareImages(personalScreen, await card.screenshot());
+  expect(overlayComparison.second.brightness - overlayComparison.first.brightness).toBeGreaterThan(
+    10,
+  );
+  expect(overlayComparison.second.chroma).toBeLessThan(overlayComparison.first.chroma);
+  await oldOverlay.evaluate((node) => node.parentNode?.removeChild(node));
+
+  const dark = await sharp({
+    create: { width: 150, height: 210, channels: 3, background: "#101010" },
+  })
+    .jpeg()
+    .toBuffer();
+  await applyImage(personal.id, dark);
+  const darkScreen = await sharp(await card.screenshot())
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = darkScreen.info;
+  const blank = ((height - 30) * width + 5) * channels;
+  expect(darkScreen.data[blank]).toBeLessThan(25);
+  let outlinePixels = 0;
+  for (let i = 0; i < width * 35 * channels; i += channels) {
+    if (darkScreen.data[i] > 230 && darkScreen.data[i + 1] > 230) outlinePixels++;
+  }
+  expect(outlinePixels).toBeGreaterThan(30);
+  const reportPath = testInfo.outputPath("background-comparison.json");
+  await writeFile(
+    reportPath,
+    JSON.stringify(
+      {
+        files: comparisons,
+        bundledBeforeAfter,
+        printComparison,
+        overlayComparison,
+        outlinePixels,
+      },
+      null,
+      2,
+    ),
+  );
+  await testInfo.attach("background-comparison", {
+    path: reportPath,
+    contentType: "application/json",
+  });
+});
+
+test("rejects undersized personal images and enforces source and output byte limits", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Use own" }).click();
+  const dialog = page.getByRole("dialog", { name: "Personal card backgrounds" });
+  const input = dialog.locator('input[type="file"]');
+  const tiny = await sharp({
+    create: { width: 149, height: 210, channels: 3, background: "white" },
+  })
+    .png()
+    .toBuffer();
+  const tooManyPixels = await sharp({
+    create: { width: 8000, height: 5001, channels: 3, background: "white" },
+  })
+    .png()
+    .toBuffer();
+  await input.setInputFiles([
+    { name: "Too small.png", mimeType: "image/png", buffer: tiny },
+    {
+      name: "Too large.png",
+      mimeType: "image/png",
+      buffer: Buffer.alloc(BACKGROUND_SOURCE_MAX_BYTES + 1),
+    },
+    { name: "Too many pixels.png", mimeType: "image/png", buffer: tooManyPixels },
+  ]);
+  await expect(dialog.getByRole("alert")).toContainText("Too small.png");
+  await expect(dialog.getByRole("alert")).toContainText("Too large.png");
+  await expect(dialog.getByRole("alert")).toContainText("Too many pixels.png");
+  await expect(dialog.getByRole("button", { name: "Choose images" })).toBeEnabled();
+  await page.evaluate((maxBytes) => {
+    const oversized = new Blob([new Uint8Array(maxBytes + 1)], { type: "image/jpeg" });
+    HTMLCanvasElement.prototype.toBlob = (callback) => callback(oversized);
+  }, BACKGROUND_JPEG_MAX_BYTES);
+  const valid = await sharp({
+    create: { width: 150, height: 210, channels: 3, background: "white" },
+  })
+    .png()
+    .toBuffer();
+  await input.setInputFiles({
+    name: "Too large after encoding.png",
+    mimeType: "image/png",
+    buffer: valid,
+  });
+  await expect(dialog.getByRole("alert")).toContainText("Too large after encoding.png");
+  await expect(dialog.getByRole("alert")).toContainText("The processed JPEG exceeds 1 MiB");
+  await expect(dialog.getByRole("button", { name: /^Remove / })).toHaveCount(0);
+});
 
 test("normalizes mixed imports and shares the saved background across designs and print", async ({
   page,
