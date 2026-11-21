@@ -15,7 +15,7 @@ Diese Anwendung dient der Erstellung und Verwaltung von Zauberkarten für Dungeo
 
 ## 3. Lokale Datenspeicherung
 
-Eigene Zauber, gespeicherte Decks, das aktive Deck und Anpassungen an SRD-Texten werden ausschließlich im Browser in einer lokalen IndexedDB-Datenbank gespeichert. Die Anwendung verwendet hierfür Dexie.js.
+Eigene Zauber, gespeicherte Decks, das aktive Deck, Anpassungen an SRD-Texten und eigene Kartenhintergründe mit ihrer gespeicherten Auswahl werden im Browser in einer lokalen IndexedDB-Datenbank gespeichert. Die Anwendung verwendet hierfür Dexie.js.
 
 Die Spracheinstellung wird im `localStorage` gespeichert. Der Browser-Cache enthält Anwendungsdateien, Schriftarten und mitgelieferte Zauberdaten für die Offline-Nutzung, jedoch keine selbst erstellten Inhalte.
 
@@ -30,6 +30,10 @@ Lokal gespeicherte Inhalte bleiben grundsätzlich erhalten, bis sie innerhalb de
 Eigene Zauber und gespeicherte Decks können einzeln gelöscht werden. Beim Löschen eines eigenen Zaubers werden passende Einträge im aktiven Deck entfernt; gespeicherte Decks bleiben unverändert. Beim Löschen eines gespeicherten Decks wird die Verknüpfung zum aktiven Deck entfernt; der Inhalt des aktiven Decks bleibt erhalten. Deck-Einträge können einzeln entfernt werden. Die Funktion „Einträge leeren“ entfernt alle Einträge, behält aber Deckname und Verknüpfung bei. Änderungen an SRD-Texten können mit „Auf Original zurücksetzen“ zurückgesetzt werden.
 
 Es gibt keine zentrale Schaltfläche zum Löschen sämtlicher lokaler Daten. Über die Browsereinstellungen lassen sich alle Websitedaten einschließlich IndexedDB, `localStorage` und Cache Storage entfernen.
+
+Eigene Kartenhintergründe können einzeln im Hintergrunddialog entfernt werden.
+
+Beim Export eines vollständigen Backups wird eine lokale Datei heruntergeladen. Die Wiederherstellung ersetzt nach Bestätigung die aktuelle Sammlung in diesem Browser. Die Anwendung verarbeitet die Datei lokal.
 
 Beim Löschen von Browserdaten sowie beim Wechsel von Browser oder Gerät können lokal gespeicherte Inhalte verloren gehen.
 

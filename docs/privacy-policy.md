@@ -15,7 +15,7 @@ This application allows users to create and manage spell cards for Dungeons & Dr
 
 ## 3. Local Data Storage
 
-Custom spells, saved decks, the active deck, and modifications to SRD texts are stored exclusively in the user's browser using a local IndexedDB database. The application uses Dexie.js for this purpose.
+Custom spells, saved decks, the active deck, modifications to SRD texts, and personal card background images with their saved selection are stored in the user's browser using a local IndexedDB database. The application uses Dexie.js for this purpose.
 
 The language preference is stored in `localStorage`. The browser cache contains application files, fonts, and bundled spell data for offline use, but no user-created content.
 
@@ -30,6 +30,10 @@ Locally stored content generally remains available until it is deleted or reset 
 Custom spells and saved decks can be deleted individually. Deleting a custom spell also removes matching entries from the active deck; saved decks remain unchanged. When a saved deck is deleted, the linked active-deck association is cleared; the active-deck content is preserved. Deck entries can be removed individually. The Clear entries action removes all entries while keeping the deck name and association. Modifications to SRD texts can be reset with Reset to original.
 
 There is no central button to delete all local data. Browser settings can remove all site data, including IndexedDB, `localStorage`, and Cache Storage.
+
+Personal card background images can be removed individually in the background dialog.
+
+Exporting a complete backup downloads a local file. Restoring a backup replaces the current collection in this browser after confirmation. The application processes the file locally.
 
 Locally stored content may be lost when browser data is cleared or when switching browsers or devices.
 
