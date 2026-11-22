@@ -784,6 +784,8 @@ export const de = {
       label: "Kartenhintergrund",
       hint: "Gilt für Vorschau und Druck.",
       none: "Kein Hintergrund",
+      previous: "Vorheriger Hintergrund",
+      next: "Nächster Hintergrund",
       useOwn: "Eigene verwenden",
       manage: "Eigene Kartenhintergründe",
       importHelp:

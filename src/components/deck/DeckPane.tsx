@@ -5,6 +5,8 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   FolderOpen,
   GripVertical,
   MoreHorizontal,
@@ -357,6 +359,25 @@ export function DeckPane() {
 
   const repairTarget = librarySpells.find((spell) => spell.id === repairSpellId);
 
+  const backgroundIds = [
+    CARD_BACKGROUND_NONE,
+    ...CARD_BACKGROUNDS.map((option) => option.id),
+    ...personalBackgrounds.map(({ id }) => id),
+  ];
+  const currentBackgroundId = cardBackgroundId(cardBackground);
+  const canCycleBackground = backgroundIds.length > 1;
+  const cycleBackground = (step: 1 | -1) => {
+    if (!canCycleBackground) return;
+    const index = backgroundIds.indexOf(currentBackgroundId);
+    const nextIndex =
+      index === -1
+        ? step === 1
+          ? 0
+          : backgroundIds.length - 1
+        : (index + step + backgroundIds.length) % backgroundIds.length;
+    void chooseBackground(backgroundIds[nextIndex]);
+  };
+
   return (
     <section id="deck-panel" className="flex h-full min-h-0 flex-col" aria-label={t("deck.title")}>
       <div id="deck-controls" className="space-y-2 border-b border-border p-3">
@@ -510,6 +531,30 @@ export function DeckPane() {
                 )}
               </NativeSelect>
             </div>
+            {canCycleBackground ? (
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  aria-label={t("card.background.previous")}
+                  aria-controls="deck-background-select"
+                  disabled={backgroundBusy || !collectionGeneration}
+                  onClick={() => cycleBackground(-1)}
+                >
+                  <ChevronLeft size={14} aria-hidden="true" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  aria-label={t("card.background.next")}
+                  aria-controls="deck-background-select"
+                  disabled={backgroundBusy || !collectionGeneration}
+                  onClick={() => cycleBackground(1)}
+                >
+                  <ChevronRight size={14} aria-hidden="true" />
+                </Button>
+              </div>
+            ) : null}
             <Button
               size="sm"
               variant="outline"

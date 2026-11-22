@@ -769,6 +769,8 @@ export const en = {
       label: "Card background",
       hint: "Applies to preview and print.",
       none: "None",
+      previous: "Previous background",
+      next: "Next background",
       useOwn: "Use own",
       manage: "Personal card backgrounds",
       importHelp: "Choose JPEG, PNG, or WebP images. The app crops and saves them on this device.",

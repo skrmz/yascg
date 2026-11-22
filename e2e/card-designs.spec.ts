@@ -172,6 +172,43 @@ test("selects and resets a card background for the preview", async ({ page }) =>
   ).toBe("none");
 });
 
+test("cycles card backgrounds with the previous and next buttons", async ({ page }) => {
+  await page.goto("/");
+  await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");
+
+  const background = page.getByLabel("Card background");
+  const next = page.getByRole("button", { name: "Next background" });
+  const previous = page.getByRole("button", { name: "Previous background" });
+  await expect(next).toBeVisible();
+  await expect(previous).toBeVisible();
+
+  const values = await background
+    .locator("option")
+    .evaluateAll((options) => options.map((option) => (option as HTMLOptionElement).value));
+  const first = values[0];
+  const second = values[1];
+  const last = values[values.length - 1];
+  if (!first || !second || !last) throw new Error("Expected at least two card backgrounds");
+
+  await expect(background).toHaveValue(first);
+
+  await next.click();
+  await expect(background).toHaveValue(second);
+  await expect(page.locator(`.card-preview-page[data-card-background="${second}"]`)).toHaveCount(1);
+
+  await previous.click();
+  await expect(background).toHaveValue(first);
+  await expect(page.locator(".card-preview-page[data-card-background]")).toHaveCount(0);
+
+  await previous.click();
+  await expect(background).toHaveValue(last);
+  await expect(page.locator(`.card-preview-page[data-card-background="${last}"]`)).toHaveCount(1);
+
+  await next.click();
+  await expect(background).toHaveValue(first);
+  await expect(page.locator(".card-preview-page[data-card-background]")).toHaveCount(0);
+});
+
 test("defaults to Compact after a reload", async ({ page }) => {
   await page.goto("/");
   await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");
