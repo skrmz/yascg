@@ -9,7 +9,7 @@ import {
   isValidDeckName,
   normalizeDeckName,
   savedDeckSchema,
-  activeDeckRecordSchema,
+  storedActiveDeckSchema,
   type ActiveDeckRecord,
   type SavedDeck,
 } from "@/domain/deck";
@@ -91,7 +91,7 @@ function assertDeckName(raw: string, associated: boolean): string {
 }
 
 function persisted(active: ActiveDeckRecord): ActiveDeckRecord {
-  return activeDeckRecordSchema.parse(active);
+  return storedActiveDeckSchema.parse(active);
 }
 
 /** Save As: creates a brand-new saved snapshot and binds the active deck to it. */
@@ -214,6 +214,7 @@ export async function loadSavedDeck(
     const active = persisted({
       ...current,
       name: saved.name,
+      instanceId: newUuid(),
       entries,
       savedDeckId: saved.id,
       baseline: {
@@ -279,6 +280,7 @@ export async function newActiveDeck(
     }
     const active = persisted({
       id: ACTIVE_DECK_ID,
+      instanceId: newUuid(),
       name: "",
       entries: [],
       baseline: null,

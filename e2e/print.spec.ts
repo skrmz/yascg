@@ -15,7 +15,7 @@ test("print dialog explains settings and renders a 9-up sheet", async ({ page })
     .first()
     .click();
 
-  await page.getByRole("button", { name: "Print" }).first().click();
+  await page.getByRole("button", { name: "Print cards" }).first().click();
   await expect(page.getByText("Print settings")).toBeVisible();
   await page.getByRole("button", { name: "Print settings" }).click();
   await expect(page.getByText(/100% \/ Actual Size/)).toBeVisible();
@@ -76,7 +76,7 @@ test("prints the selected card background", async ({ page }) => {
   );
   expect(previewImage).toMatch(/\.jpe?g/i);
 
-  await page.getByRole("button", { name: "Print" }).first().click();
+  await page.getByRole("button", { name: "Print cards" }).first().click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: /^Print \d+ cards?$/ })
@@ -101,7 +101,7 @@ test("A4 sheets use ISO A4 geometry", async ({ page }) => {
     .first()
     .click();
 
-  await page.getByRole("button", { name: "Print" }).first().click();
+  await page.getByRole("button", { name: "Print cards" }).first().click();
   await page.getByLabel("Paper size").selectOption("A4");
   await page
     .getByRole("dialog")

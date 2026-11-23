@@ -44,6 +44,8 @@ export const DECK_NAME_MAX_LENGTH = 120;
 
 export interface ActiveDeckRecord extends ActiveDeck {
   id: typeof ACTIVE_DECK_ID;
+  /** Local lifecycle identity. An edit or snapshot save keeps this value. */
+  instanceId?: string;
 }
 
 export const deckReferenceSchema = z.object({
@@ -81,6 +83,10 @@ export const activeDeckSchema = z.object({
 
 export const activeDeckRecordSchema = activeDeckSchema.extend({
   id: z.literal(ACTIVE_DECK_ID),
+});
+
+export const storedActiveDeckSchema = activeDeckRecordSchema.extend({
+  instanceId: z.string().optional(),
 });
 
 export const savedDeckSchema = z.object({

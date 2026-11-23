@@ -50,7 +50,7 @@ async function expectContinuationLayout(cards: Locator, count: number) {
 }
 
 async function expectPrintedCards(page: Page, count: number) {
-  await page.getByRole("button", { name: "Drucken", exact: true }).first().click();
+  await page.getByRole("button", { name: "Karten drucken", exact: true }).first().click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: /drucken/i })
@@ -191,7 +191,7 @@ test("Wunsch multi-card keeps the full description across cards", async ({ page 
   expect(Math.abs(previewBox!.width - 240)).toBeLessThan(2);
   expect(Math.abs(previewBox!.height - 336)).toBeLessThan(2);
 
-  await page.getByRole("button", { name: "Drucken", exact: true }).first().click();
+  await page.getByRole("button", { name: "Karten drucken", exact: true }).first().click();
   const firstJob = page.getByRole("dialog");
   await firstJob.getByRole("checkbox", { name: "Karten eines Zaubers zusammenhalten" }).check();
   await firstJob.getByRole("button", { name: /drucken/i }).click();
@@ -214,7 +214,7 @@ test("Wunsch multi-card keeps the full description across cards", async ({ page 
   expect(Math.abs(printBox!.height - 336)).toBeLessThan(2);
 
   await page.emulateMedia({ media: "screen" });
-  await page.getByRole("button", { name: "Drucken", exact: true }).first().click();
+  await page.getByRole("button", { name: "Karten drucken", exact: true }).first().click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("checkbox", { name: "Alle Zauber auswählen" }).uncheck();
   await expect(dialog.getByRole("button", { name: "Drucken", exact: true })).toBeDisabled();

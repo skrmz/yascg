@@ -20,6 +20,7 @@ export function DialogContent({
   lang,
   titleLang,
   descriptionLang,
+  onCloseAutoFocus,
   variant = "dialog",
 }: {
   title: string;
@@ -32,6 +33,7 @@ export function DialogContent({
   lang?: string;
   titleLang?: string;
   descriptionLang?: string;
+  onCloseAutoFocus?: (event: Event) => void;
   variant?: "dialog" | "sheet";
 }) {
   const { t } = useTranslation();
@@ -41,6 +43,7 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="app-no-print fixed inset-0 z-50 bg-black/50" />
       <DialogPrimitive.Content
         lang={lang}
+        onCloseAutoFocus={onCloseAutoFocus}
         className={cn(
           "app-no-print fixed z-50 border border-border bg-card text-card-foreground shadow-xl",
           isSheet

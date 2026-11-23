@@ -86,7 +86,7 @@ test("applies a short description to an editable copy, undoes it, and prints the
   await expect(dialog.getByText(new RegExp(SHORT_PHRASE))).toBeVisible();
   await page.keyboard.press("Escape");
 
-  await page.getByRole("button", { name: "Print" }).first().click();
+  await page.getByRole("button", { name: "Print cards" }).first().click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: /^Print \d+ cards?$/ })

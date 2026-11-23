@@ -9,9 +9,11 @@ import {
   makeEntry,
   mutateActiveDeck,
   removeEntry,
+  removeEntries,
   repairEntry,
   replaceEntryWithSpell,
   reorderEntries,
+  reorderMatchingEntries,
 } from "@/db/active-deck.ts";
 import {
   SavedDeckConflictError,
@@ -58,6 +60,36 @@ describe("active deck persistence", () => {
     await expect(mutateActiveDeck(0, (current) => current)).rejects.toBeInstanceOf(
       DeckConflictError,
     );
+  });
+
+  it("removes selected IDs in one revision and preserves the saved snapshot and survivor order", async () => {
+    const entries = ["a", "b", "c", "d"].map((id) => makeEntry(id, "Custom", id));
+    await mutateActiveDeck(0, (current) => ({ ...current, entries }));
+    const { active, savedDeck } = await saveNewDeck(1, "Saved");
+    const remaining = await mutateActiveDeck(active.revision, (current) =>
+      removeEntries(current, new Set([entries[2].entryId, entries[0].entryId])),
+    );
+    expect(remaining.revision).toBe(active.revision + 1);
+    expect(remaining.entries).toEqual([entries[1], entries[3]]);
+    expect(remaining.baseline).toEqual(active.baseline);
+    expect(await listSavedDecks()).toEqual([savedDeck]);
+  });
+
+  it("applies table order once to matching slots while retaining the saved snapshot", async () => {
+    const entries = ["a", "b", "c", "d"].map((id) => makeEntry(id, "Custom", id));
+    await mutateActiveDeck(0, (current) => ({ ...current, entries }));
+    const { active, savedDeck } = await saveNewDeck(1, "Saved");
+    const ids = [entries[3].entryId, entries[0].entryId];
+    const applyOrder = (current: typeof active) => reorderMatchingEntries(current, ids);
+    const reordered = await mutateActiveDeck(active.revision, applyOrder);
+    expect(reordered.revision).toBe(active.revision + 1);
+    expect(reordered.entries).toEqual([entries[3], entries[1], entries[2], entries[0]]);
+    expect(reordered.baseline).toEqual(active.baseline);
+    expect(await listSavedDecks()).toEqual([savedDeck]);
+    await expect(mutateActiveDeck(active.revision, applyOrder)).rejects.toBeInstanceOf(
+      DeckConflictError,
+    );
+    expect(await mutateActiveDeck(reordered.revision, applyOrder)).toEqual(reordered);
   });
 
   it("rolls back when the mutator throws", async () => {
@@ -387,6 +419,11 @@ describe("saved decks", () => {
     expect(loaded.active.name).toBe("Saved");
     expect(loaded.active.baseline?.name).toBe("Saved");
     expect(loaded.active.baseline?.savedRevision).toBe(1);
+    expect(loaded.active.instanceId).toBeTruthy();
+    const renamed = await renameActiveDeck(loaded.active.revision, "Renamed");
+    expect(renamed.active.instanceId).toBe(loaded.active.instanceId);
+    const replaced = await newActiveDeck(renamed.active.revision);
+    expect(replaced.active.instanceId).not.toBe(loaded.active.instanceId);
   });
 
   it("reopening an identical snapshot is a no-op", async () => {

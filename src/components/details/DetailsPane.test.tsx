@@ -334,6 +334,10 @@ describe("DetailsPane dialog content", () => {
 describe("DetailsPane deck additions", () => {
   it("shows a toast when the selected spell is already in the active deck", async () => {
     holder.spell = makeSpell({ id: "srd-fireball", name: "Fireball" });
+    holder.activeDeck = {
+      ...createEmptyActiveDeck(),
+      entries: [makeEntry("srd-fireball", "SRD-5.2.1", "Fireball")],
+    };
     holder.addSpellToDeck.mockResolvedValueOnce("duplicate");
     const user = userEvent.setup();
     render(<DetailsPane />);

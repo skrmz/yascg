@@ -635,6 +635,44 @@ same transaction before any write. A saved-snapshot conflict is reported in the 
 baseline content cannot be verified against the associated snapshot during the Dexie v4
 migration keep the token absent and block Save until the user uses Open or Save As.
 
+### Active deck table
+
+- **Spell Cards** and **Table** share the active deck. Table uses the main workspace in Wide
+  mode. Compact and Split keep the existing tabs and expose Table and **Manage deck** under
+  **Deck**. **Spell Cards** restores the existing preview. Small table containers use accessible
+  compact rows by default and offer a scrollable **Full table**.
+- The default columns are Select, Spell name, Level, Components, Casting time, Range,
+  Duration, Concentration, and Actions. Select, Spell name, and Actions remain visible. The
+  table also supports School, Classes, Ritual, Description, and Source. Details expose full
+  values and descriptions. An unavailable translation shows the labeled English spell
+  if available. Unresolved references retain their stored name and are removable. Unknown values
+  stay distinct from valid negative values and sort last in both directions. Boolean columns
+  show a checkmark for Yes and a blank cell for No, with localized text for assistive technology
+  and in print.
+- Search matches the displayed spell name after case and whitespace normalization. School
+  and Classes allow multiple choices, Concentration and Ritual offer Any/Yes/No, and Casting
+  time uses normalized values from the active deck. Filter groups combine with AND and
+  choices within each multi-select combine with OR. Applicable filters expose unavailable
+  data. Matching and total counts update live alongside localized labels.
+- Default order follows the active deck, including changes made in the Deck pane. Sort
+  using the full table's column headers. Sorting is stable and uses deck position to break
+  ties. **Use deck order** clears sorting and retains the current filters. **Apply table
+  sort to deck** explicitly reorders every matching entry across all pages in a single
+  active-deck write. Entries outside the filter keep their positions. Saved snapshots retain
+  their order until the user saves. Filtered and sorted rows are paginated at 10 entries by
+  default. Filters, sort and page-size changes return to page one.
+- Selection uses stable entry IDs and spans pages and filters. Select all affects every
+  matching row and exposes its mixed state. **Reset filters and sort** restores deck order
+  and leaves selection intact. **Clear selection** clears the entire selection. A replacement
+  deck clears selection, and ordinary edits retain valid selected IDs.
+- **Remove selected** confirms the full selected set and discloses entries outside the
+  current filters or page. It validates the revision and identities against the live deck
+  before committing a single active-only write. Changes affecting the confirmation require
+  a new decision. Saved snapshots retain their content until the user saves.
+- Presentation, column, compact/full, page-size and filter/sort preferences live in browser
+  storage. Selection is transient. Deck snapshots, deck exports and complete backups exclude
+  the table's presentation, selection and ordering state.
+
 ## 8. JSON Import and Export
 
 Both formats are **unversioned** and strictly validated; there is no legacy, unknown-version,
@@ -950,6 +988,23 @@ must print.
   browser/printer limitations; exact physical sizing depends partly on user print settings and
   hardware.
 
+### Table printing
+
+- **Print table** is available in Table when at least one row matches. Its preview shows
+  the filters, sort, row count, columns, paper, orientation and page boundaries. It uses
+  all matching rows across screen pages in table order and all enabled data columns in
+  display order. Selection and interactive columns are excluded. Data values and descriptions
+  print in full, with their localized labels and fallback status.
+- Table pages use the chosen Letter or A4 paper and portrait or landscape orientation.
+  Column widths fit the printable page and wrap long content. Headers repeat. Rows stay
+  together where practical, and exceptionally long rows continue on separate pages. The
+  font starts at a readable size and has a 6 pt floor. If the layout cannot fit within
+  those constraints, preview blocks printing and offers adjustments to paper, orientation
+  or columns. An info button reveals browser printing instructions. Browser and printer
+  settings can still override the application's geometry.
+- Table output is read-only. **Print cards** continues to use the deck's entry order and
+  its own card selection, fitting, and continuation rules.
+
 ## 11. Offline, Persistence, Security, and Quality
 
 - First-load readiness means required assets, the language manifest, and **every** bundled
@@ -1056,6 +1111,10 @@ duplicate these outcomes as a second invariants list.
 | D17 | Decks           | Two tabs mutate the same active revision or custom-spell revision                                   | Exactly one succeeds; the other receives a conflict with no silent overwrite; stale custom-spell revisions abort                                                                                               | §7, §11     |
 | D18 | Decks           | Two tabs save the same associated snapshot                                                          | Both expected revisions are checked; exactly one succeeds; the other receives Save As/Open conflict                                                                                                            | §7          |
 | D19 | Decks           | IndexedDB quota or transaction failure                                                              | No success message and no partial linked operation                                                                                                                                                             | §7, §11     |
+| T1 | Deck table | Switch views, restore preferences, resize and use mobile Deck navigation | Table state survives view changes, rows stay readable, and deck content/order stays intact. Fresh reload clears selection. | §7 |
+| T2 | Deck table | Filter, sort, page and select across live edits and language changes | Results, columns, sort metadata and counts update together. Stable selection excludes removed entries and clears on replacement. | §7 |
+| T3 | Deck table | Remove a selection spanning pages and filters during concurrent edits | Confirmation describes exact scope and refreshes if stale. One write removes the confirmed IDs and preserves remaining order and saved snapshots. | §7 |
+| T4 | Table print | Preview Letter and A4, orientations, multiple pages, long values and infeasible layouts | Output includes all matching rows and enabled data columns, repeats headings, wraps full values and prevents output that would clip or fall below 6 pt. Card printing stays in deck order. | §10 |
 | I1  | Import/export   | Valid custom-spell payload                                                                          | Strict validation; collision/remap/override review applied; atomic commit                                                                                                                                      | §8.1        |
 | I2  | Import/export   | Custom import duplicate IDs, unknown top-level field, missing required field, or SRD-sourced record | Whole batch rejected with a readable error; no fallback parsing; SRD records never relabeled Custom                                                                                                            | §8.1        |
 | I3  | Import/export   | Custom import reserved `srd-` ID                                                                    | Unique UUID remap with old/new mapping; bundled SRD unchanged                                                                                                                                                  | §8.1        |

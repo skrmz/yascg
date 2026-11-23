@@ -32,9 +32,7 @@ describe("typed message descriptors", () => {
   });
 
   it("rejects unknown catalog keys", () => {
-    expect(() => message("app.missing.key" as MessageKey, undefined as never)).toThrow(
-      /Unknown translation key/,
-    );
+    expect(() => message("app.missing.key" as MessageKey)).toThrow(/Unknown translation key/);
   });
 
   it("preserves intentional AppError descriptors", () => {

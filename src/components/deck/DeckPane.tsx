@@ -598,9 +598,10 @@ export function DeckPane() {
             variant="outline"
             onClick={() => setPrintOpen(true)}
             disabled={printable === 0}
+            aria-label={t("deck.print")}
           >
             <Printer size={13} aria-hidden="true" />
-            {t("deck.print")}
+            {t(compact ? "deck.printCompact" : "deck.print")}
           </Button>
           <Button size="sm" variant="outline" onClick={() => void requestOpen()}>
             <FolderOpen size={13} aria-hidden="true" />

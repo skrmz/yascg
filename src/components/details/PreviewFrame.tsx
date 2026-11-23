@@ -36,6 +36,7 @@ export function PreviewFrame({ mode, onModeChange, children }: PreviewFrameProps
       <label className="app-no-print mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         {t("details.previewScale")}
         <NativeSelect
+          name="previewScale"
           className="h-8 w-auto"
           value={mode}
           onChange={(event) => onModeChange(event.target.value as PreviewScaleMode)}

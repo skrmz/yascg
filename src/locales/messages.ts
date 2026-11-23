@@ -26,13 +26,10 @@ type ValuesFor<K extends MessageKey> =
     ? undefined
     : Record<InterpolationParameters<Extract<ValueAt<typeof en, K>, string>>, MessageValue>;
 
-type DescriptorFor<K extends MessageKey> = [ValuesFor<K>] extends [undefined]
-  ? { key: K; values?: undefined }
-  : { key: K; values: ValuesFor<K> };
-
-export type MessageDescriptor = {
-  [K in MessageKey]: DescriptorFor<K>;
-}[MessageKey];
+export interface MessageDescriptor {
+  key: MessageKey;
+  values?: Record<string, MessageValue>;
+}
 
 const keyCache = new Map<string, boolean>();
 
@@ -91,7 +88,7 @@ export function message<K extends MessageKey>(
 ): MessageDescriptor {
   const values = args[0] as Record<string, MessageValue> | undefined;
   assertDescriptor(key, values);
-  return { key, ...(values ? { values } : {}) } as MessageDescriptor;
+  return values ? { key, values } : { key };
 }
 
 export function translateMessage(t: TFunction, descriptor: MessageDescriptor): string {

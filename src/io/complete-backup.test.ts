@@ -442,6 +442,15 @@ describe("complete backup transactions", () => {
     expect(download).not.toHaveBeenCalled();
   });
 
+  it("keeps the active deck lifecycle identity out of the backup format", async () => {
+    const download = vi.spyOn(downloads, "downloadText").mockImplementation(() => {});
+    await db.activeDeck.put({ ...createEmptyActiveDeck(), instanceId: "local-instance" });
+    await exportCompleteBackup();
+    const text = download.mock.calls[0][1];
+    expect(JSON.parse(text).activeDeck).not.toHaveProperty("instanceId");
+    expect(parseCompleteBackup(text).activeDeck).toEqual(createEmptyActiveDeck());
+  });
+
   it("exports a consistent pair of records during concurrent cross-store writes", async () => {
     await putCustomSpell(makeCustomSpell());
     const download = vi.spyOn(downloads, "downloadText").mockImplementation(() => {});

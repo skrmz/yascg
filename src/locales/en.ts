@@ -1,7 +1,11 @@
 import type { AbbreviationDefinition } from "./abbreviation-types.ts";
 import { abbreviationsEn } from "./abbreviations-en.ts";
+import { tablePrintEn } from "./table-print.ts";
+import { deckTableEn } from "./deck-table.ts";
 
 export const en = {
+  tablePrint: tablePrintEn,
+  deckTable: deckTableEn,
   app: {
     workspaceNavigation: "Workspace views",
     metaDescription:
@@ -210,6 +214,12 @@ export const en = {
   },
   deck: {
     title: "Active deck",
+    presentation: {
+      label: "Active deck presentation",
+      cards: "Spell Cards",
+      table: "Table",
+      manage: "Manage deck",
+    },
     nameLabel: "Active deck name",
     namePlaceholder: "Untitled deck",
     save: "Save",
@@ -218,7 +228,8 @@ export const en = {
     actions: "Deck actions",
     newDeck: "Start new deck",
     importExport: "Import / export deck",
-    print: "Print",
+    print: "Print cards",
+    printCompact: "Print",
     entries: "{{count}} entry",
     entries_one: "{{count}} entry",
     entries_other: "{{count}} entries",
@@ -480,11 +491,11 @@ export const en = {
       customSpells:
         "Create your own spells or editable copies of SRD spells, with tools to abbreviate text and apply bundled short descriptions.",
       decks:
-        "Assemble one active deck, reorder entries freely, and save named decks to reopen later.",
+        "Assemble and reorder an active deck, save named decks to reopen later, and use the table view to filter and sort large decks, select entries across pages for removal, and apply the table sort to the deck order.",
       cardDesigns:
         "Choose the Classic or Compact card design, set a bundled or personal background, and preview cards at physical size.",
       printing:
-        "Print nine cards per sheet on US Letter or A4, with automatic fitting and continuation cards for long descriptions.",
+        "Print nine cards per sheet with automatic fitting and continuation cards, or print the filtered deck as a table with your chosen columns. Both support US Letter and A4.",
       offline:
         "Work offline after the first load, keep your collection in your browser, and move it with JSON import/export or a complete backup.",
     },

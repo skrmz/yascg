@@ -58,7 +58,7 @@ test("a persisted German preference initializes the document and full chrome in 
   await expect(page.getByRole("region", { name: "Zauberbibliothek" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Sprache der Zauber/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "Menü öffnen" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Drucken" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Karten drucken" })).toBeVisible();
   await expect(page.getByText("339 Ergebnisse")).toBeVisible();
 });
 
@@ -132,7 +132,7 @@ test("German localizes about, import/export and print dialogs", async ({ page })
   await expect(customImportDialog.getByText(/Dieser Export sichert/)).toBeVisible();
   await customImportDialog.getByRole("button", { name: "Schließen" }).first().click();
 
-  await page.getByRole("button", { name: "Drucken" }).first().click();
+  await page.getByRole("button", { name: "Karten drucken" }).first().click();
   const printDialog = page.getByRole("dialog", { name: "Zauberkarten drucken" });
   await expect(printDialog.getByText("Druckeinstellungen")).toBeVisible();
   await expect(printDialog.getByLabel("Papierformat")).toHaveValue("A4");

@@ -301,7 +301,7 @@ for (const width of [390, 820, 1024]) {
     }
     for (const name of [
       "Save as…",
-      "Print",
+      "Print cards",
       "Open…",
       "Deck actions",
       "Legend",
@@ -326,7 +326,9 @@ for (const width of [390, 1024, 1440]) {
     await page.goto("/");
     await page.getByLabel("Search spells").focus();
     await page.keyboard.type("Fireball");
-    await page.getByRole("button", { name: /Add Fireball to active deck/ }).focus();
+    const add = page.getByRole("button", { name: /Add Fireball to active deck/ });
+    await expect(add).toBeEnabled();
+    await add.focus();
     await page.keyboard.press("Enter");
     await expect(page.locator(".card-preview-page").first()).toBeVisible();
     if (width < 1200) {
@@ -345,7 +347,7 @@ for (const width of [390, 1024, 1440]) {
     await save.getByRole("button", { name: "Save", exact: true }).focus();
     await page.keyboard.press("Enter");
     await expect(save).toBeHidden();
-    await page.getByRole("button", { name: "Print", exact: true }).focus();
+    await page.getByRole("button", { name: "Print cards", exact: true }).focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("dialog", { name: /Print/ })).toBeVisible();
   });

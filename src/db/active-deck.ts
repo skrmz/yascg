@@ -10,7 +10,7 @@ import { type Table } from "dexie";
 import {
   ACTIVE_DECK_ID,
   DECK_NAME_MAX_LENGTH,
-  activeDeckRecordSchema,
+  storedActiveDeckSchema,
   createEmptyActiveDeck,
   dedupeDeckEntries,
   deckEntrySchema,
@@ -20,7 +20,7 @@ import {
   type DeckEntry,
 } from "@/domain/deck";
 import type { CardFitMode, SpellSource } from "@/domain/spells";
-import { newEntryId } from "@/domain/ids";
+import { newEntryId, newUuid } from "@/domain/ids";
 import { AppError, message } from "@/locales/messages.ts";
 
 export class DeckConflictError extends AppError {
@@ -115,7 +115,7 @@ export async function mutateActiveDeck(
       baseline,
       revision: current.revision + 1,
     };
-    const validated = activeDeckRecordSchema.parse(next);
+    const validated = storedActiveDeckSchema.parse(next);
     await db.activeDeck.put(validated);
     markChanged();
     return validated;
@@ -141,10 +141,14 @@ export function addEntry(current: ActiveDeckRecord, entry: DeckEntry): ActiveDec
 }
 
 export function removeEntry(current: ActiveDeckRecord, entryId: string): ActiveDeckRecord {
-  return {
-    ...current,
-    entries: current.entries.filter((entry) => entry.entryId !== entryId),
-  };
+  return removeEntries(current, new Set([entryId]));
+}
+
+export function removeEntries(
+  current: ActiveDeckRecord,
+  entryIds: ReadonlySet<string>,
+): ActiveDeckRecord {
+  return { ...current, entries: current.entries.filter((entry) => !entryIds.has(entry.entryId)) };
 }
 
 export function moveEntry(
@@ -177,6 +181,27 @@ export function reorderEntries(
   const [moved] = entries.splice(fromIndex, 1);
   entries.splice(toIndex, 0, moved);
   return { ...current, entries };
+}
+
+/** Reorder the given entries within their existing slots, including noncontiguous matches. */
+export function reorderMatchingEntries(
+  current: ActiveDeckRecord,
+  orderedIds: readonly string[],
+): ActiveDeckRecord {
+  const ids = new Set(orderedIds);
+  const matches = current.entries.filter(({ entryId }) => ids.has(entryId));
+  if (matches.length !== ids.size || ids.size !== orderedIds.length) return current;
+  if (matches.every(({ entryId }, index) => entryId === orderedIds[index])) return current;
+
+  const entriesById = new Map(matches.map((entry) => [entry.entryId, entry]));
+  if (entriesById.size !== ids.size) return current;
+  let next = 0;
+  return {
+    ...current,
+    entries: current.entries.map((entry) =>
+      ids.has(entry.entryId) ? entriesById.get(orderedIds[next++])! : entry,
+    ),
+  };
 }
 
 export function setEntryFitMode(
@@ -274,6 +299,7 @@ export function replaceDeck(current: ActiveDeckRecord, snapshot: DeckSnapshot): 
   const entries = dedupeDeckEntries(snapshot.entries.map((entry) => deckEntrySchema.parse(entry)));
   const next: ActiveDeckRecord = {
     ...current,
+    instanceId: newUuid(),
     name: snapshot.name,
     entries,
     baseline:

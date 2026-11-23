@@ -167,9 +167,10 @@ const backupSchema = z.discriminatedUnion("version", [backupV1Schema, backupV2Sc
 
 export type CompleteBackup = Omit<
   Awaited<ReturnType<typeof readCollectionSnapshot>>["collection"],
-  "personalBackgrounds" | "personalBackgroundId"
+  "activeDeck" | "personalBackgrounds" | "personalBackgroundId"
 > & {
   type: typeof COMPLETE_BACKUP_TYPE;
+  activeDeck: z.infer<typeof activeSchema>;
 } & (
     | { version: 1 }
     | Pick<
@@ -315,8 +316,10 @@ async function loadOverrideContext(): Promise<SrdOverrideValidationContext> {
 
 export async function exportCompleteBackup(): Promise<void> {
   const {
-    collection: { personalBackgrounds, ...collection },
+    collection: { activeDeck: storedDeck, personalBackgrounds, ...collection },
   } = await readCollectionSnapshot();
+  const activeDeck = { ...storedDeck };
+  delete activeDeck.instanceId;
   const encodedImages = [];
   for (const { image, ...metadata } of personalBackgrounds) {
     const url = await backgroundDataUrl(image);
@@ -326,6 +329,7 @@ export async function exportCompleteBackup(): Promise<void> {
     type: COMPLETE_BACKUP_TYPE,
     version: COMPLETE_BACKUP_VERSION,
     ...collection,
+    activeDeck,
     personalBackgrounds: encodedImages,
   };
   let hasNegativeZero = false;

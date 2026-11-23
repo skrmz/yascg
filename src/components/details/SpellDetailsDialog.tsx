@@ -10,6 +10,7 @@ export interface SpellDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   datasetLanguage?: string;
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
 export function SpellDetailsDialog({
@@ -17,6 +18,7 @@ export function SpellDetailsDialog({
   open,
   onOpenChange,
   datasetLanguage,
+  onCloseAutoFocus,
 }: SpellDetailsDialogProps) {
   const { t } = useTranslation();
   const levelLabel = t(levelLabelKey(spell.level), { level: spell.level });
@@ -31,6 +33,7 @@ export function SpellDetailsDialog({
         titleLang={contentLanguage}
         description={`${levelLabel} \u00b7 ${t(schoolKey(spell.school))}`}
         closeLabel={t("details.close")}
+        onCloseAutoFocus={onCloseAutoFocus}
         className="app-no-print flex max-h-[85vh] w-[min(94vw,48rem)] flex-col overflow-hidden"
         bodyClassName="min-h-0 overflow-y-auto pr-1"
       >

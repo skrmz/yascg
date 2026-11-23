@@ -197,6 +197,12 @@ choices:
 - `PreviewFrame` scales only rendered screen cards using a transform inside a slot sized for
   the visual card bounds. It observes the padded preview content width; fitting, hidden
   measurement, and print renderers receive no scale input.
+- `AppShell` keeps the active deck table mounted across presentation changes. The table
+  consumes the same resolved entries as Deck and card printing. Table suspends measurement
+  for the hidden card preview. The active record's optional
+  local lifecycle ID changes on replacement so other tabs can discard selection even when
+  a loaded snapshot contains some of the same entry IDs. The ID is excluded from backups.
+  Bulk removal uses the existing active-revision transaction with the confirmed entry IDs.
 - `src/test/setup.ts` provides `setWorkspaceWidth(width)` for controlled workspace observer
   notifications (wrap updates in `act`). Isolated pane tests provide `WorkspaceLayoutContext`.
   `e2e/workspace.spec.ts` covers container/viewport independence, responsive modes, preview
@@ -439,6 +445,9 @@ settings are in the [README](../README.md#printing). Implementation details:
   and `window.print()`; `src/fonts.css` self-hosts all UI and card families as WOFF2 assets.
 - `src/print/PrintSheet.tsx` builds the 3x3 sheets and `src/print/print.css` owns the physical
   `@page`, grid, Classic, and Compact card CSS. Tooltip and dialog portals are excluded in print.
+- The independent table print preview lays out all matching rows at the chosen paper size.
+  Its paper geometry and page boundaries also drive print output. See the
+  [table printing requirements](specs/MAIN-spec.md#table-printing).
   `src/print/document-title.ts` derives the print-to-PDF document title from the active deck name
   with a dated fallback, and `PrintDialog` restores the application title after `afterprint`.
 - `src/pwa/register.ts` verifies that the shell, manifest, every bundled dataset, and at least
@@ -500,6 +509,16 @@ pnpm run test:e2e
   verified browser to date; Firefox and Safari are validation targets, not yet verified.
 - When adding a language or changing generated data, clear the service-worker cache or hard
   refresh after rebuilding so the preview does not serve stale assets.
+
+For manual table checks, use a deck with more than ten entries, including a long custom
+description and an unavailable reference. On desktop and at 200% zoom, use the keyboard to
+switch views, filter, select across pages, and open and close details and the removal dialog.
+With a screen reader, verify the table headers, sort status, matching count, mixed checkbox,
+hidden selection count, and dialog focus. In a narrow window, check the compact layout and
+the keyboard-scrollable **Full table**. Change the active deck in a second tab during removal
+confirmation. In the table print preview, enable Description and compare a 100%-scale PDF to
+the page boundaries, repeated headings, and continued rows. Repeat in both orientations, then
+open card printing and verify the original deck order.
 
 ## Limitations
 

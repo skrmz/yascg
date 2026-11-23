@@ -1,0 +1,95 @@
+.table-print-sheet {
+  box-sizing: border-box;
+  padding: 0.25in;
+  color: #111;
+  background: #fff;
+  font:
+    9pt / 1.25 Arial,
+    sans-serif;
+  text-align: start;
+}
+
+.table-print-sheet table {
+  width: 100%;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-collapse: separate;
+  border-inline-start: 0.5pt solid #777;
+  border-block-start: 0.5pt solid #777;
+  font: inherit;
+}
+
+.table-print-sheet :is(th, td) {
+  padding: 2pt 3pt;
+  border-inline-end: 0.5pt solid #777;
+  border-block-end: 0.5pt solid #777;
+  vertical-align: top;
+  text-align: start;
+}
+
+.table-print-sheet thead th {
+  background: #eee;
+  font-weight: 700;
+}
+
+.table-print-sheet tbody th {
+  font-weight: 400;
+}
+
+.table-print-cell-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 2;
+}
+
+.table-print-measure {
+  position: fixed;
+  inset: 0 auto auto 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.table-print-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 1rem;
+  max-height: min(48dvh, 32rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0.75rem;
+}
+
+.table-print-preview .table-print-sheet {
+  flex: none;
+  box-shadow: 0 0 0 1px #777;
+}
+
+.table-print-output {
+  display: none;
+}
+
+@media print {
+  body:has(> .table-print-output) {
+    page: deckTablePage;
+  }
+
+  body:has(> .table-print-output) > :not(.table-print-output) {
+    display: none !important;
+  }
+
+  .table-print-output {
+    display: block;
+  }
+
+  .table-print-output .table-print-sheet {
+    /* The explicit break avoids blank pages from physical-unit rounding. */
+    height: auto !important;
+    break-after: page;
+    break-inside: avoid;
+  }
+
+  .table-print-output .table-print-sheet:last-child {
+    break-after: auto;
+  }
+}

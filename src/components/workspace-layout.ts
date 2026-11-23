@@ -3,7 +3,9 @@ import { createContext, useContext, useLayoutEffect, useRef, useState } from "re
 export const WORKSPACE_THRESHOLDS = { split: 720, wide: 1200 } as const;
 export type WorkspaceMode = "compact" | "split" | "wide";
 export const WorkspaceLayoutContext = createContext<WorkspaceMode>("wide");
-export const ShowDetailsContext = createContext<() => void>(() => {});
+export const ShowDetailsContext = createContext<
+  (options?: { preservePresentation?: boolean }) => void
+>(() => {});
 export const useWorkspaceMode = () => useContext(WorkspaceLayoutContext);
 export function modeForWidth(width: number): WorkspaceMode {
   return width >= WORKSPACE_THRESHOLDS.wide

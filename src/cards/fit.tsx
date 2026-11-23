@@ -380,6 +380,7 @@ export interface UseCardFitOptions {
   fitMode: CardFitMode;
   language: string;
   design?: CardDesign;
+  enabled?: boolean;
 }
 
 export interface UseCardFitResult {
@@ -404,6 +405,7 @@ export function useCardFit({
   fitMode,
   language,
   design = DEFAULT_CARD_DESIGN,
+  enabled = true,
 }: UseCardFitOptions): UseCardFitResult {
   const { t, i18n } = useTranslation();
   const higherLevelsHeading = t("spell.higherLevels");
@@ -447,6 +449,7 @@ export function useCardFit({
   }, [spell, language, fitMode, design, blocks]);
 
   useEffect(() => {
+    if (!enabled) return;
     if (!spell || !cacheKey) {
       setFitState(EMPTY_FIT_STATE);
       return;
@@ -483,6 +486,7 @@ export function useCardFit({
       cancelled = true;
     };
   }, [
+    enabled,
     spell,
     cacheKey,
     blocks,

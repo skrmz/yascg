@@ -63,6 +63,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
     librarySpells,
     languageSpells,
     language,
+    activeDeck,
     addSpellToDeck,
     addSpellsToDeck,
     replaceDeckWithSpells,
@@ -196,7 +197,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
     const result = await addSpellToDeck(spell);
     if (result === "added") {
       selectSpell(spell.id);
-      showDetails();
+      showDetails({ preservePresentation: true });
     }
     if (result === "duplicate") {
       toast.info(t("library.toast.alreadyTitle"), {
@@ -320,7 +321,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={results.length === 0}
+                disabled={activeDeck === null || results.length === 0}
                 onClick={() => void onAppendAll()}
               >
                 <Sparkles size={13} aria-hidden="true" />
@@ -329,7 +330,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={results.length === 0}
+                disabled={activeDeck === null || results.length === 0}
                 onClick={() => setConfirmReplace(true)}
               >
                 {t("library.replaceDeck")}
@@ -375,12 +376,15 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-52">
-              <DropdownMenuItem disabled={results.length === 0} onSelect={() => void onAppendAll()}>
+              <DropdownMenuItem
+                disabled={activeDeck === null || results.length === 0}
+                onSelect={() => void onAppendAll()}
+              >
                 <Sparkles size={15} aria-hidden="true" />
                 {t("library.appendAll")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                disabled={results.length === 0}
+                disabled={activeDeck === null || results.length === 0}
                 onSelect={() => setConfirmReplace(true)}
               >
                 {t("library.replaceDeck")}
@@ -470,6 +474,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
                     size="icon"
                     className="shrink-0"
                     aria-label={t("library.addToDeckAria", { name: spell.name })}
+                    disabled={activeDeck === null}
                     onClick={() => void onAdd(spell)}
                   >
                     <Plus size={16} aria-hidden="true" />
@@ -528,6 +533,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
               </Button>
               <Button
                 variant="destructive"
+                disabled={activeDeck === null}
                 onClick={() => {
                   void replaceDeckWithSpells(results);
                   setConfirmReplace(false);

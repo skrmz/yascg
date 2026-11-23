@@ -122,7 +122,7 @@ async function printWithBackground(page: Page, id: string, compact: boolean) {
   await page.evaluate(() => {
     delete document.documentElement.dataset.testPrinted;
   });
-  await page.getByRole("button", { name: "Print", exact: true }).first().click();
+  await page.getByRole("button", { name: "Print cards", exact: true }).first().click();
   const dialog = page.getByRole("dialog", { name: "Print spell cards" });
   await dialog.getByRole("button", { name: /^Print \d+ cards?$/ }).click({ timeout: 10_000 });
   await expect(page.locator("html")).toHaveAttribute("data-test-printed", "true");

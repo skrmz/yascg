@@ -122,7 +122,7 @@ test("switches between Classic and Compact in preview and print", async ({ page 
   await design.selectOption("compact");
   await expect(page.locator(".card-preview-page.spell-card-compact")).toHaveCount(1);
 
-  await page.getByRole("button", { name: "Print" }).first().click();
+  await page.getByRole("button", { name: "Print cards" }).first().click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: /^Print \d+ cards?$/ })

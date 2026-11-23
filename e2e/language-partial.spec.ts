@@ -106,3 +106,27 @@ test("untranslated spells are absent from an incomplete target-language library"
   await search.fill("Flèche");
   await expect(library.getByText("Flèche acide", { exact: true })).toBeVisible();
 });
+
+test("table marks English fallbacks and keeps the same entries selected after a language change", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1500, height: 900 });
+  await page.goto("/");
+  for (const name of ["Fireball", "Acid Arrow"]) {
+    await page.getByLabel("Search spells").fill(name);
+    await page.getByRole("button", { name: `Add ${name} to active deck`, exact: true }).click();
+  }
+  await page.getByRole("button", { name: "Table", exact: true }).click();
+  const table = page.getByRole("table", { name: "Active deck table" });
+  await table.getByRole("checkbox", { name: "Select Acid Arrow" }).check();
+  await switchLanguage(page, /Français/);
+  await page.getByRole("dialog").getByRole("button", { name: "Switch language" }).click();
+  await expect(table.getByRole("checkbox", { name: "Select Flèche acide" })).toBeChecked();
+  await expect(table.getByRole("rowheader", { name: /Fireball/ })).toContainText(
+    "English fallback",
+  );
+  await table.getByRole("button", { name: "Open details for Fireball" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Fireball" }).getByRole("heading", { name: "Fireball" }),
+  ).toHaveAttribute("lang", "en");
+});

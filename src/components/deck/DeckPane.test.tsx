@@ -408,7 +408,7 @@ describe("DeckPane mobile settings", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByRole("heading", { name: "Deck" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Save" })).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Print" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Print cards" })).not.toBeNull();
     expect(screen.queryByRole("textbox", { name: "Active deck name" })).toBeNull();
     expect(screen.queryByRole("combobox", { name: "Card design" })).toBeNull();
 

@@ -30,7 +30,7 @@ export function SpellDetailsContent({
 
   return (
     <div className="spell-details-content space-y-4">
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1 [&>span]:min-w-0 [&>span]:[overflow-wrap:anywhere]">
         <SourceBadge
           source={spell.source}
           sourceLabel={spell.sourceLabel}

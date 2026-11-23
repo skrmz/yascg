@@ -1,8 +1,10 @@
+import "@testing-library/jest-dom/vitest";
 import { fireEvent, render as renderUI, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n.ts";
+import { createEmptyActiveDeck } from "@/domain/deck";
 import { CORE_CLASSES, type Spell } from "@/domain/spells";
 import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
 import { WorkspaceLayoutContext } from "../workspace-layout.ts";
@@ -64,7 +66,7 @@ vi.mock("@/state/AppProvider.tsx", () => ({
 
 beforeEach(async () => {
   holder.spells = [];
-  holder.activeDeck = null;
+  holder.activeDeck = createEmptyActiveDeck();
   holder.selectedSpellId = null;
   holder.language = "en";
   holder.addSpellToDeck.mockReset().mockResolvedValue("added");
@@ -278,6 +280,18 @@ describe("LibraryPane subclass filter", () => {
 });
 
 describe("LibraryPane deck additions", () => {
+  it("enables deck mutations once the active deck is available", () => {
+    holder.spells = [makeSpell({ name: "Fireball" })];
+    holder.activeDeck = null;
+    const { rerender } = render(<LibraryPane />);
+    expect(screen.getByRole("button", { name: "Add Fireball to active deck" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Append all" })).toBeDisabled();
+    holder.activeDeck = createEmptyActiveDeck();
+    rerender(<LibraryPane />);
+    expect(screen.getByRole("button", { name: "Add Fireball to active deck" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Append all" })).toBeEnabled();
+  });
+
   it("shows a toast instead of adding a duplicate spell", async () => {
     holder.spells = [makeCustomSpell({ id: "custom-1", name: "Shield" })];
     holder.addSpellToDeck.mockResolvedValueOnce("duplicate");
@@ -401,7 +415,7 @@ describe("LibraryPane custom spell creation", () => {
 
     rerender(<LibraryPane />);
     expect(screen.getByText("Moonbeam Deluxe")).not.toBeNull();
-    expect(holder.activeDeck).toBeNull();
+    expect(holder.activeDeck).toEqual(createEmptyActiveDeck());
   });
 
   it("does not bypass the active search query for the new spell", async () => {

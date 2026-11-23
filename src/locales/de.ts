@@ -1,7 +1,11 @@
 import type { Translations } from "./en.ts";
 import { abbreviationsDe } from "./abbreviations-de.ts";
+import { tablePrintDe } from "./table-print.ts";
+import { deckTableDe } from "./deck-table.ts";
 
 export const de = {
+  tablePrint: tablePrintDe,
+  deckTable: deckTableDe,
   app: {
     workspaceNavigation: "Arbeitsbereichansichten",
     metaDescription: "Offline-fähiger Zauberkarten-Generator für Dungeons & Dragons 5.5e (2024).",
@@ -212,6 +216,12 @@ export const de = {
   },
   deck: {
     title: "Aktives Deck",
+    presentation: {
+      label: "Ansicht des aktiven Decks",
+      cards: "Zauberkarten",
+      table: "Tabelle",
+      manage: "Deck verwalten",
+    },
     nameLabel: "Name des aktiven Decks",
     namePlaceholder: "Unbenanntes Deck",
     save: "Speichern",
@@ -220,7 +230,8 @@ export const de = {
     actions: "Deck-Aktionen",
     newDeck: "Neues Deck beginnen",
     importExport: "Deck importieren/exportieren",
-    print: "Drucken",
+    print: "Karten drucken",
+    printCompact: "Drucken",
     entries: "{{count}} Eintrag",
     entries_one: "{{count}} Eintrag",
     entries_other: "{{count}} Einträge",
@@ -489,11 +500,11 @@ export const de = {
       customSpells:
         "Erstelle eigene Zauber oder bearbeitbare Kopien von SRD-Zaubern, mit Werkzeugen zum Abkürzen von Texten und zum Anwenden mitgelieferter Kurzbeschreibungen.",
       decks:
-        "Stelle ein aktives Deck zusammen, sortiere Einträge frei und speichere benannte Decks, um sie später wieder zu öffnen.",
+        "Stelle ein aktives Deck zusammen, ordne die Einträge und speichere benannte Decks. In der Tabellenansicht filterst und sortierst du auch große Decks, wählst Einträge über mehrere Seiten zum Entfernen aus und übernimmst die Tabellensortierung in die Deck-Reihenfolge.",
       cardDesigns:
         "Wähle das klassische oder das kompakte Kartendesign, lege einen mitgelieferten oder eigenen Hintergrund fest und sieh dir die Karten in Originalgröße an.",
       printing:
-        "Drucke neun Karten pro Blatt auf US Letter oder A4, mit automatischer Anpassung und Fortsetzungskarten für lange Beschreibungen.",
+        "Drucke neun Karten pro Blatt mit automatischer Anpassung und Fortsetzungskarten oder das gefilterte Deck als Tabelle mit den gewählten Spalten. Beide Druckarten unterstützen US Letter und A4.",
       offline:
         "Arbeite nach dem ersten Laden offline, behalte deine Sammlung im Browser und sichere oder übertrage sie per JSON-Import und -Export oder als vollständige Sicherung.",
     },

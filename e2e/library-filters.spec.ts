@@ -35,7 +35,7 @@ test("advanced filters keep an active indicator when collapsed", async ({ page }
   const advanced = page.getByRole("button", { name: /Advanced Filters/ });
 
   await advanced.click();
-  await page.getByLabel("Concentration").click();
+  await page.getByRole("combobox", { name: "Concentration", exact: true }).click();
   await page.getByRole("option", { name: "Yes" }).click();
 
   await advanced.click();

@@ -35,7 +35,7 @@ interface CopyConfirmationFlow {
   retryable: boolean;
 }
 
-export function DetailsPane() {
+export function DetailsPane({ previewActive = true }: { previewActive?: boolean }) {
   const {
     selectedSpell,
     activeDeck,
@@ -71,6 +71,7 @@ export function DetailsPane() {
     fitMode,
     language,
     design: cardDesign,
+    enabled: previewActive,
   });
   const previewReady =
     fit.result !== null && (cardDesign !== "compact" || fit.presentation !== null);
@@ -268,7 +269,7 @@ export function DetailsPane() {
           />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1">
-          <Button size="sm" onClick={() => void onAdd()}>
+          <Button size="sm" disabled={activeDeck === null} onClick={() => void onAdd()}>
             <Plus size={14} aria-hidden="true" />
             {t("details.add")}
           </Button>

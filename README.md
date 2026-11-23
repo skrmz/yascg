@@ -111,6 +111,14 @@ Named snapshots are independent of the working deck:
 - The status label distinguishes **Saved**, **Unsaved changes**, **Not saved as a deck**, and
   **New deck**.
 
+Use **Spell Cards / Table** to switch the active deck workspace. On smaller screens, open
+**Deck** to reach Table and use **Manage deck** for reordering and saving. Table adds spell
+search, filters, sortable columns, and bulk removal. Open **Full table** on narrow screens
+to sort by column. **Use deck order** clears the table sort. **Apply table sort to deck**
+reorders matching spells across every page and keeps filtered-out spells in their current
+positions. Select all covers every matching page. **Remove selected** also includes selected
+entries outside the current filters, and the confirmation explains its scope.
+
 The **Card design** selector below the deck controls chooses **Classic** (the default) or
 **Compact**. Compact replaces the metadata table with compact casting-time, range, and duration
 items, connected component boxes, a standalone concentration indicator, numbered rules notes,
@@ -149,7 +157,7 @@ actions work offline when the app and bundled catalog are cached.
 
 ## Printing
 
-Open **Print** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per sheet on a centered
+Open **Print cards** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per sheet on a centered
 7.5in x 10.5in grid. The paper selection defaults to **A4** for German and **US Letter** for
 English. When saving as PDF, the browser suggests the active deck name, or a dated generic name
 when the deck is unnamed. The selected Classic or Compact card design is used consistently in
@@ -178,6 +186,14 @@ Exact physical sizing depends partly on hardware non-printable margins and drive
 Verify with a test sheet and measure the printed grid; deviations outside the ±1mm tolerance
 should be investigated rather than "fixed" with CSS scaling.
 
+From **Table**, use **Print table** to preview a table of every matching entry in the
+current sort order. The output uses your enabled data columns and prints their full
+contents. Choose Letter or A4 and portrait or landscape in the preview. If it cannot fit
+the selected columns, change the paper, orientation, or columns. Use the info button for
+printing instructions. Match the preview's paper
+and orientation in the browser print dialog, use 100% scale, and disable browser headers
+and footers. Select **None** for margins because the preview already includes them.
+
 ## Offline behavior and data safety
 
 After the first successful load, the header shows an offline-status icon while the app shell,
@@ -187,10 +203,11 @@ a retry control appears. The retry control re-runs the cache check. Once everyth
 the icon disappears and **Offline ready** is announced to assistive technology. Language
 switching after precache performs no network requests.
 
-Spells, decks, and local SRD notes are stored in the browser's IndexedDB; the language
-preference is stored separately in `localStorage`. The active deck is written automatically;
-named snapshots change only through Save or Save As. IndexedDB is not guaranteed permanent. If
-local storage is unavailable or quota is exceeded, the app shows an actionable message. Keep a
+Spells, decks, and local SRD notes are stored in the browser's IndexedDB. Language and
+deck-view preferences are stored separately in `localStorage`. The app writes active deck
+changes automatically. Named snapshots change through Save or Save As. IndexedDB is not
+guaranteed permanent. If local storage is unavailable or quota is exceeded, the app shows
+an actionable message. Keep a
 [complete backup](#back-up-or-restore-the-entire-collection) in case browser storage is cleared.
 
 The header menu includes a bilingual **Privacy Policy** entry. All UI and card fonts are

@@ -21,7 +21,9 @@ import {
   moveEntry,
   mutateActiveDeck,
   removeEntry,
+  removeEntries,
   reorderEntries,
+  reorderMatchingEntries,
   repairEntry,
   replaceEntryWithSpell,
   setEntryFitMode,
@@ -74,6 +76,7 @@ import {
   type LanguageSwitchImpact,
 } from "@/services/data/resolution.ts";
 import type { ActiveDeckRecord, DeckEntry, DeckStatus, SavedDeck } from "@/domain/deck";
+import { newUuid } from "@/domain/ids";
 import { dedupeDeckEntries, getDeckStatus, hasSpellEntry, isDeckDirty } from "@/domain/deck";
 import type { CardFitMode, Spell, SpellSource, SrdSpellOverride } from "@/domain/spells";
 import type { ShortDescriptionMap } from "@/domain/short-descriptions";
@@ -208,8 +211,16 @@ export interface AppContextValue {
   addSpellsToDeck: (spells: readonly Spell[]) => Promise<AddSpellsResult>;
   replaceDeckWithSpells: (spells: readonly Spell[]) => Promise<void>;
   removeFromDeck: (entryId: string) => Promise<void>;
+  removeDeckEntries: (
+    entryIds: readonly string[],
+    expectedRevision: number,
+  ) => Promise<"ok" | "changed" | "error">;
   moveDeckEntry: (entryId: string, delta: -1 | 1) => Promise<void>;
   reorderDeckEntries: (fromIndex: number, toIndex: number) => Promise<void>;
+  applyDeckEntryOrder: (
+    orderedIds: readonly string[],
+    expectedRevision: number,
+  ) => Promise<DeckMutationOutcome>;
   setDeckEntryFitMode: (entryId: string, fitMode: CardFitMode) => Promise<void>;
   renameActiveDeck: (name: string) => Promise<RenameDeckOutcome>;
   clearDeck: () => Promise<void>;
@@ -614,6 +625,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (spells: readonly Spell[]) => {
       await runDeckMutation((current) => ({
         ...current,
+        instanceId: newUuid(),
         entries: spells.map((spell) => makeEntry(spell.id, spell.source, spell.name)),
       }));
     },
@@ -623,6 +635,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const removeFromDeck = useCallback(
     async (entryId: string) => {
       await runDeckMutation((current) => removeEntry(current, entryId));
+    },
+    [runDeckMutation],
+  );
+
+  const removeDeckEntries = useCallback(
+    async (entryIds: readonly string[], expectedRevision: number) => {
+      const ids = new Set(entryIds);
+      let changedSinceConfirmation = false;
+      const outcome = await runDeckMutation(
+        (current) => {
+          const next = removeEntries(current, ids);
+          changedSinceConfirmation = current.entries.length - next.entries.length !== ids.size;
+          return changedSinceConfirmation ? current : next;
+        },
+        { expectedRevision, handleConflict: "return" },
+      );
+      if (outcome.status === "conflict" || changedSinceConfirmation) return "changed";
+      return outcome.status;
     },
     [runDeckMutation],
   );
@@ -638,6 +668,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (fromIndex: number, toIndex: number) => {
       await runDeckMutation((current) => reorderEntries(current, fromIndex, toIndex));
     },
+    [runDeckMutation],
+  );
+
+  const applyDeckEntryOrder = useCallback(
+    (orderedIds: readonly string[], expectedRevision: number) =>
+      runDeckMutation((current) => reorderMatchingEntries(current, orderedIds), {
+        expectedRevision,
+      }),
     [runDeckMutation],
   );
 
@@ -1226,8 +1264,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addSpellsToDeck,
       replaceDeckWithSpells,
       removeFromDeck,
+      removeDeckEntries,
       moveDeckEntry,
       reorderDeckEntries,
+      applyDeckEntryOrder,
       setDeckEntryFitMode,
       renameActiveDeck,
       clearDeck,
@@ -1291,8 +1331,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addSpellsToDeck,
       replaceDeckWithSpells,
       removeFromDeck,
+      removeDeckEntries,
       moveDeckEntry,
       reorderDeckEntries,
+      applyDeckEntryOrder,
       setDeckEntryFitMode,
       renameActiveDeck,
       clearDeck,
