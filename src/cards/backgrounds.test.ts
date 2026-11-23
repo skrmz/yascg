@@ -10,12 +10,12 @@ import {
 } from "@/cards/backgrounds.ts";
 
 describe("card background registry", () => {
-  it("discovers a sorted, unique set of jpg file names", () => {
+  it("discovers a sorted, unique set of JPEG file names", () => {
     expect(CARD_BACKGROUNDS.length).toBeGreaterThan(0);
     for (const option of CARD_BACKGROUNDS) {
-      expect(option.id.endsWith(".jpg")).toBe(true);
+      expect(option.id).toMatch(/\.jpe?g$/i);
       expect(option.label).toBe(option.id);
-      expect(option.url).toContain(".jpg");
+      expect(option.url).toMatch(/\.jpe?g/i);
     }
     const ids = CARD_BACKGROUNDS.map((option) => option.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -34,9 +34,9 @@ describe("card background registry", () => {
     expect(normalizeCardBackground(3)).toBe(CARD_BACKGROUND_NONE);
   });
 
-  it("resolves every texture to a distinct non-empty jpg url", () => {
+  it("resolves every texture to a distinct non-empty JPEG url", () => {
     const urls = CARD_BACKGROUNDS.map((option) => cardBackgroundUrl(option.id));
-    expect(urls.every((url) => url !== null && url.length > 0 && url.includes(".jpg"))).toBe(true);
+    expect(urls.every((url) => url !== null && /\.jpe?g/i.test(url))).toBe(true);
     expect(new Set(urls).size).toBe(urls.length);
     expect(cardBackgroundUrl(CARD_BACKGROUND_NONE)).toBeNull();
     expect(cardBackgroundUrl(undefined)).toBeNull();
@@ -47,7 +47,7 @@ describe("card background registry", () => {
     expect(cardBackgroundStyle(CARD_BACKGROUND_NONE)).toEqual({});
     expect(cardBackgroundStyle(undefined)).toEqual({});
     const style = cardBackgroundStyle(CARD_BACKGROUNDS[0].id) as Record<string, string>;
-    expect(style["--card-background-image"]).toContain(".jpg");
+    expect(style["--card-background-image"]).toMatch(/\.jpe?g/i);
   });
 
   it("truncates long file names for display", () => {

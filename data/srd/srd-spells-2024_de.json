@@ -2731,7 +2731,7 @@
     "material": "ein Stück Gaze",
     "duration": "bis zu 1 Stunde",
     "concentration": true,
-    "description": "Für die Wirkungsdauer verwandelt sich eine bereitwillige Kreatur, die du berührst, mitsamt ihrer Ausrüstung in eine Nebelwolke. Der Zauber endet beim Ziel, wenn seine Trefferpunkte auf 0 sinken oder es den Zauber mithilfe einer magischen Aktion selbst beendet.\nIn dieser Gestalt verfügt das Ziel als einzige Bewegungsrate über eine Flugbewegungsrate von drei Metern, und es kann schweben. Das Ziel kann den Bereich einer anderen Kreatur betreten und besetzen. Es ist gegen Hieb‑, Stichund Wuchtschaden resistent, gegen den Zustand Liegend immun und bei Stärke‑, Geschicklichkeitsund Konstitutionsrettungswürfen im Vorteil. Es kann kleine Öffnungen passieren, behandelt jedoch Flüssigkeiten wie solide Oberflächen.\nDas Ziel kann weder sprechen noch mit Gegenständen interagieren. Es kann Gegenstände, die es getragen oder gehalten hat, nicht fallenlassen, verwenden oder anderweitig mit ihnen interagieren. Außerdem kann es weder angreifen noch Zauber wirken.",
+    "description": "Für die Wirkungsdauer verwandelt sich eine bereitwillige Kreatur, die du berührst, mitsamt ihrer Ausrüstung in eine Nebelwolke. Der Zauber endet beim Ziel, wenn seine Trefferpunkte auf 0 sinken oder es den Zauber mithilfe einer magischen Aktion selbst beendet.\nIn dieser Gestalt verfügt das Ziel als einzige Bewegungsrate über eine Flugbewegungsrate von drei Metern, und es kann schweben. Das Ziel kann den Bereich einer anderen Kreatur betreten und besetzen. Es ist gegen Hieb‑, Stich- und Wuchtschaden resistent, gegen den Zustand Liegend immun und bei Stärke‑, Geschicklichkeitsund Konstitutionsrettungswürfen im Vorteil. Es kann kleine Öffnungen passieren, behandelt jedoch Flüssigkeiten wie solide Oberflächen.\nDas Ziel kann weder sprechen noch mit Gegenständen interagieren. Es kann Gegenstände, die es getragen oder gehalten hat, nicht fallenlassen, verwenden oder anderweitig mit ihnen interagieren. Außerdem kann es weder angreifen noch Zauber wirken.",
     "higher_level": "Für jeden Zauberplatzgrad über dem 3. kannst du auf eine weitere Kreatur zielen."
   },
   {
@@ -5719,7 +5719,7 @@
     "material": "Diamantstaub im Wert von mindestens 100 GM, den der Zauber verbraucht",
     "duration": "bis zu 1 Stunde",
     "concentration": true,
-    "description": "Bis der Zauber endet, ist eine bereitwillige Kreatur, die du berührst, gegen Hieb‑, Stichund Wuchtschaden resistent."
+    "description": "Bis der Zauber endet, ist eine bereitwillige Kreatur, die du berührst, gegen Hieb‑, Stich- und Wuchtschaden resistent."
   },
   {
     "index": "storm-of-vengeance",
@@ -6415,7 +6415,7 @@
     "material": "eine Kerze",
     "duration": "8 Stunden",
     "concentration": false,
-    "description": "Dieser Zauber verwandelt dich und bis zu zehn bereitwillige Kreaturen deiner Wahl in Reichweite für die Wirkungsdauer in gasförmige Gestalten, die als Wolkenschwaden erscheinen. In Wolkengestalt verfügt ein Ziel über eine Flugbewegungsrate von 90 Metern und kann schweben. Es ist gegen den Zustand Liegend immun und gegen Hieb‑, Stichund Wuchtschaden resistent. Die einzigen Aktionen, die ein Ziel in dieser Gestalt ausführen kann, sind die Spurt‑Aktion oder eine magische Aktion, um die Rückverwandlung in seine normale Gestalt zu beginnen. Die Rückverwandlung dauert eine Minute, in der das Ziel betäubt ist. Bis der Zauber endet, kann das Ziel zur Wolkengestalt zurückkehren. Auch dies erfordert eine magische Aktion, gefolgt von einer einminütigen Verwandlung.\nBefindet sich ein Ziel in Wolkengestalt in der Luft, wenn der Zauber endet, so sinkt es eine Minute lang 18 Meter pro Runde hinab, bis es sicher landet. Wenn es nach einer Minute nicht landen kann, stürzt es die verbleibende Entfernung nach unten."
+    "description": "Dieser Zauber verwandelt dich und bis zu zehn bereitwillige Kreaturen deiner Wahl in Reichweite für die Wirkungsdauer in gasförmige Gestalten, die als Wolkenschwaden erscheinen. In Wolkengestalt verfügt ein Ziel über eine Flugbewegungsrate von 90 Metern und kann schweben. Es ist gegen den Zustand Liegend immun und gegen Hieb‑, Stich- und Wuchtschaden resistent. Die einzigen Aktionen, die ein Ziel in dieser Gestalt ausführen kann, sind die Spurt‑Aktion oder eine magische Aktion, um die Rückverwandlung in seine normale Gestalt zu beginnen. Die Rückverwandlung dauert eine Minute, in der das Ziel betäubt ist. Bis der Zauber endet, kann das Ziel zur Wolkengestalt zurückkehren. Auch dies erfordert eine magische Aktion, gefolgt von einer einminütigen Verwandlung.\nBefindet sich ein Ziel in Wolkengestalt in der Luft, wenn der Zauber endet, so sinkt es eine Minute lang 18 Meter pro Runde hinab, bis es sicher landet. Wenn es nach einer Minute nicht landen kann, stürzt es die verbleibende Entfernung nach unten."
   },
   {
     "index": "wind-wall",

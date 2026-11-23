@@ -74,7 +74,7 @@ test("prints the selected card background", async ({ page }) => {
   const previewImage = await preview.evaluate(
     (element) => getComputedStyle(element).backgroundImage,
   );
-  expect(previewImage).toContain(".jpg");
+  expect(previewImage).toMatch(/\.jpe?g/i);
 
   await page.getByRole("button", { name: "Print" }).first().click();
   await page

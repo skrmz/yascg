@@ -154,8 +154,8 @@ test("selects and resets a card background for the preview", async ({ page }) =>
   await expect(
     page.locator(`.card-preview-page[data-card-background="${backgroundValue}"]`),
   ).toHaveCount(1);
-  expect(await preview.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain(
-    ".jpg",
+  expect(await preview.evaluate((element) => getComputedStyle(element).backgroundImage)).toMatch(
+    /\.jpe?g/i,
   );
 
   await page.reload();

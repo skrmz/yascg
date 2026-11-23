@@ -54,7 +54,7 @@ test("precaches shell, datasets, sidecars, fonts, and card backgrounds, then wor
     await page.getByLabel("Card background").selectOption(value);
     await expect
       .poll(() => cardBackgroundPath(preview), { message: `background ${value}` })
-      .toMatch(/^\/assets\/.+\.jpg$/);
+      .toMatch(/^\/assets\/.+\.jpe?g$/i);
     backgroundPaths.push((await cardBackgroundPath(preview))!);
   }
   expect(new Set(backgroundPaths).size).toBe(backgroundValues.length);
