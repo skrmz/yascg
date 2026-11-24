@@ -51,13 +51,13 @@ function paragraph(value: string): BlockNode {
   return { type: "paragraph", children: [{ type: "text", value }] };
 }
 
-describe("multi-card pagination layout", () => {
+describe("continuation pagination layout", () => {
   it("measures pages after the first with the continuation-card layout", () => {
     const blocks = ["a", "b", "c", "d", "e", "f"].map(paragraph);
     const measure: MeasureFit = (page, _fontPt, continuation) =>
       page.length <= (continuation ? 4 : 2);
 
-    const fit = computeFit(blocks, measure, "multi-card");
+    const fit = computeFit(blocks, measure, "auto");
 
     expect(fit.pages.map((page) => page.length)).toEqual([2, 4]);
     expect(fit.pages.flat()).toHaveLength(blocks.length);
@@ -135,13 +135,13 @@ describe("computeFit across localized headings", () => {
     const english = computeFit(
       parseSpellBody(spell, "Higher Levels", markers),
       measureByBlockCount(1),
-      "multi-card",
+      "auto",
       1,
     );
     const german = computeFit(
       parseSpellBody(spell, "Höhere Grade", markers),
       measureByBlockCount(1),
-      "multi-card",
+      "auto",
       1,
     );
     expect(english.overflow).toBe(true);
@@ -167,7 +167,7 @@ describe("component blocks through the fit pipeline", () => {
 
   it("emits each component block exactly once across continuation cards", () => {
     const blocks = parseSpellBody(richSpell, "Higher Levels", markers);
-    const fit = computeFit(blocks, measureByBlockCount(2), "multi-card");
+    const fit = computeFit(blocks, measureByBlockCount(2), "auto");
     expect(fit.pages.length).toBeGreaterThan(1);
     const text = JSON.stringify(fit.pages);
     expect(countOccurrences(text, '"component":"verbal"')).toBe(1);

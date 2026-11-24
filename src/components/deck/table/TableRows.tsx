@@ -46,15 +46,7 @@ function RowName({ row }: { row: TableRow }) {
   );
 }
 
-function RowCell({
-  row,
-  column,
-  onOpen,
-}: {
-  row: TableRow;
-  column: DataColumn;
-  onOpen: TableRowsProps["onOpen"];
-}) {
+function RowCell({ row, column }: { row: TableRow; column: DataColumn }) {
   const { t } = useTranslation();
   const value = cellText(row, column, t);
   if (column === "concentration" || column === "ritual") {
@@ -99,21 +91,7 @@ function RowCell({
       {column === "description" && value.length > 240 ? `${value.slice(0, 239)}…` : value}
     </span>
   );
-  if (column !== "description") return content;
-  return (
-    <>
-      {content}
-      <Button
-        type="button"
-        variant="link"
-        className="deck-table-description-button"
-        aria-label={t("deckTable.showRowDescription", { name: row.name })}
-        onClick={(event) => onOpen(row.id, event.currentTarget)}
-      >
-        {t("deckTable.showDescription")}
-      </Button>
-    </>
-  );
+  return content;
 }
 
 export function TableRows({
@@ -245,7 +223,7 @@ export function TableRows({
                     .filter((column) => column !== "name")
                     .map((column) => (
                       <td key={column} data-column={column}>
-                        <RowCell row={row} column={column} onOpen={onOpen} />
+                        <RowCell row={row} column={column} />
                       </td>
                     ))}
                   <td>{actions(row, false)}</td>

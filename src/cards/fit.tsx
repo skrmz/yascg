@@ -22,7 +22,7 @@ export const AUTO_SHRINK_STEPS = [8.5, 8, 7.5, 7, 6.5, 6] as const;
 export const AUTO_SHRINK_MIN_PT = 6;
 export const MULTI_CARD_FONT_PT = 8;
 export const MULTI_CARD_MIN_FONT_PT = 6;
-/** Best fit paginates instead of rendering a single card below this body size. */
+/** Automatic fitting paginates below this single-card body size. */
 export const AUTO_MIN_FONT_PT = MULTI_CARD_FONT_PT;
 
 export interface MeasureOutcome {
@@ -265,10 +265,8 @@ export function computeFit(
   if (fitMode === "auto-shrink") {
     return fitAutoShrink(source, measure, tableOverflowed, resetTableOverflow);
   }
-  if (fitMode === "auto") {
-    const full = fitFullSourceSingleCard(source, measure, resetTableOverflow, AUTO_MIN_FONT_PT);
-    if (full) return full;
-  }
+  const full = fitFullSourceSingleCard(source, measure, resetTableOverflow, AUTO_MIN_FONT_PT);
+  if (full) return full;
   return fitMultiCard(source, measure, maxCards, tableOverflowed, resetTableOverflow);
 }
 

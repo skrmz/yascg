@@ -21,7 +21,7 @@ async function addWunsch(page: Page) {
   await details.getByRole("button", { name: "Hinzufügen", exact: true }).click();
 
   const deck = page.getByRole("region", { name: "Aktives Deck" });
-  return { details, fitMode: deck.getByLabel("Anpassungsmodus für Wunsch") };
+  return { details, oneCard: deck.getByRole("checkbox", { name: "Nur eine Karte für Wunsch" }) };
 }
 
 function bodyOverflow(cards: Locator) {
@@ -64,10 +64,10 @@ test("Wunsch defaults to automatic fitting and paginates without truncation", as
   await page.goto("/");
   await switchLanguage(page, /Deutsch/);
 
-  const { details, fitMode } = await addWunsch(page);
+  const { details, oneCard } = await addWunsch(page);
   const cards = details.locator(".card-preview-page");
 
-  await expect(fitMode).toHaveValue("auto");
+  await expect(oneCard).not.toBeChecked();
   await expect
     .poll(async () => cards.count(), { message: "Automatic fitting should paginate Wunsch" })
     .toBeGreaterThan(1);
@@ -79,22 +79,25 @@ test("Wunsch defaults to automatic fitting and paginates without truncation", as
   expect((await bodyOverflow(cards)).every((overflow) => overflow <= 1)).toBe(true);
 });
 
-test("Wunsch auto-shrink truncates to one card with a visible ellipsis", async ({ page }) => {
+test("Single card only fits Wunsch on one card with a visible ellipsis", async ({ page }) => {
   await page.addInitScript(() => {
     window.print = () => undefined;
   });
   await page.goto("/");
   await switchLanguage(page, /Deutsch/);
 
-  const { details, fitMode } = await addWunsch(page);
+  const { details, oneCard } = await addWunsch(page);
   const cards = details.locator(".card-preview-page");
 
-  await fitMode.selectOption("auto-shrink");
-  await expect(fitMode).toHaveValue("auto-shrink");
+  // The controlled checkbox updates after the IndexedDB write completes.
+  await oneCard.click();
+  await expect(oneCard).toBeChecked();
   await expect(cards).toHaveCount(1);
   await expect(details.getByText(/Die Beschreibung wurde gekürzt/)).toBeVisible();
   await expect(
-    details.getByText(/Wechsle zu „Beste Anpassung“ oder in den Mehrkartenmodus/),
+    details.getByText(
+      /Wechsle zur automatischen Anpassung, um die vollständige Beschreibung anzuzeigen\./,
+    ),
   ).toBeVisible();
   await expect(cards.first()).toHaveAttribute("style", /--body-font-pt: 6pt/);
   await expect(cards.first().locator(".card-metadata")).toHaveCount(1);
@@ -124,17 +127,15 @@ test("Wunsch auto-shrink truncates to one card with a visible ellipsis", async (
   expect((await bodyOverflow(printCards))[0]).toBeLessThanOrEqual(1);
 });
 
-test("multi-card previews arrange cards in responsive rows", async ({ page }) => {
+test("Automatic fitting previews continuation cards in responsive rows", async ({ page }) => {
   await page.goto("/");
   await switchLanguage(page, /Deutsch/);
 
-  const { details, fitMode } = await addWunsch(page);
+  const { details } = await addWunsch(page);
   const cards = details.locator(".card-preview-page");
 
-  await fitMode.selectOption("multi-card");
-  await expect(fitMode).toHaveValue("multi-card");
   await expect
-    .poll(async () => cards.count(), { message: "Multi-card should paginate Wunsch" })
+    .poll(async () => cards.count(), { message: "Automatic fitting should paginate Wunsch" })
     .toBeGreaterThan(1);
 
   const firstBox = await cards.nth(0).boundingBox();
@@ -159,22 +160,22 @@ test("multi-card previews arrange cards in responsive rows", async ({ page }) =>
     .toBeGreaterThan(10);
 });
 
-test("Wunsch multi-card keeps the full description across cards", async ({ page }) => {
+test("Automatic fitting keeps the full Wunsch description across continuation cards", async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     window.print = () => undefined;
   });
   await page.goto("/");
   await switchLanguage(page, /Deutsch/);
 
-  const { details, fitMode } = await addWunsch(page);
+  const { details } = await addWunsch(page);
   const cards = details.locator(".card-preview-page");
 
-  await fitMode.selectOption("multi-card");
-  await expect(fitMode).toHaveValue("multi-card");
   let cardCount = 0;
   await expect
     .poll(async () => (cardCount = await cards.count()), {
-      message: "Multi-card should paginate Wunsch",
+      message: "Automatic fitting should paginate Wunsch",
     })
     .toBeGreaterThan(1);
 

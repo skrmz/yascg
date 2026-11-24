@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { db } from "@/db/database.ts";
 import { getActiveDeck, mutateActiveDeck, makeEntry } from "@/db/active-deck.ts";
-import { analyzeDeckImport, applyDeckImport } from "@/io/import-deck.ts";
+import { analyzeDeckImport, applyDeckImport, planToEntries } from "@/io/import-deck.ts";
 import { buildDeckPayload } from "@/io/export.ts";
 import type { DeckEntry } from "@/domain/deck.ts";
 
@@ -71,7 +71,7 @@ describe("deck import analysis", () => {
       {
         entryId: "e2",
         spellId: "custom-1",
-        fitMode: "multi-card",
+        fitMode: "auto",
         reference: { source: "Custom", name: "Homebrew" },
       },
       {
@@ -89,7 +89,7 @@ describe("deck import analysis", () => {
         { spellId: "srd-fireball", fitMode: "auto", reference: validEntry.reference },
         {
           spellId: "custom-1",
-          fitMode: "multi-card",
+          fitMode: "auto",
           reference: { source: "Custom", name: "Homebrew" },
         },
         {
@@ -99,6 +99,23 @@ describe("deck import analysis", () => {
         },
       ]);
     }
+  });
+
+  it("normalizes the retired fit mode on import and exports only current values", () => {
+    const legacyEntry = {
+      spellId: "srd-wish",
+      fitMode: "multi-card",
+      reference: { source: "SRD-5.2.1", name: "Wish" },
+    };
+    const analysis = analyzeDeckImport(deckPayload([legacyEntry, validEntry]));
+    if (!analysis.ok) throw new Error("Expected the legacy deck to import");
+    expect(analysis.plan.entries).toEqual([{ ...legacyEntry, fitMode: "auto" }, validEntry]);
+
+    const exported = buildDeckPayload({
+      name: analysis.plan.name,
+      entries: planToEntries(analysis.plan),
+    });
+    expect(exported.entries.map((entry) => entry.fitMode)).toEqual(["auto", "auto-shrink"]);
   });
 
   it("rejects a wrong type", () => {

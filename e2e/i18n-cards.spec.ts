@@ -49,7 +49,7 @@ test("cycles card terminology EN to DE and back without stale fit or overflow", 
   await expect(card.getByText("V, G, M")).toBeVisible();
   await expect(card.getByText("Zauberer, Magier")).toBeVisible();
   const german = await layoutState(page);
-  // German card text is longer than English. Best fit never shrinks a single
+  // German card text is longer than English. Automatic fitting never shrinks a single
   // card below 8 pt, so longer text may paginate instead; the fit guarantees
   // must still hold and switching back must restore the original layout.
   expect(german.cards).toBeGreaterThanOrEqual(english.cards);

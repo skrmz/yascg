@@ -46,7 +46,7 @@ async function selectGermanSpellData(page: Page) {
     .click();
 }
 
-async function waitForMultiCardPagination(cards: Locator): Promise<number> {
+async function waitForContinuationPagination(cards: Locator): Promise<number> {
   await expect
     .poll(
       async () => {
@@ -61,7 +61,7 @@ async function waitForMultiCardPagination(cards: Locator): Promise<number> {
           ? count
           : 0;
       },
-      { message: "Compact multi-card pagination should stabilize" },
+      { message: "Compact continuation pagination should stabilize" },
     )
     .toBeGreaterThan(1);
 
@@ -254,10 +254,9 @@ test("Compact paginates a long German spell without clipping content", async ({ 
   await selectGermanSpellData(page);
   await addSpellToDeck(page, "Wunsch", /^Wunsch/, "Hinzufügen", germanUi);
   await page.getByLabel("Kartendesign").selectOption("compact");
-  await page.getByLabel("Anpassungsmodus für Wunsch").selectOption("multi-card");
 
   const cards = page.locator(".card-preview-page.spell-card-compact");
-  const cardCount = await waitForMultiCardPagination(cards);
+  const cardCount = await waitForContinuationPagination(cards);
 
   await expect(cards.first().locator(".compact-metadata")).toHaveCount(1);
   await expect(cards.first().locator(".compact-continuation")).toHaveCount(0);

@@ -351,7 +351,7 @@ describe("DetailsPane deck additions", () => {
 });
 
 describe("DetailsPane fit notices", () => {
-  it("explains truncation and points to automatic or multi-card mode", () => {
+  it("explains truncation and points to automatic layout", () => {
     holder.fit = {
       pages: [[]],
       fontPt: 6,
@@ -361,7 +361,7 @@ describe("DetailsPane fit notices", () => {
     render(<DetailsPane />);
     expect(
       screen.getByText(
-        "Description truncated to fit on one card at 5pt. Switch to Best fit or multi-card mode to display the full description.",
+        "Description truncated to fit on one card at 5pt. Switch to automatic layout to display the full description.",
       ),
     ).not.toBeNull();
   });

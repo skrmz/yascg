@@ -1,3 +1,4 @@
+import "@testing-library/jest-dom/vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
@@ -106,6 +107,7 @@ beforeEach(() => {
   holder.deleteSavedDeck.mockReset().mockResolvedValue({ status: "ok" });
   holder.newActiveDeck.mockReset().mockResolvedValue({ status: "ok" });
   holder.importDeck.mockReset().mockResolvedValue({ status: "ok" });
+  holder.setDeckEntryFitMode.mockReset();
   holder.cardDesign = "classic";
   holder.setCardDesign.mockReset();
   holder.cardBackground = "none";
@@ -363,12 +365,20 @@ describe("DeckPane actions", () => {
   });
 });
 
-describe("DeckPane fit mode selector", () => {
-  it.each(["A", "Protection from Evil and Good"])("updates the fit mode for %s", async (name) => {
+describe("DeckPane single-card checkbox", () => {
+  it.each([
+    { name: "A", fitMode: "auto", nextMode: "auto-shrink", checked: false },
+    {
+      name: "Protection from Evil and Good",
+      fitMode: "auto-shrink",
+      nextMode: "auto",
+      checked: true,
+    },
+  ] as const)("updates the fit mode for $name", async ({ name, fitMode, nextMode, checked }) => {
     const entry = {
       entryId: "e1",
       spellId: "srd-a",
-      fitMode: "auto" as const,
+      fitMode,
       reference: { source: "SRD-5.2.1" as const, name },
     };
     holder.activeDeck = { ...associatedDeck, entries: [entry] };
@@ -381,16 +391,38 @@ describe("DeckPane fit mode selector", () => {
     const user = userEvent.setup();
     render(<DeckPane />);
 
-    const select = screen.getByLabelText(`Fit mode for ${name}`) as HTMLSelectElement;
-    expect(select.getAttribute("aria-description")).toContain("6pt");
-    expect(select.value).toBe("auto");
-    expect(within(select).getByRole("option", { name: "Best fit" })).not.toBeNull();
-    expect(within(select).getByRole("option", { name: "Auto-shrink" })).not.toBeNull();
-    expect(within(select).getByRole("option", { name: "Multi-card" })).not.toBeNull();
+    expect(screen.queryByRole("combobox", { name: `Fit mode for ${name}` })).toBeNull();
+    expect(screen.queryByText("About fit modes")).toBeNull();
+    expect(screen.getByText("Single card only")).toBeVisible();
+    const checkbox = screen.getByRole<HTMLInputElement>("checkbox", {
+      name: `Single card only for ${name}`,
+    });
+    expect(checkbox.checked).toBe(checked);
 
-    await user.selectOptions(select, "multi-card");
+    await user.click(checkbox);
 
-    expect(holder.setDeckEntryFitMode).toHaveBeenCalledWith("e1", "multi-card");
+    expect(holder.setDeckEntryFitMode).toHaveBeenCalledExactlyOnceWith("e1", nextMode);
+  });
+
+  it("keeps the checkbox available when a spell is missing", async () => {
+    const entry = {
+      entryId: "e1",
+      spellId: "srd-a",
+      fitMode: "auto" as const,
+      reference: { source: "SRD-5.2.1" as const, name: "Missing spell" },
+    };
+    holder.activeDeck = { ...associatedDeck, entries: [entry] };
+    holder.resolvedEntries = [
+      { entry, resolution: { status: "missing", referenceName: entry.reference.name } },
+    ];
+    const user = userEvent.setup();
+    render(<DeckPane />);
+
+    const checkbox = screen.getByRole("checkbox", { name: "Single card only for Missing spell" });
+    expect(checkbox).not.toBeChecked();
+    await user.click(checkbox);
+
+    expect(holder.setDeckEntryFitMode).toHaveBeenCalledExactlyOnceWith("e1", "auto-shrink");
   });
 });
 

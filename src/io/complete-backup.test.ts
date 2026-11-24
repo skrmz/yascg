@@ -83,10 +83,7 @@ describe("complete backup fidelity", () => {
       subclasses: ["Wizard: School B", "Wizard: School A"],
       damageTypes: ["cold", "acid"],
     });
-    const linked = {
-      ...makeEntry(custom.id, "Custom", custom.name),
-      fitMode: "multi-card" as const,
-    };
+    const linked = makeEntry(custom.id, "Custom", custom.name);
     const missing = {
       ...makeEntry("deleted", "Custom", "Stored fallback"),
       fitMode: "auto-shrink" as const,
@@ -158,6 +155,34 @@ describe("complete backup fidelity", () => {
     await expect(saveAssociatedDeck(9, metadata.generation)).rejects.toBeInstanceOf(
       SavedDeckConflictError,
     );
+  });
+
+  it("normalizes the retired fit mode in active, baseline, and saved entries on restore", async () => {
+    const automatic = makeEntry(canonical.id, "SRD-5.2.1", canonical.name);
+    const legacy = { ...automatic, fitMode: "multi-card" };
+    const singleCard = {
+      ...makeEntry("custom-id", "Custom", "Custom spell"),
+      fitMode: "auto-shrink",
+    };
+    const entries = [legacy, singleCard];
+    const saved = { id: "a", name: "Saved", entries, updatedAt: 8, revision: 3 };
+    const backup = {
+      ...emptyBackup(),
+      activeDeck: {
+        ...createEmptyActiveDeck(),
+        name: saved.name,
+        entries,
+        savedDeckId: saved.id,
+        baseline: { name: saved.name, entries, savedRevision: saved.revision },
+      },
+      savedDecks: [saved],
+    };
+
+    await (await reviewCompleteBackup(encode(backup), loadContext)).commit();
+    const { collection } = await readCollectionSnapshot();
+    expect(collection.activeDeck.entries).toEqual([automatic, singleCard]);
+    expect(collection.activeDeck.baseline?.entries).toEqual([automatic, singleCard]);
+    expect(collection.savedDecks).toEqual([{ ...saved, entries: [automatic, singleCard] }]);
   });
 
   it("preserves a migrated association with a missing snapshot and unverified baseline", async () => {

@@ -82,7 +82,7 @@ describe("automatic fitting", () => {
     expect(fit.overflow).toBe(false);
   });
 
-  it("falls back to multi-card without truncation when 6pt does not fit", () => {
+  it("falls back to continuation cards without truncation when 6pt does not fit", () => {
     const text = "word ".repeat(200).trim();
     const fit = computeFit([paragraph(text)], charBudget(120), "auto");
 
@@ -236,9 +236,9 @@ describe("auto-shrink single-card fitting", () => {
   });
 });
 
-describe("multi-card pagination", () => {
+describe("continuation pagination", () => {
   it("keeps all content across continuation cards", () => {
-    const fit = computeFit(longBody, charBudget(160), "multi-card");
+    const fit = computeFit(longBody, charBudget(160), "auto");
 
     expect(fit.pages.length).toBeGreaterThan(1);
     expect(fit.fontPt).toBe(MULTI_CARD_FONT_PT);
@@ -252,7 +252,7 @@ describe("multi-card pagination", () => {
       "Alpha bravo charlie delta echo foxtrot golf hotel india juliett kilo lima mike november. "
         .repeat(4)
         .trim();
-    const fit = computeFit([paragraph(text)], charBudget(60), "multi-card");
+    const fit = computeFit([paragraph(text)], charBudget(60), "auto");
 
     expect(fit.pages.length).toBeGreaterThan(1);
     expect(fit.truncated).toBe(false);
@@ -273,7 +273,7 @@ describe("multi-card pagination", () => {
       "Smoke obscures the area until the wind shifts.",
     ];
     const source: BlockNode[] = [heading("Effects"), list(items)];
-    const fit = computeFit(source, charBudget(80), "multi-card");
+    const fit = computeFit(source, charBudget(80), "auto");
 
     expect(fit.pages.length).toBeGreaterThan(1);
     expect(fit.truncated).toBe(false);
@@ -292,7 +292,7 @@ describe("multi-card pagination", () => {
     const item =
       "A single very long list item keeps its words, punctuation, and reading order intact even when it has to span a card boundary.";
     const source: BlockNode[] = [list([item])];
-    const fit = computeFit(source, charBudget(40), "multi-card");
+    const fit = computeFit(source, charBudget(40), "auto");
 
     expect(fit.pages.length).toBeGreaterThan(1);
     expect(allText(fit.pages.flat())).toBe(item);
@@ -309,7 +309,7 @@ describe("multi-card pagination", () => {
   });
 
   it("reports overflow instead of truncating when the continuation cap is exceeded", () => {
-    const fit = computeFit([paragraph("word ".repeat(40).trim())], charBudget(30), "multi-card", 2);
+    const fit = computeFit([paragraph("word ".repeat(40).trim())], charBudget(30), "auto", 2);
 
     expect(fit.overflow).toBe(true);
     expect(fit.truncated).toBe(false);
@@ -323,40 +323,41 @@ describe("multi-card pagination", () => {
       return allText(page).length <= budget;
     };
     const text = "word ".repeat(20).trim();
-    const fit = computeFit([paragraph(text)], measure, "multi-card");
+    const fit = computeFit([paragraph(text)], measure, "auto");
 
     expect(fit.pages.length).toBeGreaterThan(1);
     expect(allText(fit.pages.flat())).toBe(text);
     expect(calls.some((call) => call.continuation === false && call.cardCount === 2)).toBe(true);
   });
 
-  it("does not reserve pagination space for a single multi-card page", () => {
+  it("does not reserve pagination space when the continuation pass fits on one card", () => {
     const calls: Array<{ continuation: boolean; cardCount: number | undefined }> = [];
     const measure: MeasureFit = (_page, _fontPt, continuation, cardCount) => {
       calls.push({ continuation, cardCount });
-      return true;
+      return cardCount === 1;
     };
-    const fit = computeFit([paragraph("short")], measure, "multi-card");
+    const fit = computeFit([paragraph("short")], measure, "auto");
 
     expect(fit.pages).toHaveLength(1);
-    expect(calls.every((call) => call.continuation === false && call.cardCount === 1)).toBe(true);
+    expect(calls).toContainEqual({ continuation: false, cardCount: 1 });
+    expect(calls.some((call) => call.cardCount === 2)).toBe(false);
   });
 });
 
 describe("fit mode selection", () => {
-  it("truncates in auto-shrink while multi-card keeps the same content", () => {
+  it("truncates in auto-shrink while automatic fitting keeps the same content", () => {
     const source = [paragraph("word ".repeat(80).trim())];
 
-    const auto = computeFit(source, charBudget(60), "auto-shrink");
-    const multi = computeFit(source, charBudget(60), "multi-card");
+    const singleCard = computeFit(source, charBudget(60), "auto-shrink");
+    const automatic = computeFit(source, charBudget(60), "auto");
 
-    expect(auto.pages).toHaveLength(1);
-    expect(auto.truncated).toBe(true);
-    expect(allText(auto.pages[0] ?? []).length).toBeLessThanOrEqual(60);
+    expect(singleCard.pages).toHaveLength(1);
+    expect(singleCard.truncated).toBe(true);
+    expect(allText(singleCard.pages[0] ?? []).length).toBeLessThanOrEqual(60);
 
-    expect(multi.pages.length).toBeGreaterThan(1);
-    expect(multi.truncated).toBe(false);
-    expect(allText(multi.pages.flat())).toBe(allText(source));
+    expect(automatic.pages.length).toBeGreaterThan(1);
+    expect(automatic.truncated).toBe(false);
+    expect(allText(automatic.pages.flat())).toBe(allText(source));
   });
 });
 
@@ -370,10 +371,10 @@ function notesBlock(items: readonly string[]): BlockNode {
 }
 
 describe("protected notes fitting", () => {
-  it("never splits or ellipsizes the notes block in multi-card mode", () => {
+  it("never splits or ellipsizes the notes block during pagination", () => {
     const notes = notesBlock(["a casting-time qualifier"]);
     const source: BlockNode[] = [notes, paragraph("word ".repeat(60).trim())];
-    const fit = computeFit(source, charBudget(90), "multi-card");
+    const fit = computeFit(source, charBudget(90), "auto");
 
     expect(fit.pages.length).toBeGreaterThan(1);
     expect(fit.truncated).toBe(false);
@@ -426,13 +427,9 @@ describe("protected notes fitting", () => {
     expect(fit.overflowReason).toBe("notes");
   });
 
-  it("keeps notes on page one only in multi-card fitting", () => {
+  it("keeps notes on page one only during pagination", () => {
     const notes = notesBlock(["note"]);
-    const fit = computeFit(
-      [notes, paragraph("word ".repeat(50).trim())],
-      charBudget(50),
-      "multi-card",
-    );
+    const fit = computeFit([notes, paragraph("word ".repeat(50).trim())], charBudget(50), "auto");
 
     expect(fit.pages[0]).toContainEqual(notes);
     for (const page of fit.pages.slice(1)) {
@@ -445,7 +442,7 @@ describe("protected notes fitting", () => {
     const fit = computeFit(
       [notes, paragraph("word ".repeat(40).trim())],
       charBudget(30),
-      "multi-card",
+      "auto",
       2,
     );
     expect(fit.overflow).toBe(true);
@@ -460,7 +457,7 @@ describe("higher-level sections survive pagination", () => {
       { ...heading("Higher Levels"), section: "higherLevels" },
       { ...paragraph(text), section: "higherLevels" },
     ];
-    const fit = computeFit(source, charBudget(80), "multi-card");
+    const fit = computeFit(source, charBudget(80), "auto");
 
     expect(fit.pages.length).toBeGreaterThan(1);
     const blocks = fit.pages.flat();
@@ -485,9 +482,9 @@ describe("oversized Markdown tables", () => {
     expect(fit.truncated).toBe(false);
   });
 
-  it("blocks multi-card printing when a table cannot fit", () => {
+  it("blocks printing in automatic mode when a table cannot fit", () => {
     const measure: MeasureFit = () => ({ fits: false, tableOverflow: true });
-    const fit = computeFit([table], measure, "multi-card");
+    const fit = computeFit([table], measure, "auto");
 
     expect(fit.overflow).toBe(true);
     expect(fit.overflowReason).toBe("table");

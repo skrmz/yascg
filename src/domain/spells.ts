@@ -46,7 +46,7 @@ export const ABILITY_SCORES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as cons
 
 export const SPELL_SOURCES = ["SRD-5.2.1", "Custom"] as const;
 
-export const CARD_FIT_MODES = ["auto", "auto-shrink", "multi-card"] as const;
+export const CARD_FIT_MODES = ["auto", "auto-shrink"] as const;
 
 export type SpellSchool = (typeof SPELL_SCHOOLS)[number];
 export type CoreClass = (typeof CORE_CLASSES)[number];
@@ -122,7 +122,10 @@ export const spellSchoolSchema = z.enum(SPELL_SCHOOLS);
 export const coreClassSchema = z.enum(CORE_CLASSES);
 export const abilityScoreSchema = z.enum(ABILITY_SCORES);
 export const spellSourceSchema = z.enum(SPELL_SOURCES);
-export const cardFitModeSchema = z.enum(CARD_FIT_MODES);
+// "multi-card" is a retired alias accepted only at deck-entry validation boundaries and never emitted.
+export const cardFitModeSchema = z
+  .enum([...CARD_FIT_MODES, "multi-card"] as const)
+  .transform((value): CardFitMode => (value === "multi-card" ? "auto" : value));
 
 const trimmedNonEmpty = (max: number) => z.string().trim().min(1).max(max);
 

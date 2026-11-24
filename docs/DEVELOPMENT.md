@@ -143,9 +143,8 @@ Paths are relative to the repository root.
   `BlockNode` renderer including structured component-description markers, headings,
   blockquotes, and nested lists, and deterministic AST splitting/pagination.
 - `src/cards/` — Classic and Compact card chrome plus hidden-card measurement, `document.fonts`
-  gating, best-fit fitting (largest full-body single card at 8.5pt → 8pt, otherwise multi-card),
-  explicit single-card auto-shrink (8.5pt → 6pt) with a measured trailing ellipsis at the floor,
-  and multi-card pagination with heading-orphan prevention. Oversized Markdown tables are
+  gating, automatic fitting with continuation pagination and heading-orphan prevention, and
+  optional single-card shrinking with a measured trailing ellipsis. Oversized Markdown tables are
   detected during hidden-card measurement and reported as blocking overflow. `design.ts` owns the design enum and
   normalization, `compact.ts` builds the pre-fit Compact presentation and notes, and
   `CompactCard.tsx` renders the Compact design.
@@ -257,6 +256,9 @@ This section maps those contracts to the implementation.
   Save then blocks until the user opens the snapshot or uses Save As. `version(5)` promotes stored
   `auto-shrink` entries (including baselines and saved snapshots) to `auto`, the automatic mode,
   and bumps the active revision when the active deck changed.
+  `version(9)` retires `multi-card` by rewriting active, baseline, and saved-snapshot entries
+  to `auto`. It bumps the active revision when its entries or baseline change and preserves
+  saved revision tokens.
 - Cross-tab notifications (`src/db/notifications.ts`) are advisory. Revision checks inside
   transactions are authoritative; a conflict keeps the user's uncommitted intent available and
   routes to the Reload Latest/Cancel or Save As/Open recovery described in the specification.
@@ -396,12 +398,12 @@ the [product specification](specs/MAIN-spec.md#9-card-layout-and-text-fitting); 
 settings are in the [README](../README.md#printing). Implementation details:
 
 - `src/cards/fit.tsx` measures actual rendered heights in a hidden fixed-size card, caches by
-  content/language/fit mode/design, and implements best fit (single card at 8.5–8 pt, otherwise
-  multi-card), explicit auto-shrink, and multi-card pagination.
+  content/language/fit mode/design, and implements automatic fitting with continuation pagination
+  and optional single-card shrinking.
   Measurement runs only on content/style changes, never on every scroll event. A missing measured
   body element throws so preview and print surface a fit error instead of a false fit. Compact
-  multi-card fitting repaginates once with the pagination line reserved when the first pass produces
-  multiple cards, so the measured first card matches preview/print above the footer.
+  continuation fitting repaginates once with the pagination line reserved when the first pass
+  produces multiple cards, so the measured first card matches preview/print above the footer.
 - `src/cards/design.ts` owns `CardDesign` and `DEFAULT_CARD_DESIGN`. `AppProvider` exposes
   in-memory `cardDesign`/`setCardDesign`; the Deck pane selector is the only writer, and nothing
   is persisted.

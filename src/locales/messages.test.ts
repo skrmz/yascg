@@ -21,12 +21,12 @@ describe("typed message descriptors", () => {
   });
 
   it("interpolates supported primitive values", () => {
-    const descriptor = message("deck.fitModeAria", { name: "Feuerball" });
-    expect(translateMessage(i18n.t, descriptor)).toBe("Fit mode for Feuerball");
+    const descriptor = message("deck.oneCardAria", { name: "Feuerball" });
+    expect(translateMessage(i18n.t, descriptor)).toBe("Single card only for Feuerball");
   });
 
   it("rejects missing interpolation values", () => {
-    expect(() => message("deck.fitModeAria", {} as Record<"name", string>)).toThrow(
+    expect(() => message("deck.oneCardAria", {} as Record<"name", string>)).toThrow(
       /missing a valid "name" value/,
     );
   });

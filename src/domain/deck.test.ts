@@ -81,7 +81,7 @@ describe("deck baseline and dirty rules", () => {
   it("compares reference, fit mode, spell and entry ids", () => {
     const base = entry();
     expect(deckEntriesEqual([base], [entry()])).toBe(true);
-    expect(deckEntriesEqual([base], [entry({ fitMode: "multi-card" })])).toBe(false);
+    expect(deckEntriesEqual([base], [entry({ fitMode: "auto" })])).toBe(false);
     expect(deckEntriesEqual([base], [entry({ spellId: "srd-other" })])).toBe(false);
     expect(
       deckEntriesEqual([base], [entry({ reference: { source: "Custom", name: "Fireball" } })]),

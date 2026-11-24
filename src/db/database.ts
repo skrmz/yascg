@@ -179,6 +179,42 @@ export class SpellCardsDatabase extends Dexie {
       srdSpellOverrides: "collectionWriteGuard, spellId, locale",
     });
     this.version(8).stores({ personalBackgrounds: "id" });
+    this.version(9)
+      // Keep the deprecated stores' collectionWriteGuard key paths from version 7.
+      .stores({ ...COLLECTION_STORES, personalBackgrounds: "id" })
+      .upgrade(async (tx) => {
+        const activeTable = tx.table("collectionActiveDeck") as Table<ActiveDeckRecord, string>;
+        const savedTable = tx.table("collectionSavedDecks") as Table<SavedDeck, string>;
+
+        // Automatic fitting already paginates when needed.
+        const normalize = (entries: DeckEntry[]): DeckEntry[] =>
+          entries.map((entry) =>
+            (entry.fitMode as string) === "multi-card" ? { ...entry, fitMode: "auto" } : entry,
+          );
+
+        for (const deck of await activeTable.toArray()) {
+          const entries = normalize(deck.entries);
+          const storedBaseline = deck.baseline;
+          const baseline =
+            storedBaseline === null
+              ? null
+              : { ...storedBaseline, entries: normalize(storedBaseline.entries) };
+          const changed =
+            entries.some((entry, index) => entry !== deck.entries[index]) ||
+            (storedBaseline !== null &&
+              baseline !== null &&
+              baseline.entries.some((entry, index) => entry !== storedBaseline.entries[index]));
+          if (changed) {
+            await activeTable.put({ ...deck, entries, baseline, revision: deck.revision + 1 });
+          }
+        }
+        for (const deck of await savedTable.toArray()) {
+          const entries = normalize(deck.entries);
+          if (entries.some((entry, index) => entry !== deck.entries[index])) {
+            await savedTable.put({ ...deck, entries });
+          }
+        }
+      });
   }
 }
 

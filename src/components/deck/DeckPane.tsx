@@ -30,6 +30,7 @@ import type { CardFitMode } from "@/domain/spells";
 import type { EntryResolution } from "@/services/data/resolution.ts";
 import { AppError, translateMessage } from "@/locales/messages.ts";
 import { Button } from "@/ui/Button.tsx";
+import { Checkbox } from "@/ui/Checkbox.tsx";
 import { Input, Label, NativeSelect } from "@/ui/Field.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import {
@@ -663,14 +664,6 @@ export function DeckPane() {
         >
           {t("deck.heading")}
         </h2>
-        <details className="px-2 text-xs text-muted-foreground">
-          <summary className="cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-ring">
-            {t("deck.fitHelpTitle")}
-          </summary>
-          <p id="deck-fit-help" className="py-2">
-            {t("deck.fitHelp")}
-          </p>
-        </details>
         <ol
           id="deck-entries"
           className="@container/deck-entries min-h-0 flex-1 overflow-auto p-2"
@@ -948,20 +941,14 @@ function DeckRow({
           </Button>
         ) : null}
       </div>
-      <div className="flex min-w-0 items-center gap-1 @min-[24rem]/deck-entries:ps-[2.625rem] @min-[36rem]/deck-entries:grid @min-[36rem]/deck-entries:grid-cols-[11rem_auto] @min-[36rem]/deck-entries:gap-2 @min-[36rem]/deck-entries:ps-0">
-        <NativeSelect
-          id={`fit-mode-${entry.entryId}`}
-          name={`fit-mode-${entry.entryId}`}
-          aria-label={t("deck.fitModeAria", { name })}
-          aria-description={t("deck.fitHelp")}
-          className="h-8 w-40 min-w-0 text-xs @min-[36rem]/deck-entries:w-full"
-          value={entry.fitMode}
-          onChange={(event) => onFitMode(event.target.value as CardFitMode)}
-        >
-          <option value="auto">{t("deck.bestFit")}</option>
-          <option value="auto-shrink">{t("deck.autoShrink")}</option>
-          <option value="multi-card">{t("deck.multiCard")}</option>
-        </NativeSelect>
+      <div className="flex min-w-0 items-center gap-1 @min-[24rem]/deck-entries:ps-[2.625rem] @min-[36rem]/deck-entries:gap-2 @min-[36rem]/deck-entries:ps-0">
+        <Checkbox
+          id={`one-card-${entry.entryId}`}
+          label={<span className="text-xs">{t("deck.oneCard")}</span>}
+          aria-label={t("deck.oneCardAria", { name })}
+          checked={entry.fitMode === "auto-shrink"}
+          onChange={(event) => onFitMode(event.target.checked ? "auto-shrink" : "auto")}
+        />
         <div className="flex shrink-0 items-center @min-[36rem]/deck-entries:gap-1">
           <Button
             variant="ghost"

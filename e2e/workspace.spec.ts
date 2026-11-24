@@ -123,11 +123,16 @@ for (const language of ["en", "de"]) {
       expect(await text.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
         true,
       );
-      const fit = row.getByRole("combobox");
+      const fit = row.getByRole("checkbox").locator("xpath=..");
       const fitBox = (await fit.boundingBox())!;
-      const secondFitBox = (await rows.nth(1).getByRole("combobox").boundingBox())!;
+      const secondFitBox = (await rows
+        .nth(1)
+        .getByRole("checkbox")
+        .locator("xpath=..")
+        .boundingBox())!;
       expect(secondFitBox.x).toBeCloseTo(fitBox.x, 0);
       expect(secondFitBox.width).toBeCloseTo(fitBox.width, 0);
+      const buttons = await row.locator("label + div button").all();
       const singleRow = await page.locator("#deck-entries").evaluate((element) => {
         const style = getComputedStyle(element);
         return (
@@ -142,27 +147,15 @@ for (const language of ["en", "de"]) {
         ).toBeLessThan(1);
       } else {
         expect(fitBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height);
-        expect(fitBox.width).toBeLessThanOrEqual(160);
-        const buttons = await row.locator("select + div button").all();
         const first = (await buttons[0].boundingBox())!;
         const second = (await buttons[1].boundingBox())!;
         expect(second.x - first.x).toBeCloseTo(first.width, 0);
       }
       if (width >= 1920) expect(singleRow).toBe(true);
-      expect(
-        await fit.evaluate((element) => {
-          const select = element as HTMLSelectElement;
-          const style = getComputedStyle(select);
-          const context = document.createElement("canvas").getContext("2d")!;
-          context.font = style.font;
-          const labelWidth = context.measureText(select.selectedOptions[0].text).width;
-          return (
-            select.clientWidth >=
-            labelWidth + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + 20
-          );
-        }),
-      ).toBe(true);
-      for (const button of await row.locator("select + div button").all()) {
+      expect(await fit.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true,
+      );
+      for (const button of buttons) {
         const box = (await button.boundingBox())!;
         expect(Math.abs(box.y + box.height / 2 - fitBox.y - fitBox.height / 2)).toBeLessThan(1);
       }
@@ -311,7 +304,9 @@ for (const width of [390, 820, 1024]) {
     ]) {
       await touchTarget(page.getByRole("button", { name, exact: true }));
     }
-    await touchTarget(page.getByRole("combobox", { name: "Fit mode for Fireball" }));
+    await touchTarget(
+      page.getByRole("checkbox", { name: "Single card only for Fireball" }).locator("xpath=.."),
+    );
     await page.getByRole("button", { name: "Save as…", exact: true }).click();
     const save = page.getByRole("dialog", { name: "Save deck as" });
     await touchTarget(save.getByRole("button", { name: "Save", exact: true }));

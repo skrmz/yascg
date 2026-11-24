@@ -306,13 +306,8 @@ export const de = {
     repairConfirm: "Reparieren",
     replacementSpell: "Ersatzzauber",
     chooseSpell: "Zauber auswählen…",
-    fitModeAria: "Anpassungsmodus für {{name}}",
-    fitHelpTitle: "Anpassungsmodi erklärt",
-    fitHelp:
-      "Beste Anpassung: größte Einzelkarte bis 8pt, danach mehrere Karten. Automatisch verkleinern: bis 6pt mit Kürzungswarnung. Mehrere Karten: Folgekarten mit 8pt.",
-    bestFit: "Beste Anpassung",
-    autoShrink: "Auto-Anpassung",
-    multiCard: "Mehrere Karten",
+    oneCard: "Nur eine Karte",
+    oneCardAria: "Nur eine Karte für {{name}}",
     showAria: "{{name}} in den Details anzeigen",
     moveUpAria: "{{name}} nach oben verschieben",
     moveDownAria: "{{name}} nach unten verschieben",
@@ -542,7 +537,7 @@ export const de = {
     deleteConfirm: "Zauber löschen",
     fitError: "Diese Karte konnte nicht gemessen werden. Bitte versuche es erneut.",
     truncated:
-      "Die Beschreibung wurde gekürzt, damit sie bei {{min}} pt auf eine Karte passt. Wechsle zu „Beste Anpassung“ oder in den Mehrkartenmodus, um die vollständige Beschreibung anzuzeigen.",
+      "Die Beschreibung wurde gekürzt, damit sie bei {{min}} pt auf eine Karte passt. Wechsle zur automatischen Anpassung, um die vollständige Beschreibung anzuzeigen.",
     overflow:
       "Dieser Eintrag überschreitet das Limit von {{max}} Fortsetzungskarten und kann nicht gedruckt werden.",
     cardCount: "{{count}} physische Karte bei {{font}} pt.",

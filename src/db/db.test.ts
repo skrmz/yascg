@@ -26,7 +26,8 @@ import {
   saveNewDeck,
 } from "@/db/saved-decks.ts";
 import { deleteCustomSpell, putCustomSpell, restoreDeletedSpell } from "@/db/custom-spells.ts";
-import type { DeckEntry } from "@/domain/deck";
+import { isDeckDirty, type ActiveDeckRecord, type DeckEntry, type SavedDeck } from "@/domain/deck";
+import type { CardFitMode } from "@/domain/spells";
 import { makeCustomSpell } from "@/test/fixtures/spells.ts";
 
 beforeEach(async () => {
@@ -717,6 +718,140 @@ describe("database migration", () => {
       upgraded.close();
       await Dexie.delete(name);
     }
+  });
+
+  describe("retired multi-card fitting", () => {
+    const automatic = [makeEntry("srd-b", "SRD-5.2.1", "B"), makeEntry("srd-a", "SRD-5.2.1", "A")];
+    const retired = [
+      { ...automatic[0], fitMode: "multi-card" as unknown as CardFitMode },
+      automatic[1],
+    ];
+    const supported: DeckEntry[] = [{ ...automatic[0], fitMode: "auto-shrink" }, automatic[1]];
+
+    it.each([
+      {
+        scenario: "normalizes active, baseline, and saved entries and keeps the deck clean",
+        entries: retired,
+        baselineEntries: retired,
+        savedEntries: retired,
+        revision: 4,
+        dirty: false,
+      },
+      {
+        scenario: "normalizes a saved snapshot without revising the associated active deck",
+        entries: automatic,
+        baselineEntries: automatic,
+        savedEntries: retired,
+        revision: 3,
+        dirty: false,
+      },
+      {
+        scenario: "preserves records already using supported modes",
+        entries: supported,
+        baselineEntries: supported,
+        savedEntries: supported,
+        revision: 3,
+        dirty: false,
+      },
+      {
+        scenario: "normalizes a baseline-only change and clears the retired fit difference",
+        entries: automatic,
+        baselineEntries: retired,
+        savedEntries: retired,
+        revision: 4,
+        dirty: false,
+      },
+      {
+        scenario: "keeps the active deck dirty when the name also differs",
+        entries: retired,
+        baselineEntries: automatic,
+        savedEntries: automatic,
+        name: "Unsaved name",
+        revision: 4,
+        dirty: true,
+      },
+      {
+        scenario: "keeps an unassociated working deck dirty",
+        entries: retired,
+        baselineEntries: null,
+        savedEntries: automatic,
+        name: "",
+        revision: 4,
+        dirty: true,
+      },
+    ])("$scenario", async ({ entries, baselineEntries, savedEntries, name, revision, dirty }) => {
+      const databaseName = `spell-cards-migration-retired-fit-${crypto.randomUUID()}`;
+      const legacy = new Dexie(databaseName);
+      legacy.version(8).stores({
+        customSpells: "collectionWriteGuard, name, updatedAt",
+        savedDecks: "collectionWriteGuard, updatedAt",
+        activeDeck: "collectionWriteGuard",
+        srdSpellOverrides: "collectionWriteGuard, spellId, locale",
+        collectionCustomSpells: "id, name, updatedAt",
+        collectionSavedDecks: "id, updatedAt",
+        collectionActiveDeck: "id",
+        collectionSrdSpellOverrides: "[spellId+locale], spellId, locale",
+        collectionMetadata: "id",
+        personalBackgrounds: "id",
+      });
+      const saved: SavedDeck = {
+        id: "saved-fit",
+        name: "Fit",
+        updatedAt: 42,
+        revision: 5,
+        entries: savedEntries,
+      };
+      const active: ActiveDeckRecord = {
+        id: "active",
+        name: name ?? saved.name,
+        savedDeckId: baselineEntries === null ? undefined : saved.id,
+        entries,
+        revision: 3,
+        baseline:
+          baselineEntries === null
+            ? null
+            : { name: saved.name, entries: baselineEntries, savedRevision: saved.revision },
+      };
+
+      const upgraded = new SpellCardsDatabase(databaseName);
+      try {
+        await legacy.open();
+        await legacy.table("collectionActiveDeck").put(active);
+        await legacy.table("collectionSavedDecks").put(saved);
+        legacy.close();
+
+        await upgraded.open();
+        const storedActive = await upgraded.activeDeck.get(active.id);
+        const storedSaved = await upgraded.savedDecks.get(saved.id);
+        if (!storedActive || !storedSaved) throw new Error("Expected migrated deck records");
+        expect(storedActive).toEqual({
+          ...active,
+          entries: entries === supported ? supported : automatic,
+          revision,
+          baseline:
+            active.baseline === null
+              ? null
+              : {
+                  ...active.baseline,
+                  entries: baselineEntries === supported ? supported : automatic,
+                },
+        });
+        expect(storedSaved).toEqual({
+          ...saved,
+          entries: savedEntries === supported ? supported : automatic,
+        });
+        expect(isDeckDirty(storedActive)).toBe(dirty);
+        if (storedActive.baseline !== null) {
+          expect(storedActive.savedDeckId).toBe(storedSaved.id);
+          expect(storedActive.baseline.savedRevision).toBe(storedSaved.revision);
+        }
+        expect(upgraded.table("activeDeck").schema.primKey.keyPath).toBe("collectionWriteGuard");
+      } finally {
+        legacy.close();
+        upgraded.close();
+        await Dexie.delete(databaseName);
+      }
+    });
   });
 
   it("verifies a legacy association whose baseline matches its snapshot", async () => {

@@ -36,7 +36,7 @@ decks, user-entered text, or canonical stored game mechanics.
 
 **Included:** spell-data language selection; localized UI (EN/DE); search and filters; custom
 spell CRUD and JSON import/export; unique spell entries and ordering; named local saved decks;
-deck JSON import/export; automatic fitting with auto-shrink or continuation cards; US Letter/A4
+deck JSON import/export; automatic fitting with an optional single-card shrink; US Letter/A4
 printing; offline PWA.
 
 **Excluded:** non-SRD bundled spells, accounts/cloud sync/backend, PDF rendering engines, card
@@ -130,7 +130,7 @@ export type CoreClass =
   | "Paladin" | "Ranger" | "Rogue" | "Sorcerer" | "Warlock" | "Wizard";
 
 export type SpellSource = "SRD-5.2.1" | "Custom";
-export type CardFitMode = "auto" | "auto-shrink" | "multi-card";
+export type CardFitMode = "auto" | "auto-shrink";
 
 export interface SpellComponents {
   verbal: boolean;
@@ -301,10 +301,10 @@ persistence help, and Save/Print/Open actions stay visible; a **Deck settings** 
 reveals name editing, card design, card background, and legend. Split/Wide always show these
 settings. Expanding
 or collapsing settings preserves their values, and validation/action errors remain visible.
-Deck entry names wrap without truncation. Narrow deck entries use two aligned rows: name
-above, fit selector and actions below. When the entry list's content width reaches 36rem,
-entries use one row with aligned fit and action columns. Narrow entries use a compact fit
-selector beside adjacent action touch targets, without stretching to fill unused space.
+Deck entry names wrap without truncation. Narrow deck entries use two aligned rows with the
+name above and the **Single card only** checkbox and actions below. When the entry list's
+content width reaches 36rem, each entry uses one row with the checkbox and actions aligned
+after the name.
 
 **Preview & Details pane:** the default pane shows the rendered physical card preview(s) for
 the selected spell, arranged in wrapping rows while preserving 2.5in × 3.5in dimensions. Fit
@@ -510,8 +510,10 @@ This section is the authoritative owner of deck-state semantics. Implementation 
   normalized to the first occurrence when the database is upgraded or a saved deck is loaded.
   Reference repair must not rebind an entry to a spell already present in the deck. Entry IDs
   must be unique within a deck.
-- Support add, remove, move up/down, drag reorder, per-entry fit mode (**Best fit** by default,
-  **Auto-shrink**, or **Multi-card**), and **Clear entries** (with confirmation).
+- Support add, remove, move up/down, drag reorder, and **Clear entries** (with confirmation).
+  Each entry has a **Single card only** checkbox. Unchecked uses automatic fitting (`auto`),
+  and checked uses single-card shrinking (`auto-shrink`). The accessible name includes the
+  spell name. The checkbox remains available for missing and translation-unavailable entries.
 - **Status and Save enablement:** derive a four-state status from association and dirty state —
   **Saved** (associated, clean), **Unsaved changes** (associated, dirty), **Not saved as a
   deck** (unassociated, populated), and **New deck** (unassociated, empty and unnamed).
@@ -723,13 +725,15 @@ payload is valid and the user confirms the operation. Runtime schemas live in
 
 - Export `DeckExportPayload` with references only (not full spell bodies). Filename
   `spell-deck-YYYY-MM-DD.json`. Export the current active deck, not the saved-deck collection.
-  Do not export `entryId`, `revision`, or `baseline`. The format is unversioned.
+  Do not export `entryId`, `revision`, or `baseline`. The format is unversioned. Exported
+  `fitMode` values are `auto` and `auto-shrink`.
 - Import maximum: 5 MiB JSON and 2,000 entries. The supported payload is
   `{type:"deck",name,exportedAt,entries:[{spellId,fitMode,reference:{source,name}}]}`. Validate
-  the entire payload and all entries before any write; unknown top-level fields, wrong `type`,
-  `fitMode` outside `auto` / `auto-shrink` / `multi-card`, missing/invalid `spellId`, invalid
-  reference source/name, or excess limits cause atomic rejection. Do not infer references from
-  names, migrate historical shapes, or claim future compatibility.
+  the entire payload and all entries before any write. Accept `auto` and `auto-shrink` as
+  `fitMode` values and normalize the retired `multi-card` alias to `auto`. Unknown fit modes,
+  unknown top-level fields, wrong `type`, missing or invalid `spellId`, invalid reference
+  source or name, and excess limits cause atomic rejection. Resolve references by ID and
+  source. The retired fit-mode alias is the only historical deck-format exception.
 - Deck import/export and custom-spell import/export are separate workflows: deck JSON tools live
   in the deck actions menu, while custom-spell import/export lives in the Library pane next to
   **Create custom spell**. A deck export is not a backup of custom spell definitions or SRD
@@ -754,7 +758,7 @@ payload is valid and the user confirms the operation. Runtime schemas live in
 
 **Language compatibility:** export payloads are unversioned and contain canonical SRD IDs and
 `reference` hints, not the selected language or bundled spell bodies. Import/load decks in any
-selected language without migrating or rewriting their entries. The stored `reference.name` may
+selected language without rewriting entries based on language. The stored `reference.name` may
 be English or translated and is never used for matching. A missing translation yields a
 placeholder, not a missing-reference repair suggestion. Imported custom spells retain their
 contents and behavior regardless of the selected SRD language.
@@ -769,7 +773,8 @@ entire file, including JPEG bytes and the selection reference, before offering c
 replaces all collection records and the saved selection atomically. Version 1 contains an empty
 personal library and selection, and review warns when restoring it will remove personal images.
 Record identities, order, baselines, historical revisions, and unresolved references survive.
-The receiving browser keeps its language preference.
+Restore applies the fit-mode validation and normalization in §8.2 to all deck entries. The
+receiving browser keeps its language preference.
 
 Every committed collection change invalidates an earlier restore review. Every successful restore
 invalidates stale collection mutations across open tabs. See the
@@ -803,8 +808,7 @@ hint, the Legend trigger, the Legend dialog, nor any tooltip is printed. The sel
 part of the fit cache key and is used identically by the preview, hidden measurement card,
 pagination, and print output; switching designs re-measures without changing stored spell or deck
 data. Preview scale is a screen-only view setting as specified in §5; it is excluded from fit
-cache inputs and print rendering. The Deck exposes a touch/keyboard-operable fit-mode help
-disclosure and an accessible description on each fit selector.
+cache inputs and print rendering.
 
 **Card backgrounds:** The Active Deck selector offers **None**, bundled JPEGs discovered at build
 time, and a distinct group of personal images. **Use own** imports JPEG, PNG, or WebP locally and
@@ -876,18 +880,16 @@ fingerprint. A missing measured body element is a hard measurement error, not a 
 success; the preview and print dialog show a fit error and printing stays blocked. Never perform
 measurement for every scroll event.
 
-**Best fit (default, stored value `auto`):** new entries start in Best fit, and existing stored
-entries that used the former implicit default migrate to it. Fit the complete body on one card at
-the largest size from 8.5 pt down to 8 pt. When even 8 pt cannot hold the complete body, use the
-multi-card layout at 8 pt instead, so Best fit never truncates a description, never shows the
-truncation warning, and never renders single-card body text below 8 pt. The stored mode stays
-`auto`; preview, details, hidden measurement, and print resolve the same effective layout, and
-changing the language or card design re-resolves it. Multi-card's existing per-block 6 pt fallback
-for an individual unbreakable block is unchanged.
+**Automatic (default, stored value `auto`):** new entries use automatic fitting. Try the complete
+body on one card at 8.5 pt, then at 8 pt. If it still overflows, paginate at 8 pt with a 6 pt
+fallback for an individual unbreakable block. Automatic fitting never uses the single-card
+ellipsis or truncation warning. The continuation limit below still applies. Preview, details,
+hidden measurement, and print resolve the same layout, and changing the language or card design
+re-resolves it.
 
-**Auto-shrink (explicit single card):** always produces exactly one physical card. Body font
-starts at 8.5 pt and decreases in 0.5 pt steps to 6 pt; choose the largest size that fits. If the
-complete body still overflows at 6 pt, render the largest safe prefix of the parsed Markdown
+**Single card only (stored value `auto-shrink`):** always produces exactly one physical card.
+Body font starts at 8.5 pt and decreases in 0.5 pt steps to 6 pt. Choose the largest size that
+fits. If the complete body still overflows at 6 pt, render the largest safe prefix of the parsed Markdown
 document that fits **together with a trailing visible ellipsis (`…`)**, measuring the ellipsis as
 part of that prefix rather than appending it afterwards. Prefer block boundaries, then sentence,
 word, and finally Unicode grapheme boundaries; never output malformed HTML, a broken list
@@ -895,12 +897,12 @@ container, half a Unicode grapheme, or an empty trailing block. Drop a trailing 
 that has no remaining body text so the ellipsis stays visible. Preview and print use the same
 truncated card, and the ellipsis is printed. Show an **on-screen-only** warning that the
 description was truncated at 6 pt because it did not fit on one card and that switching to
-Best fit or multi-card mode preserves the full description. An explicit fit mode is
-authoritative: Auto-shrink never switches to multiple cards automatically, multi-card never
-truncates, and changing the mode immediately updates preview and print. Do not silently drop
-content without the ellipsis and warning.
+the automatic layout preserves the full description, subject to the continuation limit.
+Changing the checkbox immediately updates preview and print. Whenever single-card fitting
+truncates the description, display the ellipsis and warning.
 
-**Multi-card:** body font 8 pt; use 6 pt only when an individual block cannot fit at 8 pt.
+**Continuation cards (automatic mode):** body font 8 pt; use 6 pt only when an individual block
+cannot fit at 8 pt.
 Split description/Higher Levels at paragraph boundaries, then sentence/word boundaries as
 needed; preserve words, punctuation, and reading order. The first card keeps the full header,
 metadata, body, and footer. Continuation cards keep the compact header (name, level, and
@@ -910,15 +912,15 @@ continuation-card layouts separately. Continuations show `Continued from Card N`
 `Card X of N` in the footer. Keep a spell's physical cards consecutive. If a single unbreakable
 token cannot fit, wrap it at Unicode grapheme boundaries without dropping characters; if fixed
 chrome alone is too tall, ellipsize its strings rather than clipping outside the card. Class tags
-may move to the last continuation card. No description text may be silently lost in multi-card
-mode. Define a maximum of 100 continuation cards per deck entry; if exceeded, block printing
+may move to the last continuation card. Preserve the description during continuation
+pagination. Define a maximum of 100 continuation cards per deck entry; if exceeded, block printing
 that entry with a visible actionable error rather than silently discard content.
 
 Markdown parsing must build safe document nodes (not HTML string slicing). Treat headings, list
 items, paragraphs, and Higher Levels as ordered blocks; split a block at safe text-node
 boundaries and reopen/close list and emphasis structure on each card. Never orphan a heading
 when the next body block could instead move with it. Preserve punctuation and all original
-visible body text in multi-card mode. Use grapheme-aware splitting (`Intl.Segmenter` or
+visible body text during continuation pagination. Use grapheme-aware splitting (`Intl.Segmenter` or
 equivalent) for emoji/combining marks.
 
 Markdown rendering must preserve the authored structure in the preview, details dialog,
@@ -931,7 +933,7 @@ large, and printing is blocked for that entry until the table is shortened or re
 columns.
 
 Preview warnings and controls are never printed. Use deterministic fixture tests for empty
-text, long strings, Markdown, headings/lists/emphasis, multi-card pagination, auto-shrink
+text, long strings, Markdown, headings/lists/emphasis, continuation pagination, single-card
 truncation with a measured ellipsis (including split paragraphs and list items), extremely long
 tokens, and unusual Unicode.
 
@@ -966,8 +968,8 @@ must print.
   physical dimensions.
 - Printing never changes the deck or the selected language.
 - The print dialog starts with the whole active deck selected. Users can select spells and expand
-  multi-card spells to select individual cards. Printed continuations preserve their content and
-  numbering from the full measured expansion.
+  spells with continuation cards to select individual cards. Printed continuations preserve
+  their content and numbering from the full measured expansion.
 - **Keep each spell’s cards together** is off by default. When on, a selected group of up to nine
   cards moves to the next sheet if it cannot fit on the current one. Larger groups continue in
   order across sheets.
@@ -1126,8 +1128,8 @@ duplicate these outcomes as a second invariants list.
 | I9  | Import/export   | Deck import same name as saved deck                                                                 | Active deck replaced; no saved snapshot modified; imported deck is **Not saved as a deck**                                                                                                                     | §7, §8.2    |
 | I10 | Import/export   | Custom vs deck formats                                                                              | Separate dialogs and files; deck export states it does not back up custom spells or SRD overrides; no combined package required                                                                                | §8          |
 | I11 | Import/export   | Export and reimport a partially translated deck                                                     | Canonical IDs and all entries preserved; no language-specific payload rewriting                                                                                                                                | §8.2        |
-| P1  | Cards/print     | Best fit and explicit auto-shrink on long Markdown                                                  | Best fit: one card at 8.5–8 pt when the full body fits, otherwise multi-card at 8 pt with no truncation or warning; explicit auto-shrink: one card down to 6 pt with a safe measured ellipsis and preview-only warning; print matches preview | §9          |
-| P2  | Cards/print     | Multi-card on long Unicode/Markdown content                                                         | No dropped text, invalid markup, or split grapheme; continuation order retained; complete text preserved                                                                                                       | §9          |
+| P1  | Cards/print     | Automatic fitting and Single card only on long Markdown | Automatic uses one card at 8.5–8 pt when the full body fits and continuation cards at 8 pt for longer text. Single card only shrinks down to 6 pt and uses a safe measured ellipsis and preview-only warning if the description still overflows. Print matches preview. | §9 |
+| P2  | Cards/print     | Continuation pagination on long Unicode/Markdown content | Preserve all text, valid markup, grapheme boundaries, and continuation order. | §9 |
 | P3  | Cards/print     | More than 100 continuation cards                                                                    | Visible blocking error for that entry; no silent omission                                                                                                                                                      | §9, §10     |
 | P4  | Cards/print     | Long spell title and fixed fields                                                                   | Title wraps within the header without clipping; fixed fields truncate visibly; level/icons remain visible                                                                                                      | §9          |
 | P5  | Cards/print     | Card typography and font readiness                                                                  | Vollkorn 700 title, Alegreya Sans 500 body with fallbacks; self-hosted required faces verified before measurement and `print()`; app chrome fonts unchanged                                                       | §9, §10     |

@@ -14,9 +14,9 @@ paper. All data stays in your browser unless you export it as JSON.
 - Create an editable custom copy of an SRD spell that is in the active deck, then replace that
   deck entry with the saved copy while keeping its position and fit mode.
 - Keep one active deck and save or load named decks locally.
-- Preview spell cards, open full details, render safe Markdown, and print with best-fit layout
-  (one card at 8 pt or larger when it fits, otherwise multi-card continuation), or forced
-  auto-shrink/multi-card.
+- Preview and print spell cards with safe Markdown and access the full spell details. The
+  automatic layout uses one card at 8 pt or larger when the description fits and adds
+  continuation cards for longer text. You can also force one card, shrinking text to 6 pt.
 - Choose the **Classic** card layout (the default) or a denser **Compact** layout, with a Legend
   for Compact abbreviations and icons. The selection applies to preview and print and is not
   stored across reloads.
@@ -61,10 +61,10 @@ in a bottom sheet with removable chips for active filters, and **Append all**, *
 menu. Search, filters, and the list scroll position are kept when switching tabs; **Reset
 filters** clears the search text and every filter.
 
-Each deck entry uses **Best fit** by default: a description that fits on one card is shrunk only
-down to 8 pt, and a longer description continues on multiple cards without truncation. The
-per-entry fit selector can instead force **Auto-shrink** (always one card, shrinking to 6 pt with
-a visible ellipsis and warning when the text does not fit) or **Multi-card**.
+The automatic layout tries one card at 8.5 pt, then 8 pt, and adds continuation cards for longer
+descriptions. Check **Single card only** on a deck entry to shrink its description down to 6 pt
+as needed. If the text still overflows, the card shows an ellipsis and the preview displays a
+warning.
 
 When the selected spell is an SRD spell that is already in the active deck, the details header
 offers **Create editable copy**. It opens the custom-spell editor with an unsaved copy; nothing
@@ -161,12 +161,12 @@ Open **Print cards** in the Active Deck pane. Cards are 2.5in x 3.5in, nine per 
 7.5in x 10.5in grid. The paper selection defaults to **A4** for German and **US Letter** for
 English. When saving as PDF, the browser suggests the active deck name, or a dated generic name
 when the deck is unnamed. The selected Classic or Compact card design is used consistently in
-preview, measurement, and print. Automatic fitting and **Multi-Card** mode use the same
-continuation layout: the first card keeps the full header and metadata block; continuation cards
-use a compact header with a localized `contd.`/`Forts.` label and omit repeated metadata so more
-description fits.
+preview, measurement, and print. The first card keeps the full header and metadata block.
+Continuation cards use a compact header with a localized `contd.`/`Forts.` label and omit
+repeated metadata so more description fits.
 
-The dialog opens with all spells selected. Expand a multi-card spell to pick individual cards.
+The dialog opens with all spells selected. Expand a spell with continuation cards to pick
+individual cards.
 Enable **Keep each spell’s cards together** to move a group to a fresh sheet when it can fit there.
 
 Before printing, configure your browser/printer:
