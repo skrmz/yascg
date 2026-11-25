@@ -188,7 +188,7 @@ export function AppShell() {
     >
       <Header />
       {notice ? (
-        <div className="app-no-print flex flex-wrap items-center justify-between gap-2 border-b border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs text-amber-200">
+        <div className="app-no-print animate-reveal-subtle flex flex-wrap items-center justify-between gap-2 border-b border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs text-amber-200">
           <span className="min-w-0 break-words" role="status">
             {translateMessage(t, notice)}
           </span>

@@ -285,7 +285,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
         {!isDesktop && activeChips.length > 0 ? (
           <div
             role="group"
-            className="-mx-2 overflow-x-auto overscroll-x-contain px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="animate-reveal-subtle -mx-2 overflow-x-auto overscroll-x-contain px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label={t("library.activeFilterRow")}
           >
             <ul className="flex w-max items-center gap-1">

@@ -112,7 +112,12 @@ export function OfflineStatus() {
             </Tooltip>
           ) : null}
           {applyUpdate ? (
-            <Button variant="secondary" size="sm" onClick={() => applyUpdate()}>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="animate-reveal-subtle"
+              onClick={() => applyUpdate()}
+            >
               {t("offline.updateAvailable")}
             </Button>
           ) : null}

@@ -18,7 +18,7 @@ export function DropdownMenuContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "app-no-print z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none",
+          "app-no-print z-50 min-w-40 origin-[var(--radix-dropdown-menu-content-transform-origin)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 motion-reduce:animate-none!",
           className,
         )}
         {...props}

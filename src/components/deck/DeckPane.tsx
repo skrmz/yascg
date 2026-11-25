@@ -497,7 +497,10 @@ export function DeckPane() {
                 {t("deck.settings")}
                 <ChevronDown
                   size={14}
-                  className={cn(settingsOpen && "rotate-180")}
+                  className={cn(
+                    "transition-transform motion-reduce:transition-none",
+                    settingsOpen && "rotate-180",
+                  )}
                   aria-hidden="true"
                 />
               </Button>
@@ -531,7 +534,10 @@ export function DeckPane() {
       <div
         id="deck-design"
         hidden={settingsHidden}
-        className="space-y-1.5 border-b border-border p-3"
+        className={cn(
+          "space-y-1.5 border-b border-border p-3",
+          compact && settingsOpen && "animate-reveal-subtle",
+        )}
       >
         <div
           id="deck-name-settings"

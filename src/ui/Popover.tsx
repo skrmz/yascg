@@ -21,7 +21,7 @@ export function PopoverContent({
         align={align}
         sideOffset={6}
         className={cn(
-          "z-50 w-64 rounded-md border border-border bg-popover text-popover-foreground p-2 shadow-lg outline-none",
+          "z-50 w-64 origin-[var(--radix-popover-content-transform-origin)] rounded-md border border-border bg-popover text-popover-foreground p-2 shadow-lg outline-none duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 motion-reduce:animate-none!",
           className,
         )}
       >

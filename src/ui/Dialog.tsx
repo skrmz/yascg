@@ -40,15 +40,15 @@ export function DialogContent({
   const isSheet = variant === "sheet";
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="app-no-print fixed inset-0 z-50 bg-black/50" />
+      <DialogPrimitive.Overlay className="app-no-print fixed inset-0 z-50 bg-black/50 duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:animate-none!" />
       <DialogPrimitive.Content
         lang={lang}
         onCloseAutoFocus={onCloseAutoFocus}
         className={cn(
-          "app-no-print fixed z-50 border border-border bg-card text-card-foreground shadow-xl",
+          "app-no-print fixed z-50 border border-border bg-card text-card-foreground shadow-xl duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:animate-none!",
           isSheet
             ? "inset-x-0 bottom-0 flex max-h-[calc(100dvh-var(--app-keyboard-inset,0px)-1rem)] w-full flex-col overflow-hidden rounded-t-xl p-0 pb-[env(safe-area-inset-bottom)]"
-            : "left-1/2 top-1/2 w-[min(92vw,34rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg p-5 max-h-[85vh] overflow-auto",
+            : "left-1/2 top-1/2 w-[min(92vw,34rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg p-5 max-h-[85vh] overflow-auto data-[state=open]:zoom-in-95",
           className,
         )}
       >

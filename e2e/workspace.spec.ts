@@ -9,10 +9,15 @@ async function noPageOverflow(page: Page) {
   ).toEqual({ horizontal: false, vertical: false });
 }
 async function touchTarget(control: Locator) {
-  const box = await control.boundingBox();
-  expect(box).not.toBeNull();
-  expect(box!.width).toBeGreaterThanOrEqual(44);
-  expect(box!.height).toBeGreaterThanOrEqual(44);
+  await expect
+    .poll(
+      async () => {
+        const box = await control.boundingBox();
+        return box ? Math.min(box.width, box.height) : 0;
+      },
+      { message: `Touch target size for ${control.toString()}` },
+    )
+    .toBeGreaterThanOrEqual(44);
 }
 for (const [width, height] of [
   [320, 568],
