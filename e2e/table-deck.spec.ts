@@ -48,8 +48,7 @@ test("table runs in the main workspace and leaves card printing and deck order i
   await addFireball(page);
   await page
     .locator("#deck-entries")
-    .getByRole("button", { name: /Fireball/ })
-    .first()
+    .getByRole("button", { name: "Show Fireball in details", exact: true })
     .click();
   await expect(page.locator(".card-preview-page").first()).toBeVisible();
   await page.getByRole("button", { name: "Table", exact: true }).click();

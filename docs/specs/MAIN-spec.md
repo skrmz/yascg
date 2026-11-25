@@ -306,6 +306,21 @@ name above and the **Single card only** checkbox and actions below. When the ent
 content width reaches 36rem, each entry uses one row with the checkbox and actions aligned
 after the name.
 
+The grip is the sole drag control. It has a localized name that identifies the entry,
+localized keyboard instructions and drag feedback, a visible focus indicator, and the
+workspace touch target. Mouse and pen require a small movement to pick up an entry. Touch
+requires a brief hold within a small movement tolerance. A tap or movement beyond the
+tolerance before the hold completes leaves the order intact. Swiping the row body scrolls the
+Deck, and row selection, fit controls, repair, removal, and the **Move up** and **Move down**
+buttons remain available during ordinary navigation.
+
+On the focused grip, Space or Enter picks up or drops the entry, Up or Down moves the
+preview position within the list, and Escape cancels. The keyboard drop position stays in
+view, and focus returns to the entry's grip after a drop or cancellation. Holding a pointer
+drag near either vertical edge scrolls the entry list, or the whole Deck pane at short
+viewport heights, so newly revealed entries are available as drop targets. Edge scrolling
+stops when the pointer leaves the edge zone or the drag ends.
+
 **Preview & Details pane:** the default pane shows the rendered physical card preview(s) for
 the selected spell, arranged in wrapping rows while preserving 2.5in × 3.5in dimensions. Fit
 status notices remain visible above the preview. The preview group is horizontally centered.
@@ -514,6 +529,11 @@ This section is the authoritative owner of deck-state semantics. Implementation 
   Each entry has a **Single card only** checkbox. Unchecked uses automatic fitting (`auto`),
   and checked uses single-card shrinking (`auto-shrink`). The accessible name includes the
   spell name. The checkbox remains available for missing and translation-unavailable entries.
+- Drag sorting includes resolved, missing, and translation-unavailable entries in the same
+  order. The preview is temporary. A valid drop at a changed position persists one
+  active-deck reorder, with dirty state derived from the existing baseline. Cancellation,
+  release outside the valid drop area, an unchanged position, or a deck change that
+  invalidates the drag causes no reorder write.
 - **Status and Save enablement:** derive a four-state status from association and dirty state —
   **Saved** (associated, clean), **Unsaved changes** (associated, dirty), **Not saved as a
   deck** (unassociated, populated), and **New deck** (unassociated, empty and unnamed).
@@ -1144,6 +1164,7 @@ duplicate these outcomes as a second invariants list.
 | U4  | Library filters | Progressive disclosure and live results | Level/Class/Source initially visible; Advanced opens for active advanced filters; sticky polite match count updates immediately; Reset clears query and filters; All/SRD/Custom expose pressed state; specific-source reselection is stable | §5 |
 | U5  | Accessibility   | Selected spell, filter summaries, recovery and targets | Current row has aria-current and a leading cue; two-line names retain accessible full names; multi-select names include values; empty reset restores focus; 44px touch targets in Compact/Split and coarse-pointer Wide | §5 |
 | U6  | Deck UI         | Save vocabulary, Legend and fit help | Unassociated primary action says Save as…; associated says Save; Start new deck differs from empty status; Legend explains both designs and covers abbreviations applied by Abbreviate or by an applied short description; touch/keyboard users can open fit explanations and each selector has an accessible description | §7, §9 |
+| U7  | Deck UI         | Grip activation, cancellation, and scrolling | Mouse, pen, touch, and keyboard reorder from the grip; row-body swipes scroll; edge scrolling reveals drop targets in both Deck layouts; focus returns after keyboard drop or cancellation; only a valid changed drop writes and survives reload; Move up and Move down remain accessible | §5, §7 |
 | H1  | Hosting         | Static production build                                                                             | Static assets plus SPA fallback deploy to Workers; no API/backend/secrets; PWA and client routes intact                                                                                                        | §3, §11     |
 | O1  | Offline/quality | First-load precache and retry                                                                       | Accurate **Setting up offline access**, **Offline ready**, or **Offline setup incomplete** with retry states; status is icon-only with hover/focus/tap text, hidden when ready, and still announced to assistive technology; no premature readiness claim; runtime asset errors show an actionable retry/fallback | §11         |
 | O2  | Offline/quality | Offline language switch after readiness                                                             | No runtime network request; only manifest-listed assets are selectable                                                                                                                                         | §11         |

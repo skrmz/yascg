@@ -114,7 +114,9 @@ for (const language of ["en", "de"]) {
       }
       const rows = page.locator("#deck-entries > li");
       const row = rows.first();
-      const title = row.getByRole("button").first();
+      const title = row.getByRole("button", {
+        name: language === "de" ? /in den Details anzeigen$/ : `Show ${name} in details`,
+      });
       await expect(title).toBeVisible();
       const titleBox = (await title.boundingBox())!;
       const rowBox = (await row.boundingBox())!;
@@ -298,6 +300,7 @@ for (const width of [390, 820, 1024]) {
       "Open…",
       "Deck actions",
       "Legend",
+      "Reorder Fireball",
       "Move Fireball up",
       "Move Fireball down",
       "Remove Fireball",

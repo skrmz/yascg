@@ -306,6 +306,13 @@ export const en = {
     oneCard: "Single card only",
     oneCardAria: "Single card only for {{name}}",
     showAria: "Show {{name}} in details",
+    reorderAria: "Reorder {{name}}",
+    dragInstructions:
+      "Press Space or Enter to pick up or drop this entry. Use the Up and Down arrow keys to move it, or press Escape to cancel.",
+    dragPickedUp: "Picked up {{name}}, position {{position}} of {{count}}.",
+    dragPosition: "{{name}}, position {{position}} of {{count}}.",
+    dragDropped: "Dropped {{name}} at position {{position}}.",
+    dragCanceled: "Reordering canceled for {{name}}.",
     moveUpAria: "Move {{name}} up",
     moveDownAria: "Move {{name}} down",
     removeAria: "Remove {{name}}",

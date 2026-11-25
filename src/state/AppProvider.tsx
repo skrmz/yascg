@@ -664,11 +664,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [runDeckMutation],
   );
 
+  const activeDeckRevision = activeDeck?.revision;
   const reorderDeckEntries = useCallback(
     async (fromIndex: number, toIndex: number) => {
-      await runDeckMutation((current) => reorderEntries(current, fromIndex, toIndex));
+      if (activeDeckRevision === undefined) return;
+      await runDeckMutation((current) => reorderEntries(current, fromIndex, toIndex), {
+        expectedRevision: activeDeckRevision,
+        handleConflict: "return",
+      });
     },
-    [runDeckMutation],
+    [activeDeckRevision, runDeckMutation],
   );
 
   const applyDeckEntryOrder = useCallback(

@@ -1,4 +1,15 @@
-import { useCallback, useContext, useEffect, useRef, useState, type DragEvent } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  Accessibility,
+  AutoScroller,
+  Feedback,
+  KeyboardSensor,
+  PointerActivationConstraints,
+  PointerSensor,
+} from "@dnd-kit/dom";
+import { scrollIntoViewIfNeeded } from "@dnd-kit/dom/utilities";
+import { DragDropProvider, type DragDropManager, type DragEndEvent } from "@dnd-kit/react";
+import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import { ShowDetailsContext, useWorkspaceMode } from "../workspace-layout.ts";
 import { useTranslation } from "react-i18next";
 import {
@@ -53,6 +64,43 @@ interface FlushResult {
   changed: boolean;
 }
 
+const deckSensors = [
+  PointerSensor.configure({
+    activationConstraints: (event) => [
+      event.pointerType === "touch"
+        ? new PointerActivationConstraints.Delay({ value: 200, tolerance: 8 })
+        : new PointerActivationConstraints.Distance({ value: 5 }),
+    ],
+  }),
+  KeyboardSensor.configure({
+    keyboardCodes: {
+      ...KeyboardSensor.defaults.keyboardCodes,
+      end: ["Space", "Enter"],
+      left: [],
+      right: [],
+    },
+  }),
+];
+
+const deckPlugins = [
+  AutoScroller.configure({ threshold: { x: 0, y: 0.15 } }),
+  Feedback.configure({ dropAnimation: null }),
+];
+
+function releasedRowIndex(event: PointerEvent, list: HTMLOListElement | null) {
+  const row = list?.ownerDocument
+    .elementFromPoint(event.clientX, event.clientY)
+    ?.closest<HTMLElement>("[data-deck-index]");
+  return row && row.parentElement === list ? Number(row.dataset.deckIndex) : undefined;
+}
+
+function isInsideDeckScroller(list: HTMLOListElement, { x, y }: { x: number; y: number }) {
+  const scroller =
+    getComputedStyle(list).overflowY === "visible" ? list.closest("#deck-panel") : list;
+  const rect = scroller?.getBoundingClientRect();
+  return rect && x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom;
+}
+
 export function DeckPane() {
   const showDetails = useContext(ShowDetailsContext);
   const compact = useWorkspaceMode() === "compact";
@@ -98,7 +146,7 @@ export function DeckPane() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [repairEntryId, setRepairEntryId] = useState<string | null>(null);
   const [repairSpellId, setRepairSpellId] = useState("");
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragAnnouncement, setDragAnnouncement] = useState("");
   const [printOpen, setPrintOpen] = useState(false);
   const [ioOpen, setIoOpen] = useState(false);
   const [ioDirty, setIoDirty] = useState(false);
@@ -128,6 +176,12 @@ export function DeckPane() {
   const skipBlurRef = useRef(false);
   const committingRef = useRef(false);
   const flushRef = useRef<Promise<FlushResult> | null>(null);
+  const deckListRef = useRef<HTMLOListElement>(null);
+  const dragSessionRef = useRef<{
+    revision: number;
+    generation: string;
+    position: number;
+  } | null>(null);
 
   useEffect(() => {
     editingRef.current = editing;
@@ -350,12 +404,49 @@ export function DeckPane() {
     setConfirmClear(true);
   };
 
-  const onDragStart = (index: number) => setDragIndex(index);
-  const onDrop = (index: number) => {
-    if (dragIndex !== null && dragIndex !== index) {
-      void reorderDeckEntries(dragIndex, index);
+  const onDeckDragEnd = (
+    { operation, nativeEvent, canceled }: DragEndEvent,
+    manager: DragDropManager,
+  ) => {
+    const session = dragSessionRef.current;
+    dragSessionRef.current = null;
+    const { source, activatorEvent } = operation;
+    if (!isSortable(source)) return;
+
+    const keyboard = activatorEvent instanceof KeyboardEvent;
+    const fromIndex = source.initialIndex;
+    const toIndex = keyboard
+      ? nativeEvent instanceof KeyboardEvent
+        ? session?.position
+        : undefined
+      : nativeEvent instanceof PointerEvent && nativeEvent.type === "pointerup"
+        ? releasedRowIndex(nativeEvent, deckListRef.current)
+        : undefined;
+    const valid =
+      !canceled &&
+      session?.revision === activeDeck?.revision &&
+      session?.generation === collectionGeneration &&
+      entries[fromIndex]?.entryId === source.id &&
+      toIndex !== undefined &&
+      Boolean(entries[toIndex]);
+
+    if (keyboard) {
+      setDragAnnouncement(
+        valid
+          ? t("deck.dragDropped", { name: source.data.name, position: toIndex + 1 })
+          : t("deck.dragCanceled", { name: source.data.name }),
+      );
+      // The feedback element moves back into the list when dnd-kit finishes the drop.
+      void manager.renderer.rendering.then(() => {
+        requestAnimationFrame(() => {
+          const grip = source.handle;
+          if (!(grip instanceof HTMLButtonElement) || !grip.isConnected) return;
+          grip.focus({ preventScroll: true });
+          if (!valid || fromIndex === toIndex) scrollIntoViewIfNeeded(grip);
+        });
+      });
     }
-    setDragIndex(null);
+    if (valid && fromIndex !== toIndex) void reorderDeckEntries(fromIndex, toIndex);
   };
 
   const repairTarget = librarySpells.find((spell) => spell.id === repairSpellId);
@@ -657,58 +748,141 @@ export function DeckPane() {
         </div>
       </div>
 
-      <div id="deck-entries-container" className="mt-2 flex min-h-0 flex-1 flex-col">
+      <div id="deck-entries-container" className="relative mt-2 flex min-h-0 flex-1 flex-col">
         <h2
           id="deck-entries-heading"
           className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
           {t("deck.heading")}
         </h2>
-        <ol
-          id="deck-entries"
-          className="@container/deck-entries min-h-0 flex-1 overflow-auto p-2"
-          aria-labelledby="deck-entries-heading"
+        <DragDropProvider
+          sensors={deckSensors}
+          plugins={(defaults) => [
+            ...defaults.filter(
+              (plugin) =>
+                plugin !== Accessibility && plugin !== AutoScroller && plugin !== Feedback,
+            ),
+            ...deckPlugins,
+          ]}
+          onBeforeDragStart={(event) => {
+            const { source } = event.operation;
+            if (!activeDeck || deckBusy || !isSortable(source)) {
+              event.preventDefault();
+              return;
+            }
+            dragSessionRef.current = {
+              revision: activeDeck.revision,
+              generation: collectionGeneration,
+              position: source.index,
+            };
+          }}
+          onDragStart={({ operation }, manager) => {
+            if (operation.activatorEvent instanceof KeyboardEvent && isSortable(operation.source)) {
+              setDragAnnouncement(
+                t("deck.dragPickedUp", {
+                  name: operation.source.data.name,
+                  position: operation.source.initialIndex + 1,
+                  count: entries.length,
+                }),
+              );
+            } else {
+              manager.registry.plugins.get(AutoScroller)?.enable();
+            }
+          }}
+          onCollision={(event, manager) => {
+            if (manager.dragOperation.activatorEvent instanceof KeyboardEvent) {
+              event.preventDefault();
+            }
+          }}
+          onDragMove={(event, manager) => {
+            const { to, by, nativeEvent, operation } = event;
+            if (nativeEvent instanceof KeyboardEvent) {
+              event.preventDefault();
+              const session = dragSessionRef.current;
+              const { source, shape } = operation;
+              if (!session || !by?.y || !shape || !isSortable(source)) return;
+
+              // Advance by deck index so fully clipped rows are reachable by keyboard.
+              const position = session.position + Math.sign(by.y);
+              const entry = entries[position];
+              if (!entry) return;
+              const row = manager.registry.droppables.get(entry.entryId)?.element;
+              if (!row) return;
+
+              session.position = position;
+              void manager.actions.setDropTarget(entry.entryId);
+              scrollIntoViewIfNeeded(row);
+              const rect = row.getBoundingClientRect();
+              manager.actions.move({
+                by: { x: 0, y: rect.top + rect.height / 2 - shape.current.center.y },
+                propagate: false,
+              });
+              setDragAnnouncement(
+                t("deck.dragPosition", {
+                  name: source.data.name,
+                  position: position + 1,
+                  count: entries.length,
+                }),
+              );
+              return;
+            }
+
+            const list = deckListRef.current;
+            if (!list || !to || !(nativeEvent instanceof PointerEvent)) return;
+            // The plugin can retain a scroller after the pointer leaves it.
+            const scroller = manager.registry.plugins.get(AutoScroller);
+            if (isInsideDeckScroller(list, to)) scroller?.enable();
+            else scroller?.disable();
+          }}
+          onDragEnd={onDeckDragEnd}
         >
-          {entries.length === 0 ? (
-            <li className="p-4 text-center text-sm text-muted-foreground">{t("deck.empty")}</li>
-          ) : null}
-          {resolvedEntries.map(({ entry, resolution }, index) => {
-            const contentLanguage =
-              resolution.status === "resolved"
-                ? resolveContentLanguage(resolution.spell, language)
-                : undefined;
-            return (
-              <DeckRow
-                key={entry.entryId}
-                entry={entry}
-                index={index}
-                resolution={resolution}
-                language={language}
-                contentLanguage={contentLanguage}
-                onRemove={() => void removeFromDeck(entry.entryId)}
-                onMoveUp={() => void moveDeckEntry(entry.entryId, -1)}
-                onMoveDown={() => void moveDeckEntry(entry.entryId, 1)}
-                onFitMode={(mode) => void setDeckEntryFitMode(entry.entryId, mode)}
-                onRepair={() => {
-                  setRepairEntryId(entry.entryId);
-                  setRepairSpellId("");
-                }}
-                onSelect={() => {
-                  if (resolution.status === "resolved") {
-                    selectSpell(resolution.spell.id);
-                    showDetails();
-                  }
-                }}
-                dragProps={{
-                  draggable: true,
-                  onDragStart: () => onDragStart(index),
-                  onDragOver: (event) => event.preventDefault(),
-                  onDrop: () => onDrop(index),
-                }}
-              />
-            );
-          })}
-        </ol>
+          <p id="deck-drag-instructions" className="sr-only">
+            {t("deck.dragInstructions")}
+          </p>
+          <p role="status" className="sr-only">
+            {dragAnnouncement}
+          </p>
+          <ol
+            ref={deckListRef}
+            id="deck-entries"
+            className="@container/deck-entries min-h-0 flex-1 overflow-auto p-2"
+            aria-labelledby="deck-entries-heading"
+          >
+            {entries.length === 0 ? (
+              <li className="p-4 text-center text-sm text-muted-foreground">{t("deck.empty")}</li>
+            ) : null}
+            {resolvedEntries.map(({ entry, resolution }, index) => {
+              const contentLanguage =
+                resolution.status === "resolved"
+                  ? resolveContentLanguage(resolution.spell, language)
+                  : undefined;
+              return (
+                <DeckRow
+                  key={entry.entryId}
+                  entry={entry}
+                  index={index}
+                  resolution={resolution}
+                  language={language}
+                  contentLanguage={contentLanguage}
+                  onRemove={() => void removeFromDeck(entry.entryId)}
+                  onMoveUp={() => void moveDeckEntry(entry.entryId, -1)}
+                  onMoveDown={() => void moveDeckEntry(entry.entryId, 1)}
+                  onFitMode={(mode) => void setDeckEntryFitMode(entry.entryId, mode)}
+                  onRepair={() => {
+                    setRepairEntryId(entry.entryId);
+                    setRepairSpellId("");
+                  }}
+                  onSelect={() => {
+                    if (resolution.status === "resolved") {
+                      selectSpell(resolution.spell.id);
+                      showDetails();
+                    }
+                  }}
+                />
+              );
+            })}
+          </ol>
+        </DragDropProvider>
       </div>
 
       <SaveAsDialog
@@ -871,12 +1045,6 @@ interface DeckRowProps {
   onFitMode: (mode: CardFitMode) => void;
   onRepair: () => void;
   onSelect: () => void;
-  dragProps: {
-    draggable: boolean;
-    onDragStart: () => void;
-    onDragOver: (event: DragEvent) => void;
-    onDrop: () => void;
-  };
 }
 
 function DeckRow({
@@ -891,10 +1059,16 @@ function DeckRow({
   onFitMode,
   onRepair,
   onSelect,
-  dragProps,
 }: DeckRowProps) {
   const { t } = useTranslation();
   const name = resolution.status === "resolved" ? resolution.spell.name : resolution.referenceName;
+  const { ref, handleRef, isDragging, isDropTarget } = useSortable({
+    id: entry.entryId,
+    index,
+    data: { name },
+    // Use a drop-target highlight while keeping the list in React's committed order.
+    plugins: [],
+  });
   const nameContent = (
     <>
       <span
@@ -912,16 +1086,29 @@ function DeckRow({
   );
   return (
     <li
+      ref={ref}
+      data-deck-index={index}
       className={cn(
         "mb-1 grid grid-cols-[minmax(0,1fr)] items-center gap-1 rounded border px-2 py-1.5 @min-[36rem]/deck-entries:grid-cols-[minmax(0,1fr)_auto] @min-[36rem]/deck-entries:gap-2 @min-[36rem]/deck-entries:py-2",
         resolution.status === "resolved"
           ? "border-border bg-card"
           : "border-dashed border-amber-400/30 bg-amber-400/10",
+        isDropTarget && !isDragging && "outline-2 -outline-offset-2 outline-ring",
       )}
-      {...dragProps}
     >
       <div className="flex min-w-0 items-center gap-1">
-        <GripVertical size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+        <Button
+          ref={handleRef}
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-6 shrink-0 touch-none cursor-grab text-muted-foreground select-none active:cursor-grabbing"
+          aria-label={t("deck.reorderAria", { name })}
+          aria-describedby="deck-drag-instructions"
+          aria-pressed={isDragging}
+        >
+          <GripVertical size={14} aria-hidden="true" />
+        </Button>
         <span className="w-5 shrink-0 text-start text-xs text-muted-foreground">{index + 1}</span>
         {resolution.status === "resolved" ? (
           <button
@@ -941,7 +1128,7 @@ function DeckRow({
           </Button>
         ) : null}
       </div>
-      <div className="flex min-w-0 items-center gap-1 @min-[24rem]/deck-entries:ps-[2.625rem] @min-[36rem]/deck-entries:gap-2 @min-[36rem]/deck-entries:ps-0">
+      <div className="flex min-w-0 items-center gap-1 @min-[24rem]/deck-entries:ps-[calc(max(1.5rem,var(--touch-target,0px))+1.75rem)] @min-[36rem]/deck-entries:gap-2 @min-[36rem]/deck-entries:ps-0">
         <Checkbox
           id={`one-card-${entry.entryId}`}
           label={<span className="text-xs">{t("deck.oneCard")}</span>}

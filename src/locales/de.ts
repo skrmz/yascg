@@ -309,6 +309,13 @@ export const de = {
     oneCard: "Nur eine Karte",
     oneCardAria: "Nur eine Karte für {{name}}",
     showAria: "{{name}} in den Details anzeigen",
+    reorderAria: "{{name}} neu anordnen",
+    dragInstructions:
+      "Drücke die Leertaste oder Eingabetaste, um den Eintrag aufzunehmen oder abzulegen. Verschiebe ihn mit den Pfeiltasten nach oben oder unten. Drücke Escape, um abzubrechen.",
+    dragPickedUp: "{{name}} aufgenommen, Position {{position}} von {{count}}.",
+    dragPosition: "{{name}}, Position {{position}} von {{count}}.",
+    dragDropped: "{{name}} an Position {{position}} abgelegt.",
+    dragCanceled: "Anordnen von {{name}} abgebrochen.",
     moveUpAria: "{{name}} nach oben verschieben",
     moveDownAria: "{{name}} nach unten verschieben",
     removeAria: "{{name}} entfernen",
