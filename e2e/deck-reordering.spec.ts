@@ -108,7 +108,7 @@ test("the mouse grip moves entries both ways and persists order", async ({ page 
   const fireball = grip(page, "Fireball");
   const wish = grip(page, "Wish");
   const missile = grip(page, "Magic Missile");
-  const fireballBody = page.getByRole("button", { name: "Show Fireball in details" });
+  const fireballBody = page.getByRole("button", { name: "Show Fireball in Preview" });
   const revision = await activeDeckRevision(page);
 
   await mouseDrag(page, fireballBody, missile);
@@ -124,6 +124,26 @@ test("the mouse grip moves entries both ways and persists order", async ({ page 
   await expectOrder(page, ["Fireball", "Magic Missile", "Wish"]);
   await page.reload();
   await expectOrder(page, ["Fireball", "Magic Missile", "Wish"]);
+});
+
+test("hiding List cancels an active keyboard reorder without committing it", async ({ page }) => {
+  await importDeck(page, shortDeck);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("tab", { name: "Deck", exact: true }).click();
+  const revision = await activeDeckRevision(page);
+  await grip(page, "Fireball").focus();
+  await page.keyboard.press("Space");
+  await expect(activeGrip(page)).toHaveCount(1);
+  await page.keyboard.press("ArrowDown");
+  // A pointer can change presentation while a keyboard drag owns the grip.
+  await page.getByRole("button", { name: "Table", exact: true }).click();
+  await expect(grip(page, "Fireball")).toBeHidden();
+  await page.keyboard.press("Enter");
+  expect(await activeDeckRevision(page)).toBe(revision);
+  await page.getByRole("button", { name: "List", exact: true }).click();
+  await expectOrder(page, shortDeck);
+  await expect(activeGrip(page)).toHaveCount(0);
+  expect(await activeDeckRevision(page)).toBe(revision);
 });
 
 test("keyboard pickup, move, drop and cancel retain focus and update only the active deck", async ({
@@ -279,7 +299,15 @@ test.describe("touch input", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("tab", { name: "Deck", exact: true }).click();
     const list = page.locator("#deck-entries");
-    const body = await center(page.getByRole("button", { name: "Show Light in details" }));
+    const rowButton = page.getByRole("button", { name: "Show Magic Missile in Preview" });
+    await expect(rowButton).toBeInViewport({ ratio: 1 });
+    const body = await center(rowButton);
+    expect(
+      await rowButton.evaluate(
+        (button, { x, y }) => button.contains(document.elementFromPoint(x, y)),
+        body,
+      ),
+    ).toBe(true);
     const cdp = await context.newCDPSession(page);
     const touchStart = (point: { x: number; y: number }) =>
       cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point] });

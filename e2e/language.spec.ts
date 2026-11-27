@@ -27,7 +27,11 @@ test("switching to the complete German dataset keeps deck spells available and p
   await expect(page.getByRole("button", { name: /Deutsch/ })).toBeVisible();
 
   const deck = page.getByRole("region", { name: "Aktives Deck" });
-  await expect(deck.getByText("Feuerball")).toBeVisible();
+  await expect(
+    deck
+      .locator("#deck-entries")
+      .getByRole("button", { name: "Feuerball in der Vorschau anzeigen", exact: true }),
+  ).toBeVisible();
   await expect(deck.getByText("1 Eintrag")).toBeVisible();
   await expect(deck.getByText(/1 druckbar/)).toHaveCount(0);
   await expect(deck.getByText(/Nicht in de/)).toHaveCount(0);

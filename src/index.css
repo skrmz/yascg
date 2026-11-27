@@ -218,15 +218,19 @@ body,
   #deck-panel {
     overflow-y: auto;
   }
-  #deck-controls,
-  #deck-design,
-  #deck-actions {
+  #deck-controls {
     flex-shrink: 0;
   }
-  #deck-entries-container {
-    flex: none;
-  }
+  #deck-entries-container,
   #deck-entries {
+    flex: none;
+    overflow: visible;
+  }
+}
+
+@media screen and (max-height: 480px) {
+  #deck-table-container,
+  #deck-table-container .deck-table-workspace {
     flex: none;
     overflow: visible;
   }

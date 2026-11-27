@@ -3,8 +3,21 @@ import { createContext, useContext, useLayoutEffect, useRef, useState } from "re
 export const WORKSPACE_THRESHOLDS = { split: 720, wide: 1200 } as const;
 export type WorkspaceMode = "compact" | "split" | "wide";
 export const WorkspaceLayoutContext = createContext<WorkspaceMode>("wide");
+export type DeckPresentation = "list" | "table";
+export const PRESENTATION_KEY = "spellCards.deckPresentation";
+export function readDeckPresentation(): DeckPresentation {
+  try {
+    return localStorage.getItem(PRESENTATION_KEY) === "table" ? "table" : "list";
+  } catch {
+    return "list";
+  }
+}
 export const ShowDetailsContext = createContext<
-  (options?: { preservePresentation?: boolean }) => void
+  (options?: {
+    spellId?: string;
+    trigger?: HTMLElement;
+    source?: "library" | "deck" | "table";
+  }) => void
 >(() => {});
 export const useWorkspaceMode = () => useContext(WorkspaceLayoutContext);
 export function modeForWidth(width: number): WorkspaceMode {

@@ -1,3 +1,4 @@
+import { openSpellAction } from "./workspace-controls";
 import { expect, test } from "@playwright/test";
 
 test("creates an editable copy of an SRD spell and replaces the active deck entry", async ({
@@ -13,8 +14,7 @@ test("creates an editable copy of an SRD spell and replaces the active deck entr
   const deck = page.getByRole("region", { name: "Active deck" });
   await expect(deck.getByText("1 entry")).toBeVisible();
 
-  const details = page.getByRole("region", { name: "Spell preview and details" });
-  await details.getByRole("button", { name: "Create editable copy" }).click();
+  await openSpellAction(page, "Create editable copy");
 
   const editor = page.getByRole("dialog", { name: "Create editable copy" });
   await expect(editor).toBeVisible();
@@ -29,7 +29,11 @@ test("creates an editable copy of an SRD spell and replaces the active deck entr
   await confirmation.getByRole("button", { name: "Replace entry" }).click();
 
   await expect(page.getByText("The active deck entry now uses your custom copy.")).toBeVisible();
-  await expect(deck.getByText("Fireball (Homebrew)")).toBeVisible();
+  await expect(
+    deck
+      .locator("#deck-entries")
+      .getByRole("button", { name: "Show Fireball (Homebrew) in Preview", exact: true }),
+  ).toBeVisible();
   await expect(deck.getByText("1 entry")).toBeVisible();
 
   await page.getByLabel("Search spells").fill("Fireball");

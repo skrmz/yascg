@@ -50,10 +50,13 @@ API or secrets. Build, preview, Workers Builds, and `compatibility_date` operati
 
 ## Using the app
 
-Browse the library, open a spell for details, and add spells to the **Active Deck**. Create
-custom spells from the library and edit them from the details view. Decks contain at most one
-entry per spell; **Append all** skips spells already present and reports how many were added
-and skipped. **Replace deck** replaces the active entries after confirmation.
+Browse the library and add spells to the **Active Deck** without leaving the Library.
+Each successful addition names the spell in a notice. Open a spell name to inspect it in
+**Preview**, then use **Read full spell** for its complete rules. Create custom spells from
+the Library and edit them from **Spell actions** in Preview. Use **Edit component notes**
+there for restricted SRD edits. Decks contain at most one entry per spell.
+**Append all** skips spells already in the deck and reports how many it added and skipped.
+**Replace deck** replaces the active entries after confirmation.
 
 On narrow screens the library is list-first: search and **Filters** share one row, filters open
 in a bottom sheet with removable chips for active filters, and **Append all**, **Replace deck**,
@@ -66,8 +69,8 @@ descriptions. Check **Single card only** on a deck entry to shrink its descripti
 as needed. If the text still overflows, the card shows an ellipsis and the preview displays a
 warning.
 
-When the selected spell is an SRD spell that is already in the active deck, the details header
-offers **Create editable copy**. It opens the custom-spell editor with an unsaved copy; nothing
+When the selected SRD spell is already in the active deck, **Spell actions** offers
+**Create editable copy**. It opens the custom-spell editor with an unsaved copy; nothing
 is stored until you save. After saving, confirm **Replace entry** to point only that deck entry
 at the copy, keeping its position and fit mode. Cancelling the confirmation keeps the saved copy
 in your library and leaves the deck unchanged. If the deck changed before you confirm, the
@@ -99,7 +102,9 @@ data is sent anywhere.
 The active deck is always stored locally as you edit it; "unsaved" never means "unpersisted".
 Named snapshots are independent of the working deck:
 
-- Edit the active deck name inline. Enter or blur commits, Escape cancels.- **Save** updates the associated named snapshot. A deck without an association opens
+- Select the deck name to open the rename field. Press Enter or leave the field to commit.
+  Press Escape to cancel.
+- **Save** updates the associated named snapshot. A deck without an association opens
   **Save As…** instead.
 - **Save As…** in the deck actions menu always creates a new named snapshot, including from a
   blank workspace. Duplicate names are allowed.
@@ -109,23 +114,29 @@ Named snapshots are independent of the working deck:
 - **New deck** blanks the active workspace without deleting saved snapshots. **Clear entries**
   removes only the active entries and keeps the name and snapshot association.
 - The status label distinguishes **Saved**, **Unsaved changes**, **Not saved as a deck**, and
-  **New deck**.
+  **New deck**. Select the status to learn what it means.
 
-Use **Spell Cards / Table** to switch the active deck workspace. On smaller screens, open
-**Deck** to reach Table and use **Manage deck** for reordering and saving. Table adds spell
-search, filters, sortable columns, and bulk removal. Open **Full table** on narrow screens
-to sort by column. **Use deck order** clears the table sort. **Apply table sort to deck**
-reorders matching spells across every page and keeps filtered-out spells in their current
-positions. Select all covers every matching page. **Remove selected** also includes selected
-entries outside the current filters, and the confirmation explains its scope.
+Use **List / Table** to switch between two views of the active deck. On smaller screens, open
+**Deck** to reach them. List provides ordered entries, reordering, fit controls, repair, and removal.
+Both views share Save, Open, and **Print cards**. On Wide screens, Table uses the Preview
+and Deck columns while Library stays available. Use **Sort by** in either table layout.
+Choose **Use deck order** to reset display sorting and keep the filters.
+Under **Filters**, **Apply table sort to deck** reorders matching spells across every page.
+Other spells keep their positions. Use **Table view & print** to open the full table, choose
+columns, or print matching rows. Column choices apply to Full table and Print table.
+Select all covers every matching page. **Remove selected** includes entries outside the
+current filters. The confirmation gives the removal count and scope.
 
-The **Card design** selector below the deck controls chooses **Classic** (the default) or
-**Compact**. Compact replaces the metadata table with compact casting-time, range, and duration
+While Table is active, opening a Library spell or a Table row shows its full rules in a dialog.
+Closing it keeps the Table context. **Open Preview** explicitly switches to List and reveals
+the inspected spell's cards. Returning to Table restores its filters, selection, page, and scroll.
+
+Open **Card appearance** below the cards in Preview or from **Print cards**.
+The **Card design** selector offers **Classic** and **Compact** (the default). Compact replaces the metadata table with compact casting-time, range, and duration
 items, connected component boxes, a standalone concentration indicator, numbered rules notes,
 optional higher-level sections, and a three-part Source | School | Classes footer. Its
 **Legend** button explains the abbreviations and icons. The design choice affects the preview,
-measurement, pagination, and print output; it is kept for the session and resets to Classic after
-a reload.
+measurement, pagination, and print output. The choice resets to Compact after a reload.
 
 Use **Card background** to choose a texture for both designs. **Use own** imports JPEG, PNG, and
 WebP files and lets you remove personal images. A selected personal image is remembered on reload.

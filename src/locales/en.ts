@@ -12,7 +12,7 @@ export const en = {
       "Offline-first SRD 5.2.1 spell card generator for Dungeons & Dragons 5.5e (2024).",
     tabs: {
       library: "Library",
-      details: "Details",
+      details: "Preview",
       deck: "Deck",
     },
     notice: {
@@ -189,6 +189,7 @@ export const en = {
     matchCount_one: "{{count}} spell matches",
     matchCount_other: "{{count}} spells match",
     addToDeckAria: "Add {{name}} to active deck",
+    inDeck: "Already in the active deck",
     replaceTitle: "Replace the active deck?",
     replaceDescription:
       "This removes the current active deck entries and replaces them with the {{count}} matching spell. Saved decks are not changed.",
@@ -198,6 +199,7 @@ export const en = {
       "This removes the current active deck entries and replaces them with the {{count}} matching spells. Saved decks are not changed.",
     replaceConfirm: "Replace deck",
     toast: {
+      addedSpell: "Added {{name}} to the active deck.",
       alreadyTitle: "Already in deck",
       alreadyDescription: "{{name}} is already in the active deck.",
       noAddedTitle: "No spells added",
@@ -216,9 +218,8 @@ export const en = {
     title: "Active deck",
     presentation: {
       label: "Active deck presentation",
-      cards: "Spell Cards",
+      list: "List",
       table: "Table",
-      manage: "Manage deck",
     },
     nameLabel: "Active deck name",
     namePlaceholder: "Untitled deck",
@@ -229,7 +230,6 @@ export const en = {
     newDeck: "Start new deck",
     importExport: "Import / export deck",
     print: "Print cards",
-    printCompact: "Print",
     entries: "{{count}} entry",
     entries_one: "{{count}} entry",
     entries_other: "{{count}} entries",
@@ -246,7 +246,8 @@ export const en = {
     heading: "Deck entries",
     empty: "The active deck is empty. Add spells from the library.",
     statusLabel: "Deck status",
-    settings: "Deck settings",
+    rename: "Rename deck {{name}}",
+    statusHelp: "{{status}} · Deck persistence help",
     status: {
       saved: "Saved",
       unsaved: "Unsaved changes",
@@ -305,7 +306,7 @@ export const en = {
     chooseSpell: "Choose a spell…",
     oneCard: "Single card only",
     oneCardAria: "Single card only for {{name}}",
-    showAria: "Show {{name}} in details",
+    showAria: "Show {{name}} in Preview",
     reorderAria: "Reorder {{name}}",
     dragInstructions:
       "Press Space or Enter to pick up or drop this entry. Use the Up and Down arrow keys to move it, or press Escape to cancel.",
@@ -517,11 +518,16 @@ export const en = {
     updateAvailable: "Update available",
   },
   details: {
-    show: "Show details",
+    actions: "Spell actions",
+    unavailable:
+      "This spell is unavailable in the current language. Select another spell to preview its card.",
+    show: "Read full spell",
     edit: "Edit",
+    editNotes: "Edit component notes",
+    openPreview: "Open Preview",
     close: "Close",
-    title: "Spell preview and details",
-    empty: "Select a spell to preview its card and details.",
+    title: "Spell preview",
+    empty: "Select a spell to preview its card.",
     previewScale: "Preview scale",
     previewPhysical: "Physical (100%)",
     previewFit: "Fit width (up to 200%)",
@@ -778,9 +784,10 @@ export const en = {
       legendSchools: "Schools",
       legendClasses: "Classes",
     },
+    appearance: "Card appearance",
     background: {
       label: "Card background",
-      hint: "Applies to preview and print.",
+      hint: "Appearance applies to card previews and card printing. Design and bundled backgrounds last for this session. The app saves your personal background selection on this device.",
       none: "None",
       previous: "Previous background",
       next: "Next background",
@@ -807,6 +814,7 @@ export const en = {
     title: {
       new: "New custom spell",
       edit: "Edit custom spell",
+      notes: "Edit component notes",
       copy: "Create editable copy",
     },
     description: "Custom spells are stored locally and never modify bundled SRD data.",

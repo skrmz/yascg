@@ -1,3 +1,4 @@
+import { openCardAppearance } from "./workspace-controls";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 // The fitter accepts up to 1px of rounding error between scrollHeight and
@@ -15,7 +16,7 @@ type Locale = {
 const germanUi: Locale = {
   searchLabel: "Zauber suchen",
   libraryName: "Zauberbibliothek",
-  detailsName: "Zaubervorschau und Details",
+  detailsName: "Zaubervorschau",
 };
 
 async function addSpellToDeck(
@@ -32,7 +33,7 @@ async function addSpellToDeck(
     .first()
     .click();
   await page
-    .getByRole("region", { name: locale.detailsName ?? "Spell preview and details" })
+    .getByRole("region", { name: locale.detailsName ?? "Spell preview" })
     .getByRole("button", { name: add })
     .first()
     .click();
@@ -106,6 +107,7 @@ test("switches between Classic and Compact in preview and print", async ({ page 
   await page.goto("/");
   await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");
 
+  await openCardAppearance(page);
   const design = page.getByLabel("Card design");
   const preview = page.locator(".card-preview-page");
   await expect(design).toHaveValue("compact");
@@ -139,6 +141,7 @@ test("selects and resets a card background for the preview", async ({ page }) =>
   await page.goto("/");
   await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");
 
+  await openCardAppearance(page);
   const background = page.getByLabel("Card background");
   const preview = page.locator(".card-preview-page").first();
   const backgroundValue = await background.locator("option").nth(1).getAttribute("value");
@@ -159,7 +162,7 @@ test("selects and resets a card background for the preview", async ({ page }) =>
   );
 
   await page.reload();
-  await page.getByRole("button", { name: "Show Fireball in details" }).click();
+  await page.getByRole("button", { name: "Show Fireball in Preview" }).click();
   await expect(page.locator(".card-preview-page").first()).toBeVisible();
 
   await expect(page.getByLabel("Card background")).toHaveValue("none");
@@ -176,6 +179,7 @@ test("cycles card backgrounds with the previous and next buttons", async ({ page
   await page.goto("/");
   await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");
 
+  await openCardAppearance(page);
   const background = page.getByLabel("Card background");
   const next = page.getByRole("button", { name: "Next background" });
   const previous = page.getByRole("button", { name: "Previous background" });
@@ -212,6 +216,7 @@ test("cycles card backgrounds with the previous and next buttons", async ({ page
 test("defaults to Compact after a reload", async ({ page }) => {
   await page.goto("/");
   await addSpellToDeck(page, "Fireball", /^Fireball Level 3/, "Add");
+  await openCardAppearance(page);
   await page.getByLabel("Card design").selectOption("classic");
   await expect(page.locator(".card-preview-page.spell-card")).toHaveCount(1);
 
@@ -225,6 +230,7 @@ test("defaults to Compact after a reload", async ({ page }) => {
 test("Compact keeps the duration note visible and linked", async ({ page }) => {
   await page.goto("/");
   await addSpellToDeck(page, "Glyph of Warding", /^Glyph of Warding Level 3/, "Add");
+  await openCardAppearance(page);
   await page.getByLabel("Card design").selectOption("compact");
 
   const card = page.locator(".card-preview-page.spell-card-compact").first();
@@ -253,6 +259,7 @@ test("Compact paginates a long German spell without clipping content", async ({ 
   await page.goto("/");
   await selectGermanSpellData(page);
   await addSpellToDeck(page, "Wunsch", /^Wunsch/, "Hinzufügen", germanUi);
+  await openCardAppearance(page);
   await page.getByLabel("Kartendesign").selectOption("compact");
 
   const cards = page.locator(".card-preview-page.spell-card-compact");

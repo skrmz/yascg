@@ -11,7 +11,7 @@ export const de = {
     metaDescription: "Offline-fähiger Zauberkarten-Generator für Dungeons & Dragons 5.5e (2024).",
     tabs: {
       library: "Bibliothek",
-      details: "Details",
+      details: "Vorschau",
       deck: "Deck",
     },
     notice: {
@@ -191,6 +191,7 @@ export const de = {
     matchCount_one: "{{count}} passender Zauber",
     matchCount_other: "{{count}} passende Zauber",
     addToDeckAria: "{{name}} zum aktiven Deck hinzufügen",
+    inDeck: "Bereits im aktiven Deck",
     replaceTitle: "Das aktive Deck ersetzen?",
     replaceDescription:
       "Dadurch werden die Einträge des aktiven Decks entfernt und durch den {{count}} passenden Zauber ersetzt. Gespeicherte Decks werden nicht geändert.",
@@ -200,6 +201,7 @@ export const de = {
       "Dadurch werden die Einträge des aktiven Decks entfernt und durch die {{count}} passenden Zauber ersetzt. Gespeicherte Decks werden nicht geändert.",
     replaceConfirm: "Deck ersetzen",
     toast: {
+      addedSpell: "{{name}} zum aktiven Deck hinzugefügt.",
       alreadyTitle: "Bereits im Deck",
       alreadyDescription: "{{name}} ist bereits im aktiven Deck.",
       noAddedTitle: "Keine Zauber hinzugefügt",
@@ -218,9 +220,8 @@ export const de = {
     title: "Aktives Deck",
     presentation: {
       label: "Ansicht des aktiven Decks",
-      cards: "Zauberkarten",
+      list: "Liste",
       table: "Tabelle",
-      manage: "Deck verwalten",
     },
     nameLabel: "Name des aktiven Decks",
     namePlaceholder: "Unbenanntes Deck",
@@ -231,7 +232,6 @@ export const de = {
     newDeck: "Neues Deck beginnen",
     importExport: "Deck importieren/exportieren",
     print: "Karten drucken",
-    printCompact: "Drucken",
     entries: "{{count}} Eintrag",
     entries_one: "{{count}} Eintrag",
     entries_other: "{{count}} Einträge",
@@ -248,7 +248,8 @@ export const de = {
     heading: "Zauber im Deck",
     empty: "Das aktive Deck ist leer. Füge Zauber aus der Bibliothek hinzu.",
     statusLabel: "Deck-Status",
-    settings: "Deck-Einstellungen",
+    rename: "Deck {{name}} umbenennen",
+    statusHelp: "{{status}} · Hilfe zum Speichern",
     status: {
       saved: "Gespeichert",
       unsaved: "Nicht gespeicherte Änderungen",
@@ -308,7 +309,7 @@ export const de = {
     chooseSpell: "Zauber auswählen…",
     oneCard: "Nur eine Karte",
     oneCardAria: "Nur eine Karte für {{name}}",
-    showAria: "{{name}} in den Details anzeigen",
+    showAria: "{{name}} in der Vorschau anzeigen",
     reorderAria: "{{name}} neu anordnen",
     dragInstructions:
       "Drücke die Leertaste oder Eingabetaste, um den Eintrag aufzunehmen oder abzulegen. Verschiebe ihn mit den Pfeiltasten nach oben oder unten. Drücke Escape, um abzubrechen.",
@@ -526,11 +527,16 @@ export const de = {
     updateAvailable: "Update verfügbar",
   },
   details: {
-    show: "Details anzeigen",
+    actions: "Zauberaktionen",
+    unavailable:
+      "Dieser Zauber ist in der aktuellen Sprache nicht verfügbar. Wähle einen anderen Zauber für die Kartenvorschau.",
+    show: "Vollständigen Zauber lesen",
     edit: "Bearbeiten",
+    editNotes: "Komponentennotizen bearbeiten",
+    openPreview: "Vorschau öffnen",
     close: "Schließen",
-    title: "Zaubervorschau und Details",
-    empty: "Wähle einen Zauber aus, um seine Karte und Details anzuzeigen.",
+    title: "Zaubervorschau",
+    empty: "Wähle einen Zauber aus, um seine Karte anzuzeigen.",
     previewScale: "Vorschaumaßstab",
     previewPhysical: "Originalgröße (100%)",
     previewFit: "Breite ausfüllen (bis 200%)",
@@ -793,9 +799,10 @@ export const de = {
       legendSchools: "Schulen",
       legendClasses: "Klassen",
     },
+    appearance: "Kartengestaltung",
     background: {
       label: "Kartenhintergrund",
-      hint: "Gilt für Vorschau und Druck.",
+      hint: "Die Gestaltung gilt für Kartenvorschau und Kartendruck. Design und mitgelieferte Hintergründe gelten für diese Sitzung. Die App speichert die Auswahl eines eigenen Hintergrunds auf diesem Gerät.",
       none: "Kein Hintergrund",
       previous: "Vorheriger Hintergrund",
       next: "Nächster Hintergrund",
@@ -824,6 +831,7 @@ export const de = {
     title: {
       new: "Neuer eigener Zauber",
       edit: "Eigenen Zauber bearbeiten",
+      notes: "Komponentennotizen bearbeiten",
       copy: "Bearbeitbare Kopie erstellen",
     },
     description:

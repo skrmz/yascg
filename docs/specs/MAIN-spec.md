@@ -274,15 +274,22 @@ invoke reference repair. `reference.name` is a historical display fallback, not 
 
 ## 5. Workspace and Library
 
-Three responsive panes: **Library** (search/filter/list), **Preview & Details** (selected
+Three responsive panes: **Library** (search/filter/list), **Preview** (selected
 spell/card), and **Active Deck** (ordered unique entries, fit mode, save/load/print). Layout
-uses measured workspace container width: **Compact below 720px** shows Library / Details / Deck
-tabs; **Split at 720–1199px** keeps Library visible beside a Details / Deck tab switcher;
-**Wide at ≥1200px** shows all three panes without tabs. Split columns are
+uses measured workspace container width: **Compact below 720px** shows Library / Preview / Deck
+tabs; **Split at 720–1199px** keeps Library visible beside a Preview / Deck tab switcher;
+**Wide at ≥1200px** uses Library, Preview, and ordered Deck in List without tabs.
+Wide Table spans the Preview and Deck columns beside Library. Split columns are
 `clamp(320px, 36%, 420px) minmax(400px, 1fr)`; Wide columns are
 `clamp(320px, 24%, 400px) minmax(560px, 1fr) clamp(300px, calc(50% - 300px), 640px)`.
-Selecting a Library spell or resolved Deck row reveals Details, including reselection of the
-current spell. All panes stay mounted across modes; search, filters, list scroll, selection,
+Activating a Library spell name or resolved Deck List row explicitly reveals Preview, including
+reselection of the current spell. During active Table, Library spell names instead open full
+rules without changing the selected spell or leaving Table. Successful individual Library Add
+selects the added spell without changing destination, presentation, or focus. A newer explicit
+selection takes precedence over a delayed Add completion. Duplicate and failed additions keep
+selection unchanged. Successful additions announce the spell name. Append all and confirmed
+replacement do not navigate. Successful Library custom creation explicitly reveals Preview.
+All panes stay mounted across modes; search, filters, list scroll, selection,
 deck, right-pane choice, and unsubmitted deck-name edits survive resizing. Hidden panes are
 excluded from keyboard navigation. The Library is list-first in Compact/Split: search and a **Filters**
 trigger share one row, filters open in a bottom sheet with removable active-filter chips,
@@ -296,11 +303,10 @@ Primary workflow controls have 44×44px effective targets in Compact/Split and o
 with a coarse primary pointer; fine-pointer Wide retains its existing density.
 At short viewport heights (including browser zoom), the Deck uses a single whole-pane scroll
 region so pinned controls cannot squeeze its entries out of reach. The page remains fixed.
-In Compact mode, deck settings start collapsed. The deck name, entry count, status,
-persistence help, and Save/Print/Open actions stay visible; a **Deck settings** disclosure
-reveals name editing, card design, card background, and legend. Split/Wide always show these
-settings. Expanding
-or collapsing settings preserves their values, and validation/action errors remain visible.
+The shared Deck header shows the name, count, status, List/Table switch, Save, Open, and
+**Print cards**. Select the name for guarded inline rename. Select the status for persistence
+help. Both disclosures start closed and keep their state when switching views. Validation
+and action errors stay visible. Save As, New deck, transfer, and Clear entries are in Deck actions.
 Deck entry names wrap without truncation. Narrow deck entries use two aligned rows with the
 name above and the **Single card only** checkbox and actions below. When the entry list's
 content width reaches 36rem, each entry uses one row with the checkbox and actions aligned
@@ -321,16 +327,19 @@ drag near either vertical edge scrolls the entry list, or the whole Deck pane at
 viewport heights, so newly revealed entries are available as drop targets. Edge scrolling
 stops when the pointer leaves the edge zone or the drag ends.
 
-**Preview & Details pane:** the default pane shows the rendered physical card preview(s) for
+**Preview pane:** the default pane shows the rendered physical card preview(s) for
 the selected spell, arranged in wrapping rows while preserving 2.5in × 3.5in dimensions. Fit
 status notices remain visible above the preview. The preview group is horizontally centered.
 A localized **Preview scale** selector defaults to **Physical (100%)** and offers **Fit width**
 up to 200%. Screen transforms and visual wrapper bounds never change physical card geometry,
 fit inputs/results, pagination, the details dialog, or printed output. Full spell metadata and the complete canonical
 description are available on demand in a responsive, scrollable details dialog, opened from the
-persistent localized **Show details** header control. No single click on the card body opens
-details or menus, the preview exposes no duplicate actions menu or context menu, and all
-interaction affordances are excluded from print. The dialog reads the
+persistent localized **Read full spell** header control. Add and Read full spell remain direct.
+**Spell actions** groups eligible edit, copy, duplicate, and delete actions. Card-body clicks
+remain passive. Card count and scale share a control row when space permits.
+**Card appearance** is a disclosure below the cards, including when no card can be shown.
+**Print cards** and Deck actions can reveal and focus that same disclosure.
+Interaction controls are excluded from print. The reader uses the
 resolved selected spell, never card DOM or fit output, and closes immediately if the selected
 spell changes.
 
@@ -410,6 +419,9 @@ introduce a second vertical scroll container or page-level horizontal overflow.
   of active-deck contents, search/filter results, and the selected spell. Saving adds the spell
   to `db.customSpells` and refreshes the library/search index; it never adds the spell to the
   active deck, which changes only through an explicit add action.
+- **Restricted SRD editing:** Preview names the action and editor **Edit component notes**.
+  Custom spells retain their custom-edit label and editor title. This distinction does not
+  broaden SRD editing permissions or editable-copy eligibility.
 - New spells use `crypto.randomUUID()` and `updatedAt = Date.now()`; edits update the timestamp;
   duplication creates a new UUID.
 - Defaults: level 0, school Evocation, casting time `1 Action`, range `Self`, duration
@@ -418,7 +430,7 @@ introduce a second vertical scroll container or page-level horizontal overflow.
 - Validate before saving. Report errors inline. A failed IndexedDB write must not appear
   successful. A custom spell edit or overwrite retains its ID, and cards resolve the current
   spell body by that ID; saved snapshots are not rewritten.
-- **Editable copies of SRD spells:** the Details pane offers **Create editable copy** for an SRD
+- **Editable copies of SRD spells:** the Preview pane offers **Create editable copy** for an SRD
   spell present in the active deck. Clicking it creates an in-memory custom draft with a new
   UUID and opens the custom-spell editor; nothing is persisted until **Save spell** succeeds.
   - The draft is a schema-aware deep copy of the resolved source spell. Identity fields
@@ -659,10 +671,18 @@ migration keep the token absent and block Save until the user uses Open or Save 
 
 ### Active deck table
 
-- **Spell Cards** and **Table** share the active deck. Table uses the main workspace in Wide
-  mode. Compact and Split keep the existing tabs and expose Table and **Manage deck** under
-  **Deck**. **Spell Cards** restores the existing preview. Small table containers use accessible
-  compact rows by default and offer a scrollable **Full table**.
+- **List** and **Table** represent the same active deck. List contains the ordered entries
+  with reordering, fit, repair, removal, and explicit Preview access. Table uses both right
+  columns in Wide and the single right column in Split. Compact shows one Deck tab.
+  Only the active body is visible. Both bodies stay mounted below one shared controller and
+  header. Save, Open, card printing,
+  rename state, status, and guarded deck actions remain available in either presentation.
+  Switching changes neither entries, stored order, fit modes, revision, nor saved association.
+  An active List drag is cancelled before the List hides. Hidden bodies cannot receive focus.
+  The existing presentation key reads legacy `cards` as List and preserves `table`.
+  Small table containers use accessible compact rows by default. **Table view & print**
+  groups the scrollable **Full table** choice, column settings, and **Print table**.
+  Column settings apply to Full table and table printing. Compact rows keep their fields.
 - The default columns are Select, Spell name, Level, Components, Casting time, Range,
   Duration, Concentration, and Actions. Select, Spell name, and Actions remain visible. The
   table also supports School, Classes, Ritual, Description, and Source. Details expose full
@@ -675,17 +695,29 @@ migration keep the token absent and block Save until the user uses Open or Save 
   and Classes allow multiple choices, Concentration and Ritual offer Any/Yes/No, and Casting
   time uses normalized values from the active deck. Filter groups combine with AND and
   choices within each multi-select combine with OR. Applicable filters expose unavailable
-  data. Matching and total counts update live alongside localized labels.
-- Default order follows the active deck, including changes made in the Deck pane. Sort
-  using the full table's column headers. Sorting is stable and uses deck position to break
-  ties. **Use deck order** clears sorting and retains the current filters. **Apply table
-  sort to deck** explicitly reorders every matching entry across all pages in a single
+  data. The Filters disclosure shows the active filter count. Matching, total, and
+  selected counts, off-filter selections, and the current sort stay visible.
+- Table rows and adjacent Library candidates open full rules without changing global selection.
+  Dismissal restores the source trigger, or a visible search fallback if that trigger disappeared.
+  **Open Preview** closes the reader, selects the inspected spell, chooses List, and focuses
+  Preview. It is offered only when the selected-language spell body supports a card preview.
+  Returning to Table retains filters, sort, columns, selection, page, and applicable scroll.
+  Reader content resolves live by ID. Deletion, a hidden source context, or collection replacement
+  closes incidental inspection. Language changes refresh the resolved text and preserve custom
+  authored content. Missing and untranslated references keep their existing inspection paths.
+- Default order follows the active deck, including changes made in List. Use **Sort by**
+  and **Sort direction** in either layout or the column headers in Full table. All sortable
+  columns are available, including hidden columns. Description is excluded. Sorting is stable
+  and uses deck position to break ties. Choose **Use deck order** to clear sorting and retain
+  filters. This changes display order only. Under **Filters**, **Apply table sort to deck**
+  explicitly reorders every matching entry across all pages in a single
   active-deck write. Entries outside the filter keep their positions. Saved snapshots retain
   their order until the user saves. Filtered and sorted rows are paginated at 10 entries by
   default. Filters, sort and page-size changes return to page one.
 - Selection uses stable entry IDs and spans pages and filters. Select all affects every
-  matching row and exposes its mixed state. **Reset filters and sort** restores deck order
-  and leaves selection intact. **Clear selection** clears the entire selection. A replacement
+  matching row and exposes its mixed state. Under **Filters**, **Reset filters and sort** restores
+  deck order and leaves selection intact. When there is a selection, **Clear selection** and
+  **Remove selected** appear beside its count. A replacement
   deck clears selection, and ordinary edits retain valid selected IDs.
 - **Remove selected** confirms the full selected set and discloses entries outside the
   current filters or page. It validates the revision and identities against the live deck
@@ -817,11 +849,10 @@ These rules are scoped to `.spell-card`; application-shell typography is unchang
 typography must never override the application `--font-sans`, `--font-display`, or
 `--font-mono` tokens.
 
-**Card designs:** Classic is the unchanged original layout and the default for every session and
-for any absent or invalid selection. Compact is an additive selectable layout. The **Card
-design** selector sits in the Active Deck pane after `#deck-controls` and before the deck entries,
-offers exactly Classic and Compact in the active UI language, is not persisted, and resets to
-Classic on reload. A Legend button stays available for both designs and opens a localized
+**Card designs:** Compact is the default for each session and for any absent or invalid
+selection. The **Card design** selector in Preview's **Card appearance** disclosure offers
+Classic and Compact in the active UI language. The choice resets to Compact on reload.
+A Legend button stays available for both designs and opens a localized
 glossary describing Compact icons/abbreviations and abbreviations introduced by **Abbreviate** or by
 an applied short description in either design. Neither the selector, its
 hint, the Legend trigger, the Legend dialog, nor any tooltip is printed. The selected design is
@@ -830,8 +861,8 @@ pagination, and print output; switching designs re-measures without changing sto
 data. Preview scale is a screen-only view setting as specified in §5; it is excluded from fit
 cache inputs and print rendering.
 
-**Card backgrounds:** The Active Deck selector offers **None**, bundled JPEGs discovered at build
-time, and a distinct group of personal images. **Use own** imports JPEG, PNG, or WebP locally and
+**Card backgrounds:** The selector in **Card appearance** offers **None**, bundled JPEGs
+discovered at build time, and a distinct group of personal images. **Use own** imports JPEG, PNG, or WebP locally and
 allows removal of personal images. Both image pipelines apply EXIF orientation, center-crop to
 exactly 5:7 without stretching or upscaling, and flatten transparency onto the paper color in
 sRGB. They accept sources up to 25 MiB and 40 megapixels and require at least 150 × 210 pixels
@@ -878,7 +909,7 @@ never rewrite stored spell text.
   `Somatic`/`Gestisch` accessible labels.
 - **Footer:** source and `Card X of N` for continuations.
 - Components use V/S/M indicators; absent components display `—`. Material details may use one
-  line with ellipsis on the first card; full details remain available in the Show details dialog.
+  line with ellipsis on the first card; full details remain available through Read full spell.
 - Fixed fields (school, range, duration and other header/metadata strings) never disappear:
   truncate with visible ellipsis if they cannot fit. The spell name wraps within the header
   instead of truncating; measurement includes the resulting header height. Full untruncated
@@ -1133,8 +1164,8 @@ duplicate these outcomes as a second invariants list.
 | D17 | Decks           | Two tabs mutate the same active revision or custom-spell revision                                   | Exactly one succeeds; the other receives a conflict with no silent overwrite; stale custom-spell revisions abort                                                                                               | §7, §11     |
 | D18 | Decks           | Two tabs save the same associated snapshot                                                          | Both expected revisions are checked; exactly one succeeds; the other receives Save As/Open conflict                                                                                                            | §7          |
 | D19 | Decks           | IndexedDB quota or transaction failure                                                              | No success message and no partial linked operation                                                                                                                                                             | §7, §11     |
-| T1 | Deck table | Switch views, restore preferences, resize and use mobile Deck navigation | Table state survives view changes, rows stay readable, and deck content/order stays intact. Fresh reload clears selection. | §7 |
-| T2 | Deck table | Filter, sort, page and select across live edits and language changes | Results, columns, sort metadata and counts update together. Stable selection excludes removed entries and clears on replacement. | §7 |
+| T1 | Deck table | Switch List/Table, read legacy preferences, resize and use mobile Deck navigation | Both views expose shared guarded deck actions. Mounted bodies retain state, entries and stored order. No Manage deck destination remains. Fresh reload clears selection. | §7 |
+| T2 | Deck table | Filter, sort, page and select across live edits, language changes and incidental inspection | Compact sorting and full-table header sorting share one preference. Results, columns, sort metadata and counts update together. Stable selection excludes removed entries and clears on replacement. Table-row and Library readers preserve global selection and Table state. Explicit Open Preview selects the candidate, chooses List and focuses Preview. | §5, §7 |
 | T3 | Deck table | Remove a selection spanning pages and filters during concurrent edits | Confirmation describes exact scope and refreshes if stale. One write removes the confirmed IDs and preserves remaining order and saved snapshots. | §7 |
 | T4 | Table print | Preview Letter and A4, orientations, multiple pages, long values and infeasible layouts | Output includes all matching rows and enabled data columns, repeats headings, wraps full values and prevents output that would clip or fall below 6 pt. Card printing stays in deck order. | §10 |
 | I1  | Import/export   | Valid custom-spell payload                                                                          | Strict validation; collision/remap/override review applied; atomic commit                                                                                                                                      | §8.1        |
@@ -1158,13 +1189,13 @@ duplicate these outcomes as a second invariants list.
 | P8  | Cards/print     | Cross-browser verification                                                                          | Chromium geometry verified; Chrome/Firefox/Safari remain the target for current and future validation                                                                                                          | §10         |
 | P9  | Cards/print     | Offline card preview and print                                                                      | Self-hosted UI and card fonts load from precache; typography and measurement work without network                                                                                                               | §9, §11     |
 | P10 | Cards/print     | Compact abbreviated casting-time parsing                                                            | `A`, `BA`/`B`, `R`, and localized `MIN`/`HR`/`min`/`Std.` values parse to the same base, glyph, accessible label, qualifier, caret, notes, fit, and print behavior as full text; stored text is never transformed at render | §9          |
-| U1  | Details UI      | Preview-only default pane                                                                           | No duplicated metadata/description pane by default; details open from the header control; no duplicate preview menu or context menu; dialog closes on spell change; print unchanged                                                        | §5          |
-| U2  | Workspace       | Compact / Split / Wide and container boundaries | Modes follow measured container width, including viewport mismatch; 720px starts Split and 1200px starts Wide; pane minima hold; one relevant tab list; selection reveals Details; state and focus survive resizing without page scrolling | §5 |
+| U1 | Preview UI | Preview-only default pane and explicit full-rules reading | Preview and Read full spell have distinct accessible names. Spell actions contains eligible editing actions. A single Card appearance disclosure stays available with or without a selected card. Preview reader closes on selected-spell change. Card-body clicks remain passive and print stays unchanged. | §5 |
+| U2 | Workspace | Compact / Split / Wide and container boundaries | Modes follow measured container width, including viewport mismatch. 720px starts Split and 1200px starts Wide. Pane minima and one relevant tab list hold. Explicit inspection and same-spell reselection reveal Preview outside active Table. Incidental selection never navigates. Wide Table uses both right columns and hides List and Preview. Assembly returns on List. State and focus survive resizing without page scrolling. | §5 |
 | U3  | Preview         | Physical / Fit width and continuation rows | Physical is the default; centered visual bounds scale up to 200%; rows wrap without overlap; physical dimensions, fit result, card count, text and print remain unchanged | §5, §9 |
 | U4  | Library filters | Progressive disclosure and live results | Level/Class/Source initially visible; Advanced opens for active advanced filters; sticky polite match count updates immediately; Reset clears query and filters; All/SRD/Custom expose pressed state; specific-source reselection is stable | §5 |
-| U5  | Accessibility   | Selected spell, filter summaries, recovery and targets | Current row has aria-current and a leading cue; two-line names retain accessible full names; multi-select names include values; empty reset restores focus; 44px touch targets in Compact/Split and coarse-pointer Wide | §5 |
-| U6  | Deck UI         | Save vocabulary, Legend and fit help | Unassociated primary action says Save as…; associated says Save; Start new deck differs from empty status; Legend explains both designs and covers abbreviations applied by Abbreviate or by an applied short description; touch/keyboard users can open fit explanations and each selector has an accessible description | §7, §9 |
-| U7  | Deck UI         | Grip activation, cancellation, and scrolling | Mouse, pen, touch, and keyboard reorder from the grip; row-body swipes scroll; edge scrolling reveals drop targets in both Deck layouts; focus returns after keyboard drop or cancellation; only a valid changed drop writes and survives reload; Move up and Move down remain accessible | §5, §7 |
+| U5 | Accessibility | Selected spell, five individual Library additions, filter summaries, recovery and targets | Five successful additions retain workspace, presentation, focus, search, filters and scroll, with named feedback. Failed/duplicate additions preserve selection. Delayed Add cannot replace newer explicit selection. Current row exposes aria-current. Full names, filter summaries, empty-search focus recovery and 44px touch targets remain available. | §5 |
+| U6 | Deck UI | Shared actions, Save vocabulary, Legend and fit help | List and Table use the same controller, status and guarded Save/Open/card-print actions. Invalid or stale rename recovery remains available. Unassociated primary action says Save as… and associated says Save. Start new deck, Legend, fit explanations and accessible selector descriptions retain their behavior. | §7, §9 |
+| U7 | Deck UI | Grip activation, cancellation, scrolling and presentation changes | Mouse, pen, touch and keyboard reorder from the grip. Row swipes and edge scrolling remain available. Focus returns after keyboard drop/cancellation. Hiding List cancels dragging and prevents hidden commits. Only a valid changed drop writes. Move up and Move down remain accessible. | §5, §7 |
 | H1  | Hosting         | Static production build                                                                             | Static assets plus SPA fallback deploy to Workers; no API/backend/secrets; PWA and client routes intact                                                                                                        | §3, §11     |
 | O1  | Offline/quality | First-load precache and retry                                                                       | Accurate **Setting up offline access**, **Offline ready**, or **Offline setup incomplete** with retry states; status is icon-only with hover/focus/tap text, hidden when ready, and still announced to assistive technology; no premature readiness claim; runtime asset errors show an actionable retry/fallback | §11         |
 | O2  | Offline/quality | Offline language switch after readiness                                                             | No runtime network request; only manifest-listed assets are selectable                                                                                                                                         | §11         |

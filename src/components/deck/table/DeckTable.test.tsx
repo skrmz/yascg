@@ -7,6 +7,7 @@ import i18n from "@/i18n.ts";
 import type { ResolvedDeckEntry } from "@/state/AppProvider.tsx";
 import { makeSpell } from "@/test/fixtures/spells.ts";
 import { DeckTable } from "./DeckTable.tsx";
+import { ShowDetailsContext } from "../../workspace-layout.ts";
 
 vi.mock("@/state/AppProvider.tsx", () => ({ useApp: () => appState }));
 vi.mock("@/components/print/TablePrintDialog.tsx", () => ({ TablePrintDialog: () => null }));
@@ -37,6 +38,7 @@ function workspace(revision: number, indexes: number[]) {
     language: "en",
     dataLoading: false,
     collectionError: null,
+    collectionGeneration: "initial",
   };
 }
 
@@ -108,20 +110,29 @@ describe("DeckTable", () => {
     rerender(show(true));
     expect(screen.getByRole("searchbox")).toHaveValue("  sPeLL   12  ");
     expect(table().getByRole("checkbox", { name: "Select Spell 12" })).not.toBeChecked();
+    await user.click(screen.getByText("Filters", { exact: true }));
     await user.click(screen.getByRole("button", { name: "Reset filters and sort" }));
     expect(table().getByRole("checkbox", { name: "Select Spell 01" })).toBeChecked();
     await user.selectOptions(screen.getByRole("combobox", { name: "Rows per page" }), "25");
     expect(table().getAllByRole("rowheader")).toHaveLength(12);
-    await user.click(table().getByRole("button", { name: "Spell name" }));
-    await user.click(table().getByRole("button", { name: "Spell name" }));
+    const sortField = screen.getByRole("combobox", { name: "Sort by" });
+    expect(within(sortField).getByRole("option", { name: "School" })).toBeVisible();
+    expect(within(sortField).queryByRole("option", { name: "Description" })).toBeNull();
+    await user.selectOptions(sortField, "name");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Sort direction" }),
+      "descending",
+    );
     expect(table().getByRole("columnheader", { name: "Spell name" })).toHaveAttribute(
       "aria-sort",
       "descending",
     );
     expect(table().getAllByRole("rowheader")[0]).toHaveTextContent("Spell 12");
+    await user.click(table().getByRole("button", { name: "Spell name" }));
+    expect(sortField).toHaveValue("");
 
     rerender(show(true, "replaced"));
-    expect(screen.getByRole("button", { name: "Remove selected" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Remove selected" })).toBeNull();
     expect(table().getByRole("checkbox", { name: "Select Spell 01" })).not.toBeChecked();
     expect(removeEntries).not.toHaveBeenCalled();
   }, 10_000);
@@ -159,13 +170,13 @@ describe("DeckTable", () => {
     await user.click(confirm);
     expect(removeEntries).toHaveBeenCalledTimes(2);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(screen.getByRole("button", { name: "Remove selected" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Remove selected" })).toBeNull();
   });
 
   it("opens full spell details by keyboard and restores focus to the same row", async () => {
     const user = userEvent.setup();
     render(<DeckTable active deckInstance="first" removeEntries={async () => "ok"} />);
-    const trigger = table().getByRole("button", { name: "Open details for Spell 01" });
+    const trigger = table().getByRole("button", { name: "Read full spell for Spell 01" });
     trigger.focus();
     await user.keyboard("{Enter}");
     const dialog = await screen.findByRole("dialog", { name: "Spell 01" });
@@ -173,4 +184,85 @@ describe("DeckTable", () => {
     await user.keyboard("{Escape}");
     await waitFor(() => expect(trigger).toHaveFocus());
   });
+
+  it("opens Preview only on explicit request with the inspected identity", async () => {
+    const user = userEvent.setup();
+    const showDetails = vi.fn();
+    render(
+      <ShowDetailsContext.Provider value={showDetails}>
+        <DeckTable active deckInstance="first" removeEntries={async () => "ok"} />
+      </ShowDetailsContext.Provider>,
+    );
+    await user.click(table().getByRole("checkbox", { name: "Select Spell 01" }));
+    await user.click(table().getByRole("button", { name: "Read full spell for Spell 02" }));
+    expect(showDetails).not.toHaveBeenCalled();
+    await user.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Open Preview" }),
+    );
+    expect(showDetails).toHaveBeenCalledExactlyOnceWith({
+      spellId: "srd-spell-2",
+      source: "table",
+    });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(table().getByRole("checkbox", { name: "Select Spell 01" })).toBeChecked();
+  });
+
+  it("resolves live text when the inspected row changes language", async () => {
+    const user = userEvent.setup();
+    const show = () => <DeckTable active deckInstance="first" removeEntries={async () => "ok"} />;
+    const { rerender } = render(show());
+    await user.click(table().getByRole("button", { name: "Read full spell for Spell 01" }));
+    appState = workspace(2, indexes);
+    appState.language = "de";
+    appState.resolvedEntries[0].resolution = {
+      status: "resolved",
+      spell: makeSpell({
+        id: "srd-spell-1",
+        name: "Zauber Eins",
+        description: ["Aktueller Zaubertext."],
+      }),
+    };
+    rerender(show());
+    const dialog = screen.getByRole("dialog", { name: "Zauber Eins" });
+    expect(dialog).toHaveTextContent("Aktueller Zaubertext.");
+    expect(dialog).not.toHaveTextContent("A test spell.");
+  });
+
+  it.each(["hidden", "generation", "deleted"])(
+    "closes inspection after the source becomes %s and does not reopen it on return",
+    async (change) => {
+      const user = userEvent.setup();
+      const show = (active = true) => (
+        <DeckTable active={active} deckInstance="first" removeEntries={async () => "ok"} />
+      );
+      const { rerender } = render(show());
+      await user.click(table().getByRole("button", { name: "Read full spell for Spell 01" }));
+      expect(screen.getByRole("dialog")).toBeVisible();
+      if (change === "generation") appState = { ...appState, collectionGeneration: "replacement" };
+      if (change === "deleted") appState = workspace(2, indexes.slice(1));
+      rerender(show(change !== "hidden"));
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+      appState = workspace(3, indexes);
+      rerender(show());
+      expect(screen.queryByRole("dialog")).toBeNull();
+    },
+  );
+
+  it.each(["translation-unavailable", "missing"] as const)(
+    "retains %s inspection without offering an unavailable Preview",
+    async (status) => {
+      const user = userEvent.setup();
+      const fallback = makeSpell({ id: "srd-spell-1", name: "Spell 01" });
+      appState.resolvedEntries[0].resolution = { status, referenceName: "Spell 01" };
+      if (status === "translation-unavailable") appState.englishById.set(fallback.id, fallback);
+      render(<DeckTable active deckInstance="first" removeEntries={async () => "ok"} />);
+      await user.click(table().getByRole("button", { name: "Read full spell for Spell 01" }));
+      const dialog = screen.getByRole("dialog", { name: "Spell 01" });
+      expect(within(dialog).queryByRole("button", { name: "Open Preview" })).toBeNull();
+      if (status === "translation-unavailable") expect(dialog).toHaveTextContent("A test spell.");
+      else expect(dialog).toHaveTextContent("srd-spell-1");
+      await user.keyboard("{Escape}");
+      expect(screen.queryByRole("dialog")).toBeNull();
+    },
+  );
 });

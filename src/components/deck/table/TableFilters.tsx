@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { CORE_CLASSES, SPELL_SCHOOLS, type SpellSchool } from "@/domain/spells.ts";
 import { classKey, schoolKey } from "@/locales/labels.ts";
@@ -63,12 +64,14 @@ export function TableFilters({
   hasUnknown,
   classes,
   onPatch,
+  children,
 }: {
   filters: Filters;
   casting: CastingOption[];
   hasUnknown: boolean;
   classes: readonly string[];
   onPatch: (patch: Partial<Filters>) => void;
+  children: ReactNode;
 }) {
   const { t } = useTranslation();
   const castingValue = getCastingOption(casting, filters.castingTime)?.id ?? filters.castingTime;
@@ -149,6 +152,7 @@ export function TableFilters({
           </select>
         </label>
       </div>
+      {children}
     </details>
   );
 }

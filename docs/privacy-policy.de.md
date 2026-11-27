@@ -17,7 +17,7 @@ Diese Anwendung dient der Erstellung und Verwaltung von Zauberkarten für Dungeo
 
 Eigene Zauber, gespeicherte Decks, das aktive Deck, Anpassungen an SRD-Texten und eigene Kartenhintergründe mit ihrer gespeicherten Auswahl werden im Browser in einer lokalen IndexedDB-Datenbank gespeichert. Die Anwendung verwendet hierfür Dexie.js.
 
-Die Spracheinstellung wird im `localStorage` gespeichert. Der Browser-Cache enthält Anwendungsdateien, Schriftarten und mitgelieferte Zauberdaten für die Offline-Nutzung, jedoch keine selbst erstellten Inhalte.
+Die Sprach- und Deckansichtseinstellungen werden im `localStorage` gespeichert. Der Browser-Cache enthält Anwendungsdateien, Schriftarten und mitgelieferte Zauberdaten für die Offline-Nutzung, jedoch keine selbst erstellten Inhalte.
 
 Diese Inhalte werden nicht an den Betreiber oder Dritte übertragen. Der Betreiber kann sie weder einsehen noch wiederherstellen.
 

@@ -14,8 +14,9 @@ Technical implementation is not a claim of full GDPR compliance.
 
 | Storage | Key / database | Contents | Removed by |
 | --- | --- | --- | --- |
-| IndexedDB (Dexie) | `spell-cards-generator`, version 5 | `customSpells`, `savedDecks`, `activeDeck`, `srdSpellOverrides` | Individual deletion actions in the app, or browser settings |
+| IndexedDB (Dexie) | `spell-cards-generator` | Custom spells, saved decks, active deck, SRD overrides, personal card backgrounds and their saved selection, and local collection concurrency metadata | Individual deletion, complete backup restore, or browser settings |
 | `localStorage` | `spellCards.language` | Selected spell-data/UI language preference | Language switching, or browser settings |
+| `localStorage` | `spellCards.deckPresentation`, `spellCards.deckTable` | Active-deck presentation and table preferences, including search, filters, sorting, and columns | Changing preferences, or browser settings |
 | Cache Storage | Workbox precache | App shell, JS/CSS, local WOFF2 fonts, bundled card-background JPGs, language manifest, bundled spell datasets | Browser settings or service-worker cache eviction |
 | `BroadcastChannel` | In-memory channel | Local cross-tab notifications | Page/tab lifetime |
 

@@ -1,3 +1,4 @@
+import { openSpellAction } from "./workspace-controls";
 import { expect, test } from "@playwright/test";
 
 // Deterministic test-only sidecars. Production content is never used here.
@@ -41,8 +42,7 @@ async function addFireball(page: import("@playwright/test").Page): Promise<void>
 }
 
 async function openCopyEditor(page: import("@playwright/test").Page) {
-  const details = page.getByRole("region", { name: "Spell preview and details" });
-  await details.getByRole("button", { name: "Create editable copy" }).click();
+  await openSpellAction(page, "Create editable copy");
   return page.getByRole("dialog", { name: "Create editable copy" });
 }
 
@@ -80,8 +80,8 @@ test("applies a short description to an editable copy, undoes it, and prints the
   await confirmation.getByRole("button", { name: "Replace entry" }).click();
   await expect(page.getByText("The active deck entry now uses your custom copy.")).toBeVisible();
 
-  const details = page.getByRole("region", { name: "Spell preview and details" });
-  await details.getByRole("button", { name: "Show details" }).click();
+  const details = page.getByRole("region", { name: "Spell preview" });
+  await details.getByRole("button", { name: "Read full spell" }).click();
   const dialog = page.getByRole("dialog", { name: "Fireball" });
   await expect(dialog.getByText(new RegExp(SHORT_PHRASE))).toBeVisible();
   await page.keyboard.press("Escape");
@@ -114,7 +114,7 @@ test("keeps the original SRD spell text after applying a description to a copy",
   await page.getByLabel("Search spells").fill("Fireball");
   await page.getByRole("button", { name: /^Fireball Level 3 · Evocation SRD 5\.2\.1$/ }).click();
 
-  const details = page.getByRole("region", { name: "Spell preview and details" });
+  const details = page.getByRole("region", { name: "Spell preview" });
   await expect(details.getByText(/bright streak flashes/)).toBeVisible();
   await expect(details.getByText(new RegExp(SHORT_PHRASE))).toHaveCount(0);
 });
@@ -164,7 +164,7 @@ test("does not offer the action when a saved copy is reopened through the edit p
   await expect(page.getByText("The active deck entry now uses your custom copy.")).toBeVisible();
   await page.keyboard.press("Escape");
 
-  await page.getByRole("button", { name: "Edit" }).click();
+  await openSpellAction(page, "Edit");
   const edit = page.getByRole("dialog", { name: "Edit custom spell" });
   await expect(edit).toBeVisible();
   await expect(edit.getByRole("button", { name: "Apply short description" })).toHaveCount(0);
@@ -193,10 +193,7 @@ test("uses the German sidecar when the data language is German", async ({ page }
   await page
     .getByRole("button", { name: "Feuerball zum aktiven Deck hinzufügen", exact: true })
     .click();
-  await page
-    .getByRole("region", { name: "Zaubervorschau und Details" })
-    .getByRole("button", { name: "Bearbeitbare Kopie erstellen" })
-    .click();
+  await openSpellAction(page, "Bearbeitbare Kopie erstellen");
 
   const editor = page.getByRole("dialog", { name: "Bearbeitbare Kopie erstellen" });
   const apply = editor.getByRole("button", { name: "Kurzbeschreibung anwenden" });
@@ -214,10 +211,7 @@ test("never falls back to the English sidecar for German", async ({ page }) => {
   await page
     .getByRole("button", { name: "Feuerball zum aktiven Deck hinzufügen", exact: true })
     .click();
-  await page
-    .getByRole("region", { name: "Zaubervorschau und Details" })
-    .getByRole("button", { name: "Bearbeitbare Kopie erstellen" })
-    .click();
+  await openSpellAction(page, "Bearbeitbare Kopie erstellen");
 
   const editor = page.getByRole("dialog", { name: "Bearbeitbare Kopie erstellen" });
   const apply = editor.getByRole("button", { name: "Kurzbeschreibung anwenden" });

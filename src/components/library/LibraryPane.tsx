@@ -1,6 +1,7 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Check,
   MoreHorizontal,
   Plus,
   RotateCcw,
@@ -67,7 +68,6 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
     addSpellToDeck,
     addSpellsToDeck,
     replaceDeckWithSpells,
-    selectSpell,
     selectedSpellId,
   } = useApp();
   const { t } = useTranslation();
@@ -194,10 +194,9 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
   };
 
   const onAdd = async (spell: Spell) => {
-    const result = await addSpellToDeck(spell);
+    const result = await addSpellToDeck(spell, { selectOnSuccess: true });
     if (result === "added") {
-      selectSpell(spell.id);
-      showDetails({ preservePresentation: true });
+      toast.success(t("library.toast.addedSpell", { name: spell.name }));
     }
     if (result === "duplicate") {
       toast.info(t("library.toast.alreadyTitle"), {
@@ -435,6 +434,7 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
           ) : null}
           {results.map((spell) => {
             const contentLanguage = resolveContentLanguage(spell, language);
+            const inDeck = activeDeck?.entries.some((entry) => entry.spellId === spell.id) ?? false;
             return (
               <li key={spell.id}>
                 <div
@@ -450,10 +450,13 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
                     type="button"
                     aria-current={spell.id === selectedSpellId ? "true" : undefined}
                     className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                    onClick={() => {
-                      selectSpell(spell.id);
-                      showDetails();
-                    }}
+                    onClick={(event) =>
+                      showDetails({
+                        spellId: spell.id,
+                        trigger: event.currentTarget,
+                        source: "library",
+                      })
+                    }
                   >
                     <span className="min-w-0 flex-1">
                       <span
@@ -474,10 +477,15 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
                     size="icon"
                     className="shrink-0"
                     aria-label={t("library.addToDeckAria", { name: spell.name })}
+                    aria-description={inDeck ? t("library.inDeck") : undefined}
                     disabled={activeDeck === null}
                     onClick={() => void onAdd(spell)}
                   >
-                    <Plus size={16} aria-hidden="true" />
+                    {inDeck ? (
+                      <Check size={16} aria-hidden="true" />
+                    ) : (
+                      <Plus size={16} aria-hidden="true" />
+                    )}
                   </Button>
                 </div>
               </li>
@@ -519,7 +527,11 @@ export function LibraryPane({ active = true }: { active?: boolean }) {
         </Dialog>
       ) : null}
 
-      <CustomSpellForm open={creating} onOpenChange={setCreating} />
+      <CustomSpellForm
+        open={creating}
+        onOpenChange={setCreating}
+        onSaved={(spell) => showDetails({ spellId: spell.id })}
+      />
       <CustomSpellImportExportDialog open={customIoOpen} onOpenChange={setCustomIoOpen} />
 
       <Dialog open={confirmReplace} onOpenChange={setConfirmReplace}>

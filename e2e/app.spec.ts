@@ -1,3 +1,4 @@
+import { openDeckRename } from "./workspace-controls";
 import { expect, test } from "@playwright/test";
 
 test("loads the library and adds a spell to the active deck", async ({ page }) => {
@@ -12,7 +13,11 @@ test("loads the library and adds a spell to the active deck", async ({ page }) =
   await addButton.click();
 
   const deck = page.getByRole("region", { name: "Active deck" });
-  await expect(deck.getByText("Fireball")).toBeVisible();
+  await expect(
+    deck
+      .locator("#deck-entries")
+      .getByRole("button", { name: "Show Fireball in Preview", exact: true }),
+  ).toBeVisible();
 });
 
 test("rejects a duplicate spell with a bottom-right notification", async ({ page }) => {
@@ -56,15 +61,19 @@ test("saves a named deck and re-saves it through Open", async ({ page }) => {
     .click();
 
   const deck = page.getByRole("region", { name: "Active deck" });
-  const name = page.getByLabel("Active deck name");
-  await expect(deck.getByText("Fireball")).toBeVisible();
+  const name = await openDeckRename(page);
+  await expect(
+    deck
+      .locator("#deck-entries")
+      .getByRole("button", { name: "Show Fireball in Preview", exact: true }),
+  ).toBeVisible();
   await name.fill("Test Deck");
   await name.press("Enter");
 
   await deck.getByRole("button", { name: "Save as…" }).click();
   const saveAs = page.getByRole("dialog", { name: "Save deck as" });
   await expect(saveAs.getByLabel("Active deck name")).toHaveValue("Test Deck");
-  await saveAs.getByRole("button", { name: "Save" }).click();
+  await saveAs.getByRole("button", { name: "Save", exact: true }).click();
 
   await expect(deck.getByText("Saved", { exact: true })).toBeVisible();
 
@@ -80,7 +89,7 @@ test("saves a named deck and re-saves it through Open", async ({ page }) => {
     .click();
 
   await expect(deck.getByText("Unsaved changes")).toBeVisible();
-  await deck.getByRole("button", { name: "Save" }).click();
+  await deck.getByRole("button", { name: "Save", exact: true }).click();
   await expect(deck.getByText("Saved", { exact: true })).toBeVisible();
 });
 
@@ -93,15 +102,19 @@ test("New deck keeps saved snapshots and Clear entries preserves association", a
     .click();
 
   const deck = page.getByRole("region", { name: "Active deck" });
-  await expect(deck.getByText("Fireball")).toBeVisible();
-  const name = page.getByLabel("Active deck name");
+  await expect(
+    deck
+      .locator("#deck-entries")
+      .getByRole("button", { name: "Show Fireball in Preview", exact: true }),
+  ).toBeVisible();
+  const name = await openDeckRename(page);
   await name.fill("Kept Deck");
   await name.press("Enter");
 
   await deck.getByRole("button", { name: "Save as…" }).click();
   await page
     .getByRole("dialog", { name: "Save deck as" })
-    .getByRole("button", { name: "Save" })
+    .getByRole("button", { name: "Save", exact: true })
     .click();
 
   await deck.getByRole("button", { name: "Deck actions" }).click();
@@ -114,7 +127,7 @@ test("New deck keeps saved snapshots and Clear entries preserves association", a
   await expect(deck.getByText("Unsaved changes")).toBeVisible();
   await expect(deck.getByText("0 entries")).toBeVisible();
 
-  await deck.getByRole("button", { name: "Save" }).click();
+  await deck.getByRole("button", { name: "Save", exact: true }).click();
   await expect(deck.getByText("Saved", { exact: true })).toBeVisible();
 
   await deck.getByRole("button", { name: "Open…" }).click();
@@ -149,8 +162,8 @@ test("opens spell details from the persistent header button", async ({ page }) =
     .first()
     .click();
 
-  const details = page.getByRole("region", { name: "Spell preview and details" });
-  await details.getByRole("button", { name: "Show details" }).click();
+  const details = page.getByRole("region", { name: "Spell preview" });
+  await details.getByRole("button", { name: "Read full spell" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Fireball" });
   await expect(dialog).toBeVisible();
@@ -169,13 +182,13 @@ test("opens card actions from the header action bar only", async ({ page }) => {
     .first()
     .click();
 
-  const details = page.getByRole("region", { name: "Spell preview and details" });
-  await expect(details.getByRole("button", { name: "Edit", exact: true })).toBeVisible();
+  const details = page.getByRole("region", { name: "Spell preview" });
+  await expect(details.getByRole("button", { name: "Spell actions", exact: true })).toBeVisible();
 
   await page.locator(".card-preview-frame").click({ button: "right" });
   await expect(page.getByRole("menuitem")).toHaveCount(0);
 
-  await details.getByRole("button", { name: "Show details" }).click();
+  await details.getByRole("button", { name: "Read full spell" }).click();
   await expect(page.getByRole("dialog", { name: "Fireball" })).toBeVisible();
 });
 

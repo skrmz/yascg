@@ -17,7 +17,7 @@ This application allows users to create and manage spell cards for Dungeons & Dr
 
 Custom spells, saved decks, the active deck, modifications to SRD texts, and personal card background images with their saved selection are stored in the user's browser using a local IndexedDB database. The application uses Dexie.js for this purpose.
 
-The language preference is stored in `localStorage`. The browser cache contains application files, fonts, and bundled spell data for offline use, but no user-created content.
+The selected language and deck-view preferences are stored in `localStorage`. The browser cache contains application files, fonts, and bundled spell data for offline use, but no user-created content.
 
 This content is not transmitted to the operator or any third party. The operator cannot access or recover it.
 

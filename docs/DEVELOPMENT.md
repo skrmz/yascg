@@ -177,8 +177,11 @@ choices:
   container with `ResizeObserver`. Only mode changes update layout state. It starts in Compact,
   measures before paint, and uses container measurement on window resize as the observer fallback.
   `AppShell` keeps panes mounted with `forceMount` and hides inactive panes, preserving local
-  state and deck-name drafts. Compact and Split share Radix tab navigation; `ShowDetailsContext`
-  reveals Details even when a user reselects the same spell. Hidden-pane focus moves to a visible
+  state and deck-name drafts. Compact and Split share Radix tab navigation. `ShowDetailsContext`
+  passes explicit inspection intent and requested identity independently of the selected ID.
+  It reveals Preview even when a user reselects the same spell. Successful Library Add updates
+  selection without navigation, unless a newer explicit selection supersedes the pending Add.
+  Library creation requests Preview explicitly after save. Hidden-pane focus moves to a visible
   pane after navigation or a mode change. `LibraryPane` restores its recorded list `scrollTop`
   when it becomes visible.
 - `WorkspaceLayoutContext` chooses the Library filter tree and actions UI. The shell's mode is
@@ -191,17 +194,29 @@ choices:
 - `DialogContent` has a `sheet` variant that anchors to the bottom edge, scrolls only its body,
   and accounts for the visual-viewport keyboard inset (`--app-keyboard-inset`) and safe areas.
   The shell locks `html`/`body`/`#root` overflow and restores it in print.
-  At short viewport heights, CSS makes the Deck pane the single scroll container and lets
-  its entries flow normally, keeping toolbar controls and rows reachable at high zoom.
+  At short viewport heights, CSS lets the entire Deck scroll to keep the controls and rows
+  reachable. Table retains its horizontal scroller for wide values.
 - `PreviewFrame` scales only rendered screen cards using a transform inside a slot sized for
   the visual card bounds. It observes the padded preview content width; fitting, hidden
   measurement, and print renderers receive no scale input.
-- `AppShell` keeps the active deck table mounted across presentation changes. The table
-  consumes the same resolved entries as Deck and card printing. Table suspends measurement
-  for the hidden card preview. The active record's optional
+- One mounted `DeckPane` owns shared actions, rename/session state, dialogs, and the mounted
+  List and Table bodies. Each mode hides the inactive body without remounting it.
+  Wide Table spans both right columns. The shell keeps the existing presentation key and
+  reads legacy `cards` as `list`. Table uses the same resolved entries as List and card
+  printing. Sort controls and column headers write the same display preference. The active record's optional
   local lifecycle ID changes on replacement so other tabs can discard selection even when
   a loaded snapshot contains some of the same entry IDs. The ID is excluded from backups.
   Bulk removal uses the existing active-revision transaction with the confirmed entry IDs.
+- `DetailsPane` suspends fit measurement while Preview is hidden. It owns Preview scale and
+  mounts `CardAppearance` even without a resolved spell. The disclosure owns the controls
+  and image dialogs, uses existing provider writers, and can receive focus from Deck or
+  card print settings.
+- Table-row inspection stays local to `DeckTable`. Library inspection during active Table uses
+  shell-local identity and trigger state with the same `SpellDetailsDialog`. Both resolve live
+  records and keep Table state. Explicit **Open Preview** chooses List and reveals Preview,
+  suppressing dialog focus return to a hidden trigger. Closing incidental inspection restores
+  its trigger or a visible search fallback. Source-context changes and collection replacement
+  close stale dialogs. Language changes refresh resolved reader content.
 - `src/test/setup.ts` provides `setWorkspaceWidth(width)` for controlled workspace observer
   notifications (wrap updates in `act`). Isolated pane tests provide `WorkspaceLayoutContext`.
   `e2e/workspace.spec.ts` covers container/viewport independence, responsive modes, preview

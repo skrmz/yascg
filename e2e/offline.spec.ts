@@ -1,3 +1,4 @@
+import { openCardAppearance, openSpellAction } from "./workspace-controls";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
@@ -34,6 +35,7 @@ test("precaches shell, datasets, sidecars, fonts, and card backgrounds, then wor
     await navigator.serviceWorker.ready;
   });
 
+  await openCardAppearance(page);
   const backgroundValues = await page
     .getByLabel("Card background")
     .locator("option")
@@ -114,7 +116,7 @@ test("precaches shell, datasets, sidecars, fonts, and card backgrounds, then wor
   await page
     .getByRole("button", { name: "Feuerball zum aktiven Deck hinzufügen", exact: true })
     .click();
-  await page.getByRole("button", { name: "Bearbeitbare Kopie erstellen" }).click();
+  await openSpellAction(page, "Bearbeitbare Kopie erstellen");
   const editor = page.getByRole("dialog", { name: "Bearbeitbare Kopie erstellen" });
   const apply = editor.getByRole("button", { name: "Kurzbeschreibung anwenden" });
   await expect(apply).toBeEnabled();

@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Accessibility,
   AutoScroller,
@@ -10,36 +10,17 @@ import {
 import { scrollIntoViewIfNeeded } from "@dnd-kit/dom/utilities";
 import { DragDropProvider, type DragDropManager, type DragEndEvent } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
-import { ShowDetailsContext, useWorkspaceMode } from "../workspace-layout.ts";
+import { ShowDetailsContext, type DeckPresentation } from "../workspace-layout.ts";
+import { DeckTable } from "./table/DeckTable.tsx";
 import { useTranslation } from "react-i18next";
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  FolderOpen,
-  GripVertical,
-  MoreHorizontal,
-  Printer,
-  Save,
-  Trash2,
-  Wrench,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, GripVertical, MoreHorizontal, Trash2, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { resolveContentLanguage } from "@/content-language.ts";
-import { CARD_DESIGN_LABEL_KEYS, CARD_DESIGNS, type CardDesign } from "@/cards/design.ts";
-import {
-  CARD_BACKGROUND_NONE,
-  CARD_BACKGROUNDS,
-  cardBackgroundId,
-  cardBackgroundLabel,
-} from "@/cards/backgrounds.ts";
 import { isValidDeckName, normalizeDeckName, type DeckEntry } from "@/domain/deck";
 import type { CardFitMode } from "@/domain/spells";
 import type { EntryResolution } from "@/services/data/resolution.ts";
-import { AppError, translateMessage } from "@/locales/messages.ts";
+import { translateMessage } from "@/locales/messages.ts";
 import { Button } from "@/ui/Button.tsx";
 import { Checkbox } from "@/ui/Checkbox.tsx";
 import { Input, Label, NativeSelect } from "@/ui/Field.tsx";
@@ -56,8 +37,6 @@ import { PrintDialog } from "@/components/print/PrintDialog.tsx";
 import { DeckImportExportDialog } from "@/components/import-export/DeckImportExportDialog.tsx";
 import { OpenDeckDialog } from "./OpenDeckDialog.tsx";
 import { SaveAsDialog } from "./SaveAsDialog.tsx";
-import { CardLegendDialog } from "./CardLegendDialog.tsx";
-import { PersonalBackgroundsDialog } from "./PersonalBackgroundsDialog.tsx";
 
 interface FlushResult {
   ok: boolean;
@@ -101,11 +80,21 @@ function isInsideDeckScroller(list: HTMLOListElement, { x, y }: { x: number; y: 
   return rect && x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom;
 }
 
-export function DeckPane() {
+export function DeckPane({
+  presentation = "list",
+  presentationSwitch,
+  onOpenAppearance,
+  active = true,
+}: {
+  presentation?: DeckPresentation;
+  presentationSwitch?: ReactNode;
+  onOpenAppearance?: () => void;
+  active?: boolean;
+}) {
   const showDetails = useContext(ShowDetailsContext);
-  const compact = useWorkspaceMode() === "compact";
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const settingsHidden = compact && !settingsOpen;
+  const listActive = active && presentation === "list";
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const {
     activeDeck,
     dirty,
@@ -125,12 +114,7 @@ export function DeckPane() {
     canUndo,
     undoDelete,
     librarySpells,
-    selectSpell,
-    cardDesign,
-    setCardDesign,
-    cardBackground,
-    setCardBackground,
-    personalBackgrounds,
+    removeDeckEntries,
     collectionGeneration,
   } = useApp();
   const { t } = useTranslation();
@@ -150,38 +134,34 @@ export function DeckPane() {
   const [printOpen, setPrintOpen] = useState(false);
   const [ioOpen, setIoOpen] = useState(false);
   const [ioDirty, setIoDirty] = useState(false);
-  const [legendOpen, setLegendOpen] = useState(false);
-  const [backgroundsOpen, setBackgroundsOpen] = useState(false);
-  const [backgroundBusy, setBackgroundBusy] = useState(false);
-  const [backgroundError, setBackgroundError] = useState<string | null>(null);
-
-  const chooseBackground = async (id: string) => {
-    setBackgroundError(null);
-    setBackgroundBusy(true);
-    try {
-      await setCardBackground(id);
-    } catch (error) {
-      setBackgroundError(
-        error instanceof AppError
-          ? translateMessage(t, error.descriptor)
-          : t("card.background.storageFailed"),
-      );
-    } finally {
-      setBackgroundBusy(false);
-    }
-  };
-
   const editingRef = useRef(false);
   const editSessionRef = useRef<{ revision: number; name: string } | null>(null);
   const skipBlurRef = useRef(false);
   const committingRef = useRef(false);
   const flushRef = useRef<Promise<FlushResult> | null>(null);
   const deckListRef = useRef<HTMLOListElement>(null);
+  const dragManagerRef = useRef<DragDropManager | null>(null);
+  const listActiveRef = useRef(listActive);
+  listActiveRef.current = listActive;
   const dragSessionRef = useRef<{
     revision: number;
     generation: string;
     position: number;
   } | null>(null);
+
+  useEffect(() => {
+    const session = dragSessionRef.current;
+    if (
+      session &&
+      (!listActive ||
+        session.revision !== activeDeck?.revision ||
+        session.generation !== collectionGeneration)
+    ) {
+      dragSessionRef.current = null;
+      dragManagerRef.current?.actions.stop({ canceled: true });
+    }
+    if (!listActive) setRepairEntryId(null);
+  }, [listActive, activeDeck?.revision, collectionGeneration]);
 
   useEffect(() => {
     editingRef.current = editing;
@@ -423,6 +403,7 @@ export function DeckPane() {
         ? releasedRowIndex(nativeEvent, deckListRef.current)
         : undefined;
     const valid =
+      listActiveRef.current &&
       !canceled &&
       session?.revision === activeDeck?.revision &&
       session?.generation === collectionGeneration &&
@@ -440,7 +421,8 @@ export function DeckPane() {
       void manager.renderer.rendering.then(() => {
         requestAnimationFrame(() => {
           const grip = source.handle;
-          if (!(grip instanceof HTMLButtonElement) || !grip.isConnected) return;
+          if (!(grip instanceof HTMLButtonElement) || !grip.isConnected || !listActiveRef.current)
+            return;
           grip.focus({ preventScroll: true });
           if (!valid || fromIndex === toIndex) scrollIntoViewIfNeeded(grip);
         });
@@ -451,99 +433,51 @@ export function DeckPane() {
 
   const repairTarget = librarySpells.find((spell) => spell.id === repairSpellId);
 
-  const backgroundIds = [
-    CARD_BACKGROUND_NONE,
-    ...CARD_BACKGROUNDS.map((option) => option.id),
-    ...personalBackgrounds.map(({ id }) => id),
-  ];
-  const currentBackgroundId = cardBackgroundId(cardBackground);
-  const canCycleBackground = backgroundIds.length > 1;
-  const cycleBackground = (step: 1 | -1) => {
-    if (!canCycleBackground) return;
-    const index = backgroundIds.indexOf(currentBackgroundId);
-    const nextIndex =
-      index === -1
-        ? step === 1
-          ? 0
-          : backgroundIds.length - 1
-        : (index + step + backgroundIds.length) % backgroundIds.length;
-    void chooseBackground(backgroundIds[nextIndex]);
-  };
-
   return (
-    <section id="deck-panel" className="flex h-full min-h-0 flex-col" aria-label={t("deck.title")}>
-      <div id="deck-controls" className="space-y-2 border-b border-border p-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {compact ? (
-            <>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
-                  {activeDeck?.name || t("deck.title")}
-                </h2>
-                <p className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-                  <span>{t("deck.entries", { count: entries.length })}</span>
-                  <span className={statusTone} title={statusCopy.hint}>
-                    {statusCopy.label}
-                  </span>
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-expanded={settingsOpen}
-                aria-controls="deck-design"
-                onClick={() => setSettingsOpen((open) => !open)}
+    <section
+      id="deck-panel"
+      className="flex h-full min-h-0 min-w-0 flex-1 flex-col"
+      aria-label={t("deck.title")}
+    >
+      <header id="deck-controls" className="space-y-2 border-b border-border bg-card p-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2">
+            <h2
+              aria-label={activeDeck?.name || t("deck.title")}
+              className="min-w-0 text-sm font-semibold text-foreground [overflow-wrap:anywhere]"
+            >
+              <button
+                type="button"
+                className="min-w-0 rounded text-start underline decoration-muted-foreground underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+                aria-label={t("deck.rename", { name: activeDeck?.name || t("deck.title") })}
+                aria-expanded={renameOpen}
+                aria-controls="deck-name-settings"
+                disabled={!activeDeck}
+                onClick={() => setRenameOpen((open) => !open)}
               >
-                {t("deck.settings")}
-                <ChevronDown
-                  size={14}
-                  className={cn(
-                    "transition-transform motion-reduce:transition-none",
-                    settingsOpen && "rotate-180",
-                  )}
-                  aria-hidden="true"
-                />
-              </Button>
-            </>
-          ) : (
-            <>
-              <h2 className="text-sm font-semibold text-foreground">{t("deck.title")}</h2>
-              <span className="text-xs text-muted-foreground">
-                {t("deck.entries", { count: entries.length })}
-              </span>
-            </>
-          )}
+                {activeDeck?.name || t("deck.title")}
+              </button>
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {t("deck.entries", { count: entries.length })}
+            </span>
+            <button
+              type="button"
+              className={cn(
+                "rounded text-left text-xs font-semibold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring",
+                statusTone,
+              )}
+              aria-label={t("deck.statusHelp", { status: statusCopy.label })}
+              aria-expanded={helpOpen}
+              aria-controls="deck-persistence-hint"
+              onClick={() => setHelpOpen((open) => !open)}
+            >
+              {statusCopy.label}
+            </button>
+          </div>
+          {presentationSwitch}
         </div>
-
-        {nameError ? (
-          <p id="deck-name-error" role="alert" className="text-xs text-red-300">
-            {nameError}
-          </p>
-        ) : null}
-        {actionError ? (
-          <p role="alert" className="text-xs text-red-300">
-            {actionError}
-          </p>
-        ) : null}
-
-        <p id="deck-persistence-hint" className="text-xs text-muted-foreground">
-          {statusCopy.hint}
-        </p>
-      </div>
-
-      <div
-        id="deck-design"
-        hidden={settingsHidden}
-        className={cn(
-          "space-y-1.5 border-b border-border p-3",
-          compact && settingsOpen && "animate-reveal-subtle",
-        )}
-      >
-        <div
-          id="deck-name-settings"
-          hidden={settingsHidden}
-          className={cn("items-center gap-2", settingsHidden ? "hidden" : "flex")}
-        >
+        <div id="deck-name-settings" hidden={!renameOpen}>
           <Label htmlFor="deck-name" className="sr-only">
             {t("deck.nameLabel")}
           </Label>
@@ -551,7 +485,7 @@ export function DeckPane() {
             id="deck-name"
             value={nameDraft}
             placeholder={t("deck.namePlaceholder")}
-            className="min-w-0 flex-1"
+            className="min-w-0"
             aria-invalid={nameError ? true : undefined}
             aria-describedby={nameError ? "deck-name-error" : undefined}
             onFocus={startEdit}
@@ -571,194 +505,114 @@ export function DeckPane() {
               }
             }}
           />
-          <span
-            className={cn(
-              "min-w-0 max-w-[45%] shrink text-right text-xs font-semibold leading-tight [overflow-wrap:anywhere]",
-              statusTone,
-            )}
-            title={statusCopy.hint}
-          >
-            {statusCopy.label}
-          </span>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-0 flex-1">
-            <Label htmlFor="deck-design-select">{t("card.design.label")}</Label>
-            <NativeSelect
-              id="deck-design-select"
-              value={cardDesign}
-              className="mt-1 h-8"
-              onChange={(event) => setCardDesign(event.target.value as CardDesign)}
+        <p id="deck-persistence-hint" hidden={!helpOpen} className="text-xs text-muted-foreground">
+          {statusCopy.hint}
+        </p>
+        {nameError ? (
+          <p id="deck-name-error" role="alert" className="text-xs text-red-300">
+            {nameError}
+          </p>
+        ) : null}
+        {actionError ? (
+          <p role="alert" className="text-xs text-red-300">
+            {actionError}
+          </p>
+        ) : null}
+        <div id="deck-actions" className="space-y-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <div
+              className="inline-flex"
+              onPointerDownCapture={() => {
+                if (editingRef.current) void flushNameCommit();
+              }}
             >
-              {CARD_DESIGNS.map((design) => (
-                <option key={design} value={design}>
-                  {t(CARD_DESIGN_LABEL_KEYS[design])}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
-          <Button size="sm" variant="outline" onClick={() => setLegendOpen(true)}>
-            {t("card.design.legend")}
-          </Button>
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-end gap-2">
-            <div className="min-w-0 flex-1">
-              <Label htmlFor="deck-background-select">{t("card.background.label")}</Label>
-              <NativeSelect
-                id="deck-background-select"
-                value={cardBackgroundId(cardBackground)}
-                className="mt-1 h-8"
-                disabled={backgroundBusy || !collectionGeneration}
-                onChange={(event) => void chooseBackground(event.target.value)}
+              <Button
+                size="sm"
+                onClick={() =>
+                  void (activeDeck?.savedDeckId === undefined ? requestSaveAs() : onSave())
+                }
+                disabled={saveDisabled}
+                title={t("deck.persistenceHint")}
               >
-                <option value={CARD_BACKGROUND_NONE}>{t("card.background.none")}</option>
-                {CARD_BACKGROUNDS.map((option) => (
-                  <option key={option.id} value={option.id} title={option.id}>
-                    {cardBackgroundLabel(option.id)}
-                  </option>
-                ))}
-                {personalBackgrounds.length > 0 && (
-                  <optgroup label={t("card.background.personal")}>
-                    {personalBackgrounds.map(({ id, name }) => (
-                      <option key={id} value={id} title={name}>
-                        {t("card.background.personalOption", { name: cardBackgroundLabel(name) })}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </NativeSelect>
+                {t(activeDeck?.savedDeckId === undefined ? "deck.saveAs" : "deck.save")}
+              </Button>
             </div>
-            {canCycleBackground ? (
-              <div className="flex shrink-0 items-center gap-1">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  aria-label={t("card.background.previous")}
-                  aria-controls="deck-background-select"
-                  disabled={backgroundBusy || !collectionGeneration}
-                  onClick={() => cycleBackground(-1)}
-                >
-                  <ChevronLeft size={14} aria-hidden="true" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  aria-label={t("card.background.next")}
-                  aria-controls="deck-background-select"
-                  disabled={backgroundBusy || !collectionGeneration}
-                  onClick={() => cycleBackground(1)}
-                >
-                  <ChevronRight size={14} aria-hidden="true" />
-                </Button>
-              </div>
-            ) : null}
             <Button
               size="sm"
               variant="outline"
-              disabled={backgroundBusy || !collectionGeneration}
-              onClick={() => setBackgroundsOpen(true)}
+              onClick={() => setPrintOpen(true)}
+              disabled={printable === 0}
+              aria-label={t("deck.print")}
             >
-              {t("card.background.useOwn")}
+              {t("deck.print")}
             </Button>
+            <Button size="sm" variant="outline" onClick={() => void requestOpen()}>
+              {t("deck.open")}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" aria-label={t("deck.actions")}>
+                  <MoreHorizontal size={16} aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onSelect={() => void requestSaveAs()}>
+                  {t("deck.saveAs")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void requestNewDeck()}>
+                  {t("deck.newDeck")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void requestImportExport()}>
+                  {t("deck.importExport")}
+                </DropdownMenuItem>
+                {onOpenAppearance && (
+                  <DropdownMenuItem onSelect={onOpenAppearance}>
+                    {t("card.appearance")}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-300"
+                  disabled={entries.length === 0}
+                  onSelect={() => void requestClear()}
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                  {t("deck.clearEntries")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {canUndo ? (
+              <Button size="sm" variant="secondary" onClick={() => void undoDelete()}>
+                {t("deck.undoDelete")}
+              </Button>
+            ) : null}
           </div>
-          {backgroundError && (
-            <p role="alert" className="mt-1 text-xs text-red-300">
-              {backgroundError}
-            </p>
+
+          {printable !== entries.length && (
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              <span>{t("deck.printable", { count: printable })}</span>
+              {unavailableCount > 0 ? (
+                <span className="text-amber-300">
+                  {t("deck.notInLanguage", { count: unavailableCount, language })}
+                </span>
+              ) : null}
+              {missingCount > 0 ? (
+                <span className="text-red-300">{t("deck.missing", { count: missingCount })}</span>
+              ) : null}
+            </div>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">{t("card.background.hint")}</p>
-      </div>
-
-      <div id="deck-actions" className="space-y-2 border-b border-border p-3">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <div
-            className="inline-flex"
-            onPointerDownCapture={() => {
-              if (editingRef.current) void flushNameCommit();
-            }}
-          >
-            <Button
-              size="sm"
-              onClick={() =>
-                void (activeDeck?.savedDeckId === undefined ? requestSaveAs() : onSave())
-              }
-              disabled={saveDisabled}
-              title={t("deck.persistenceHint")}
-            >
-              <Save size={13} aria-hidden="true" />
-              {t(activeDeck?.savedDeckId === undefined ? "deck.saveAs" : "deck.save")}
-            </Button>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setPrintOpen(true)}
-            disabled={printable === 0}
-            aria-label={t("deck.print")}
-          >
-            <Printer size={13} aria-hidden="true" />
-            {t(compact ? "deck.printCompact" : "deck.print")}
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => void requestOpen()}>
-            <FolderOpen size={13} aria-hidden="true" />
-            {t("deck.open")}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" aria-label={t("deck.actions")}>
-                <MoreHorizontal size={16} aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onSelect={() => void requestSaveAs()}>
-                {t("deck.saveAs")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => void requestNewDeck()}>
-                {t("deck.newDeck")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => void requestImportExport()}>
-                {t("deck.importExport")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-red-300"
-                disabled={entries.length === 0}
-                onSelect={() => void requestClear()}
-              >
-                <Trash2 size={14} aria-hidden="true" />
-                {t("deck.clearEntries")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {canUndo ? (
-            <Button size="sm" variant="secondary" onClick={() => void undoDelete()}>
-              {t("deck.undoDelete")}
-            </Button>
-          ) : null}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-          {printable !== entries.length ? (
-            <span>{t("deck.printable", { count: printable })}</span>
-          ) : null}
-          {unavailableCount > 0 ? (
-            <span className="text-amber-300">
-              {t("deck.notInLanguage", { count: unavailableCount, language })}
-            </span>
-          ) : null}
-          {missingCount > 0 ? (
-            <span className="text-red-300">{t("deck.missing", { count: missingCount })}</span>
-          ) : null}
-        </div>
-      </div>
-
-      <div id="deck-entries-container" className="relative mt-2 flex min-h-0 flex-1 flex-col">
-        <h2
-          id="deck-entries-heading"
-          className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-        >
+      </header>
+      <div
+        id="deck-entries-container"
+        hidden={!listActive}
+        className={cn(
+          "relative flex min-h-0 min-w-0 flex-1 flex-col bg-card",
+          !listActive && "hidden",
+        )}
+      >
+        <h2 id="deck-entries-heading" className="sr-only">
           {t("deck.heading")}
         </h2>
         <DragDropProvider
@@ -772,7 +626,7 @@ export function DeckPane() {
           ]}
           onBeforeDragStart={(event) => {
             const { source } = event.operation;
-            if (!activeDeck || deckBusy || !isSortable(source)) {
+            if (!listActiveRef.current || !activeDeck || deckBusy || !isSortable(source)) {
               event.preventDefault();
               return;
             }
@@ -783,6 +637,7 @@ export function DeckPane() {
             };
           }}
           onDragStart={({ operation }, manager) => {
+            dragManagerRef.current = manager;
             if (operation.activatorEvent instanceof KeyboardEvent && isSortable(operation.source)) {
               setDragAnnouncement(
                 t("deck.dragPickedUp", {
@@ -880,8 +735,7 @@ export function DeckPane() {
                   }}
                   onSelect={() => {
                     if (resolution.status === "resolved") {
-                      selectSpell(resolution.spell.id);
-                      showDetails();
+                      showDetails({ spellId: resolution.spell.id, source: "deck" });
                     }
                   }}
                 />
@@ -889,6 +743,21 @@ export function DeckPane() {
             })}
           </ol>
         </DragDropProvider>
+      </div>
+
+      <div
+        id="deck-table-container"
+        hidden={presentation !== "table"}
+        className={cn(
+          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card",
+          presentation !== "table" && "hidden",
+        )}
+      >
+        <DeckTable
+          active={active && presentation === "table"}
+          deckInstance={activeDeck?.instanceId ?? ""}
+          removeEntries={removeDeckEntries}
+        />
       </div>
 
       <SaveAsDialog
@@ -1032,9 +901,11 @@ export function DeckPane() {
         </DialogContent>
       </Dialog>
 
-      <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
-      {backgroundsOpen && <PersonalBackgroundsDialog onClose={() => setBackgroundsOpen(false)} />}
-      <CardLegendDialog open={legendOpen} onOpenChange={setLegendOpen} />
+      <PrintDialog
+        open={printOpen}
+        onOpenChange={setPrintOpen}
+        onOpenAppearance={onOpenAppearance}
+      />
     </section>
   );
 }

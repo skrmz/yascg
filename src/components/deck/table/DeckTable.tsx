@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { ShowDetailsContext } from "@/components/workspace-layout.ts";
 import { ChevronLeft, ChevronRight, Columns3, Search, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -8,13 +9,14 @@ import { useApp } from "@/state/AppProvider.tsx";
 import { Button } from "@/ui/Button.tsx";
 import { Checkbox } from "@/ui/Checkbox.tsx";
 import { Dialog, DialogContent, DialogTrigger } from "@/ui/Dialog.tsx";
-import { Input } from "@/ui/Field.tsx";
+import { Input, NativeSelect } from "@/ui/Field.tsx";
 import { TableFilters, summarizeFilters } from "./TableFilters.tsx";
 import { TableRows } from "./TableRows.tsx";
 import {
   DATA_COLUMNS,
   OPTIONAL_COLUMNS,
   PAGE_SIZES,
+  canSort,
   castingOptions,
   cellText,
   filterTableRows,
@@ -33,6 +35,8 @@ import {
 } from "./model.ts";
 import "./deck-table.css";
 
+const SORT_COLUMNS = DATA_COLUMNS.filter(canSort);
+
 interface RemovalRequest {
   ids: string[];
   deckInstance: string;
@@ -48,6 +52,7 @@ interface DeckTableProps {
 }
 
 export function DeckTable({ active, deckInstance, removeEntries }: DeckTableProps) {
+  const showDetails = useContext(ShowDetailsContext);
   const { t } = useTranslation();
   const {
     activeDeck,
@@ -58,6 +63,7 @@ export function DeckTable({ active, deckInstance, removeEntries }: DeckTableProp
     dataLoading,
     collectionError,
     applyDeckEntryOrder,
+    collectionGeneration,
   } = useApp();
   const [preferences, setPreferences] = useState(readTablePreferences);
   const [page, setPage] = useState(1);
@@ -75,6 +81,14 @@ export function DeckTable({ active, deckInstance, removeEntries }: DeckTableProp
   const sortScopeId = useId();
   const returnFocus = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const columnsTrigger = useRef<HTMLButtonElement>(null);
+  const outputDisclosure = useRef<HTMLDetailsElement>(null);
+  const previewExit = useRef(false);
+
+  useEffect(() => {
+    setDetails(null);
+    setColumnsOpen(false);
+  }, [active, deckInstance, collectionGeneration]);
 
   useEffect(() => writeTablePreferences(preferences), [preferences]);
 
@@ -120,6 +134,9 @@ export function DeckTable({ active, deckInstance, removeEntries }: DeckTableProp
   ).length;
   const detailsRow =
     details?.deckInstance === deckInstance ? rows.find(({ id }) => id === details.id) : undefined;
+  useEffect(() => {
+    if (!detailsRow) setDetails(null);
+  }, [detailsRow]);
   const disabled = !activeDeck || deckBusy || Boolean(collectionError);
 
   useEffect(() => {
@@ -177,12 +194,24 @@ export function DeckTable({ active, deckInstance, removeEntries }: DeckTableProp
   };
   const restoreFocus = (event: Event) => {
     event.preventDefault();
+    if (previewExit.current || !active) {
+      if (previewExit.current)
+        document.querySelector<HTMLElement>('[data-workspace-pane="details"]')?.focus();
+      else
+        document
+          .querySelector<HTMLElement>('[data-workspace-pane][data-state="active"]:not([hidden])')
+          ?.focus({ preventScroll: true });
+      previewExit.current = false;
+      return;
+    }
     const trigger = returnFocus.current;
-    if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+    if (trigger?.isConnected && !trigger.closest("[hidden]"))
+      trigger.focus({ preventScroll: true });
     if (document.activeElement !== trigger) searchRef.current?.focus({ preventScroll: true });
     returnFocus.current = null;
   };
   const openDetails = (id: string, trigger: HTMLElement) => {
+    previewExit.current = false;
     returnFocus.current = trigger;
     setDetails({ id, deckInstance });
   };
@@ -249,7 +278,7 @@ export function DeckTable({ active, deckInstance, removeEntries }: DeckTableProp
     >
       <div className="deck-table-content">
         <div className="deck-table-toolbar">
-          <div className="deck-table-tool-row">
+          <div className="deck-table-tool-row deck-table-query">
             <label className="deck-table-search">
               <Search size={16} aria-hidden="true" />
               <span className="sr-only">{t("deckTable.search")}</span>
@@ -262,98 +291,154 @@ export function DeckTable({ active, deckInstance, removeEntries }: DeckTableProp
                 onChange={(event) => patchFilters({ name: event.target.value })}
               />
             </label>
-            <Dialog open={columnsOpen && active} onOpenChange={setColumnsOpen}>
-              <DialogTrigger asChild>
-                <Button type="button" variant="outline">
-                  <Columns3 size={15} aria-hidden="true" />
-                  {t("deckTable.columns")}
+            <NativeSelect
+              aria-label={t("deckTable.sortBy")}
+              className="deck-table-sort-field"
+              value={preferences.sort?.column ?? ""}
+              onChange={(event) => {
+                const column = event.target.value;
+                setSort(
+                  canSort(column)
+                    ? { column, direction: preferences.sort?.direction ?? "ascending" }
+                    : null,
+                );
+              }}
+            >
+              <option value="">{t("deckTable.useDeckOrder")}</option>
+              {SORT_COLUMNS.map((column) => (
+                <option key={column} value={column}>
+                  {t(`deckTable.column.${column}`)}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+          <div className="deck-table-tool-row deck-table-options">
+            <TableFilters
+              filters={preferences.filters}
+              casting={casting}
+              hasUnknown={rows.some((row) => row.spell === null)}
+              classes={classes}
+              onPatch={patchFilters}
+            >
+              <div className="deck-table-tool-row px-3 pb-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="deck-table-wrap-button"
+                  aria-describedby={
+                    sortChangesDeckOrder && matching.length < rows.length ? sortScopeId : undefined
+                  }
+                  disabled={disabled || applyingSort || dataLoading || !sortChangesDeckOrder}
+                  onClick={() => void applySort()}
+                >
+                  {t("deckTable.applySortToDeck")}
                 </Button>
-              </DialogTrigger>
-              <DialogContent
-                title={t("deckTable.columns")}
-                description={t("deckTable.columnsDescription")}
+                {sortChangesDeckOrder && matching.length < rows.length && (
+                  <span id={sortScopeId} className="text-xs text-muted-foreground">
+                    {t("deckTable.applySortScope")}
+                  </span>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="deck-table-wrap-button"
+                  onClick={reset}
+                  disabled={filterSummary.length === 0 && !preferences.sort}
+                >
+                  {t("deckTable.reset")}
+                </Button>
+              </div>
+            </TableFilters>
+            {preferences.sort && (
+              <NativeSelect
+                aria-label={t("deckTable.sortDirection")}
+                className="deck-table-sort-direction"
+                value={preferences.sort.direction}
+                onChange={(event) => {
+                  if (preferences.sort)
+                    setSort({
+                      column: preferences.sort.column,
+                      direction: event.target.value === "descending" ? "descending" : "ascending",
+                    });
+                }}
               >
-                <div className="deck-table-column-choices">
-                  {OPTIONAL_COLUMNS.map((column) => (
-                    <Checkbox
-                      key={column}
-                      label={t(`deckTable.column.${column}`)}
-                      checked={preferences.columns.includes(column)}
-                      onChange={(event) => toggleColumn(column, event.target.checked)}
-                    />
-                  ))}
+                <option value="ascending">{t("deckTable.ascendingDirection")}</option>
+                <option value="descending">{t("deckTable.descendingDirection")}</option>
+              </NativeSelect>
+            )}
+            <details ref={outputDisclosure} className="deck-table-output">
+              <summary>{t("deckTable.viewAndPrint")}</summary>
+              <div className="deck-table-tool-row px-3 pb-3">
+                <Dialog open={columnsOpen && active} onOpenChange={setColumnsOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      ref={columnsTrigger}
+                      type="button"
+                      variant="outline"
+                      className="deck-table-wrap-button"
+                    >
+                      <Columns3 size={15} aria-hidden="true" />
+                      <span className="deck-table-compact-columns">
+                        {t("deckTable.fullAndPrintColumns")}
+                      </span>
+                      <span className="deck-table-wide-columns">{t("deckTable.columns")}</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent
+                    title={t("deckTable.columns")}
+                    description={t("deckTable.columnsDescription")}
+                    onCloseAutoFocus={(event) => {
+                      if (!active) {
+                        restoreFocus(event);
+                        return;
+                      }
+                      event.preventDefault();
+                      columnsTrigger.current?.focus();
+                    }}
+                  >
+                    <div className="deck-table-column-choices">
+                      {OPTIONAL_COLUMNS.map((column) => (
+                        <Checkbox
+                          key={column}
+                          label={t(`deckTable.column.${column}`)}
+                          checked={preferences.columns.includes(column)}
+                          onChange={(event) => toggleColumn(column, event.target.checked)}
+                        />
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                {active ? (
+                  <TablePrintDialog
+                    columns={printColumns}
+                    rows={printRows}
+                    rowCount={matching.length}
+                    filters={filterSummary}
+                    sort={currentSort}
+                    deckName={activeDeck?.name ?? ""}
+                    onColumns={() => {
+                      if (outputDisclosure.current) outputDisclosure.current.open = true;
+                      setColumnsOpen(true);
+                    }}
+                    disabled={disabled || dataLoading}
+                  />
+                ) : null}
+                <div className="deck-table-full-toggle">
+                  <Checkbox
+                    label={t("deckTable.fullTable")}
+                    checked={preferences.fullTable}
+                    onChange={(event) =>
+                      setPreferences((previous) => ({
+                        ...previous,
+                        fullTable: event.target.checked,
+                      }))
+                    }
+                  />
                 </div>
-              </DialogContent>
-            </Dialog>
-            {active ? (
-              <TablePrintDialog
-                columns={printColumns}
-                rows={printRows}
-                rowCount={matching.length}
-                filters={filterSummary}
-                sort={currentSort}
-                deckName={activeDeck?.name ?? ""}
-                onColumns={() => setColumnsOpen(true)}
-                disabled={disabled || dataLoading}
-              />
-            ) : null}
+              </div>
+            </details>
           </div>
-          <TableFilters
-            filters={preferences.filters}
-            casting={casting}
-            hasUnknown={rows.some((row) => row.spell === null)}
-            classes={classes}
-            onPatch={patchFilters}
-          />
-          <div className="deck-table-tool-row">
-            <Button
-              type="button"
-              variant="outline"
-              className="deck-table-wrap-button"
-              disabled={!preferences.sort}
-              onClick={() => setSort(null)}
-            >
-              {t("deckTable.useDeckOrder")}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="deck-table-wrap-button"
-              aria-describedby={
-                sortChangesDeckOrder && matching.length < rows.length ? sortScopeId : undefined
-              }
-              disabled={disabled || applyingSort || dataLoading || !sortChangesDeckOrder}
-              onClick={() => void applySort()}
-            >
-              {t("deckTable.applySortToDeck")}
-            </Button>
-            {sortChangesDeckOrder && matching.length < rows.length ? (
-              <span id={sortScopeId} className="text-xs text-muted-foreground">
-                {t("deckTable.applySortScope")}
-              </span>
-            ) : null}
-            {matching.length > 0 || rows.length === 0 ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="deck-table-wrap-button"
-                onClick={reset}
-                disabled={filterSummary.length === 0 && !preferences.sort}
-              >
-                {t("deckTable.reset")}
-              </Button>
-            ) : null}
-            <div className="deck-table-full-toggle">
-              <Checkbox
-                label={t("deckTable.fullTable")}
-                checked={preferences.fullTable}
-                onChange={(event) =>
-                  setPreferences((previous) => ({ ...previous, fullTable: event.target.checked }))
-                }
-              />
-            </div>
-          </div>
-          <div className="deck-table-tool-row">
+          <div className="deck-table-tool-row deck-table-summary">
             <p className="deck-table-status" role="status">
               {dataLoading
                 ? t("deckTable.loading")
@@ -363,28 +448,36 @@ export function DeckTable({ active, deckInstance, removeEntries }: DeckTableProp
               {hiddenSelection > 0
                 ? ` · ${t("deckTable.hiddenSelection", { count: hiddenSelection })}`
                 : ""}
-              <span className="sr-only">
-                {" · "}
-                {currentSort}
-              </span>
+              {" · "}
+              {currentSort}
             </p>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setSelectionState({ deckInstance, ids: new Set() })}
-              disabled={selection.size === 0}
-            >
-              {t("deckTable.clearSelection")}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={disabled || selection.size === 0}
-              onClick={(event) => requestRemoval([...selection], event.currentTarget)}
-            >
-              <Trash2 size={15} aria-hidden="true" />
-              {t("deckTable.removeSelected")}
-            </Button>
+            {selection.size > 0 && (
+              <div
+                className="deck-table-tool-row"
+                role="group"
+                aria-label={t("deckTable.selectionActions")}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setSelectionState({ deckInstance, ids: new Set() });
+                    searchRef.current?.focus({ preventScroll: true });
+                  }}
+                >
+                  {t("deckTable.clearSelection")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={disabled}
+                  onClick={(event) => requestRemoval([...selection], event.currentTarget)}
+                >
+                  <Trash2 size={15} aria-hidden="true" />
+                  {t("deckTable.removeSelected")}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -477,6 +570,15 @@ export function DeckTable({ active, deckInstance, removeEntries }: DeckTableProp
           open={active}
           onOpenChange={(open) => !open && setDetails(null)}
           onCloseAutoFocus={restoreFocus}
+          onOpenPreview={
+            detailsRow.status === "resolved"
+              ? () => {
+                  previewExit.current = true;
+                  setDetails(null);
+                  showDetails({ spellId: detailsRow.spellId, source: "table" });
+                }
+              : undefined
+          }
         />
       ) : null}
       {detailsRow && !detailsRow.spell ? (

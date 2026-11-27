@@ -207,7 +207,10 @@ export interface AppContextValue {
   reloadLatest: () => void;
   dismissConflict: () => void;
 
-  addSpellToDeck: (spell: Spell) => Promise<AddSpellResult>;
+  addSpellToDeck: (
+    spell: Spell,
+    options?: { selectOnSuccess?: boolean },
+  ) => Promise<AddSpellResult>;
   addSpellsToDeck: (spells: readonly Spell[]) => Promise<AddSpellsResult>;
   replaceDeckWithSpells: (spells: readonly Spell[]) => Promise<void>;
   removeFromDeck: (entryId: string) => Promise<void>;
@@ -294,6 +297,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [retryToken, setRetryToken] = useState(0);
 
   const [selectedSpellId, setSelectedSpellId] = useState<string | null>(null);
+  const selectionRevision = useRef(0);
+  const selectSpell = useCallback((id: string | null) => {
+    selectionRevision.current += 1;
+    setSelectedSpellId(id);
+  }, []);
   const [cardDesign, setCardDesignState] = useState<CardDesign>(DEFAULT_CARD_DESIGN);
 
   const setCardDesign = useCallback((design: CardDesign) => {
@@ -584,14 +592,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addSpellToDeck = useCallback(
-    async (spell: Spell): Promise<AddSpellResult> => {
-      let result: AddSpellResult = "duplicate";
+    async (spell: Spell, options?: { selectOnSuccess?: boolean }): Promise<AddSpellResult> => {
+      const startedAtSelection = selectionRevision.current;
+      let added = false;
       const outcome = await runDeckMutation((current) => {
         if (hasSpellEntry(current.entries, spell.id)) return current;
-        result = "added";
+        added = true;
         return addEntry(current, makeEntry(spell.id, spell.source, spell.name));
       });
-      return outcome.status === "ok" ? result : "error";
+      if (outcome.status !== "ok") return "error";
+      // An explicit selection made while the write was pending takes precedence.
+      if (added && options?.selectOnSuccess && selectionRevision.current === startedAtSelection) {
+        setSelectedSpellId(spell.id);
+      }
+      return added ? "added" : "duplicate";
     },
     [runDeckMutation],
   );
@@ -1247,7 +1261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       retryData: () => setRetryToken((token) => token + 1),
       dismissDataError: () => setDataError(null),
       selectedSpellId,
-      selectSpell: setSelectedSpellId,
+      selectSpell,
       selectedSpell,
       cardDesign,
       setCardDesign,
@@ -1317,6 +1331,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dataLoading,
       dataError,
       selectedSpellId,
+      selectSpell,
       selectedSpell,
       cardDesign,
       setCardDesign,

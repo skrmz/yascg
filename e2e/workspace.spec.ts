@@ -1,3 +1,4 @@
+import { openCardAppearance, openDeckRename } from "./workspace-controls";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function noPageOverflow(page: Page) {
@@ -19,6 +20,41 @@ async function touchTarget(control: Locator) {
     )
     .toBeGreaterThanOrEqual(44);
 }
+
+test("mobile adds five spells without leaving Library or losing its context", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const search = page.getByLabel("Search spells");
+  const results = page.getByRole("list", { name: "Spell results" });
+  await search.fill("a");
+  const chosen = results.getByRole("button", { name: /^Add .* to active deck$/ });
+  await expect(chosen.nth(4)).toBeVisible();
+  const names = (await chosen.all()).slice(0, 5);
+  expect(names).toHaveLength(5);
+  for (const add of names) {
+    const label = await add.getAttribute("aria-label");
+    const name = label!.slice(4, -" to active deck".length);
+    await add.scrollIntoViewIfNeeded();
+    const scrollTop = await results.evaluate((element) => element.scrollTop);
+    await add.focus();
+    await page.keyboard.press("Enter");
+    await expect(add).toHaveAccessibleDescription("Already in the active deck");
+    await expect(add).toBeFocused();
+    await expect(page.getByRole("tab", { name: "Library", exact: true })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(search).toHaveValue("a");
+    expect(await results.evaluate((element) => element.scrollTop)).toBe(scrollTop);
+    await expect(
+      page.locator("[data-sonner-toast]").filter({ hasText: name }).last(),
+    ).toBeVisible();
+  }
+  await page.getByRole("tab", { name: "Deck", exact: true }).click();
+  await expect(page.locator("#deck-entries > li")).toHaveCount(5);
+  await page.getByRole("tab", { name: "Library", exact: true }).click();
+  await expect(search).toHaveValue("a");
+});
 for (const [width, height] of [
   [320, 568],
   [390, 844],
@@ -95,32 +131,31 @@ for (const language of ["en", "de"]) {
         await page.getByRole("tab", { name: "Deck", exact: true }).click();
       }
       if (width === 390) {
-        const settings = page.getByRole("button", {
-          name: language === "de" ? "Deck-Einstellungen" : "Deck settings",
-          exact: true,
+        const rename = page.getByRole("button", {
+          name: language === "de" ? /^Deck .+ umbenennen$/ : /^Rename deck /,
         });
-        await expect(settings).toHaveAttribute("aria-expanded", "false");
-        await expect(page.locator("#deck-design-select")).toBeHidden();
-        await expect(page.locator("#deck-background-select")).toBeHidden();
+        await expect(rename).toHaveAttribute("aria-expanded", "false");
         const listHeight = (await page.locator("#deck-entries").boundingBox())!.height;
         const paneHeight = (await page.locator("#deck-panel").boundingBox())!.height;
         expect(listHeight / paneHeight).toBeGreaterThan(0.65);
-        await settings.click();
-        await expect(page.locator("#deck-name")).toBeVisible();
-        await expect(page.locator("#deck-background-select")).toBeVisible();
-        await page.locator("#deck-design-select").selectOption("compact");
-        const expandedListHeight = (await page.locator("#deck-entries").boundingBox())!.height;
-        expect(listHeight - expandedListHeight).toBeGreaterThan(100);
-        await settings.click();
-        await expect(page.locator("#deck-design-select")).toBeHidden();
-        await settings.click();
-        await expect(page.locator("#deck-design-select")).toHaveValue("compact");
-        await settings.click();
+        const field = await openDeckRename(page);
+        await expect(field).toBeVisible();
+        await rename.click();
+        await expect(field).toBeHidden();
+        await page.getByRole("tab", { name: language === "de" ? "Vorschau" : "Preview" }).click();
+        await openCardAppearance(page);
+        await page.locator("#card-design-select").selectOption("classic");
+        await page.getByRole("tab", { name: "Deck", exact: true }).click();
+        await expect(page.locator("#card-design-select")).toBeHidden();
+        await page.getByRole("tab", { name: language === "de" ? "Vorschau" : "Preview" }).click();
+        await expect(page.locator("#card-design-select")).toBeVisible();
+        await expect(page.locator("#card-design-select")).toHaveValue("classic");
+        await page.getByRole("tab", { name: "Deck", exact: true }).click();
       }
       const rows = page.locator("#deck-entries > li");
       const row = rows.first();
       const title = row.getByRole("button", {
-        name: language === "de" ? /in den Details anzeigen$/ : `Show ${name} in details`,
+        name: language === "de" ? /in der Vorschau anzeigen$/ : `Show ${name} in Preview`,
       });
       await expect(title).toBeVisible();
       const titleBox = (await title.boundingBox())!;
@@ -187,8 +222,7 @@ test("container resizing preserves state and right-pane selection", async ({ pag
   await page.getByLabel("Search spells").fill("Fireball");
   await page.getByRole("button", { name: /Add Fireball to active deck/ }).click();
   await page.getByRole("tab", { name: "Deck", exact: true }).click();
-  await page.getByRole("button", { name: "Deck settings", exact: true }).click();
-  const deckName = page.getByLabel("Active deck name", { exact: true });
+  const deckName = await openDeckRename(page);
   await deckName.fill("Unsubmitted name");
   await workspace.evaluate((element) => {
     element.style.width = "820px";
@@ -200,8 +234,8 @@ test("container resizing preserves state and right-pane selection", async ({ pag
   );
   await expect(deckName).toHaveValue("Unsubmitted name");
   await expect(page.getByLabel("Search spells")).toHaveValue("Fireball");
-  await page.getByRole("button", { name: "Show Fireball in details" }).click();
-  await expect(page.getByRole("tab", { name: "Details", exact: true })).toHaveAttribute(
+  await page.getByRole("button", { name: "Show Fireball in Preview" }).click();
+  await expect(page.getByRole("tab", { name: "Preview", exact: true })).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -272,6 +306,7 @@ test("wide coarse-pointer controls retain touch targets", async ({ browser }) =>
   const page = await context.newPage();
   await page.goto("/");
   await touchTarget(page.getByRole("button", { name: "Save as…", exact: true }));
+  await openCardAppearance(page);
   await touchTarget(page.getByRole("button", { name: "Legend", exact: true }));
   await context.close();
 });
@@ -295,16 +330,12 @@ for (const width of [390, 820, 1024]) {
     await touchTarget(add);
     await add.click();
     await page.getByRole("tab", { name: "Deck", exact: true }).click();
-    if (width < 720) {
-      await touchTarget(page.getByRole("button", { name: "Deck settings", exact: true }));
-      await page.getByRole("button", { name: "Deck settings", exact: true }).click();
-    }
+    await touchTarget(page.getByRole("button", { name: /^Rename deck / }));
     for (const name of [
       "Save as…",
       "Print cards",
       "Open…",
       "Deck actions",
-      "Legend",
       "Reorder Fireball",
       "Move Fireball up",
       "Move Fireball down",
@@ -319,6 +350,14 @@ for (const width of [390, 820, 1024]) {
     const save = page.getByRole("dialog", { name: "Save deck as" });
     await touchTarget(save.getByRole("button", { name: "Save", exact: true }));
     await touchTarget(save.getByRole("button", { name: "Cancel", exact: true }));
+    await save.getByRole("button", { name: "Cancel", exact: true }).click();
+    await page.getByRole("button", { name: "Table", exact: true }).click();
+    await touchTarget(page.getByRole("combobox", { name: "Sort by" }));
+    await touchTarget(page.locator(".deck-table-filters summary"));
+    await touchTarget(page.getByText("Table view & print", { exact: true }));
+    await page.getByRole("tab", { name: "Preview", exact: true }).click();
+    await openCardAppearance(page);
+    await touchTarget(page.getByRole("button", { name: "Legend", exact: true }));
     await noPageOverflow(page);
   });
 }
@@ -333,9 +372,19 @@ for (const width of [390, 1024, 1440]) {
     await expect(add).toBeEnabled();
     await add.focus();
     await page.keyboard.press("Enter");
+    await expect(add).toBeFocused();
+    await expect(page.getByLabel("Search spells")).toBeVisible();
+    if (width < 720) {
+      await expect(page.getByRole("tab", { name: "Library", exact: true })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+    }
+    await page.getByRole("list", { name: "Spell results" }).getByRole("button").first().focus();
+    await page.keyboard.press("Enter");
     await expect(page.locator(".card-preview-page").first()).toBeVisible();
     if (width < 1200) {
-      await page.getByRole("tab", { name: "Details", exact: true }).focus();
+      await page.getByRole("tab", { name: "Preview", exact: true }).focus();
       await page.keyboard.press("ArrowRight");
       await expect(page.getByRole("tab", { name: "Deck", exact: true })).toHaveAttribute(
         "aria-selected",
@@ -352,7 +401,12 @@ for (const width of [390, 1024, 1440]) {
     await expect(save).toBeHidden();
     await page.getByRole("button", { name: "Print cards", exact: true }).focus();
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("dialog", { name: /Print/ })).toBeVisible();
+    const print = page.getByRole("dialog", { name: /Print/ });
+    await expect(print).toBeVisible();
+    await print.getByRole("button", { name: "Card appearance", exact: true }).press("Enter");
+    await expect(print).toBeHidden();
+    await expect(page.getByLabel("Card design")).toBeVisible();
+    await expect(page.getByText("Card appearance", { exact: true })).toBeFocused();
   });
 }
 
@@ -386,15 +440,21 @@ for (const viewport of [
     await page.getByLabel("Search spells").fill("Fireball");
     await page.getByRole("button", { name: /Add Fireball to active deck/ }).click();
     await page.getByRole("tab", { name: "Deck", exact: true }).click();
-    if (viewport.width < 720) {
-      await page.getByRole("button", { name: "Deck settings", exact: true }).click();
-    }
+
+    const entry = page.getByRole("button", { name: "Show Fireball in Preview" });
+    await entry.scrollIntoViewIfNeeded();
+    await expect(entry).toBeInViewport({ ratio: 1 });
+    await page.getByRole("button", { name: "Table", exact: true }).click();
+    const sort = page.getByRole("combobox", { name: "Sort by" });
+    await sort.scrollIntoViewIfNeeded();
+    await expect(sort).toBeInViewport({ ratio: 1 });
+    await page.getByLabel("Rows per page").scrollIntoViewIfNeeded();
+    await expect(page.getByLabel("Rows per page")).toBeInViewport({ ratio: 1 });
+    await page.getByRole("tab", { name: "Preview", exact: true }).click();
+    await openCardAppearance(page);
     const legend = page.getByRole("button", { name: "Legend", exact: true });
     await legend.scrollIntoViewIfNeeded();
     await expect(legend).toBeInViewport({ ratio: 1 });
-    const entry = page.getByRole("button", { name: "Show Fireball in details" });
-    await entry.scrollIntoViewIfNeeded();
-    await expect(entry).toBeInViewport({ ratio: 1 });
     await noPageOverflow(page);
   });
 }

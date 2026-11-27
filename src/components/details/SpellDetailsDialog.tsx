@@ -4,6 +4,7 @@ import { resolveContentLanguage } from "@/content-language.ts";
 import { levelLabelKey, schoolKey } from "@/locales/labels.ts";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { SpellDetailsContent } from "./SpellDetailsContent.tsx";
+import { Button } from "@/ui/Button.tsx";
 
 export interface SpellDetailsDialogProps {
   spell: Spell;
@@ -11,6 +12,7 @@ export interface SpellDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
   datasetLanguage?: string;
   onCloseAutoFocus?: (event: Event) => void;
+  onOpenPreview?: () => void;
 }
 
 export function SpellDetailsDialog({
@@ -19,6 +21,7 @@ export function SpellDetailsDialog({
   onOpenChange,
   datasetLanguage,
   onCloseAutoFocus,
+  onOpenPreview,
 }: SpellDetailsDialogProps) {
   const { t } = useTranslation();
   const levelLabel = t(levelLabelKey(spell.level), { level: spell.level });
@@ -36,6 +39,11 @@ export function SpellDetailsDialog({
         onCloseAutoFocus={onCloseAutoFocus}
         className="app-no-print flex max-h-[85vh] w-[min(94vw,48rem)] flex-col overflow-hidden"
         bodyClassName="min-h-0 overflow-y-auto pr-1"
+        footer={
+          onOpenPreview ? (
+            <Button onClick={onOpenPreview}>{t("details.openPreview")}</Button>
+          ) : undefined
+        }
       >
         <SpellDetailsContent spell={spell} datasetLanguage={datasetLanguage} />
       </DialogContent>

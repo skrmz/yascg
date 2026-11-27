@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Info, Plus, SquarePen, Trash2 } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/state/AppProvider.tsx";
 import { resolveContentLanguage } from "@/content-language.ts";
@@ -15,7 +15,14 @@ import { SourceBadge } from "@/ui/Badge.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { CustomSpellForm } from "./CustomSpellForm.tsx";
 import { SpellDetailsDialog } from "./SpellDetailsDialog.tsx";
-import { PreviewFrame, type PreviewScaleMode } from "./PreviewFrame.tsx";
+import { PreviewFrame, PreviewScale, type PreviewScaleMode } from "./PreviewFrame.tsx";
+import { CardAppearance } from "./CardAppearance.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/ui/DropdownMenu.tsx";
 
 interface CopyDraftFlow {
   draft: Spell;
@@ -35,9 +42,28 @@ interface CopyConfirmationFlow {
   retryable: boolean;
 }
 
-export function DetailsPane({ previewActive = true }: { previewActive?: boolean }) {
+export function DetailsPane({
+  previewActive = true,
+  appearanceRequest,
+}: {
+  previewActive?: boolean;
+  appearanceRequest?: number;
+}) {
+  const { t } = useTranslation();
+  return (
+    <section className="flex h-full min-h-0 flex-col overflow-auto" aria-label={t("details.title")}>
+      <SpellPreview previewActive={previewActive} />
+      <div className="shrink-0">
+        <CardAppearance openRequest={appearanceRequest} />
+      </div>
+    </section>
+  );
+}
+
+function SpellPreview({ previewActive }: { previewActive: boolean }) {
   const {
     selectedSpell,
+    selectedSpellId,
     activeDeck,
     language,
     cardDesign,
@@ -196,14 +222,16 @@ export function DetailsPane({ previewActive = true }: { previewActive?: boolean 
   if (!selectedSpell) {
     return (
       <>
-        <section className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-          <p className="text-sm text-muted-foreground">{t("details.empty")}</p>
+        <div className="flex flex-col items-center justify-center gap-3 p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            {t(selectedSpellId ? "details.unavailable" : "details.empty")}
+          </p>
           {canUndo ? (
             <Button variant="outline" size="sm" onClick={() => void undoDelete()}>
               {t("details.undoDelete")}
             </Button>
           ) : null}
-        </section>
+        </div>
         {copyConfirmationDialog}
       </>
     );
@@ -256,10 +284,13 @@ export function DetailsPane({ previewActive = true }: { previewActive?: boolean 
   };
 
   return (
-    <section className="flex h-full min-h-0 flex-col" aria-label={t("details.title")}>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+    <>
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-1 border-b border-border px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <h2 lang={contentLanguage} className="truncate text-sm font-semibold text-foreground">
+          <h2
+            lang={contentLanguage}
+            className="min-w-0 text-sm font-semibold text-foreground [overflow-wrap:anywhere]"
+          >
             {spell.name}
           </h2>
           <SourceBadge
@@ -268,42 +299,48 @@ export function DetailsPane({ previewActive = true }: { previewActive?: boolean 
             overridden={spell.overridden}
           />
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <Button size="sm" disabled={activeDeck === null} onClick={() => void onAdd()}>
-            <Plus size={14} aria-hidden="true" />
             {t("details.add")}
           </Button>
           <Button variant="outline" size="sm" onClick={openDetails} aria-label={t("details.show")}>
-            <Info size={14} aria-hidden="true" />
             {t("details.show")}
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-            <SquarePen size={14} aria-hidden="true" />
-            {t("details.edit")}
-          </Button>
-          {canCreateEditableCopy ? (
-            <Button variant="ghost" size="sm" onClick={startCopy}>
-              <Copy size={14} aria-hidden="true" />
-              {t("details.createEditableCopy")}
-            </Button>
-          ) : null}
-          {isCustom ? (
-            <>
-              <Button variant="ghost" size="sm" onClick={() => void duplicateSpell(spell.id)}>
-                <Copy size={14} aria-hidden="true" />
-                {t("details.duplicate")}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" aria-label={t("details.actions")}>
+                <MoreHorizontal size={16} aria-hidden="true" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)}>
-                <Trash2 size={14} aria-hidden="true" />
-                {t("details.delete")}
-              </Button>
-            </>
-          ) : null}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onSelect={() => setEditing(true)}>
+                {t(isCustom ? "details.edit" : "details.editNotes")}
+              </DropdownMenuItem>
+              {canCreateEditableCopy && (
+                <DropdownMenuItem onSelect={startCopy}>
+                  {t("details.createEditableCopy")}
+                </DropdownMenuItem>
+              )}
+              {isCustom && (
+                <>
+                  <DropdownMenuItem onSelect={() => void duplicateSpell(spell.id)}>
+                    {t("details.duplicate")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-red-300"
+                    onSelect={() => setConfirmDelete(true)}
+                  >
+                    {t("details.delete")}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto p-3">
-        <div className="mb-3 space-y-1">
+      <div className="shrink-0 p-3">
+        <div className="space-y-1">
           {fit.error ? (
             <p className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-300">
               {t("details.fitError")}
@@ -323,34 +360,38 @@ export function DetailsPane({ previewActive = true }: { previewActive?: boolean 
                   : t("details.overflow", { max: LIMITS.CONTINUATION_CARDS_MAX })}
             </p>
           ) : null}
-          {fit.result && !fit.result.overflow ? (
-            <p className="text-xs text-muted-foreground">
-              {t("details.cardCount", {
-                count: fit.result.pages.length,
-                font: fit.result.fontPt,
-              })}
-            </p>
-          ) : null}
         </div>
-
         {previewReady && fit.result ? (
-          <PreviewFrame mode={previewMode} onModeChange={setPreviewMode}>
-            {fit.result.pages.map((pageBlocks, index) => (
-              <CardView
-                key={`${spell.id}-${index}`}
-                spell={spell}
-                blocks={pageBlocks}
-                cardIndex={index + 1}
-                cardCount={fit.result!.pages.length}
-                fontPt={fit.result!.fontPt}
-                contentLanguage={contentLanguage}
-                design={cardDesign}
-                background={cardBackground}
-                presentation={fit.presentation ?? undefined}
-                className="card-preview-page animate-reveal-subtle"
-              />
-            ))}
-          </PreviewFrame>
+          <>
+            <div className="app-no-print mb-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+              {!fit.result.overflow && (
+                <p className="text-xs text-muted-foreground">
+                  {t("details.cardCount", {
+                    count: fit.result.pages.length,
+                    font: fit.result.fontPt,
+                  })}
+                </p>
+              )}
+              <PreviewScale mode={previewMode} onModeChange={setPreviewMode} />
+            </div>
+            <PreviewFrame mode={previewMode}>
+              {fit.result.pages.map((pageBlocks, index) => (
+                <CardView
+                  key={`${spell.id}-${index}`}
+                  spell={spell}
+                  blocks={pageBlocks}
+                  cardIndex={index + 1}
+                  cardCount={fit.result!.pages.length}
+                  fontPt={fit.result!.fontPt}
+                  contentLanguage={contentLanguage}
+                  design={cardDesign}
+                  background={cardBackground}
+                  presentation={fit.presentation ?? undefined}
+                  className="card-preview-page animate-reveal-subtle"
+                />
+              ))}
+            </PreviewFrame>
+          </>
         ) : (
           <div className="rounded border border-dashed border-input p-4 text-xs text-muted-foreground">
             {t("details.measuring")}
@@ -404,6 +445,6 @@ export function DetailsPane({ previewActive = true }: { previewActive?: boolean 
         />
       </Dialog>
       {fit.measureLayer}
-    </section>
+    </>
   );
 }

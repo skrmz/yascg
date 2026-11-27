@@ -1,3 +1,4 @@
+import { openCardAppearance, openDeckRename, openSpellAction } from "./workspace-controls";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
@@ -50,7 +51,7 @@ async function exportBackup(page: Page) {
 }
 
 async function renameDeck(page: Page, name: string) {
-  const field = page.getByLabel("Active deck name");
+  const field = await openDeckRename(page);
   await expect(field).toBeEditable();
   await field.fill(name);
   await field.press("Enter");
@@ -61,7 +62,9 @@ async function addFireball(page: Page) {
   await page.getByLabel("Search spells").fill("Fireball");
   await page.getByRole("button", { name: "Add Fireball to active deck", exact: true }).click();
   await expect(
-    page.getByRole("region", { name: "Active deck" }).getByText("Fireball"),
+    page
+      .locator("#deck-entries")
+      .getByRole("button", { name: "Show Fireball in Preview", exact: true }),
   ).toBeVisible();
 }
 
@@ -91,6 +94,7 @@ async function importBackgrounds(page: Page) {
     .webp()
     .toBuffer();
   const dialog = page.getByRole("dialog", { name: "Personal card backgrounds" });
+  await openCardAppearance(page);
   await page.getByRole("button", { name: "Use own" }).click();
   await dialog.locator('input[type="file"]').setInputFiles([
     { name: "Paper.png", mimeType: "image/png", buffer: paper },
@@ -164,9 +168,22 @@ async function printWithBackground(page: Page, id: string, compact: boolean) {
 }
 
 async function expectBackgroundPdf(page: Page) {
+  await page.emulateMedia({ media: "print" });
+  const card = page.locator(".print-root .spell-card").first();
+  await expect(card).toBeVisible();
+  await card.evaluate(async (element) => {
+    const background = getComputedStyle(element).backgroundImage;
+    const image = new Image();
+    image.src = background.slice(5, -2);
+    await image.decode();
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  });
   const pdf = (
     await page.pdf({ scale: 1, preferCSSPageSize: true, printBackground: true })
   ).toString("latin1");
+  await page.emulateMedia({ media: "screen" });
   expect(pdf).toMatch(/\/MediaBox\s*\[0 0 612 792\]/);
   const images = [...pdf.matchAll(/\/Subtype \/Image\s+\/Width (\d+)\s+\/Height (\d+)/g)].map(
     ([, width, height]) => [Number(width), Number(height)],
@@ -263,6 +280,7 @@ test("matches bundled JPEG framing and color before CSS, and preserves print art
     converted: 2,
     failed: 0,
   });
+  await openCardAppearance(page);
   await page.getByRole("button", { name: "Use own" }).click();
   const dialog = page.getByRole("dialog", { name: "Personal card backgrounds" });
   await dialog.locator('input[type="file"]').setInputFiles([
@@ -401,6 +419,7 @@ test("rejects undersized personal images and enforces source and output byte lim
   page,
 }) => {
   await page.goto("/");
+  await openCardAppearance(page);
   await page.getByRole("button", { name: "Use own" }).click();
   const dialog = page.getByRole("dialog", { name: "Personal card backgrounds" });
   const input = dialog.locator('input[type="file"]');
@@ -490,12 +509,14 @@ test("normalizes mixed imports and shares the saved background across designs an
   await expectBackgroundPdf(page);
   await design.selectOption("classic");
   await page.reload();
+  await openCardAppearance(page);
   await expect(design).toHaveValue("compact");
   await expect(background).toHaveValue(id);
   await background.selectOption("none");
   await expect(background).toHaveValue("none");
   expect((await exportBackup(page)).personalBackgroundId).toBeNull();
   await page.reload();
+  await openCardAppearance(page);
   await expect(background).toHaveValue("none");
 
   await background.selectOption(id);
@@ -504,9 +525,11 @@ test("normalizes mixed imports and shares the saved background across designs an
   await background.selectOption(bundled);
   await expect(background).toHaveValue(bundled);
   await page.reload();
+  await openCardAppearance(page);
   await expect(background).toHaveValue("none");
   await background.selectOption(id);
   await expect(background).toHaveValue(id);
+  await openCardAppearance(page);
   await page.getByRole("button", { name: "Use own" }).click();
   const dialog = page.getByRole("dialog", { name: "Personal card backgrounds" });
   await dialog.getByRole("button", { name: "Remove Paper.png" }).click();
@@ -560,7 +583,7 @@ test("exports only committed data and requires confirmation to replace a populat
     .click();
   await expect(page.getByText("Saved", { exact: true })).toBeVisible();
   await renameDeck(page, "Working deck");
-  const name = page.getByLabel("Active deck name");
+  const name = await openDeckRename(page);
   await name.fill("Uncommitted draft");
 
   // A pointer activation starts at the focused inline name editor.
@@ -608,7 +631,8 @@ test("exports only committed data and requires confirmation to replace a populat
     expect(await exportBackup(target)).toEqual(backup);
     expect(await target.evaluate(() => localStorage.getItem("spellCards.language"))).toBeNull();
     await expect(target.getByLabel("Card background")).toHaveValue(backgroundId);
-    await target.getByRole("button", { name: "Show Fireball in details" }).click();
+    await target.getByRole("button", { name: "Show Fireball in Preview" }).click();
+    await openCardAppearance(target);
     for (const variant of ["classic", "compact"]) {
       await target.getByLabel("Card design").selectOption(variant);
       await expect(target.locator(".card-preview-page").first()).toHaveAttribute(
@@ -713,7 +737,7 @@ test("rejects stale cross-tab reviews and delayed editor saves without notificat
     .getByRole("button", { name: /^Fireball/ })
     .first()
     .click();
-  await b.getByRole("button", { name: "Edit", exact: true }).click();
+  await openSpellAction(b, "Edit component notes");
   const editor = b.getByRole("dialog");
   await editor.getByLabel("Verbal description").fill("Stale note");
   await staleReview.getByRole("button", { name: "Replace entire collection" }).click();
@@ -832,7 +856,9 @@ test("keeps deck and custom-spell import and export working after restore", asyn
   });
   await deck.getByRole("button", { name: "Replace active deck…" }).click();
   await expect(
-    page.getByRole("region", { name: "Active deck" }).getByText(spell.name),
+    page
+      .locator("#deck-entries")
+      .getByRole("button", { name: `Show ${spell.name} in Preview`, exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Deck actions" }).click();
   await page.getByRole("menuitem", { name: "Import / export deck" }).click();

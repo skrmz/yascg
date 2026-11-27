@@ -24,9 +24,11 @@ import { NativeSelect } from "@/ui/Field.tsx";
 export function PrintDialog({
   open,
   onOpenChange,
+  onOpenAppearance,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOpenAppearance?: () => void;
 }) {
   const { resolvedEntries, language, activeDeck, cardDesign, cardBackground } = useApp();
   const { t } = useTranslation();
@@ -206,6 +208,18 @@ export function PrintDialog({
         >
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
+              {onOpenAppearance && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onOpenAppearance();
+                  }}
+                >
+                  {t("card.appearance")}
+                </Button>
+              )}
               <label className="flex items-center gap-2 text-sm">
                 {t("print.paper")}
                 <NativeSelect

@@ -1,3 +1,4 @@
+import { openSpellAction } from "./workspace-controls";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -30,7 +31,7 @@ test("SRD override save and reset propagate across tabs without a refresh", asyn
   await expect(shell(tabB).getByText("SRD 5.2.1 *")).toHaveCount(0);
 
   // Author a verbal note in tab A.
-  await tabA.getByRole("button", { name: "Edit" }).click();
+  await openSpellAction(tabA, "Edit component notes");
   await tabA.getByLabel("Verbal description").fill("Flamme der Zauberkraft");
   await tabA.getByRole("dialog").getByRole("button", { name: "Save spell" }).click();
 
@@ -49,7 +50,7 @@ test("SRD override save and reset propagate across tabs without a refresh", asyn
   ).toBeVisible();
 
   // Reset in tab A reverts both tabs.
-  await tabA.getByRole("button", { name: "Edit" }).click();
+  await openSpellAction(tabA, "Edit component notes");
   await tabA.getByRole("dialog").getByRole("button", { name: "Reset to original" }).click();
 
   await expect(shell(tabA).getByText("SRD 5.2.1 *")).toHaveCount(0);

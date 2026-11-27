@@ -1,3 +1,4 @@
+import { openTableOutput } from "./workspace-controls";
 import { expect, test } from "@playwright/test";
 
 test("print continues long rows with repeated headers and fits all columns on each PDF page", async ({
@@ -40,6 +41,7 @@ test("print continues long rows with repeated headers and fits all columns on ea
   await expect(page.getByText("1 result", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Append all" }).click();
   await page.getByRole("button", { name: "Table", exact: true }).click();
+  await openTableOutput(page);
   await page.getByRole("button", { name: "Columns", exact: true }).click();
   const columnDialog = page.getByRole("dialog", { name: "Columns" });
   const checkboxes = columnDialog.getByRole("checkbox");

@@ -1,13 +1,31 @@
 import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { setWorkspaceWidth } from "@/test/setup.ts";
-import { modeForWidth, useWorkspaceLayout } from "./workspace-layout.ts";
+import {
+  modeForWidth,
+  useWorkspaceLayout,
+  readDeckPresentation,
+  PRESENTATION_KEY,
+} from "./workspace-layout.ts";
 
 function Workspace() {
   const { ref, mode } = useWorkspaceLayout();
   return <main ref={ref}>{mode}</main>;
 }
 describe("workspace container modes", () => {
+  it.each([null, "cards", "list", "invalid", "table"])("reads legacy presentation %s", (value) => {
+    if (value === null) localStorage.removeItem(PRESENTATION_KEY);
+    else localStorage.setItem(PRESENTATION_KEY, value);
+    expect(readDeckPresentation()).toBe(value === "table" ? "table" : "list");
+    localStorage.removeItem(PRESENTATION_KEY);
+  });
+  it("defaults to List when presentation storage is unavailable", () => {
+    const read = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("Unavailable");
+    });
+    expect(readDeckPresentation()).toBe("list");
+    read.mockRestore();
+  });
   it.each([
     [319, "compact"],
     [700, "compact"],

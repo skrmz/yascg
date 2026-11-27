@@ -12,11 +12,41 @@ Project-specific rules take precedence over shared rules; more specific rules ap
 Do not read, search, index, or modify `docs/archive/` or its contents.
 Exclude it from recursive operations and delegated tasks without exception.
 
-Use parallel subagents when supported and beneficial, assigning independent workstreams and avoiding conflicting changes.
+## Execution and resource efficiency
+
+Minimize context, reasoning, tool calls, and execution overhead without compromising correctness, security, explicit requirements, or mandatory verification.
+
+### Context and implementation
+
+- Read only task-relevant files and documentation. Prefer targeted searches and bounded reads.
+- Reuse established findings, loaded instructions, project conventions, and existing implementations unless invalidated.
+- Exclude dependencies, generated artifacts, caches, and unrelated files unless directly relevant. 
+- Match investigation and planning depth to complexity and risk. Prefer straightforward, maintainable solutions.
+- Stay within scope; avoid speculative improvements and unrelated changes.
+- Use subagents or parallel execution only when their expected benefit outweighs coordination and context costs.
+
+### Verification and debugging
+
+- Run targeted checks during implementation and complete all applicable verification gates before completion.
+- Reuse successful results unless invalidated by changes.
+- Investigate failures by root cause; rerun affected checks first and expand coverage when justified.
+- Do not repeat unsuccessful attempts without new evidence. Reassess stalled investigations and report unresolved blockers.
+- Never weaken tests, acceptance criteria, or required verification to reduce resource consumption.
+
+### Output and continuity
+
+- Keep plans, progress updates, and summaries concise.
+- Bound command output while preserving exit codes, result counts, and access to failure diagnostics.
+- Inspect large logs, reports, and diffs selectively.
+- Generate evidence only when needed.
+- Avoid unnecessary polling or restarting active commands.
+- Maintain concise checkpoints for long-running tasks. Reuse existing checkpoint documents.
+- On resumption, verify relevant state and assumptions without repeating still-valid completed work.
+- Honor explicit stop instructions immediately. When approaching resource limits, preserve work and record outstanding items before stopping.
 
 ## Project-specific toolchain guidance
 
-The following rules take precedence over the generic Vite+ guidance below:
+All project-specific instructions in this file, including execution efficiency, dependency installation, and verification requirements, take precedence over the generic Vite+ guidance below:
 
 - Use `pnpm run <script>` for package scripts, `pnpm exec vp run <task>` for Vite tasks, and `pnpm exec vp <command>` for built-in Vite+ commands.
 - Use existing project scripts for TypeScript execution; do not assume `vp` or `vpx` is globally available or that `vpx` is installed locally.
@@ -57,8 +87,10 @@ release. Add a tool name to select part of the graph. For example, run
 ## Project-specific guidance
 
 - Follow existing project conventions and architecture.
-- Run `pnpm run check` and `pnpm run test` after relevant changes.
-- Run normalization and affected E2E tests when changing data processing or application behavior.
+- Run `pnpm run check` and `pnpm run test` after completing relevant code changes or at the designated validation gate.
+- Run normalization when changes affect data processing or generated data.
+- Run affected E2E tests when changes affect application behavior.
+- Run broader regression suites when required by the verification matrix, acceptance criteria, or change impact.
 - Report failed, skipped, or unavailable verification checks and their reasons.
 - Keep the app deployable as a static Cloudflare Worker: `wrangler.jsonc` is the input
   configuration, production is assets-only with the SPA fallback, and no server API,
@@ -103,19 +135,10 @@ whole sections.
 Do not duplicate command tables, package scripts, payload schemas, or full deployment
 procedures across documents. Update relative links and anchors when headings move.
 
-Keep documentation synchronized with code and configuration changes.
+Keep directly affected documentation synchronized with code and configuration changes. Use the documentation ownership table to identify authoritative sources. Do not review or update unrelated documentation solely because repository changes were made.
+
 Apply the corresponding verification requirements whenever documentation work also changes code or configuration.
 
 ## Task-specific documentation
 
-Consult these files only when relevant to the task:
-
-- `README.md` — product overview, quick start, user usage, printing settings, backup, and licensing.
-- `docs/DEVELOPMENT.md` — toolchain, architecture, deck persistence implementation, localization internals, printing/offline implementation, and testing.
-- `docs/cloudflare-deployment-guide.md` — Workers Static Assets setup, Workers Builds dashboard settings, and framework-specific notes.
-- `docs/srd-data-pipeline.md` — raw SRD source shape, normalization, translations, and the legacy-format migration workflow.
-- `docs/short-descriptions-import.md` — short-description artifact contract, snapshot refresh and maintainer import workflow.
-- `docs/specs/MAIN-spec.md` — current product behavior contract and verification matrix.
-- `docs/custom-spell-import-guide.md` — custom-spell JSON format and import behavior.
-- `docs/subclasses.md` — official subclass catalog.
-- `scripts/normalize-srd.ts` — SRD normalization implementation.
+Consult documentation from the ownership table only when relevant to the current task. 

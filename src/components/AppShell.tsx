@@ -9,7 +9,7 @@ import { SectionErrorBoundary } from "./ErrorBoundary.tsx";
 import { LibraryPane } from "./library/LibraryPane.tsx";
 import { DetailsPane } from "./details/DetailsPane.tsx";
 import { DeckPane } from "./deck/DeckPane.tsx";
-import { DeckTable } from "./deck/table/DeckTable.tsx";
+import { SpellDetailsDialog } from "./details/SpellDetailsDialog.tsx";
 import { Button } from "@/ui/Button.tsx";
 import { Dialog, DialogContent } from "@/ui/Dialog.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs.tsx";
@@ -18,21 +18,12 @@ import {
   ShowDetailsContext,
   WorkspaceLayoutContext,
   useWorkspaceLayout,
+  readDeckPresentation,
+  PRESENTATION_KEY,
+  type DeckPresentation,
 } from "./workspace-layout.ts";
 
 type PaneKey = "library" | "details" | "deck";
-type DeckPresentation = "cards" | "table";
-
-const PRESENTATION_KEY = "spellCards.deckPresentation";
-
-function readDeckPresentation(): DeckPresentation {
-  try {
-    return localStorage.getItem(PRESENTATION_KEY) === "table" ? "table" : "cards";
-  } catch {
-    return "cards";
-  }
-}
-
 const PANE_CONTENT =
   "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring";
 
@@ -59,7 +50,8 @@ export function AppShell() {
     collectionGeneration,
     collectionError,
     refreshAll,
-    removeDeckEntries,
+    librarySpells,
+    selectSpell,
   } = useApp();
   const { t } = useTranslation();
 
@@ -93,7 +85,13 @@ export function AppShell() {
   const [tab, setTab] = useState<PaneKey>("library");
   const [rightTab, setRightTab] = useState<"details" | "deck">("details");
   const [presentation, setPresentation] = useState(readDeckPresentation);
-  const [managingDeck, setManagingDeck] = useState(false);
+  const [appearanceRequest, setAppearanceRequest] = useState<{
+    generation: string;
+    sequence: number;
+  }>();
+  const [inspection, setInspection] = useState<{ id: string; generation: string } | null>(null);
+  const inspectionTrigger = useRef<HTMLElement | null>(null);
+  const previewExit = useRef(false);
   const focusCards = useRef(false);
   const { ref: workspaceRef, mode } = useWorkspaceLayout();
   useEffect(() => {
@@ -111,72 +109,76 @@ export function AppShell() {
     mode === "wide" || (mode === "split" ? pane === "library" || pane === rightTab : pane === tab);
   const wide = mode === "wide";
   const tablePreferred = presentation === "table";
-  const tableVisible = tablePreferred && (wide || (paneVisible("deck") && !managingDeck));
+  const tableVisible = tablePreferred && paneVisible("deck");
+  const inspectedSpell =
+    inspection?.generation === collectionGeneration && paneVisible("library") && tableVisible
+      ? librarySpells.find(({ id }) => id === inspection.id)
+      : undefined;
+  useEffect(() => {
+    if (!inspectedSpell) setInspection(null);
+  }, [inspectedSpell]);
   const choosePresentation = (value: DeckPresentation) => {
     setPresentation(value);
-    setManagingDeck(false);
     try {
       localStorage.setItem(PRESENTATION_KEY, value);
     } catch {
       // The switch remains usable when browser storage is unavailable.
     }
-    if (!wide && value === "cards") {
-      focusCards.current = true;
-      changeTab("details");
-    }
+  };
+  const openPreview = (spellId?: string, moveFocus = true) => {
+    if (spellId) selectSpell(spellId);
+    previewExit.current = true;
+    setInspection(null);
+    choosePresentation("list");
+    focusCards.current = moveFocus;
+    changeTab("details");
+  };
+  const openAppearance = () => {
+    openPreview(undefined, false);
+    setAppearanceRequest((request) => ({
+      generation: collectionGeneration,
+      sequence: (request?.sequence ?? 0) + 1,
+    }));
   };
   const presentationSwitch = (
     <div
       role="group"
       aria-label={t("deck.presentation.label")}
-      className={cn(
-        "flex flex-wrap items-center gap-2 border-b border-border bg-card px-3",
-        mode === "compact" ? "py-0.5" : "py-2",
-      )}
+      className="flex shrink-0 items-center gap-1"
     >
       <Button
+        size="sm"
         variant={tablePreferred ? "outline" : "secondary"}
         aria-pressed={!tablePreferred}
-        onClick={() => choosePresentation("cards")}
+        onClick={() => choosePresentation("list")}
       >
-        {t("deck.presentation.cards")}
+        {t("deck.presentation.list")}
       </Button>
       <Button
-        variant={tablePreferred && (wide || !managingDeck) ? "secondary" : "outline"}
-        aria-pressed={tablePreferred && (wide || !managingDeck)}
+        size="sm"
+        variant={tablePreferred ? "secondary" : "outline"}
+        aria-pressed={tablePreferred}
         onClick={() => choosePresentation("table")}
       >
         {t("deck.presentation.table")}
       </Button>
-      {!wide && tablePreferred ? (
-        <Button
-          variant={managingDeck ? "secondary" : "ghost"}
-          aria-pressed={managingDeck}
-          onClick={() => setManagingDeck(!managingDeck)}
-        >
-          {t("deck.presentation.manage")}
-        </Button>
-      ) : null}
     </div>
   );
   useEffect(() => {
     const focused = document.activeElement as HTMLElement | null;
-    if (focusCards.current || focused?.closest("[data-workspace-pane][hidden]")) {
+    const hiddenFocus = focused?.closest("[data-workspace-pane][hidden]");
+    if (focusCards.current || hiddenFocus) {
+      const destination = focusCards.current
+        ? "details"
+        : wide && tableVisible
+          ? "deck"
+          : activeTab;
       focusCards.current = false;
       workspaceRef.current
-        ?.querySelector<HTMLElement>(`[data-workspace-pane="${activeTab}"]:not([hidden])`)
+        ?.querySelector<HTMLElement>(`[data-workspace-pane="${destination}"]:not([hidden])`)
         ?.focus();
     }
-  }, [mode, activeTab, workspaceRef]);
-  const previousSelectedSpell = useRef(selectedSpellId);
-
-  useEffect(() => {
-    if (selectedSpellId !== null && selectedSpellId !== previousSelectedSpell.current) {
-      setTab("details");
-      setRightTab("details");
-    }
-    previousSelectedSpell.current = selectedSpellId;
-  }, [selectedSpellId]);
+  }, [activeTab, mode, presentation, tableVisible, wide, workspaceRef]);
 
   const notice = collectionError ?? languageNotice ?? deckError ?? dataError;
 
@@ -221,10 +223,16 @@ export function AppShell() {
       ) : null}
       <ShowDetailsContext.Provider
         value={(options) => {
-          if (wide && tablePreferred && !options?.preservePresentation) {
-            choosePresentation("cards");
+          if (options?.source === "library" && options.spellId && tableVisible) {
+            inspectionTrigger.current = options.trigger ?? null;
+            previewExit.current = false;
+            setInspection({ id: options.spellId, generation: collectionGeneration });
+            return;
           }
-          changeTab("details");
+          const sourceStaysVisible =
+            (options?.source === "library" && mode !== "compact") ||
+            (options?.source === "deck" && wide);
+          openPreview(options?.spellId, !sourceStaysVisible);
         }}
       >
         <WorkspaceLayoutContext.Provider value={mode}>
@@ -256,11 +264,7 @@ export function AppShell() {
                     : undefined
               }
             >
-              {wide ? (
-                <div className="app-no-print relative z-10 col-start-2 row-start-1 min-w-0">
-                  {presentationSwitch}
-                </div>
-              ) : (
+              {!wide ? (
                 <TabsList
                   aria-label={t("app.workspaceNavigation")}
                   className={cn(
@@ -283,7 +287,7 @@ export function AppShell() {
                     {t("app.tabs.deck")}
                   </TabsTrigger>
                 </TabsList>
-              )}
+              ) : null}
               <TabsContent
                 value="library"
                 forceMount
@@ -329,7 +333,14 @@ export function AppShell() {
                     activeDeck?.revision,
                   ]}
                 >
-                  <DetailsPane previewActive={!tableVisible} />
+                  <DetailsPane
+                    previewActive={paneVisible("details") && !tableVisible}
+                    appearanceRequest={
+                      appearanceRequest?.generation === collectionGeneration
+                        ? appearanceRequest?.sequence
+                        : undefined
+                    }
+                  />
                 </SectionErrorBoundary>
               </TabsContent>
               <TabsContent
@@ -345,44 +356,54 @@ export function AppShell() {
                   PANE_CONTENT,
                   wide &&
                     (tableVisible
-                      ? "col-start-2 col-span-2 row-start-1 row-span-2 grid grid-cols-subgrid grid-rows-subgrid bg-transparent"
+                      ? "col-start-2 col-span-2 row-start-1 row-span-2"
                       : "col-start-3 row-start-1 row-span-2 border-l border-border"),
                   mode === "split" && "col-start-2 row-start-2",
                   !paneVisible("deck") && "hidden",
                 )}
               >
-                {!wide ? <div className="app-no-print">{presentationSwitch}</div> : null}
-                <div
-                  hidden={(!wide && tableVisible) || !paneVisible("deck")}
-                  className={cn(
-                    "min-h-0 min-w-0 flex-1 overflow-hidden",
-                    wide && tableVisible && "col-start-2 row-span-2 border-l border-border bg-card",
-                    ((!wide && tableVisible) || !paneVisible("deck")) && "hidden",
-                  )}
-                >
-                  <SectionErrorBoundary name="deck" resetKeys={[language, activeDeck?.revision]}>
-                    <DeckPane />
-                  </SectionErrorBoundary>
-                </div>
-                <div
-                  hidden={!tableVisible}
-                  className={cn(
-                    "app-no-print flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card",
-                    wide && "col-start-1 row-start-2",
-                    !tableVisible && "hidden",
-                  )}
-                >
-                  <SectionErrorBoundary name="deck" resetKeys={[language, activeDeck?.revision]}>
-                    <DeckTable
-                      active={tableVisible}
-                      deckInstance={activeDeck?.instanceId ?? ""}
-                      removeEntries={removeDeckEntries}
-                    />
-                  </SectionErrorBoundary>
-                </div>
+                <SectionErrorBoundary name="deck" resetKeys={[language, activeDeck?.revision]}>
+                  <DeckPane
+                    presentation={presentation}
+                    presentationSwitch={presentationSwitch}
+                    onOpenAppearance={openAppearance}
+                    active={paneVisible("deck")}
+                  />
+                </SectionErrorBoundary>
               </TabsContent>
             </Tabs>
           </main>
+          {inspectedSpell ? (
+            <SpellDetailsDialog
+              spell={inspectedSpell}
+              datasetLanguage={language}
+              open
+              onOpenChange={(open) => !open && setInspection(null)}
+              onOpenPreview={() => openPreview(inspectedSpell.id)}
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                if (previewExit.current) {
+                  workspaceRef.current
+                    ?.querySelector<HTMLElement>('[data-workspace-pane="details"]')
+                    ?.focus();
+                  return;
+                }
+                const trigger = inspectionTrigger.current;
+                if (trigger?.isConnected && !trigger.closest("[hidden]"))
+                  trigger.focus({ preventScroll: true });
+                if (document.activeElement !== trigger) {
+                  const fallback =
+                    workspaceRef.current?.querySelector<HTMLElement>(
+                      '[data-workspace-pane="library"]:not([hidden]) input',
+                    ) ??
+                    workspaceRef.current?.querySelector<HTMLElement>(
+                      '[data-workspace-pane][data-state="active"]:not([hidden])',
+                    );
+                  fallback?.focus({ preventScroll: true });
+                }
+              }}
+            />
+          ) : null}
         </WorkspaceLayoutContext.Provider>
       </ShowDetailsContext.Provider>
 

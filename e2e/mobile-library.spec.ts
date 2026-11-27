@@ -19,7 +19,7 @@ for (const viewport of MOBILE_VIEWPORTS) {
   test(`mobile library layout at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await openLibrary(page, viewport);
 
-    const headerBox = await page.locator("header").boundingBox();
+    const headerBox = await page.getByRole("banner").boundingBox();
     expect(headerBox).not.toBeNull();
     expect(headerBox!.height).toBeLessThan(64);
 
@@ -112,7 +112,9 @@ test("mobile search and add still work", async ({ page }) => {
   await page.getByRole("tab", { name: "Deck" }).click();
 
   await expect(
-    page.getByRole("region", { name: "Active deck" }).getByText("Fireball"),
+    page
+      .locator("#deck-entries")
+      .getByRole("button", { name: "Show Fireball in Preview", exact: true }),
   ).toBeVisible();
 });
 

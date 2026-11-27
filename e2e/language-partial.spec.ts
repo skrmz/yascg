@@ -79,7 +79,11 @@ test("switching to an incomplete translation requires confirmation and keeps the
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByRole("button", { name: /English/ })).toBeVisible();
   const deck = page.getByRole("region", { name: "Active deck" });
-  await expect(deck.getByText("Fireball")).toBeVisible();
+  await expect(
+    deck
+      .locator("#deck-entries")
+      .getByRole("button", { name: "Show Fireball in Preview", exact: true }),
+  ).toBeVisible();
 
   // Confirm keeps the entry as a non-printable placeholder.
   await switchLanguage(page, /Français/);
@@ -125,7 +129,7 @@ test("table marks English fallbacks and keeps the same entries selected after a 
   await expect(table.getByRole("rowheader", { name: /Fireball/ })).toContainText(
     "English fallback",
   );
-  await table.getByRole("button", { name: "Open details for Fireball" }).click();
+  await table.getByRole("button", { name: "Read full spell for Fireball" }).click();
   await expect(
     page.getByRole("dialog", { name: "Fireball" }).getByRole("heading", { name: "Fireball" }),
   ).toHaveAttribute("lang", "en");

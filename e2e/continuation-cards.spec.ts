@@ -1,3 +1,4 @@
+import { openCardAppearance } from "./workspace-controls";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function switchLanguage(page: Page, option: RegExp) {
@@ -9,6 +10,7 @@ async function switchLanguage(page: Page, option: RegExp) {
 }
 
 async function addWunsch(page: Page) {
+  await openCardAppearance(page);
   await page.getByLabel(/Card design|Kartendesign/).selectOption("classic");
   const library = page.getByRole("region", { name: "Zauberbibliothek" });
   await page.getByLabel("Zauber suchen").fill("Wunsch");
@@ -17,7 +19,7 @@ async function addWunsch(page: Page) {
     .first()
     .click();
 
-  const details = page.getByRole("region", { name: "Zaubervorschau und Details" });
+  const details = page.getByRole("region", { name: "Zaubervorschau" });
   await details.getByRole("button", { name: "Hinzufügen", exact: true }).click();
 
   const deck = page.getByRole("region", { name: "Aktives Deck" });

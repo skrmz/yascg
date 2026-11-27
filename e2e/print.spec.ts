@@ -1,3 +1,4 @@
+import { openCardAppearance } from "./workspace-controls";
 import { expect, test } from "@playwright/test";
 
 test("print dialog explains settings and renders a 9-up sheet", async ({ page }) => {
@@ -56,6 +57,7 @@ test("prints the selected card background", async ({ page }) => {
     .first()
     .click();
 
+  await openCardAppearance(page);
   const background = page.getByLabel("Card background");
   const preview = page.locator(".card-preview-page").first();
   const backgroundValue = await background.locator("option").nth(1).getAttribute("value");

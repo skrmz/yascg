@@ -46,6 +46,8 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     activeDeck: holder.activeDeck,
     language: "en",
     cardDesign: holder.cardDesign,
+    personalBackgrounds: [],
+    collectionGeneration: "initial",
     cardBackground: holder.cardBackground,
     manifest: [],
     shortDescriptionsByLocale: {},
@@ -99,8 +101,9 @@ describe("DetailsPane empty selection", () => {
   it("keeps the placeholder without offering custom spell creation", () => {
     holder.spell = null;
     render(<DetailsPane />);
-    expect(screen.getByText("Select a spell to preview its card and details.")).not.toBeNull();
+    expect(screen.getByText("Select a spell to preview its card.")).not.toBeNull();
     expect(screen.queryByRole("button", { name: /New custom spell/ })).toBeNull();
+    expect(screen.getByText("Card appearance")).not.toBeNull();
   });
 
   it("still offers Undo delete for a pending deletion", async () => {
@@ -116,19 +119,20 @@ describe("DetailsPane empty selection", () => {
 });
 
 describe("DetailsPane preview-only default layout", () => {
-  it("renders the persistent Show details button", () => {
+  it("renders the persistent Read full spell button", () => {
     render(<DetailsPane />);
-    expect(screen.getByRole("button", { name: "Show details" })).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Edit" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Read full spell" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Spell actions" })).not.toBeNull();
   });
 
-  it("opens the edit flow from the header action bar", async () => {
+  it("opens the edit flow from Spell actions", async () => {
     const user = userEvent.setup();
     render(<DetailsPane />);
 
-    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByRole("button", { name: "Spell actions" }));
+    await user.click(screen.getByRole("menuitem", { name: "Edit component notes" }));
 
-    expect(screen.getByRole("dialog", { name: "Edit custom spell" })).not.toBeNull();
+    expect(screen.getByRole("dialog", { name: "Edit component notes" })).not.toBeNull();
   });
 
   it("does not duplicate metadata or description in the default layout", () => {
@@ -190,13 +194,17 @@ describe("DetailsPane preview-only default layout", () => {
       overflow: false,
     };
     const { rerender } = render(<DetailsPane />);
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "fit" } });
-    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("fit");
+    fireEvent.change(screen.getByRole("combobox", { name: "Preview scale" }), {
+      target: { value: "fit" },
+    });
+    expect(
+      (screen.getByRole("combobox", { name: "Preview scale" }) as HTMLSelectElement).value,
+    ).toBe("fit");
 
     holder.spell = makeSpell({ id: "srd-light", name: "Light" });
     holder.fit = null;
     rerender(<DetailsPane />);
-    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Preview scale" })).toBeNull();
 
     holder.fit = {
       pages: [[]],
@@ -205,7 +213,9 @@ describe("DetailsPane preview-only default layout", () => {
       overflow: false,
     };
     rerender(<DetailsPane />);
-    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("fit");
+    expect(
+      (screen.getByRole("combobox", { name: "Preview scale" }) as HTMLSelectElement).value,
+    ).toBe("fit");
   });
 
   it("opens the details dialog without mutating deck state", async () => {
@@ -217,7 +227,7 @@ describe("DetailsPane preview-only default layout", () => {
     const user = userEvent.setup();
     render(<DetailsPane />);
 
-    await user.click(screen.getByRole("button", { name: "Show details" }));
+    await user.click(screen.getByRole("button", { name: "Read full spell" }));
 
     const dialog = screen.getByRole("dialog", { name: "Fireball" });
     expect(within(dialog).getByText("A test spell.")).not.toBeNull();
@@ -233,7 +243,7 @@ describe("DetailsPane preview-only default layout", () => {
     const user = userEvent.setup();
     const { rerender } = render(<DetailsPane />);
 
-    await user.click(screen.getByRole("button", { name: "Show details" }));
+    await user.click(screen.getByRole("button", { name: "Read full spell" }));
     expect(screen.getByRole("dialog", { name: "Fireball" })).not.toBeNull();
 
     holder.spell = makeSpell({ id: "srd-light", name: "Light", description: ["Second spell."] });
@@ -241,7 +251,7 @@ describe("DetailsPane preview-only default layout", () => {
 
     expect(screen.queryByRole("dialog")).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Show details" }));
+    await user.click(screen.getByRole("button", { name: "Read full spell" }));
     const dialog = screen.getByRole("dialog", { name: "Light" });
     expect(within(dialog).getByText("Second spell.")).not.toBeNull();
     expect(within(dialog).queryByText("First spell.")).toBeNull();
@@ -272,7 +282,7 @@ describe("DetailsPane dialog content", () => {
     const user = userEvent.setup();
     render(<DetailsPane />);
 
-    await user.click(screen.getByRole("button", { name: "Show details" }));
+    await user.click(screen.getByRole("button", { name: "Read full spell" }));
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("Subclasses")).not.toBeNull();
     expect(within(dialog).getByText("War Domain, Arcana")).not.toBeNull();
@@ -283,7 +293,7 @@ describe("DetailsPane dialog content", () => {
     const user = userEvent.setup();
     render(<DetailsPane />);
 
-    await user.click(screen.getByRole("button", { name: "Show details" }));
+    await user.click(screen.getByRole("button", { name: "Read full spell" }));
     const dialog = screen.getByRole("dialog");
     const value = within(dialog).getByText("Subclasses").nextElementSibling;
     expect(value?.textContent).toBe("\u2014");
@@ -302,7 +312,7 @@ describe("DetailsPane dialog content", () => {
     const user = userEvent.setup();
     render(<DetailsPane />);
 
-    await user.click(screen.getByRole("button", { name: "Show details" }));
+    await user.click(screen.getByRole("button", { name: "Read full spell" }));
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("Speak the word")).not.toBeNull();
     expect(within(dialog).getByText("Trace a sigil")).not.toBeNull();
@@ -324,7 +334,7 @@ describe("DetailsPane dialog content", () => {
     const user = userEvent.setup();
     render(<DetailsPane />);
 
-    await user.click(screen.getByRole("button", { name: "Show details" }));
+    await user.click(screen.getByRole("button", { name: "Read full spell" }));
     expect(
       within(screen.getByRole("dialog")).getByText("A ruby (100 gp, consumed)"),
     ).not.toBeNull();
@@ -464,7 +474,8 @@ describe("DetailsPane editable SRD copies", () => {
   }
 
   async function openCopyEditor(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(screen.getByRole("button", { name: "Create editable copy" }));
+    await user.click(screen.getByRole("button", { name: "Spell actions" }));
+    await user.click(screen.getByRole("menuitem", { name: "Create editable copy" }));
     return screen.getByRole("dialog", { name: "Create editable copy" });
   }
 
@@ -477,23 +488,30 @@ describe("DetailsPane editable SRD copies", () => {
     return screen.getByRole("dialog", { name: `Replace the deck entry with "${name}"?` });
   }
 
-  it("hides the action for custom spells and SRD spells outside the active deck", () => {
+  it("hides the action for custom spells and SRD spells outside the active deck", async () => {
+    const user = userEvent.setup();
     holder.spell = makeCustomSpell({ id: "custom-1" });
     holder.activeDeck = makeDeck("custom-1");
     const { rerender } = render(<DetailsPane />);
-    expect(screen.queryByRole("button", { name: "Create editable copy" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Spell actions" }));
+    expect(screen.queryByRole("menuitem", { name: "Create editable copy" })).toBeNull();
+    await user.keyboard("{Escape}");
 
     holder.spell = makeSpell({ id: "srd-other" });
     holder.activeDeck = makeDeck("srd-test-spell");
     rerender(<DetailsPane />);
-    expect(screen.queryByRole("button", { name: "Create editable copy" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Spell actions" }));
+    expect(screen.queryByRole("menuitem", { name: "Create editable copy" })).toBeNull();
+    await user.keyboard("{Escape}");
   });
 
-  it("shows the action for an SRD spell present in the active deck", () => {
+  it("shows the action for an SRD spell present in the active deck", async () => {
+    const user = userEvent.setup();
     holder.spell = makeSpell({ id: "srd-test-spell" });
     holder.activeDeck = makeDeck();
     render(<DetailsPane />);
-    expect(screen.getByRole("button", { name: "Create editable copy" })).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Spell actions" }));
+    expect(screen.getByRole("menuitem", { name: "Create editable copy" })).not.toBeNull();
   });
 
   it("cancelling the editor writes nothing", async () => {
@@ -657,11 +675,17 @@ describe("DetailsPane editable SRD copies", () => {
 });
 
 describe("DetailsPane SRD editing and source", () => {
-  it("offers Edit for SRD spells while keeping Duplicate/Delete custom-only", () => {
+  it("offers Edit for SRD spells while keeping Duplicate/Delete custom-only", async () => {
     holder.spell = makeSpell();
+    const user = userEvent.setup();
     render(<DetailsPane />);
-    expect(screen.getByRole("button", { name: /Edit/ })).not.toBeNull();
-    expect(screen.queryByRole("button", { name: /Duplicate/ })).toBeNull();
+    const trigger = screen.getByRole("button", { name: "Spell actions" });
+    trigger.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("menuitem", { name: "Edit component notes" })).not.toBeNull();
+    expect(screen.queryByRole("menuitem", { name: /Duplicate|Delete/ })).toBeNull();
+    await user.keyboard("{Escape}");
+    expect(document.activeElement).toBe(trigger);
   });
 
   it("marks an overridden SRD spell with an asterisk", () => {
@@ -683,7 +707,8 @@ describe("DetailsPane short-description origin", () => {
     };
     const copyRender = render(<DetailsPane />);
 
-    await user.click(screen.getByRole("button", { name: "Create editable copy" }));
+    await user.click(screen.getByRole("button", { name: "Spell actions" }));
+    await user.click(screen.getByRole("menuitem", { name: "Create editable copy" }));
     expect(screen.getByRole("dialog", { name: "Create editable copy" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Apply short description" })).not.toBeNull();
     copyRender.unmount();
@@ -696,7 +721,8 @@ describe("DetailsPane short-description origin", () => {
       entries: [makeEntry("custom-1", "Custom", "Custom Spell")],
     };
     render(<DetailsPane />);
-    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByRole("button", { name: "Spell actions" }));
+    await user.click(screen.getByRole("menuitem", { name: /^Edit$/ }));
     expect(screen.getByRole("dialog", { name: "Edit custom spell" })).not.toBeNull();
     expect(screen.queryByRole("button", { name: "Apply short description" })).toBeNull();
   });

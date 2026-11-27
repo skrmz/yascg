@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render as renderUI, screen, within } from "@testing-library/react";
+import { act, fireEvent, render as renderUI, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
@@ -7,7 +7,8 @@ import i18n from "@/i18n.ts";
 import { createEmptyActiveDeck } from "@/domain/deck";
 import { CORE_CLASSES, type Spell } from "@/domain/spells";
 import { makeCustomSpell, makeSpell } from "@/test/fixtures/spells.ts";
-import { WorkspaceLayoutContext } from "../workspace-layout.ts";
+import { ShowDetailsContext, WorkspaceLayoutContext } from "../workspace-layout.ts";
+import { makeEntry } from "@/db/active-deck.ts";
 import { LibraryPane } from "./LibraryPane.tsx";
 
 let desktopLayout = true;
@@ -18,7 +19,9 @@ function render(ui: ReactNode) {
   return renderUI(ui, {
     wrapper: ({ children }) => (
       <WorkspaceLayoutContext.Provider value={desktopLayout ? "wide" : "compact"}>
-        {children}
+        <ShowDetailsContext.Provider value={holder.showDetails}>
+          {children}
+        </ShowDetailsContext.Provider>
       </WorkspaceLayoutContext.Provider>
     ),
   });
@@ -32,6 +35,7 @@ const holder = vi.hoisted(() => ({
   addSpellToDeck: vi.fn(),
   addSpellsToDeck: vi.fn(),
   selectSpell: vi.fn(),
+  showDetails: vi.fn(),
   saveCustomSpell: vi.fn(),
 }));
 
@@ -72,6 +76,7 @@ beforeEach(async () => {
   holder.addSpellToDeck.mockReset().mockResolvedValue("added");
   holder.addSpellsToDeck.mockReset().mockResolvedValue({ added: 0, skipped: 0, ok: true });
   holder.selectSpell.mockReset();
+  holder.showDetails.mockReset();
   holder.saveCustomSpell.mockReset();
   toastMock.info.mockReset();
   toastMock.success.mockReset();
@@ -280,6 +285,69 @@ describe("LibraryPane subclass filter", () => {
 });
 
 describe("LibraryPane deck additions", () => {
+  it("announces a successful addition and keeps focus, search, and inspection unchanged", async () => {
+    const spell = makeSpell({ name: "Fireball" });
+    holder.spells = [spell];
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+    await user.type(screen.getByLabelText("Search spells"), "Fireball");
+    const add = screen.getByRole("button", { name: "Add Fireball to active deck" });
+    await user.click(add);
+    expect(holder.addSpellToDeck).toHaveBeenCalledWith(spell, { selectOnSuccess: true });
+    expect(toastMock.success).toHaveBeenCalledWith("Added Fireball to the active deck.");
+    expect(add).toHaveFocus();
+    expect(screen.getByLabelText("Search spells")).toHaveValue("Fireball");
+    expect(holder.showDetails).not.toHaveBeenCalled();
+    expect(holder.selectSpell).not.toHaveBeenCalled();
+  });
+
+  it("does not navigate or announce success before a pending addition or after an error", async () => {
+    holder.spells = [makeSpell({ name: "Fireball" })];
+    let complete!: (result: string) => void;
+    holder.addSpellToDeck.mockReturnValueOnce(
+      new Promise<string>((resolve) => {
+        complete = resolve;
+      }),
+    );
+    const user = userEvent.setup();
+    const view = render(<LibraryPane />);
+    await user.click(screen.getByRole("button", { name: "Add Fireball to active deck" }));
+    expect(toastMock.success).not.toHaveBeenCalled();
+    view.rerender(<LibraryPane active={false} />);
+    await act(async () => {
+      complete("error");
+    });
+    expect(toastMock.success).not.toHaveBeenCalled();
+    expect(holder.selectSpell).not.toHaveBeenCalled();
+    expect(holder.showDetails).not.toHaveBeenCalled();
+  });
+
+  it("marks deck membership while keeping duplicate attempts available", () => {
+    holder.spells = [makeSpell({ id: "srd-fireball", name: "Fireball" })];
+    holder.activeDeck = {
+      ...createEmptyActiveDeck(),
+      entries: [makeEntry("srd-fireball", "SRD-5.2.1", "Fireball")],
+    };
+    render(<LibraryPane />);
+    const add = screen.getByRole("button", { name: "Add Fireball to active deck" });
+    expect(add).toBeEnabled();
+    expect(add).toHaveAttribute("aria-description", "Already in the active deck");
+  });
+
+  it("passes the candidate identity and trigger for explicit inspection, including reselection", async () => {
+    holder.spells = [makeSpell({ id: "srd-fireball", name: "Fireball" })];
+    holder.selectedSpellId = "srd-fireball";
+    const user = userEvent.setup();
+    render(<LibraryPane />);
+    const trigger = screen.getByRole("button", { name: /^Fireball/ });
+    await user.click(trigger);
+    expect(holder.showDetails).toHaveBeenCalledWith({
+      spellId: "srd-fireball",
+      trigger,
+      source: "library",
+    });
+    expect(holder.selectSpell).not.toHaveBeenCalled();
+  });
   it("enables deck mutations once the active deck is available", () => {
     holder.spells = [makeSpell({ name: "Fireball" })];
     holder.activeDeck = null;
@@ -409,6 +477,7 @@ describe("LibraryPane custom spell creation", () => {
     expect(saved.name).toBe("Moonbeam Deluxe");
     expect(saved.source).toBe("Custom");
     expect(holder.selectSpell).toHaveBeenCalledWith(saved.id);
+    expect(holder.showDetails).toHaveBeenCalledWith({ spellId: saved.id });
     expect(holder.addSpellToDeck).not.toHaveBeenCalled();
     expect(holder.addSpellsToDeck).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog", { name: "New custom spell" })).toBeNull();

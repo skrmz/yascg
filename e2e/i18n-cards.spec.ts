@@ -1,3 +1,4 @@
+import { openCardAppearance } from "./workspace-controls";
 import { expect, test, type Page } from "@playwright/test";
 
 async function switchLanguage(page: Page, option: RegExp) {
@@ -29,6 +30,7 @@ test("cycles card terminology EN to DE and back without stale fit or overflow", 
 }) => {
   await page.goto("/");
   await selectFireball(page);
+  await openCardAppearance(page);
   await page.getByLabel("Card design").selectOption("classic");
 
   const card = page.locator(".card-preview-page").first();
@@ -73,16 +75,16 @@ test("localizes damage-type badges and falls back to the raw English value", asy
   await page.getByLabel("Search spells").fill("Fire Bolt");
   await library.getByRole("button", { name: /^Fire Bolt Cantrip/ }).click();
 
-  const details = page.getByRole("region", { name: "Spell preview and details" });
-  await details.getByRole("button", { name: "Show details" }).click();
+  const details = page.getByRole("region", { name: "Spell preview" });
+  await details.getByRole("button", { name: "Read full spell" }).click();
   const englishDialog = page.getByRole("dialog");
   await expect(englishDialog.getByText("Fire", { exact: true })).toBeVisible();
   await englishDialog.getByRole("button", { name: "Close" }).click();
   await expect(englishDialog).toHaveCount(0);
 
   await switchLanguage(page, /Deutsch/);
-  const germanDetails = page.getByRole("region", { name: "Zaubervorschau und Details" });
-  await germanDetails.getByRole("button", { name: "Details anzeigen" }).click();
+  const germanDetails = page.getByRole("region", { name: "Zaubervorschau" });
+  await germanDetails.getByRole("button", { name: "Vollständigen Zauber lesen" }).click();
   const germanDialog = page.getByRole("dialog");
   await expect(germanDialog.getByText("Feuer", { exact: true })).toBeVisible();
   await expect(germanDialog.getByText("Fire", { exact: true })).toHaveCount(0);
@@ -90,6 +92,6 @@ test("localizes damage-type badges and falls back to the raw English value", asy
   await expect(germanDialog).toHaveCount(0);
 
   await switchLanguage(page, /English/);
-  await details.getByRole("button", { name: "Show details" }).click();
+  await details.getByRole("button", { name: "Read full spell" }).click();
   await expect(page.getByRole("dialog").getByText("Fire", { exact: true })).toBeVisible();
 });

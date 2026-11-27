@@ -443,7 +443,15 @@ export function CustomSpellForm({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        title={t(editableCopy ? "form.title.copy" : spell ? "form.title.edit" : "form.title.new")}
+        title={t(
+          isSrd
+            ? "form.title.notes"
+            : editableCopy
+              ? "form.title.copy"
+              : spell
+                ? "form.title.edit"
+                : "form.title.new",
+        )}
         description={t(
           editableCopy
             ? "form.descriptionCopy"

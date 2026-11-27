@@ -5,7 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { message } from "@/locales/messages.ts";
 import { CARD_BACKGROUNDS, cardBackgroundLabel } from "@/cards/backgrounds.ts";
 import { DeckPane } from "./DeckPane.tsx";
+import { CardAppearance } from "../details/CardAppearance.tsx";
 import { WorkspaceLayoutContext } from "../workspace-layout.ts";
+import { makeSpell } from "@/test/fixtures/spells.ts";
 
 const holder = vi.hoisted(() => ({
   activeDeck: null as unknown,
@@ -50,6 +52,7 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     deckBusy: false,
     savedDecks: holder.savedDecks,
     resolvedEntries: holder.resolvedEntries,
+    englishById: new Map(),
     language: "en",
     librarySpells: [],
     canUndo: false,
@@ -74,6 +77,7 @@ vi.mock("@/state/AppProvider.tsx", () => ({
     personalBackgrounds: [],
     collectionGeneration: "initial",
     setCardBackground: holder.setCardBackground,
+    removeDeckEntries: vi.fn(),
   }),
 }));
 
@@ -118,6 +122,33 @@ beforeEach(() => {
 });
 
 describe("DeckPane status and save", () => {
+  it.each(["list", "table"] as const)(
+    "keeps shared guarded actions in %s",
+    async (presentation) => {
+      holder.activeDeck = { ...associatedDeck, revision: 2 };
+      holder.dirty = true;
+      holder.deckStatus = "unsaved";
+      const user = userEvent.setup();
+      const show = (value: "list" | "table") => (
+        <WorkspaceLayoutContext.Provider value="split">
+          <DeckPane presentation={value} />
+        </WorkspaceLayoutContext.Provider>
+      );
+      const view = render(show(presentation));
+      await user.click(screen.getByRole("button", { name: "Rename deck Deck" }));
+      const input = screen.getByRole("textbox", { name: "Active deck name" });
+      await user.clear(input);
+      await user.type(input, "Renamed");
+      view.rerender(show(presentation === "list" ? "table" : "list"));
+      expect(screen.getByLabelText("Active deck name")).toBe(input);
+      expect(input).toHaveValue("Renamed");
+      expect(screen.getByRole("button", { name: "Print cards" })).toBeVisible();
+      expect(screen.getByRole("button", { name: "Open…" })).toBeVisible();
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      expect(holder.renameActiveDeck).toHaveBeenCalledExactlyOnceWith("Renamed");
+      expect(holder.saveActiveDeck).toHaveBeenCalledTimes(1);
+    },
+  );
   it("disables Save for a clean empty deck and performs no write", async () => {
     const user = userEvent.setup();
     render(<DeckPane />);
@@ -191,7 +222,8 @@ describe("DeckPane inline name editing", () => {
     const user = userEvent.setup();
     render(<DeckPane />);
 
-    const input = screen.getByLabelText("Active deck name");
+    await user.click(screen.getByRole("button", { name: "Rename deck Deck" }));
+    const input = screen.getByRole("textbox", { name: "Active deck name" });
     await user.clear(input);
     await user.type(input, "  Renamed  ");
     await user.keyboard("{Enter}");
@@ -205,7 +237,8 @@ describe("DeckPane inline name editing", () => {
     const user = userEvent.setup();
     render(<DeckPane />);
 
-    const input = screen.getByLabelText("Active deck name");
+    await user.click(screen.getByRole("button", { name: "Rename deck Deck" }));
+    const input = screen.getByRole("textbox", { name: "Active deck name" });
     await user.clear(input);
     await user.keyboard("{Enter}");
 
@@ -221,7 +254,8 @@ describe("DeckPane inline name editing", () => {
     const user = userEvent.setup();
     render(<DeckPane />);
 
-    const input = screen.getByLabelText("Active deck name");
+    await user.click(screen.getByRole("button", { name: "Rename deck Deck" }));
+    const input = screen.getByRole("textbox", { name: "Active deck name" });
     await user.clear(input);
     await user.type(input, "Renamed");
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -237,7 +271,8 @@ describe("DeckPane inline name editing", () => {
     const user = userEvent.setup();
     render(<DeckPane />);
 
-    const input = screen.getByLabelText("Active deck name");
+    await user.click(screen.getByRole("button", { name: "Rename deck Deck" }));
+    const input = screen.getByRole("textbox", { name: "Active deck name" });
     await user.clear(input);
     await user.type(input, "Renamed");
     await user.keyboard("{Enter}");
@@ -385,7 +420,10 @@ describe("DeckPane single-card checkbox", () => {
     holder.resolvedEntries = [
       {
         entry,
-        resolution: { status: "resolved", spell: { id: "srd-a", name, source: "SRD-5.2.1" } },
+        resolution: {
+          status: "resolved",
+          spell: makeSpell({ id: "srd-a", name, source: "SRD-5.2.1" }),
+        },
       },
     ];
     const user = userEvent.setup();
@@ -426,66 +464,39 @@ describe("DeckPane single-card checkbox", () => {
   });
 });
 
-describe("DeckPane mobile settings", () => {
-  it("keeps the summary and actions visible while settings are collapsed", async () => {
+describe("DeckPane disclosures", () => {
+  it("keeps identity, status and actions visible with rename and help collapsed", async () => {
     holder.activeDeck = { ...associatedDeck };
     holder.deckStatus = "saved";
     const user = userEvent.setup();
-    const view = render(
-      <WorkspaceLayoutContext.Provider value="compact">
-        <DeckPane />
-      </WorkspaceLayoutContext.Provider>,
-    );
-    const toggle = screen.getByRole("button", { name: "Deck settings" });
-    expect(toggle.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.getByRole("heading", { name: "Deck" })).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Save" })).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Print cards" })).not.toBeNull();
+    const view = render(<DeckPane />);
+    const rename = screen.getByRole("button", { name: "Rename deck Deck" });
+    const help = screen.getByRole("button", { name: /Deck persistence help/ });
+    expect(screen.getByRole("heading", { name: "Deck" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Save" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Print cards" })).toBeVisible();
     expect(screen.queryByRole("textbox", { name: "Active deck name" })).toBeNull();
-    expect(screen.queryByRole("combobox", { name: "Card design" })).toBeNull();
+    expect(screen.queryByLabelText("Card design")).toBeNull();
+    expect(help).toHaveAttribute("aria-expanded", "false");
 
-    await user.click(toggle);
-    expect(toggle.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByRole("textbox", { name: "Active deck name" })).not.toBeNull();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Card design" }), "compact");
-    expect(holder.setCardDesign).toHaveBeenCalledWith("compact");
-    await user.click(toggle);
-    expect(screen.queryByRole("button", { name: "Legend" })).toBeNull();
-
-    view.rerender(
-      <WorkspaceLayoutContext.Provider value="wide">
-        <DeckPane />
-      </WorkspaceLayoutContext.Provider>,
-    );
-    expect(screen.getByRole("textbox", { name: "Active deck name" })).not.toBeNull();
-    expect(screen.getByRole("combobox", { name: "Card design" })).not.toBeNull();
-    view.rerender(
-      <WorkspaceLayoutContext.Provider value="compact">
-        <DeckPane />
-      </WorkspaceLayoutContext.Provider>,
-    );
-    expect(
-      screen.getByRole("button", { name: "Deck settings" }).getAttribute("aria-expanded"),
-    ).toBe("false");
+    await user.click(rename);
+    await user.click(help);
+    expect(help).toHaveAttribute("aria-expanded", "true");
+    view.rerender(<DeckPane presentation="table" />);
+    expect(screen.getByRole("textbox", { name: "Active deck name" })).toBeVisible();
+    expect(help).toHaveAttribute("aria-expanded", "true");
+    await user.click(rename);
+    expect(screen.queryByRole("textbox", { name: "Active deck name" })).toBeNull();
   });
 });
 
-describe("DeckPane card design selector", () => {
-  it("sits between deck controls and deck entries with both designs", () => {
-    const { container } = render(<DeckPane />);
-    const controls = container.querySelector("#deck-controls");
-    const design = container.querySelector("#deck-design");
-    const actions = container.querySelector("#deck-actions");
-    const entries = container.querySelector("#deck-entries-container");
-    expect(controls).not.toBeNull();
-    expect(design).not.toBeNull();
-    expect(actions).not.toBeNull();
-    expect(entries).not.toBeNull();
-    expect(controls!.nextElementSibling).toBe(design);
-    expect(design!.nextElementSibling).toBe(actions);
-    expect(actions!.nextElementSibling).toBe(entries);
-
-    const select = within(design as HTMLElement).getByLabelText("Card design") as HTMLSelectElement;
+describe("CardAppearance design selector", () => {
+  it("starts collapsed and offers both designs", async () => {
+    const user = userEvent.setup();
+    render(<CardAppearance />);
+    const select = screen.getByLabelText("Card design") as HTMLSelectElement;
+    expect(select.closest("details")).not.toHaveAttribute("open");
+    await user.click(screen.getByText("Card appearance"));
     expect(Array.from(select.options, (option) => option.textContent)).toEqual([
       "Classic",
       "Compact",
@@ -495,7 +506,7 @@ describe("DeckPane card design selector", () => {
 
   it("calls setCardDesign when Compact is selected", async () => {
     const user = userEvent.setup();
-    render(<DeckPane />);
+    render(<CardAppearance />);
     await user.selectOptions(screen.getByLabelText("Card design"), "compact");
     expect(holder.setCardDesign).toHaveBeenCalledWith("compact");
   });
@@ -505,7 +516,8 @@ describe("DeckPane card design selector", () => {
     async (design) => {
       holder.cardDesign = design;
       const user = userEvent.setup();
-      render(<DeckPane />);
+      render(<CardAppearance />);
+      await user.click(screen.getByText("Card appearance"));
       await user.click(screen.getByRole("button", { name: "Legend" }));
       const dialog = screen.getByRole("dialog", { name: "Card legend" });
       expect(within(dialog).getByText(/editable spell text in either card design/)).not.toBeNull();
@@ -515,9 +527,9 @@ describe("DeckPane card design selector", () => {
   );
 });
 
-describe("DeckPane card background selector", () => {
+describe("CardAppearance background selector", () => {
   it("offers None followed by the discovered images", () => {
-    render(<DeckPane />);
+    render(<CardAppearance />);
     const select = screen.getByLabelText("Card background") as HTMLSelectElement;
     expect(Array.from(select.options, (option) => option.textContent)).toEqual([
       "None",
@@ -531,8 +543,19 @@ describe("DeckPane card background selector", () => {
   it("calls setCardBackground when an image is selected", async () => {
     const user = userEvent.setup();
     const id = CARD_BACKGROUNDS[0].id;
-    render(<DeckPane />);
+    render(<CardAppearance />);
     await user.selectOptions(screen.getByLabelText("Card background"), id);
     expect(holder.setCardBackground).toHaveBeenCalledWith(id);
+  });
+
+  it("keeps a background write error visible after closing appearance", async () => {
+    const user = userEvent.setup();
+    holder.setCardBackground.mockRejectedValueOnce(new Error("Storage failed"));
+    render(<CardAppearance />);
+    const appearance = screen.getByText("Card appearance");
+    await user.click(appearance);
+    await user.selectOptions(screen.getByLabelText("Card background"), CARD_BACKGROUNDS[0].id);
+    await user.click(appearance);
+    expect(screen.getByRole("alert")).toHaveTextContent("The background change could not be saved");
   });
 });
