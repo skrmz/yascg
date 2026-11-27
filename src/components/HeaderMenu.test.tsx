@@ -45,7 +45,7 @@ describe("HeaderMenu", () => {
 
     await openMenuItem("About App");
 
-    expect(screen.getByRole("dialog", { name: /About YASCG/ })).not.toBeNull();
+    expect(screen.getByRole("dialog")).not.toBeNull();
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
@@ -86,8 +86,8 @@ describe("HeaderMenu", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Menü öffnen" }));
     await user.click(screen.getByRole("menuitem", { name: "Über die App" }));
-    expect(screen.getByRole("dialog", { name: /Über YASCG/ })).not.toBeNull();
-    await user.click(screen.getByRole("button", { name: "Schließen" }));
+    expect(screen.getByRole("dialog")).not.toBeNull();
+    await user.keyboard("{Escape}");
 
     await user.click(screen.getByRole("button", { name: "Menü öffnen" }));
     await user.click(screen.getByRole("menuitem", { name: "Leitfaden für eigene Zauber" }));

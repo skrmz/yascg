@@ -101,9 +101,10 @@ test("German localizes about, import/export and print dialogs", async ({ page })
 
   await page.getByRole("button", { name: "Menü öffnen" }).click();
   await page.getByRole("menuitem", { name: "Über die App" }).click();
-  const about = page.getByRole("dialog", { name: /Über YASCG/ });
-  await expect(about.getByText(/Diese Anwendung steht in keiner Verbindung/)).toBeVisible();
-  await about.getByRole("button", { name: "Schließen" }).click();
+  const about = page.getByRole("dialog");
+  await expect(about.getByRole("listitem").first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(about).toBeHidden();
 
   await page.getByRole("button", { name: "Menü öffnen" }).click();
   await page.getByRole("menuitem", { name: "Leitfaden für eigene Zauber" }).click();

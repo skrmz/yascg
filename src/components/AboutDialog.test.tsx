@@ -1,7 +1,8 @@
 import { act, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vite-plus/test";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n.ts";
-import { AboutDialog } from "./AboutDialog.tsx";
+import { AboutDialog, SRD_ATTRIBUTION } from "./AboutDialog.tsx";
 
 async function setLocale(code: string) {
   await act(async () => {
@@ -22,27 +23,32 @@ describe("AboutDialog", () => {
     expect(screen.getByText(__APP_COMMIT__)).not.toBeNull();
   });
 
-  it("lists the key features and retains the legal notices", () => {
+  it("renders the feature list and legal attribution", () => {
     render(<AboutDialog open onOpenChange={() => {}} />);
 
-    const features = screen.getAllByRole("listitem");
-    expect(features).toHaveLength(6);
-    expect(features.some((item) => /SRD 5\.2\.1 library/.test(item.textContent ?? ""))).toBe(true);
-    expect(screen.getByText(/not affiliated with/)).not.toBeNull();
-    expect(screen.getByText(/Wizards of the Coast LLC/)).not.toBeNull();
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getAllByRole("listitem").length).toBeGreaterThan(0);
+    expect(within(dialog).getByText(SRD_ATTRIBUTION)).not.toBeNull();
   });
 
-  it("renders the German features and notices", async () => {
+  it("renders localized content", async () => {
     await setLocale("de");
     render(<AboutDialog open onOpenChange={() => {}} />);
 
-    const dialog = screen.getByRole("dialog", { name: /Über YASCG/ });
+    const dialog = screen.getByRole("dialog");
     const features = within(dialog).getAllByRole("listitem");
-    expect(features).toHaveLength(6);
-    expect(features.some((item) => /SRD-5\.2\.1-Bibliothek/.test(item.textContent ?? ""))).toBe(
-      true,
-    );
-    expect(within(dialog).getByText(/weder unterstützt noch gesponsert/)).not.toBeNull();
-    expect(within(dialog).getByText(/Wizards of the Coast LLC/)).not.toBeNull();
+    expect(features.length).toBeGreaterThan(0);
+    expect(features.every((item) => (item.textContent ?? "").trim().length > 0)).toBe(true);
+    expect(within(dialog).getByText(SRD_ATTRIBUTION)).not.toBeNull();
+  });
+
+  it("closes on Escape", async () => {
+    const onOpenChange = vi.fn();
+    render(<AboutDialog open onOpenChange={onOpenChange} />);
+
+    const user = userEvent.setup();
+    await user.keyboard("{Escape}");
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

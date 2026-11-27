@@ -496,25 +496,25 @@ export const de = {
   about: {
     title: "Über YASCG - Yet Another Spell Card Generator",
     description:
-      "YASCG ist ein offline-fähiger Generator für Zauberkarten für Dungeons & Dragons 5.5e (2024), mit dem du die Karten für deine Runde finden, anpassen, ordnen und drucken kannst.",
+      "YASCG ist ein offline-fähiger Generator für Zauberkarten für Dungeons & Dragons 5.5e (2024): Finde Zauber, stelle Decks zusammen und drucke Karten für deine Runde.",
     features: {
       library:
-        "Durchsuche die mitgelieferte SRD-5.2.1-Bibliothek auf Deutsch oder Englisch und filtere nach Grad, Klasse, Schule, Komponenten und mehr.",
+        "Durchsuche und filtere die mitgelieferte SRD-5.2.1-Bibliothek auf Deutsch oder Englisch und lies vollständige Zauberregeln bei Bedarf.",
       customSpells:
-        "Erstelle eigene Zauber oder bearbeitbare Kopien von SRD-Zaubern, mit Werkzeugen zum Abkürzen von Texten und zum Anwenden mitgelieferter Kurzbeschreibungen.",
+        "Erstelle eigene Zauber oder bearbeitbare SRD-Kopien, bearbeite lokale Komponentennotizen und kürze Texte mit Abkürzen oder mitgelieferten Kurzbeschreibungen.",
       decks:
-        "Stelle ein aktives Deck zusammen, ordne die Einträge und speichere benannte Decks. In der Tabellenansicht filterst und sortierst du auch große Decks, wählst Einträge über mehrere Seiten zum Entfernen aus und übernimmst die Tabellensortierung in die Deck-Reihenfolge.",
+        "Erstelle ein aktives Deck, speichere benannte Decks, ordne Einträge und verwalte große Decks in der Tabellenansicht mit Filtern, Sortierung und Auswahl über mehrere Seiten.",
       cardDesigns:
-        "Wähle das klassische oder das kompakte Kartendesign, lege einen mitgelieferten oder eigenen Hintergrund fest und sieh dir die Karten in Originalgröße an.",
+        "Wähle klassische oder kompakte Karten, lege einen mitgelieferten oder eigenen Hintergrund fest und sieh dir Karten in Originalgröße an oder skaliere die Vorschau.",
       printing:
-        "Drucke neun Karten pro Blatt mit automatischer Anpassung und Fortsetzungskarten oder das gefilterte Deck als Tabelle mit den gewählten Spalten. Beide Druckarten unterstützen US Letter und A4.",
+        "Drucke automatisch angepasste Karten mit Fortsetzungskarten oder das Deck als Tabelle mit Spalten deiner Wahl.",
       offline:
-        "Arbeite nach dem ersten Laden offline, behalte deine Sammlung im Browser und sichere oder übertrage sie per JSON-Import und -Export oder als vollständige Sicherung.",
+        "Arbeite nach dem ersten Laden offline, behalte deine Sammlung im Browser und übertrage sie per JSON-Import/-Export oder vollständiger Sicherung.",
     },
     contentNotice:
-      "Mitgelieferte Zauber beschränken sich auf das SRD 5.2.1; eigene Zauber sind als Eigen gekennzeichnet, mitgelieferte als SRD 5.2.1.",
+      "Mitgelieferte Zauber sind SRD 5.2.1 und als SRD 5.2.1 gekennzeichnet; eigene Zauber als Eigen.",
     localData:
-      "Die Daten werden lokal in deinem Browser gespeichert; exportiere deine Zauber und Decks als JSON, um eine Sicherung zu behalten.",
+      "Die Daten bleiben in deinem Browser; exportiere Zauber und Decks als JSON oder erstelle eine vollständige Sicherung.",
     disclaimer:
       "Diese Anwendung steht in keiner Verbindung zu Wizards of the Coast und wird von Wizards of the Coast weder unterstützt noch gesponsert.",
   },

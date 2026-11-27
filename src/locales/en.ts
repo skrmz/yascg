@@ -487,25 +487,25 @@ export const en = {
   about: {
     title: "About YASCG - Yet Another Spell Card Generator",
     description:
-      "YASCG is an offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards, built to help you find, customize, organize, and print the cards your table needs.",
+      "YASCG is an offline-first generator for Dungeons & Dragons 5.5e (2024) spell cards: find spells, build decks, and print cards for your table.",
     features: {
       library:
-        "Search the bundled SRD 5.2.1 library in English or German and filter by level, class, school, components, and more.",
+        "Search and filter the bundled SRD 5.2.1 library in English or German, then read full spell rules on demand.",
       customSpells:
-        "Create your own spells or editable copies of SRD spells, with tools to abbreviate text and apply bundled short descriptions.",
+        "Create custom spells or editable SRD copies, edit local component notes, and shorten text with Abbreviate or bundled short descriptions.",
       decks:
-        "Assemble and reorder an active deck, save named decks to reopen later, and use the table view to filter and sort large decks, select entries across pages for removal, and apply the table sort to the deck order.",
+        "Build one active deck, save named decks, reorder entries, and manage large decks in the table view with filters, sorting, and multi-page selection.",
       cardDesigns:
-        "Choose the Classic or Compact card design, set a bundled or personal background, and preview cards at physical size.",
+        "Choose Classic or Compact cards, set a bundled or personal background, and preview or scale cards at physical size.",
       printing:
-        "Print nine cards per sheet with automatic fitting and continuation cards, or print the filtered deck as a table with your chosen columns. Both support US Letter and A4.",
+        "Print automatically fitted cards with continuation cards, or the deck as a table with your chosen columns.",
       offline:
-        "Work offline after the first load, keep your collection in your browser, and move it with JSON import/export or a complete backup.",
+        "Work offline after the first load, keep your collection in the browser, and move it with JSON import/export or a complete backup.",
     },
     contentNotice:
-      "Bundled spells are limited to the SRD 5.2.1 and labeled SRD 5.2.1; custom spells are labeled Custom.",
+      "Bundled spells are SRD 5.2.1 and labeled SRD 5.2.1; custom spells are labeled Custom.",
     localData:
-      "Data is stored locally in your browser; export your spells and decks as JSON to keep a backup.",
+      "Data stays in your browser; export spells and decks as JSON or create a complete backup.",
     disclaimer:
       "This application is not affiliated with, endorsed by, or sponsored by Wizards of the Coast.",
   },
